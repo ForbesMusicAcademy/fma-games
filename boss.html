@@ -77,6 +77,12 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .me img{height:54px;transition:transform .15s}
 .me.hit img{transform:translateY(-8px) scale(1.12)}
 .me .hits b{font-size:24px}
+.me.ouch img{animation:ouch .5s}
+@keyframes ouch{0%,100%{transform:none;filter:none}20%{transform:translateX(-8px) rotate(-8deg);filter:sepia(1) saturate(6) hue-rotate(-30deg)}50%{transform:translateX(8px) rotate(8deg)}80%{transform:translateX(-4px)}}
+.php{width:100%;height:20px;border-radius:10px;background:var(--line);border:2px solid var(--fg);overflow:hidden;position:relative}
+.php i{display:block;height:100%;width:100%;background:linear-gradient(#5fae6f,#3E7D4C);transition:width .35s,background .3s}
+.php.low i{background:linear-gradient(#f08a5d,#C0392B)}
+.php span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:12px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
 #dmg{position:absolute;right:20%;top:30%;font-family:var(--head);font-weight:900;font-size:34px;color:var(--bad);-webkit-text-stroke:2px #fff;paint-order:stroke fill;opacity:0;pointer-events:none}
 #dmg.go{animation:dmg 1s ease-out}
 @keyframes dmg{from{transform:translateY(0);opacity:1}to{transform:translateY(-70px);opacity:0}}
@@ -128,6 +134,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
       <div class="beats" id="beats"></div>
       <div class="bars" id="bars"></div>
       <div class="me" id="me"><span><img id="meImg" alt=""></span><span class="hits"><b id="hits">0</b> hits</span></div>
+      <div class="php" id="php"><i id="phpbar"></i><span id="phptxt"></span></div>
       <div class="meter"><i id="lvl"></i></div>
       <div id="status"></div>
     </div>
@@ -315,21 +322,22 @@ const barDur = () => 4 * 60 / snd.bpm;
 const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 during the count-in
 
 /* ---------- The fight ---------- */
-const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[] };
+const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false };
 let song, info;
 function buildFight(){
   song = SONGS[S.song - 1];
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
   G.bars = n; G.need = Math.max(1, Math.round(n * WIN));
+  G.dmgPer = 100 / Math.max(1, G.bars - G.need + 1);       // knocked out on the miss that makes winning impossible
 }
 function startFight(){
   buildFight();
-  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false });
+  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false });
   G.latched.fill(false); G.onFor.fill(0);
   $("bimg").style.filter = "hue-rotate(" + ((S.song - 1) * 36) + "deg)"; $("bimg").classList.remove("dead", "hurt");
   $("meImg").src = "characters/" + CHARS[S.who] + ".png";
-  $("hits").textContent = "0";
+  $("hits").textContent = "0"; $("phpbar").style.width = "100%"; $("phptxt").textContent = "HP 100"; $("php").classList.remove("low");
   $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
   $("beats").innerHTML = "<i></i><i></i><i></i><i></i>";
   $("hpbar").style.width = "100%"; $("hptxt").textContent = G.need + " hits to win";
@@ -356,12 +364,20 @@ function frame(){
   const idx = Math.floor(bp);
   if(idx >= G.bars){ return finish(); }
   if(idx !== G.idx){
-    if(G.idx >= 0) G.outcomes[G.idx] = G.hit;       // close the bar we just left
+    if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
     G.idx = idx; G.hit = false; G.run = 0; G.rootRun = 0; G.latched.fill(false); G.onFor.fill(0); G.settle = performance.now() + 250;
     setChord(idx);
     [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
     if(idx > 0 && !G.outcomes[idx - 1]) $("status").textContent = "";
   }
+}
+function miss(){
+  if(G.done) return;
+  G.hp = Math.max(0, G.hp - G.dmgPer);
+  $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = "HP " + Math.round(G.hp); $("php").classList.toggle("low", G.hp <= 35);
+  $("me").classList.remove("ouch"); void $("me").offsetWidth; $("me").classList.add("ouch");
+  $("status").textContent = "Ouch!"; $("status").style.color = "var(--bad)";
+  if(G.hp <= 0.5){ G.done = true; G.ko = true; setTimeout(() => finish(), 1000); }
 }
 function tick(){
   if(!G.on || G.done || G.idx < 0 || !(det.ready || SIM)) return;
@@ -406,7 +422,7 @@ function finish(){
   const win = G.hits >= G.need, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
   $("endImg").style.filter = "hue-rotate(" + ((S.song - 1) * 36) + "deg)"; $("endImg").classList.toggle("dead", win);
-  $("endTitle").textContent = win ? "Boss defeated!" : "The boss got away…";
+  $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%";
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
   show("end");
