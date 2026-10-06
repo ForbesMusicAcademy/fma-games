@@ -79,11 +79,12 @@ body.wait .at-cursor-bar,body.wait .at-cursor-beat{display:none}   /* learning m
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
 <body class="wait">
 <div id="app">
-  <header><h1>Song Practice</h1><a href="./">All games</a></header>
+  <header><h1>Song Practice</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <!-- 1. the song list -->
   <section id="menu">

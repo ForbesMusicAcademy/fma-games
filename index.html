@@ -15,6 +15,8 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
 main{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.logo{width:min(62vw,260px);height:auto;display:block;margin:-6px 0 -22px}
 h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-height:1.1}
 .lead{margin:0;color:var(--muted)}
 a.game{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;color:inherit;text-decoration:none;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
@@ -28,8 +30,8 @@ small{color:var(--muted);text-align:center;margin-top:4px}
 </head>
 <body>
 <main>
-  <h1>Practice games</h1>
-  <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. Nothing is recorded or sent anywhere.</p>
+  <header><img class="logo" src="logos/fma-logo-abrv.png" alt="Forbes Music Academy"><h1>Practice games</h1></header>
+  <p class="lead" style="text-align:center">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. Nothing is recorded or sent anywhere.</p>
   <a class="game" href="quiz.html"><img src="characters/plucky.png" alt=""><div><b>Note Quiz <span class="tag">NEW</span></b><span>Answer questions by finding the right note on your guitar. Quicker = more points. Play solo or race the CPUs.</span></div></a>
   <a class="game" href="chords.html"><img src="star-on.png" alt=""><div><b>Chord Practice</b><span>Play the chord you see. Earn stars as you learn new ones.</span></div></a>
   <a class="game" href="tuner.html"><img src="characters/fret.png" alt=""><div><b>Tuning Race</b><span>Tune all six strings as fast as you can.</span></div></a>

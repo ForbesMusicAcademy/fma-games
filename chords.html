@@ -59,11 +59,12 @@ label.set input[type=range]{width:100%}
 .test{display:flex;flex-wrap:wrap;gap:8px}
 .test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
 <body>
 <div id="app">
-  <header><h1>Chord Practice</h1><a href="songs.html" style="color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff">Songs</a></header>
+  <header><h1>Chord Practice</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <section class="card" id="intro">
     <h2>Play the chord you see</h2>
