@@ -43,9 +43,9 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .eprev > div,.eprev svg{width:100%;height:100%}
 .eleft input{width:100%;font:inherit;font-weight:700;padding:9px 10px;border:2px solid var(--fg);border-radius:12px;background:#fff;text-align:center}
 .eright{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
-.icons{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
-.icons button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:11px;font-weight:800;color:var(--muted)}
-.icons button svg{width:26px;height:26px;display:block}
+.icons{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.icons button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:10px;font-weight:800;color:var(--muted)}
+.icons button svg{width:24px;height:24px;display:block}
 .icons button.on{border-color:var(--fg);background:var(--accent);color:var(--fg)}
 .epanel{display:flex;flex-direction:column;gap:10px;min-height:170px}
 .ogrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:5px}
@@ -55,6 +55,7 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .opt span{font-size:10px;font-weight:700;color:var(--muted);line-height:1.1;text-align:center;white-space:nowrap}
 .opt.on{border-color:var(--fg);background:#FFF1C7}
 .opt.on span{color:var(--fg)}
+.hint{font-size:11px;font-weight:700;color:var(--muted);text-align:center;letter-spacing:.04em}
 .sub{font-family:var(--head);font-weight:900;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:0 0 4px 2px}
 .sw{display:flex;flex-wrap:wrap;gap:6px}
 .sw button{width:27px;height:27px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);padding:0}
@@ -135,17 +136,19 @@ function drawYou(){
 /* One tab per part. Each shows a grid of pictures (and colour dots where it makes sense). */
 const ICON = {
   body: '<svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 30Q5 21 16 21Q27 21 27 30Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="12" r="1.3" fill="#26211f"/><circle cx="19" cy="12" r="1.3" fill="#26211f"/></svg>',
-  hair: '<svg viewBox="0 0 32 32"><path d="M5 18Q4 4 16 4Q28 4 27 18Q24 10 16 10Q8 10 5 18Z" fill="#c8761f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="20" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 18Q4 4 16 4Q28 4 27 18Q24 10 16 10Q8 10 5 18Z" fill="#c8761f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
-  face: '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><circle cx="11.5" cy="13" r="1.8" fill="#26211f"/><circle cx="20.5" cy="13" r="1.8" fill="#26211f"/><path d="M10.5 19Q16 25 21.5 19" fill="none" stroke="#26211f" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  hair: '<svg viewBox="0 0 32 32"><circle cx="16" cy="20" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 18Q4 4 16 4Q28 4 27 18Q24 10 16 10Q8 10 5 18Z" fill="#c8761f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  face: '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><circle cx="11.5" cy="13" r="3.4" fill="#fff" stroke="#26211f" stroke-width="1.8"/><circle cx="20.5" cy="13" r="3.4" fill="#fff" stroke="#26211f" stroke-width="1.8"/><circle cx="11.5" cy="13.4" r="1.4" fill="#26211f"/><circle cx="20.5" cy="13.4" r="1.4" fill="#26211f"/><path d="M10.5 20Q16 25 21.5 20" fill="none" stroke="#26211f" stroke-width="2.2" stroke-linecap="round"/></svg>',
   outfit: '<svg viewBox="0 0 32 32"><path d="M11 4L4 8L7 14L10 12V28H22V12L25 14L28 8L21 4Q16 8 11 4Z" fill="#e8433f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
-  acc: '<svg viewBox="0 0 32 32"><path d="M5 22Q5 8 16 8Q27 8 27 22Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 22Q26 17 30 23Q26 26 14 25Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>'
+  head: '<svg viewBox="0 0 32 32"><path d="M5 22Q5 8 16 8Q27 8 27 22Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 22Q26 17 30 23Q26 26 14 25Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  gear: '<svg viewBox="0 0 32 32"><g transform="rotate(-38 16 16)"><rect x="15" y="2" width="4" height="16" rx="1.5" fill="#e0bf82" stroke="#26211f" stroke-width="1.8"/><ellipse cx="17" cy="22" rx="7" ry="7.5" fill="#4fd0c0" stroke="#26211f" stroke-width="2"/><circle cx="17" cy="22" r="2.2" fill="#26211f"/></g></svg>'
 };
 const TABS = [
   { id: "body", label: "Body", sections: [["grid", "body", O.bodies, "full"], ["swatch", "Skin", "skin", O.skins], ["grid", "pose", O.poses, "full", "Pose"]] },
   { id: "hair", label: "Hair", sections: [["grid", "hair", O.hair, "head"], ["swatch", "Hair colour", "hairColor", O.hairColors]] },
-  { id: "face", label: "Face", sections: [["grid", "eyes", O.eyes, "face", "Eyes"], ["swatch", "Eye colour", "eyeColor", O.eyeColors], ["grid", "mouth", O.mouths, "face", "Mouth"]] },
+  { id: "face", label: "Face", sections: [["grid", "eyes", O.eyes, "face", "Eyes"], ["grid", "mouth", O.mouths, "face", "Mouth"], ["grid", "mark", O.marks, "face", "Marks"], ["grid", "eyewear", O.eyewear, "face", "Eyewear"]] },
   { id: "outfit", label: "Outfit", sections: [["grid", "top", O.tops, "full", "Top"], ["swatch", "Top colour", "color", O.palette], ["grid", "bottom", O.bottoms, "full", "Bottoms"], ["swatch", "Bottoms colour", "pants", O.palette], ["swatch", "Shoes", "accent", O.palette]] },
-  { id: "acc", label: "Extras", sections: [["grid", "acc", O.acc, "head"], ["swatch", "Colour", "accColor", O.palette]] }
+  { id: "head", label: "Head", note: "Sweet to wicked", sections: [["grid", "acc", O.acc, "head"], ["swatch", "Colour", "accColor", O.palette]] },
+  { id: "gear", label: "Gear", sections: [["grid", "gear", O.gear, "full"], ["swatch", "Colour", "gearColor", O.palette]] }
 ];
 let tab = "body";
 function drawIcons(){
@@ -154,11 +157,11 @@ function drawIcons(){
 }
 function drawPanel(){
   const t = TABS.find(x => x.id === tab);
-  $("epanel").innerHTML = t.sections.map(sec => {
+  $("epanel").innerHTML = (t.note ? `<div class="hint">${t.note}</div>` : "") + t.sections.map(sec => {
     if(sec[0] === "grid"){
       const [, key, list, view, title] = sec;
       return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + list.map(([v, label]) =>
-        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${PlayerArt.svg(Object.assign({}, cfg, { name: "" }, tab === "acc" ? {} : { acc: "none" }, { [key]: v }), view)}<span>${label}</span></button>`).join("") + `</div>`;
+        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${PlayerArt.svg(Object.assign({}, cfg, { name: "", acc: "none", eyewear: "none", mark: "none", gear: "none" }, { [key]: v }), view)}<span>${label}</span></button>`).join("") + `</div>`;
     }
     const [, label, key, colours] = sec;
     return `<div><div class="sub">${label}</div><div class="sw">` + colours.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${label} ${c}"></button>`).join("") + `</div></div>`;
