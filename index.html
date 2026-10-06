@@ -148,7 +148,7 @@ const touched = () => { try{ return !!localStorage.getItem(TOUCHED); }catch(e){ 
 const markTouched = () => { try{ localStorage.setItem(TOUCHED, "1"); }catch(e){} };
 
 function drawYou(hello){
-  const p = PlayerArt($("yart"), cfg);
+  const p = card = PlayerArt($("yart"), cfg);
   if(hello) setTimeout(() => p.pose(PlayerArt.MOMENTS.hello, 2600), 400);
   $("yname").textContent = cfg.name || "";
   $("yedit").classList.toggle("pulse", !touched());
@@ -204,11 +204,12 @@ function drawPanel(){
   $("epanel").scrollTop = keep;
 }
 // the big preview bounces with a happy face whenever something changes
-function previews(){ PlayerArt($("ebig"), cfg).react(); drawYou(); }
+function previews(){ big = PlayerArt($("ebig"), cfg); big.react(); lastEdit = performance.now(); drawYou(); }
 function save(){ Player.set(cfg); markTouched(); }
 function openEditor(){
   $("top").classList.add("editing"); $("yview").hidden = true; $("yeditor").hidden = false;
-  $("ename").value = cfg.name || ""; drawIcons(); drawPanel(); PlayerArt($("ebig"), cfg);
+  $("ename").value = cfg.name || ""; drawIcons(); drawPanel(); big = PlayerArt($("ebig"), cfg);
+  setTimeout(() => big.pose(PlayerArt.MOMENTS.hello, 2400), 300);
   document.documentElement.classList.add("editing");
 }
 function closeEditor(){
@@ -221,10 +222,24 @@ $("edone").onclick = closeEditor;
 // scrolling over the character column does nothing (the options list is the only thing that scrolls)
 document.querySelector(".eleft").addEventListener("wheel", e => e.preventDefault(), { passive: false });
 document.querySelector(".eleft").addEventListener("touchmove", e => { if(e.target.tagName !== "INPUT") e.preventDefault(); }, { passive: false });
-$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawPanel(); previews(); };
+$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawPanel(); previews(); showOff(true); };
 // back to a plain, bald character in a tee and pants (keeps the name and body type), so you build up from nothing
 $("eclear").onclick = () => { const keep = cfg.name; cfg = Player.plain(cfg.body); cfg.name = keep; save(); drawPanel(); previews(); };
 $("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); previews(); };
+/* Showing off: every few seconds the character strikes a pose (a wave, a jump for joy, a flex...). In the editor it does it
+   often, but never straight after you've changed something; on the menu card it just waves now and then. */
+let big = null, card = null, lastEdit = 0;
+const SHOW = ["wave", "cheer", "thumbs", "star", "rock", "flex", "peace", "point", "cheer", "wave"];
+function showOff(now){
+  const editing = !$("yeditor").hidden, c = editing ? big : card;
+  if(!c || document.hidden) return;
+  if(!now && editing && performance.now() - lastEdit < 3500) return;
+  if(!editing && Math.random() < 0.6) return;
+  const p = editing ? SHOW[Math.floor(Math.random() * SHOW.length)] : "wave";
+  c.pose(p, 2000);
+  if(p === "cheer" || p === "star") c.cheer();          // a jump for joy
+}
+setInterval(() => showOff(false), 5500);
 drawYou(true);
 if(location.hash === "#character") openEditor();
 </script>

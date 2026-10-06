@@ -456,9 +456,10 @@
     // palm out, three fingers fanned, thumb out low on the inner side: the wave / cheer hand
     open: { wrist: [0, 13], parts: [["M-6 -3 L-10.8 -23.5", 9], ["M0 -5 L0.4 -28.5", 9.4], ["M6 -3 L11 -22.5", 8.8], ["M-8.5 7 Q-16 7 -20.5 -1", 9.2], ["M0 1.5 L0 2", 24]],
       detail: () => "" },
-    // fingers together, hanging easy at the side
-    rest: { wrist: [0, 13.8], parts: [["M-5.6 -3 Q-6.4 -13 -5.8 -20.5", 8.4], ["M0 -4 Q-0.2 -15 0.4 -23", 8.6], ["M5.6 -3 Q6.2 -12 6.4 -19.5", 8.2], ["M-8.6 4 Q-14.4 -1 -14.4 -9", 8.6], ["M0 1 L0 1.6", 23]],
-      detail: () => `<path d="M-2.9 -20.5 V-16.5 M3.1 -19.5 V-15.5" fill="none" ${sw(1.8)}/>` },
+    // fingers together, hanging easy at the side. A hanging hand is turned upside down, so this one is drawn mirrored
+    // (thumb on +x): that keeps the thumb on the inner side, towards the body, instead of sticking out like a big pinky.
+    rest: { wrist: [0, 13.8], parts: [["M5.6 -3 Q6.4 -13 5.8 -20.5", 8.4], ["M0 -4 Q0.2 -15 -0.4 -23", 8.6], ["M-5.6 -3 Q-6.2 -12 -6.4 -19.5", 8.2], ["M8.4 4 Q13 0 13.2 -6.5", 7.8], ["M0 1 L0 1.6", 23]],
+      detail: () => `<path d="M2.9 -20.5 V-16.5 M-3.1 -19.5 V-15.5" fill="none" ${sw(1.8)}/>` },
     // thumbs up: a fist seen from the front, three curled fingers stacked on the outside, thumb straight up on the inside
     thumbs: { wrist: [0, 16], parts: [["M-1 3 L1 3", 24.5], ["M7 -4.5 L10.5 -4.5", 9], ["M7.5 3 L11 3", 9], ["M7.5 10 L10.5 10", 8.6], ["M-5 -6 Q-6.5 -18 -3.5 -27", 10.4]],
       detail: () => `<path d="M3.5 -0.8 L11 -0.8 M3.5 6.6 L11 6.6" fill="none" ${sw(2)}/>` },
