@@ -40,10 +40,10 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .chips button small{color:var(--muted);font-weight:600}
 .chips button.on{border-color:var(--fg);background:var(--accent)}
 .chips button.on small{color:var(--fg)}
-.who{display:flex;gap:8px;justify-content:space-between}
-.who button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:4px;aspect-ratio:1/1}
-.who button svg{width:100%;height:100%;display:block}
-.who button.on{border-color:var(--fg);background:#FFF1C7}
+.mine{display:flex;align-items:center;gap:14px;border:2px solid var(--line);border-radius:16px;padding:6px 12px 6px 6px;background:#fff}
+.mine .mart{width:84px;flex:none;aspect-ratio:1}
+.mine b{display:block;font-family:var(--head);font-weight:900;font-size:19px}
+.mine a{color:var(--muted);font-weight:700}
 .best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
 .tip{background:#FFF1C7;border-radius:12px;padding:8px 12px;font-weight:600;font-size:15px;margin:12px 0;color:var(--fg)!important}
 
@@ -112,7 +112,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
     <h3>Speed</h3><div class="chips" id="speeds"></div>
     <h3>What do you play?</h3><div class="chips" id="modes"></div>
     <h3>Backing</h3><div class="chips" id="backs"></div>
-    <h3>Your player</h3><div class="who" id="who"></div>
+    <h3>Your player</h3><div class="mine"><div class="mart" id="mart"></div><div><b id="mname"></b><a href="./#character">Change my character</a></div></div>
     <p class="tip">Use headphones so the game doesn't hear its own drums. Tune up first.</p>
     <button class="big" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
@@ -151,7 +151,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 </div>
 
 <script src="boss-anim.js"></script>
-<script src="char-anim.js"></script>
+<script src="player-art.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -180,11 +180,10 @@ const SONGS = [
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
 const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
-const CHARS = ["shredder","clang","fret","plucky","scales","callus"];
 const BARS = 16, WIN = 0.6;       // each song plays 16 bars (whole loops); you win with 60% of them landed
 const KEY = "fma-boss-v1";
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
-const S = Object.assign({ song:1, speed:"med", mode:"root", back:"drums", who:3 }, store.get().sel || {});
+const S = Object.assign({ song:1, speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
 
 const FFT = 16384, TONAL_MIN = 0.30;
 const det = {
@@ -323,7 +322,7 @@ const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 
 
 /* ---------- The fight ---------- */
 const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false, bossHp:100, streak:0, bestStreak:0 };
-let song, info, art, pArt;
+let song, info, art, pArt, me;
 function buildFight(){
   song = SONGS[S.song - 1];
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
@@ -349,8 +348,9 @@ function startFight(){
   Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
   G.latched.fill(false); G.onFor.fill(0);
   art = BossArt($("bimg"), { hue:(S.song - 1) * 36 });
-  pArt = CharArt($("pimg"), CHARS[S.who]);
-  $("pname").textContent = "You";
+  me = Player.get();
+  pArt = PlayerArt($("pimg"), me);
+  $("pname").textContent = me.name || "You";
   $("combo").className = "combo"; $("combo").textContent = "";
   setHp();
   $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
@@ -438,7 +438,7 @@ function finish(){
   const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
   const endArt = BossArt($("endImg"), { hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
-  const endP = CharArt($("endPlayer"), CHARS[S.who]); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else if(win) setTimeout(() => endP.cheer(), 300);
+  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else if(win) setTimeout(() => endP.cheer(), 300);
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
@@ -458,8 +458,7 @@ function draw(){
   chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
-  $("who").innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${S.who === i ? "on" : ""}" aria-label="${c}">${CharArt.svg(c)}</button>`).join("");
-  $("who").querySelectorAll("button").forEach(b => b.onclick = () => { S.who = Number(b.dataset.i); saveSel(); draw(); });
+  { const m = Player.get(); PlayerArt($("mart"), m); $("mname").textContent = m.name || "Your character"; }
   const best = store.get().best || {}, k = S.song + "-" + S.speed + "-" + S.mode;
   $("bests").textContent = best[k] ? "Your best for this song, speed and mode: " + best[k] + " hits" : "";
 }

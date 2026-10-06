@@ -5,18 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EFEAD9">
 <title>Forbes Music Academy: Practice Games</title>
-<meta name="description" content="Free guitar practice games from Forbes Music Academy: chords, tuning, songs and the Note Quiz. Play with your real guitar.">
-<link rel="canonical" href="https://games.forbesguitar.com.au/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Forbes Music Academy">
-<meta property="og:title" content="Forbes Music Academy: Practice Games">
-<meta property="og:description" content="Play with your real guitar: chords, tuning, songs and the Note Quiz.">
-<meta property="og:url" content="https://games.forbesguitar.com.au/">
-<meta property="og:image" content="https://games.forbesguitar.com.au/og-quiz.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://games.forbesguitar.com.au/og-quiz.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -27,29 +15,128 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
 main{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
-header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
-.logo{width:min(62vw,260px);height:auto;display:block;margin:-6px 0 -22px}
+button{font:inherit;cursor:pointer;color:var(--fg)}
 h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-height:1.1}
 .lead{margin:0;color:var(--muted)}
+[hidden]{display:none!important}
+
+/* logo + your character */
+.top{display:flex;align-items:stretch;gap:12px}
+.logo{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center}
+.logo img{width:100%;max-width:230px;height:auto;display:block}
+.you{flex:1 1 0;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:8px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.you .tag{font-family:var(--head);font-weight:900;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.you .yart{width:100%;max-width:170px;aspect-ratio:1}
+.you .yname{font-family:var(--head);font-weight:900;font-size:17px;line-height:1.1;min-height:1.1em;text-align:center;overflow-wrap:anywhere}
+.you button{margin-top:4px;min-height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--fg);background:var(--accent);font-weight:800}
+.you button.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* the editor */
+.editor{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4);overflow:hidden}
+.ehead{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:12px}
+.ehead .big{width:104px;flex:none;aspect-ratio:1}
+.ehead .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.ehead input{width:100%;font:inherit;font-weight:700;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:#fff}
+.ehead .row{display:flex;gap:8px}
+.ehead .row button{flex:1;min-height:42px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800}
+.ehead .row button.go{background:var(--accent);border-color:var(--fg)}
+.ebody{padding:4px 14px 16px}
+.ebody h3{margin:16px 0 8px;font-family:var(--head);font-weight:900;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.opt{position:relative;border:2px solid var(--line);background:#fff;border-radius:14px;padding:2px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:0}
+.opt svg{width:100%;aspect-ratio:1;display:block}
+.opt span{font-size:12px;font-weight:700;color:var(--muted);line-height:1.1;text-align:center}
+.opt.on{border-color:var(--fg);background:#FFF1C7}
+.opt.on span{color:var(--fg)}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw button{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line)}
+.sw button.on{box-shadow:0 0 0 3px var(--fg)}
+.sub{font-size:13px;font-weight:700;color:var(--muted);margin:10px 0 6px}
+
+/* games */
 a.game{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;color:inherit;text-decoration:none;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
 a.game:active{transform:scale(.99)}
 a.game img{width:64px;height:64px;object-fit:contain;flex:none}
 a.game b{display:block;font-family:var(--head);font-weight:900;font-size:22px;line-height:1.1}
 a.game span{color:var(--muted);font-size:15px}
-.tag{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle}
-small{color:var(--muted);text-align:center;margin-top:4px}
+.tag2{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;color:var(--fg)}
+small.foot{color:var(--muted);text-align:center;margin-top:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <main>
-  <header><img class="logo" src="logos/fma-logo-abrv.png" alt="Forbes Music Academy"><h1>Practice games</h1></header>
-  <p class="lead" style="text-align:center">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. Nothing is recorded or sent anywhere.</p>
-  <a class="game" href="quiz.html"><img src="characters/plucky-vector.svg" alt=""><div><b>Note Quiz <span class="tag">NEW</span></b><span>Answer questions by finding the right note on your guitar. Quicker = more points. Play solo or race the CPUs.</span></div></a>
-  <a class="game" href="boss.html"><img src="characters/boss.svg" alt=""><div><b>Boss Battle <span class="tag">NEW</span></b><span>Play along to a drum beat. Hit the right chord every bar to beat the boss. Ten songs, three speeds.</span></div></a>
+  <header class="top">
+    <div class="logo"><img src="logos/fma-logo-abrv.png" alt="Forbes Music Academy"></div>
+    <section class="you" id="you" aria-label="Your character">
+      <div class="tag">Your character</div>
+      <div class="yart" id="yart"></div>
+      <div class="yname" id="yname"></div>
+      <button id="yedit">Customise</button>
+    </section>
+  </header>
+
+  <section class="editor" id="editor" hidden aria-label="Customise your character">
+    <div class="ehead">
+      <div class="big" id="ebig"></div>
+      <div class="col">
+        <input id="ename" maxlength="10" placeholder="Name (optional)" autocomplete="off" autocapitalize="words" aria-label="Character name">
+        <div class="row"><button id="erand">Surprise me</button><button id="edone" class="go">Done</button></div>
+      </div>
+    </div>
+    <div class="ebody" id="ebody"></div>
+  </section>
+
+  <h1>Practice games</h1>
+  <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. Nothing is recorded or sent anywhere. Your character is saved on this device only.</p>
+  <a class="game" href="quiz.html"><img src="characters/plucky.png" alt=""><div><b>Note Quiz <span class="tag2">NEW</span></b><span>Answer questions by finding the right note on your guitar. Quicker = more points. Play solo or race the CPUs.</span></div></a>
+  <a class="game" href="boss.html"><img src="characters/boss.svg" alt=""><div><b>Boss Battle <span class="tag2">NEW</span></b><span>Play along to a drum beat. Hit the right chord every bar to beat the boss. Ten songs, three speeds.</span></div></a>
   <a class="game" href="chords.html"><img src="star-on.png" alt=""><div><b>Chord Practice</b><span>Play the chord you see. Earn stars as you learn new ones.</span></div></a>
-  <a class="game" href="tuner.html"><img src="characters/fret-vector.svg" alt=""><div><b>Tuning Race</b><span>Tune all six strings as fast as you can.</span></div></a>
+  <a class="game" href="tuner.html"><img src="characters/fret.png" alt=""><div><b>Tuning Race</b><span>Tune all six strings as fast as you can.</span></div></a>
   <a class="game" href="songs.html"><img src="diamond.png" alt=""><div><b>Song Practice</b><span>Play a tab note by note. The tab waits for you.</span></div></a>
-  <small>Forbes Music Academy</small>
+  <small class="foot">Forbes Music Academy</small>
 </main>
+
+<script src="player-art.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let cfg = Player.get();
+const O = PlayerArt.options;
+const TOUCHED = "fma-player-touched";
+const touched = () => { try{ return !!localStorage.getItem(TOUCHED); }catch(e){ return true; } };
+const markTouched = () => { try{ localStorage.setItem(TOUCHED, "1"); }catch(e){} };
+
+function drawYou(){
+  PlayerArt($("yart"), cfg);
+  $("yname").textContent = cfg.name || "";
+  $("yedit").classList.toggle("pulse", !touched());
+  $("yedit").textContent = touched() ? "Customise" : "Make it yours!";
+}
+const thumb = patch => PlayerArt.svg(Object.assign({}, cfg, { name: "" }, patch));
+function opts(list, key, labelOf){
+  return `<div class="opts">` + list.map(([v, label]) => `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${thumb({ [key]: v })}<span>${label}</span></button>`).join("") + `</div>`;
+}
+function swatches(list, key){
+  return `<div class="sw">` + list.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="colour ${c}"></button>`).join("") + `</div>`;
+}
+function drawEditor(){
+  PlayerArt($("ebig"), cfg);
+  $("ebody").innerHTML =
+    `<h3>Body</h3>${opts(O.bodies, "body")}` +
+    `<h3>Colours</h3><div class="sub">Body</div>${swatches(O.palette, "color")}<div class="sub">Hands, shoes and accessories</div>${swatches(O.palette, "accent")}` +
+    `<h3>Hair</h3>${opts(O.hair, "hair")}<div class="sub">Hair colour</div>${swatches(O.hairColors, "hairColor")}` +
+    `<h3>Eyes</h3>${opts(O.eyes, "eyes")}<h3>Mouth</h3>${opts(O.mouths, "mouth")}` +
+    `<h3>Extras</h3>${opts(O.acc, "acc")}`;
+  $("ebody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cfg[b.dataset.k] = b.dataset.v; save(); drawEditor(); drawYou(); });
+}
+function save(){ Player.set(cfg); markTouched(); }
+$("yedit").onclick = () => { $("editor").hidden = false; $("ename").value = cfg.name || ""; drawEditor(); $("editor").scrollIntoView({ behavior: "smooth", block: "start" }); };
+$("edone").onclick = () => { $("editor").hidden = true; markTouched(); drawYou(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawEditor(); drawYou(); };
+$("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); PlayerArt($("ebig"), cfg); drawYou(); };
+drawYou();
+if(location.hash === "#character") $("yedit").click();
+</script>
 </body>
 </html>
