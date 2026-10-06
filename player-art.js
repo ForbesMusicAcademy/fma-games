@@ -7,8 +7,11 @@
        neck, neckColor,
        pose, acc (head), accColor, gear (instrument), gearColor, extra (accessory: cape, backpack...), extraColor }
    Player.get() / Player.set(cfg) / Player.random()          the saved character (a random one the first time)
-   PlayerArt(container, cfg, { idle })  -> a live, animated character and its controller:
-       setDamage(0..1), hurt(), attack(dir), cheer(), react(), ko(), reset(), fidget(name), idle(on), destroy()
+   PlayerArt(container, cfg, { idle, pose })  -> a live, animated character and its controller:
+       setDamage(0..1), hurt(), attack(dir), cheer(), react(), ko(), reset(), fidget(name), idle(on), destroy(),
+       pose(name, ms)  strike a pose for ms (0 = hold it) and then go back to the resting one
+   Poses are not chosen in the editor (the character always stands relaxed there): the games use them for moments.
+   PlayerArt.MOMENTS maps game moments to poses (hello, start, hit, streak, best, win, done); games call pose(MOMENTS.x).
        Left alone it blinks, glances about and fidgets in a way that suits its pose (waving, pumping, headbanging).
        There is deliberately no "Jam"/air-guitar pose and no drumsticks: see the README.
    PlayerArt.svg(cfg, view)   -> plain SVG string (menus, thumbnails); view = "full" | "fig" | "head" | "face" | "chest" | "feet"
@@ -30,9 +33,9 @@
     bodies: [["kid", "Kid"], ["teen", "Teen"], ["adult", "Adult"]],
     poses: [["wave", "Wave"], ["cheer", "Cheer"], ["thumbs", "Thumbs up"], ["peace", "Peace"], ["star", "Star jump"], ["point", "Let's go"],
       ["hips", "Hands on hips"], ["flex", "Flex"], ["rock", "Rock on"], ["relax", "Relaxed"]],
-    hair: [["none", "None"], ["buzz", "Buzz cut"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["mop", "Mop"],
-      ["curly", "Curly"], ["afro", "Afro"], ["spiky", "Spiky"], ["mohawk", "Mohawk"], ["bun", "Bun"], ["ponytail", "Ponytail"],
-      ["pigtails", "Pigtails"], ["bob", "Bob"], ["long", "Long"], ["grunge", "Grunge"]],
+    hair: [["none", "None"], ["buzz", "Buzz cut"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["quiff", "Flick-up"], ["mop", "Mop"],
+      ["curly", "Curly"], ["afro", "Afro"], ["spiky", "Spiky"], ["mohawk", "Mohawk"], ["bun", "Bun"], ["spacebuns", "Space buns"], ["ponytail", "Ponytail"],
+      ["pigtails", "Pigtails"], ["plait", "Plaits"], ["bob", "Bob"], ["long", "Long"], ["wavy", "Long and wavy"], ["grunge", "Grunge"]],
     beards: [["none", "None"], ["stubble", "Stubble"], ["moustache", "Moustache"], ["handlebar", "Handlebar"], ["goatee", "Goatee"],
       ["chinstrap", "Chinstrap"], ["full", "Full beard"], ["bushy", "Big beard"]],
     eyes: [["calm", "Calm"], ["happy", "Happy"], ["wide", "Wide"], ["sleepy", "Sleepy"], ["tired", "Tired"], ["sad", "Sad"], ["wink", "Wink"], ["sly", "Sly"], ["grumpy", "Grumpy"]],
@@ -41,13 +44,14 @@
     eyewear: [["none", "None"], ["glasses", "Specs"], ["shades", "Shades"], ["mask", "Mask"], ["patch", "Eye patch"]],
     // tops and bottoms include music-scene staples: grunge flannel, hip-hop jersey and puffer, Britpop trackie, pop-star sequins
     tops: [["tee", "T-shirt"], ["hoodie", "Hoodie"], ["stripes", "Stripes"], ["overalls", "Dungarees"], ["jacket", "Jacket"], ["bolt", "Bolt tee"],
-      ["flannel", "Flannel"], ["jersey", "Jersey"], ["track", "Trackie top"], ["puffer", "Puffer"], ["sequin", "Sequins"]],
+      ["flannel", "Flannel"], ["jersey", "Jersey"], ["track", "Trackie top"], ["puffer", "Puffer"], ["sequin", "Sequins"], ["leather", "Spiky leather jacket"]],
     bottoms: [["pants", "Pants"], ["shorts", "Shorts"], ["skirt", "Skirt"], ["pleated", "Pleated skirt"], ["tutu", "Tutu"], ["maxi", "Long skirt"],
       ["leggings", "Leggings"], ["flares", "Flares"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
     shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"]],
     neck: [["none", "None"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"]],
     acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"]],
-    gear: [["none", "None"], ["guitar", "Guitar"], ["bass", "Bass"], ["ukulele", "Ukulele"], ["mic", "Mic"]],
+    // "guitar" is the Strat (older saves called it just "Guitar")
+    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["ukulele", "Ukulele"], ["mic", "Mic"]],
     extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"]],
     skins: SKINS, palette: PALETTE, hairColors: HAIR_COLORS
   };
@@ -109,15 +113,6 @@
   }
 
   /* ---- hair, in head units ---- */
-  const HAIR_FRONT = {
-    crop: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`,
-    sweep: `<path d="M-1.06 0.14 C-1.16 -0.78 -0.6 -1.24 0.1 -1.24 C0.82 -1.24 1.16 -0.7 1.06 0.14 C1.0 -0.28 0.86 -0.5 0.62 -0.56 C0.3 -0.18 -0.32 -0.5 -0.7 -0.42 C-0.9 -0.36 -1.0 -0.2 -1.06 0.14Z"/><path d="M-0.5 -1.18 C-0.55 -1.5 -0.2 -1.62 0.1 -1.46 C-0.1 -1.4 -0.2 -1.3 -0.1 -1.2Z"/>`,
-    spiky: `<path d="M-1.05 0.05 L-1.12 -0.55 L-0.78 -0.78 L-0.86 -1.3 L-0.42 -0.98 L-0.22 -1.5 L0.04 -1.0 L0.34 -1.46 L0.5 -0.94 L0.86 -1.3 L0.84 -0.76 L1.14 -0.58 L1.05 0.05 C0.92 -0.4 0.5 -0.6 0 -0.6 C-0.5 -0.6 -0.92 -0.4 -1.05 0.05Z"/>`,
-    bun: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/><circle cx="0" cy="-1.42" r="0.34"/>`,
-    long: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`,
-    pigtails: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`
-  };
-  ["afro", "ponytail", "bob"].forEach(k => { HAIR_FRONT[k] = HAIR_FRONT.crop; });
   // a fluffy cloud of circles, outlined as one shape (the outline goes down first, the fill on top)
   const cloud = (cs, w) => { const ring = cs.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join(""); return `<g stroke-width="${w}">${ring}</g><g stroke="none">${ring}</g>`; };
   // hats that cover the crown: hair above this line (head units) is hidden under the hat, so nothing pokes through
@@ -129,37 +124,147 @@
     const wrap = x => { if(!x) return ""; const id = "hc" + (++uid); return `<clipPath id="${id}"><rect x="0" y="${(g.oy + cy * g.hrx).toFixed(1)}" width="400" height="400"/></clipPath><g clip-path="url(#${id})">${x}</g>`; };
     return { back: wrap(h.back), front: wrap(h.front) };
   }
+  /* Hair is drawn in head units (the head is a unit circle; eyes sit on y = 0, so a fringe stops above y = -0.3).
+     Every style is built the same way, like a storybook illustration: the hair colour with pointed locks at the ends,
+     a darker layer underneath (the back of the hair), darker strand lines that follow the way the hair falls,
+     and a couple of light strands where it catches the light. */
+  const tint = (h, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(h.slice(i, i + 2), 16) * (1 - t) + 255 * t).toString(16).padStart(2, "0")).join("");
+  const mixHex = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+  const n3 = n => +n.toFixed(3);
+  // a run of locks from `from` through pts: each stroke bowed sideways by b (a fraction of its length; a list cycles)
+  const edge = (from, pts, b) => { let q = from;
+    return pts.map((p, i) => { const k = Array.isArray(b) ? b[i % b.length] : b, dx = p[0] - q[0], dy = p[1] - q[1];
+      const s = `Q${n3((q[0] + p[0]) / 2 - dy * k)} ${n3((q[1] + p[1]) / 2 + dx * k)} ${n3(p[0])} ${n3(p[1])}`; q = p; return s; }).join(" "); };
+  // strand lines from the crown out towards each tip (stopping short of it), curving by bend. Each strand starts a little
+  // to the side of the root, towards its own tip, so they don't all fan out of one point.
+  const toward = (root, tips, k, bend) => tips.map(t => { const r = [root[0] + (t[0] - root[0]) * 0.4, root[1] + (t[1] - root[1]) * 0.15];
+    const ex = r[0] + (t[0] - r[0]) * k, ey = r[1] + (t[1] - r[1]) * k, dx = ex - r[0], dy = ey - r[1];
+    return `M${n3(r[0])} ${n3(r[1])} Q${n3((r[0] + ex) / 2 - dy * bend)} ${n3((r[1] + ey) / 2 + dx * bend)} ${n3(ex)} ${n3(ey)}`; }).join(" ");
+  const mirror = pts => pts.map(([x, y]) => [-x, y]).reverse();
+  // a top-of-head cap with a smooth hairline (pulled back: buns, ponytail, plaits); part = a centre parting line
+  const CAP = "M-1.05 0.02 C-1.15 -0.78 -0.7 -1.23 0 -1.23 C0.7 -1.23 1.15 -0.78 1.05 0.02 "
+    + edge([1.05, 0.02], [[0.9, -0.4], [0.62, -0.58], [0.3, -0.66], [0, -0.68], [-0.3, -0.66], [-0.62, -0.58], [-0.9, -0.4], [-1.05, 0.02]], -0.12) + "Z";
+  const CAP_STRANDS = "M-0.84 -0.42 Q-0.72 -0.92 -0.24 -1.12 M-0.42 -0.64 Q-0.36 -0.98 -0.1 -1.16 M0.42 -0.64 Q0.36 -0.98 0.1 -1.16 M0.84 -0.42 Q0.72 -0.92 0.24 -1.12";
   function hairShapes(style, color, g){
     if(style === "none") return { back: "", front: "" };
     const W = x => (x / g.hrx).toFixed(4), sS = `${ST} stroke-width="${W(5)}"`;
-    const T = body => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="${color}" ${sS}>${body}</g>`;
-    const shine = `<path d="M-0.62 -1.0 C-0.4 -1.14 -0.1 -1.18 0.14 -1.16" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="${W(7)}" stroke-linecap="round"/>`;
-    if(style === "curly"){
-      const cs = [[-0.86, -0.4, 0.4], [-0.58, -0.92, 0.42], [0, -1.08, 0.46], [0.58, -0.92, 0.42], [0.86, -0.4, 0.4]];
-      const ring = cs.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join("");
-      return { back: "", front: `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="${color}" ${sS}><g stroke-width="${W(11)}">${ring}</g><g stroke="none">${ring}</g></g>` };
+    // shadows: blonde, ginger and brown hair darken towards a warm brown (plain darkening turns them khaki); everything else just darkens
+    const [cr, cg, cb] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16)), warm = cg > cb * 1.2 && cr >= cg && cr + cg + cb > 210;
+    const dim = t => warm ? mixHex(color, "#5a2a0a", t) : shade(color, 1 - t);
+    const dk = dim(0.32), dk2 = dim(0.5), lt = tint(color, 0.42), under = dim(0.24);
+    const T = (body, fill) => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="${fill || color}" ${sS}>${body}</g>`;
+    const ln = (d, c, w, op) => d ? `<path d="${d}" fill="none" stroke="${c}" stroke-width="${W(w)}" stroke-linecap="round"${op ? ` stroke-opacity="${op}"` : ""}/>` : "";
+    const tex = (dark, light) => ln(dark, dk, 2.6) + ln(light, lt, 3.4, 0.85);      // the strand lines that give hair its texture
+    const curl = (x, y, r) => `M${n3(x - r * 0.5)} ${n3(y + r * 0.1)} A${n3(r * 0.5)} ${n3(r * 0.5)} 0 1 1 ${n3(x + r * 0.1)} ${n3(y + r * 0.45)}`;
+    const shape = (outer, pts, b) => `<path d="${outer} ${edge(pts[0], pts.slice(1), b)}Z"/>`;
+    switch(style){
+      case "buzz": {             // a see-through cap: the colour of the hair, the skin showing through, a fine stubble texture
+        let dots = ""; for(let y = -0.92; y < -0.5; y += 0.12) for(let x = -0.86; x <= 0.86; x += 0.14){ const yy = y + Math.abs(x) * 0.36 * (y < -0.8 ? 0 : 1); if(x * x + (yy + 0.1) * (yy + 0.1) < 0.88) dots += `M${n3(x + (y * 7 % 0.05))} ${n3(yy)}h0.001`; }
+        return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".55" stroke="none"/>`) + T(ln(dots, dk, 2.4, 0.28) + ln("M-0.8 -0.42 C-0.5 -0.6 0.5 -0.6 0.8 -0.42", color, 4, 0.5)) };
+      }
+      case "shortsides": {       // faded sides, a bit of length on top swept over, a little flick at the front
+        const pts = [[0.86, -0.42], [0.66, -0.56], [0.58, -0.44], [0.36, -0.64], [0.24, -0.54], [-0.06, -0.66], [-0.5, -0.6], [-0.88, -0.36]];
+        return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".4" stroke="none"/>` + shape("M-0.88 -0.36 C-0.98 -0.88 -0.56 -1.16 0 -1.18 C0.5 -1.2 0.86 -1.08 0.96 -0.84 C1.0 -0.68 0.94 -0.52 0.86 -0.42", pts, 0.14)
+            + tex("M-0.6 -0.66 C-0.3 -0.94 0.2 -1.04 0.62 -0.96 M-0.2 -0.68 C0.1 -0.86 0.44 -0.86 0.7 -0.74 M-0.76 -0.5 C-0.6 -0.8 -0.3 -1.0 0.0 -1.08", "M-0.5 -0.96 C-0.2 -1.1 0.2 -1.12 0.5 -1.06")) };
+      }
+      case "crop": {             // a short, messy fringe of pointed locks, swept a little to one side
+        const tips = [[-0.92, -0.48], [-0.74, -0.34], [-0.56, -0.66], [-0.36, -0.36], [-0.2, -0.66], [0.04, -0.38], [0.2, -0.68], [0.44, -0.42], [0.58, -0.66], [0.8, -0.44], [0.92, -0.56], [1.05, 0.02]];
+        return { back: "", front: T(shape("M1.05 0.02 C1.16 -0.78 0.7 -1.24 0.02 -1.24 C-0.7 -1.24 -1.16 -0.78 -1.05 0.02", [[-1.05, 0.02], ...tips], [0.16, -0.1])
+          + tex(toward([-0.2, -1.14], tips.filter((_, i) => i % 2 && i < 10), 0.66, 0.1), "M-0.66 -0.98 Q-0.34 -1.14 0.0 -1.12 M0.26 -1.08 Q0.5 -1.04 0.66 -0.92")) };
+      }
+      case "sweep": {            // a side quiff: the front swept up and over to one side, the forehead showing
+        return { back: "", front: T(`<path d="M-1.05 0.02 C-1.16 -0.8 -0.74 -1.22 -0.1 -1.26 C0.36 -1.3 0.8 -1.42 1.14 -1.3 Q0.98 -1.2 1.0 -1.08 C1.1 -0.86 1.12 -0.4 1.05 0.02 ${edge([1.05, 0.02], [[0.92, -0.46], [0.8, -0.36], [0.62, -0.62]], 0.12)} C0.3 -0.8 -0.3 -0.66 -0.62 -0.5 ${edge([-0.62, -0.5], [[-0.76, -0.32], [-0.86, -0.5], [-1.05, 0.02]], 0.12)}Z"/>`
+          + tex("M-0.7 -0.62 C-0.3 -0.92 0.3 -1.1 0.92 -1.22 M-0.3 -0.7 C0.1 -0.88 0.5 -1.02 0.86 -1.08 M-0.88 -0.66 C-0.6 -1.0 -0.1 -1.18 0.46 -1.26 M0.3 -0.84 C0.6 -0.94 0.9 -0.92 0.98 -0.6", "M-0.52 -0.96 C-0.2 -1.12 0.2 -1.2 0.62 -1.24")) };
+      }
+      case "quiff": {            // short sides with the front flicked straight up into a point
+        const tips = [[0.92, -0.46], [0.74, -0.4], [0.6, -0.62], [0.36, -0.5], [0.2, -0.68]];
+        return { back: "", front: T(`<path d="M-1.05 0.02 C-1.12 -0.6 -0.9 -0.98 -0.56 -1.12 C-0.4 -1.32 -0.16 -1.5 0.14 -1.66 C0.14 -1.5 0.26 -1.38 0.4 -1.3 C0.5 -1.38 0.58 -1.46 0.64 -1.52 C0.64 -1.36 0.72 -1.2 0.86 -1.06 C1.08 -0.86 1.12 -0.4 1.05 0.02 ${edge([1.05, 0.02], tips, 0.12)} C-0.02 -0.72 -0.2 -0.7 -0.36 -0.66 ${edge([-0.36, -0.66], [[-0.4, -0.48], [-0.56, -0.64], [-0.78, -0.42], [-0.9, -0.52], [-1.05, 0.02]], 0.12)}Z"/>`
+          + tex("M-0.5 -0.7 Q-0.34 -1.12 0.08 -1.52 M0.0 -0.72 Q0.04 -1.1 0.32 -1.36 M0.48 -0.68 Q0.48 -1.02 0.6 -1.42 M-0.82 -0.6 Q-0.72 -0.98 -0.42 -1.2", "M-0.28 -0.88 Q-0.14 -1.2 0.06 -1.44")) };
+      }
+      case "spiky": {            // a crest of flame-shaped spikes, the sides kept short
+        const spikes = [[-0.84, -1.3], [-0.5, -1.06], [-0.4, -1.56], [-0.1, -1.14], [0.12, -1.7], [0.3, -1.16], [0.58, -1.54], [0.66, -1.08], [0.98, -1.24], [0.86, -0.88]];
+        return { back: "", front: T(`<path d="M-1.05 0.02 C-1.12 -0.56 -0.98 -0.84 -0.78 -0.96 ${edge([-0.78, -0.96], spikes, [0.18, -0.08])} C1.1 -0.6 1.1 -0.3 1.05 0.02 ${edge([1.05, 0.02], [[0.9, -0.44], [0.72, -0.4], [0.56, -0.6]], 0.1)} C0.2 -0.68 -0.2 -0.68 -0.56 -0.6 ${edge([-0.56, -0.6], [[-0.72, -0.4], [-0.9, -0.44], [-1.05, 0.02]], 0.1)}Z"/>`
+          + tex(toward([0, -0.66], spikes.filter((_, i) => !(i % 2)), 0.8, 0.1), "M-0.42 -0.9 Q-0.3 -1.2 -0.3 -1.4 M0.06 -0.9 Q0.1 -1.3 0.1 -1.5")) };
+      }
+      case "mop": {              // shaggy and long all round: a heavy fringe to the eyebrows and over the ears
+        const tips = [[1.0, 0.06], [0.92, 0.3], [0.82, -0.36], [0.66, -0.26], [0.56, -0.52], [0.4, -0.3], [0.28, -0.54], [0.14, -0.32], [0, -0.54], [-0.14, -0.32], [-0.28, -0.54], [-0.42, -0.3], [-0.56, -0.52], [-0.68, -0.26], [-0.82, -0.36], [-0.92, 0.3], [-1.0, 0.06], [-1.14, 0.36]];
+        return { back: T(`<path d="M-1.12 -0.4 C-1.24 0.1 -1.22 0.42 -1.06 0.56 L1.06 0.56 C1.22 0.42 1.24 0.1 1.12 -0.4Z"/>`, under),
+          front: T(shape("M-1.14 0.36 C-1.26 -0.74 -0.7 -1.3 0.02 -1.3 C0.72 -1.3 1.26 -0.74 1.14 0.36", [[1.14, 0.36], ...tips], [0.14, -0.14])
+            + tex(toward([0, -1.2], tips.filter((_, i) => i % 2 && i > 2 && i < 14), 0.66, 0.06), "M-0.66 -1.04 Q-0.34 -1.2 0.0 -1.2 M0.3 -1.16 Q0.56 -1.1 0.72 -0.98")) };
+      }
+      case "curly": {            // a mop of tight curls
+        const cs = [[-1.0, -0.08, 0.24], [-0.98, -0.48, 0.26], [-0.8, -0.86, 0.27], [-0.5, -1.08, 0.28], [-0.14, -1.18, 0.28], [0.22, -1.16, 0.28], [0.56, -1.04, 0.27], [0.84, -0.8, 0.26], [1.0, -0.44, 0.25], [1.02, -0.06, 0.23],
+          [-0.62, -0.64, 0.22], [-0.24, -0.74, 0.22], [0.14, -0.74, 0.22], [0.5, -0.66, 0.22], [0, -0.92, 0.42]];
+        return { back: "", front: T(cloud(cs, W(11)) + ln(cs.slice(0, 14).map(([x, y, r]) => curl(x, y, r)).join(" "), dk, 2.6) + ln("M-0.6 -1.18 A0.2 0.2 0 0 1 -0.36 -1.28 M0.1 -1.36 A0.2 0.2 0 0 1 0.34 -1.36", lt, 3.4, 0.85)) };
+      }
+      case "afro": {
+        const cs = [[0, -0.62, 0.98], [-0.82, -0.28, 0.6], [0.82, -0.28, 0.6], [-0.62, -1.02, 0.58], [0.62, -1.02, 0.58], [0, -1.3, 0.56], [-1.02, 0.2, 0.42], [1.02, 0.2, 0.42]];
+        const spots = [[-1.2, -0.3], [-0.96, -0.86], [-0.5, -1.36], [0.1, -1.6], [0.62, -1.34], [1.06, -0.8], [1.24, -0.2], [-1.2, 0.3], [1.2, 0.36], [-0.3, -1.1], [0.36, -1.12]];
+        return { back: T(cloud(cs, W(11)) + ln(spots.map(([x, y]) => curl(x, y, 0.18)).join(" "), dk, 2.6) + ln("M-0.86 -1.2 A0.5 0.5 0 0 1 -0.36 -1.56", lt, 4, 0.7)),
+          front: T(`<path d="M-1.05 0.02 C-1.12 -0.6 -0.7 -1.04 0 -1.04 C0.7 -1.04 1.12 -0.6 1.05 0.02 ${edge([1.05, 0.02], [[0.9, -0.34], [0.72, -0.5], [0.4, -0.62], [0, -0.66], [-0.4, -0.62], [-0.72, -0.5], [-0.9, -0.34], [-1.05, 0.02]], -0.14)}Z"/>` + ln([[-0.6, -0.8], [-0.2, -0.86], [0.2, -0.86], [0.6, -0.8]].map(([x, y]) => curl(x, y, 0.16)).join(" "), dk, 2.6)) };
+      }
+      case "mohawk": {           // shaved sides (a see-through cap) and a crest of locks down the middle
+        const crest = [[-0.5, -1.4], [-0.24, -1.2], [-0.16, -1.76], [0.06, -1.32], [0.24, -1.84], [0.3, -1.3], [0.58, -1.46]];
+        return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".3" stroke="none"/><path d="M-0.3 -0.9 ${edge([-0.3, -0.9], crest, [0.16, -0.1])} L0.32 -0.9 Q0 -0.82 -0.3 -0.9Z"/>` + tex(toward([0, -0.9], crest.filter((_, i) => !(i % 2)), 0.78, 0.1), "M-0.04 -1.0 Q0.02 -1.3 0.12 -1.56")) };
+      }
+      case "bun": case "spacebuns": {   // hair pulled up off the face into one bun on top, or two
+        const buns = style === "bun" ? [[0, -1.4, 0.36]] : [[-0.72, -1.06, 0.3], [0.72, -1.06, 0.3]];
+        const bunArt = buns.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join("");
+        const swirl = buns.map(([x, y, r]) => `M${n3(x - r * 0.6)} ${n3(y + r * 0.1)} Q${n3(x - r * 0.4)} ${n3(y - r * 0.7)} ${n3(x + r * 0.4)} ${n3(y - r * 0.5)} M${n3(x - r * 0.3)} ${n3(y + r * 0.5)} Q${n3(x + r * 0.5)} ${n3(y + r * 0.5)} ${n3(x + r * 0.6)} ${n3(y - r * 0.1)}`).join(" ");
+        return { back: "", front: T(bunArt + `<path d="${CAP}"/>` + (style === "spacebuns" ? ln("M0 -1.22 L0 -0.7", dk, 3) : "")
+          + tex(swirl + " " + (style === "bun" ? CAP_STRANDS : "M-0.84 -0.42 Q-0.8 -0.8 -0.6 -0.9 M-0.36 -0.66 Q-0.36 -0.96 -0.5 -1.0 M0.36 -0.66 Q0.36 -0.96 0.5 -1.0 M0.84 -0.42 Q0.8 -0.8 0.6 -0.9"), buns.map(([x, y, r]) => `M${n3(x - r * 0.62)} ${n3(y - r * 0.3)} A${n3(r * 0.7)} ${n3(r * 0.7)} 0 0 1 ${n3(x - r * 0.1)} ${n3(y - r * 0.68)}`).join(" "))) };
+      }
+      case "ponytail": {         // pulled back off the face into a high ponytail with a bobble
+        const tail = [[1.0, 1.24], [0.94, 1.0], [0.84, 1.16], [0.84, 0.86]];
+        return { back: T(`<path d="M0.5 -0.98 C1.2 -1.22 1.6 -0.62 1.44 0.1 C1.36 0.56 1.16 0.9 1.0 1.24 ${edge([1.0, 1.24], tail.slice(1), 0.16)} C0.86 0.5 1.04 0.24 0.86 -0.1Z"/>`
+            + tex("M1.0 -0.92 C1.34 -0.6 1.32 0.2 1.06 0.9 M0.9 -0.7 C1.12 -0.4 1.12 0.2 0.96 0.6", "M1.2 -0.84 C1.4 -0.5 1.38 -0.1 1.3 0.2") + `<circle cx="0.92" cy="-0.92" r="0.15" fill="#e8433f"/>`),
+          front: T(`<path d="${CAP}"/>` + tex(CAP_STRANDS, "M-0.62 -0.98 Q-0.3 -1.14 0.06 -1.14")) };
+      }
+      case "pigtails": case "plait": {  // a centre parting; two bunches that flick out, or two plaits hanging past the shoulders
+        let back;
+        if(style === "pigtails"){
+          const tuft = sg => { const p = [[-1.6, 0.66], [-1.5, 0.48], [-1.42, 0.78], [-1.3, 0.54], [-1.12, 0.68]].map(([x, y]) => [x * sg, y]);
+            return `<path d="M${-0.98 * sg} -0.42 C${-1.46 * sg} -0.5 ${-1.66 * sg} 0.1 ${p[0][0]} ${p[0][1]} ${edge(p[0], p.slice(1), 0.18 * sg)} C${-1.12 * sg} 0.3 ${-1.0 * sg} 0.0 ${-0.96 * sg} -0.2Z"/>`
+              + ln(`M${-1.12 * sg} -0.3 C${-1.4 * sg} -0.1 ${-1.46 * sg} 0.3 ${-1.44 * sg} 0.6 M${-1.06 * sg} -0.1 C${-1.24 * sg} 0.1 ${-1.28 * sg} 0.4 ${-1.26 * sg} 0.52`, dk, 2.6) + ln(`M${-1.26 * sg} -0.36 C${-1.46 * sg} -0.2 ${-1.54 * sg} 0.1 ${-1.54 * sg} 0.34`, lt, 3.4, 0.85); };
+          back = T(tuft(1) + tuft(-1) + `<circle cx="-1.04" cy="-0.3" r="0.15" fill="#e8433f"/><circle cx="1.04" cy="-0.3" r="0.15" fill="#e8433f"/>`);
+        } else {
+          const plait = sg => { let o = ""; for(let i = 0; i < 6; i++){ const y = 0.36 + i * 0.22, x = sg * (1.02 + (i % 2 ? 0.03 : -0.03)), a = (i % 2 ? 28 : -28);
+              o += `<ellipse cx="${n3(x)}" cy="${n3(y)}" rx="0.17" ry="0.13" transform="rotate(${a} ${n3(x)} ${n3(y)})"/>`; }
+            const ty = 0.36 + 6 * 0.22 - 0.06, tx = sg * 1.02;
+            return o + `<path d="M${tx - 0.08} ${n3(ty)} ${edge([tx - 0.08, ty], [[tx - 0.12, ty + 0.28], [tx - 0.02, ty + 0.16], [tx + 0.04, ty + 0.32], [tx + 0.1, ty + 0.14], [tx + 0.08, ty]], 0.16)}Z"/>`
+              + `<rect x="${n3(tx - 0.1)}" y="${n3(ty - 0.06)}" width="0.2" height="0.1" rx="0.04" fill="#e8433f"/>`
+              + ln([0, 1, 2, 3, 4, 5].map(i => { const y = 0.36 + i * 0.22, x = sg * (1.02 + (i % 2 ? 0.03 : -0.03)), d = i % 2 ? 1 : -1; return `M${n3(x - 0.09 * d)} ${n3(y - 0.06)} Q${n3(x)} ${n3(y + 0.02)} ${n3(x + 0.09 * d)} ${n3(y + 0.04)}`; }).join(" "), dk, 2.4); };
+          back = T(`<path d="M-1.08 -0.3 C-1.16 0.1 -1.1 0.34 -1.0 0.44 L1.0 0.44 C1.1 0.34 1.16 0.1 1.08 -0.3Z" fill="${under}"/>` + plait(-1) + plait(1));
+        }
+        return { back, front: T(`<path d="M-1.06 0.3 C-1.16 -0.74 -0.7 -1.24 0 -1.24 C0.7 -1.24 1.16 -0.74 1.06 0.3 C0.96 0.1 0.9 -0.2 0.82 -0.4 C0.66 -0.62 0.3 -0.68 0 -0.9 C-0.3 -0.68 -0.66 -0.62 -0.82 -0.4 C-0.9 -0.2 -0.96 0.1 -1.06 0.3Z"/>`
+          + tex("M0 -1.2 L0 -0.92 M-0.1 -1.06 C-0.5 -0.96 -0.84 -0.66 -0.96 -0.1 M0.1 -1.06 C0.5 -0.96 0.84 -0.66 0.96 -0.1 M-0.3 -1.12 C-0.7 -1.06 -0.98 -0.7 -1.04 -0.3", "M-0.2 -1.14 C-0.52 -1.06 -0.76 -0.88 -0.86 -0.62 M0.2 -1.14 C0.5 -1.08 0.72 -0.92 0.82 -0.7")) };
+      }
+      case "bob": {              // a side-parted bob to the chin, the ends flicking out
+        return { back: T(`<path d="M-1.1 -0.3 C-1.22 0.3 -1.16 0.72 -1.0 0.86 Q0 0.98 1.0 0.86 C1.16 0.72 1.22 0.3 1.1 -0.3Z"/>`, under),
+          front: T(`<path d="M-1.1 0.8 C-1.26 -0.6 -0.7 -1.26 0.3 -1.24 C0.92 -1.2 1.26 -0.6 1.12 0.62 Q1.2 0.76 1.28 0.74 Q1.12 0.9 0.92 0.78 C0.9 0.3 0.86 -0.2 0.7 -0.44 C0.56 -0.66 0.4 -0.8 0.3 -0.96 C0.0 -0.66 -0.5 -0.56 -0.8 -0.3 ${edge([-0.8, -0.3], [[-0.82, 0.2], [-0.88, 0.04], [-0.88, 0.76]], 0.1)} Q-1.04 0.9 -1.22 0.88Z"/>`
+            + tex("M0.3 -1.1 C-0.2 -0.96 -0.7 -0.7 -0.98 -0.2 M0.16 -1.0 C-0.2 -0.78 -0.6 -0.6 -0.84 -0.36 M-1.02 0.0 C-1.06 0.3 -1.04 0.56 -1.0 0.8 M0.46 -1.08 C0.8 -0.92 1.0 -0.5 1.04 0.1 M0.94 0.0 C0.96 0.3 0.98 0.5 1.02 0.74", "M-0.12 -1.12 C-0.5 -1.0 -0.8 -0.76 -0.92 -0.5 M0.62 -1.08 C0.86 -0.92 0.98 -0.66 1.02 -0.4")) };
+      }
+      case "long": case "wavy": {   // long hair to the shoulder blades, side-parted: dead straight, or in loose waves
+        const wavy = style === "wavy";
+        const ends = [[-1.12, 1.86], [-0.92, 1.66], [-0.74, 1.9], [-0.5, 1.7], [-0.26, 1.92], [0, 1.72], [0.26, 1.92], [0.5, 1.7], [0.74, 1.9], [0.92, 1.66], [1.12, 1.86]];
+        const sideL = wavy ? "M-1.04 -0.4 C-1.34 0.0 -1.12 0.36 -1.3 0.74 C-1.46 1.12 -1.16 1.44 -1.12 1.86" : "M-1.06 -0.4 C-1.2 0.4 -1.22 1.3 -1.12 1.86";
+        const sideR = wavy ? "C1.16 1.44 1.46 1.12 1.3 0.74 C1.12 0.36 1.34 0.0 1.04 -0.4Z" : "C1.22 1.3 1.2 0.4 1.06 -0.4Z";
+        const backStrands = wavy ? "M-1.04 0.0 C-1.2 0.4 -1.0 0.8 -1.16 1.2 C-1.26 1.5 -1.02 1.66 -1.0 1.76 M1.04 0.0 C1.2 0.4 1.0 0.8 1.16 1.2 C1.26 1.5 1.02 1.66 1.0 1.76"
+          : "M-1.06 0.2 C-1.1 0.8 -1.08 1.3 -1.0 1.7 M1.06 0.2 C1.1 0.8 1.08 1.3 1.0 1.7 M-0.92 0.6 L-0.84 1.6 M0.92 0.6 L0.84 1.6";
+        const fallL = wavy ? "C-0.92 -0.0 -0.8 0.24 -0.94 0.5 Q-0.98 0.62 -0.9 0.7" : "C-0.88 0.1 -0.88 0.44 -0.9 0.66";
+        return { back: T(`<path d="${sideL} ${edge([-1.12, 1.86], ends.slice(1), [0.18, -0.12])} ${sideR}"/>`, under) + T(ln(backStrands, dk2, 2.6) + ln(toward([0, 0.9], ends.filter((_, i) => i % 2), 0.9, 0.02), dk2, 2.4)),
+          front: T(`<path d="M-1.08 0.56 C-1.2 0.2 -1.22 -0.2 -1.12 -0.5 C-1.0 -0.96 -0.7 -1.24 -0.3 -1.24 C0.4 -1.26 0.98 -0.96 1.12 -0.5 C1.22 -0.2 1.2 0.2 1.08 0.56 ${edge([1.08, 0.56], [[0.98, 0.5], [0.9, 0.7]], 0.14)} ${wavy ? "C0.98 0.4 0.82 0.1 0.86 -0.1 C0.88 -0.3 0.72 -0.46 0.6 -0.54" : "C0.88 0.2 0.86 -0.2 0.76 -0.36 C0.7 -0.46 0.66 -0.52 0.6 -0.54"} C0.3 -0.76 -0.1 -0.76 -0.3 -0.98 C-0.44 -0.7 -0.76 -0.5 -0.86 -0.2 ${fallL} ${edge([-0.9, 0.7], [[-0.98, 0.5], [-1.08, 0.56]], 0.14)}Z"/>`
+            + tex(wavy ? "M0.7 -0.9 C1.0 -0.6 0.88 -0.3 1.0 0.0 C1.06 0.24 0.94 0.4 0.98 0.6 M-0.7 -0.9 C-1.0 -0.6 -0.88 -0.3 -1.0 0.0 C-1.06 0.24 -0.94 0.4 -0.98 0.6 M-0.2 -1.1 C0.2 -1.0 0.6 -0.8 0.8 -0.5"
+              : "M0.7 -0.92 C0.94 -0.5 0.98 0.1 0.98 0.56 M-0.7 -0.92 C-0.94 -0.5 -0.98 0.1 -0.98 0.56 M-0.2 -1.1 C0.2 -1.0 0.6 -0.8 0.82 -0.46 M-0.44 -1.0 C-0.7 -0.8 -0.86 -0.5 -0.92 -0.1",
+              "M-0.5 -1.04 C-0.78 -0.86 -0.92 -0.6 -0.96 -0.2 M0.0 -1.12 C0.4 -1.06 0.72 -0.88 0.86 -0.62")) };
+      }
+      case "grunge": {           // long, straggly and centre-parted, a stray strand or two across the face
+        return { back: T(`<path d="M-1.02 -0.4 C-1.32 0.3 -1.32 1.1 -1.16 1.62 ${edge([-1.16, 1.62], [[-1.0, 1.4], [-0.92, 1.68], [-0.76, 1.42], [-0.62, 1.6]], 0.14)} L-0.56 0.4Z"/><path d="M1.02 -0.4 C1.32 0.3 1.3 1.0 1.2 1.52 ${edge([1.2, 1.52], [[1.04, 1.36], [0.94, 1.64], [0.8, 1.38], [0.66, 1.54]], -0.14)} L0.56 0.4Z"/>` + ln("M-1.06 0.4 Q-1.1 1.0 -0.98 1.4 M1.08 0.4 Q1.12 0.9 1.04 1.3 M-0.84 0.6 Q-0.86 1.0 -0.8 1.3", dk2, 3), under),
+          front: T(`<path d="M-1.08 0.36 C-1.18 -0.8 -0.6 -1.24 0 -1.22 C0.6 -1.24 1.18 -0.8 1.08 0.36 C1.02 -0.1 0.84 -0.48 0.42 -0.62 C0.24 -0.66 0.08 -0.7 0 -0.82 C-0.08 -0.7 -0.24 -0.66 -0.42 -0.62 C-0.84 -0.48 -1.02 -0.1 -1.08 0.36Z"/>`
+            + tex("M-0.5 -0.92 Q-0.78 -0.5 -0.88 0 M0.5 -0.92 Q0.8 -0.5 0.9 0.05 M-0.18 -1.06 Q-0.36 -0.82 -0.46 -0.64 M0.2 -1.06 Q0.5 -0.9 0.66 -0.56 M-0.3 -0.7 Q-0.2 -0.4 -0.26 -0.1", "M-0.7 -1.0 Q-0.94 -0.7 -1.0 -0.3")) };
+      }
     }
-    if(style === "buzz") return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".55" stroke="none"/><path d="M-0.8 -0.42 C-0.5 -0.6 0.5 -0.6 0.8 -0.42" fill="none" stroke="${color}" stroke-opacity=".5" stroke-width="${W(4)}"/>`) };
-    if(style === "shortsides")    // faded sides, a bit of length and a little quiff on top
-      return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".4" stroke="none"/><path d="M-0.88 -0.36 C-0.98 -0.88 -0.56 -1.16 0 -1.17 C0.5 -1.18 0.84 -1.06 0.94 -0.84 C1.0 -0.68 0.94 -0.52 0.86 -0.42 C0.7 -0.58 0.44 -0.64 0.22 -0.6 C-0.06 -0.68 -0.5 -0.6 -0.88 -0.36Z"/><path d="M0.26 -1.02 Q0.62 -1.04 0.82 -0.84" fill="none" stroke="${shade(color, 0.7)}" stroke-width="${W(3)}"/>`) + `<g transform="translate(200 ${g.oy}) scale(${g.hrx})">${shine}</g>` };
-    if(style === "mop")           // a shaggy mop with a fringe down to the tops of the eyes
-      return { back: T(`<path d="M-1.1 -0.3 C-1.22 0.2 -1.12 0.44 -0.94 0.48 L0.94 0.48 C1.12 0.44 1.22 0.2 1.1 -0.3Z"/>`),
-        front: T(`<path d="M-1.1 0.2 C-1.2 -0.82 -0.62 -1.3 0 -1.3 C0.62 -1.3 1.2 -0.82 1.1 0.2 C1.02 -0.02 0.92 -0.1 0.8 -0.08 L0.68 -0.22 L0.52 -0.1 L0.36 -0.24 L0.18 -0.12 L0 -0.26 L-0.18 -0.12 L-0.36 -0.24 L-0.52 -0.1 L-0.68 -0.22 L-0.8 -0.08 C-0.92 -0.1 -1.02 -0.02 -1.1 0.2Z"/>`) + `<g transform="translate(200 ${g.oy}) scale(${g.hrx})">${shine}</g>` };
-    if(style === "grunge"){       // long, straggly and centre-parted, a stray strand or two across the face
-      const dk = shade(color, 0.72);
-      return { back: T(`<path d="M-1.02 -0.4 C-1.32 0.3 -1.32 1.1 -1.16 1.62 L-1.0 1.4 L-0.92 1.68 L-0.76 1.42 L-0.62 1.6 L-0.56 0.4Z"/><path d="M1.02 -0.4 C1.32 0.3 1.3 1.0 1.2 1.52 L1.04 1.36 L0.94 1.64 L0.8 1.38 L0.66 1.54 L0.56 0.4Z"/><path d="M-1.06 0.4 Q-1.1 1.0 -0.98 1.4 M1.08 0.4 Q1.12 0.9 1.04 1.3" fill="none" stroke="${dk}" stroke-width="${W(3)}"/>`),
-        front: T(`<path d="M-1.08 0.36 C-1.18 -0.8 -0.6 -1.24 0 -1.22 C0.6 -1.24 1.18 -0.8 1.08 0.36 C1.02 -0.1 0.84 -0.48 0.42 -0.62 C0.24 -0.66 0.08 -0.7 0 -0.82 C-0.08 -0.7 -0.24 -0.66 -0.42 -0.62 C-0.84 -0.48 -1.02 -0.1 -1.08 0.36Z"/><path d="M-0.5 -0.92 Q-0.78 -0.5 -0.88 0 M0.5 -0.92 Q0.8 -0.5 0.9 0.05 M-0.18 -1.06 Q-0.36 -0.82 -0.46 -0.64" fill="none" stroke="${dk}" stroke-width="${W(3)}"/>`) };
-    }
-    if(style === "mohawk"){       // shaved sides (a see-through cap) and a spiky crest down the middle
-      return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".3" stroke="none"/><path d="M-0.3 -0.9 L-0.5 -1.42 L-0.2 -1.28 L-0.16 -1.78 L0.06 -1.38 L0.22 -1.86 L0.3 -1.36 L0.56 -1.5 L0.32 -0.9 Q0 -0.82 -0.3 -0.9Z"/>`) };
-    }
-    let back = "";
-    if(style === "afro") back = T(cloud([[0, -0.62, 0.98], [-0.82, -0.28, 0.6], [0.82, -0.28, 0.6], [-0.62, -1.02, 0.58], [0.62, -1.02, 0.58], [0, -1.3, 0.56], [-1.02, 0.2, 0.42], [1.02, 0.2, 0.42]], W(11)));
-    if(style === "ponytail") back = T(`<path d="M0.5 -0.98 C1.2 -1.2 1.56 -0.62 1.42 0.08 C1.34 0.56 1.12 0.86 1.0 1.18 C0.9 0.7 1.04 0.28 0.86 -0.1Z"/><circle cx="0.92" cy="-0.92" r="0.15" fill="#e8433f"/>`);
-    if(style === "bob") back = T(`<path d="M-1.08 -0.3 C-1.2 0.36 -1.14 0.76 -0.88 0.92 Q0 1.0 0.88 0.92 C1.14 0.76 1.2 0.36 1.08 -0.3Z"/>`);
-    if(style === "long") back = T(`<path d="M-1.0 -0.3 C-1.28 0.4 -1.32 1.4 -1.0 1.85 C-0.8 1.95 -0.5 1.85 -0.5 1.62 L-0.6 0.2Z"/><path d="M1.0 -0.3 C1.28 0.4 1.32 1.4 1.0 1.85 C0.8 1.95 0.5 1.85 0.5 1.62 L0.6 0.2Z"/>`);
-    if(style === "pigtails") back = T(`<path d="M-1.0 -0.4 C-1.5 -0.2 -1.62 0.7 -1.38 1.3 C-1.08 1.3 -0.92 0.8 -0.96 0.1Z"/><path d="M1.0 -0.4 C1.5 -0.2 1.62 0.7 1.38 1.3 C1.08 1.3 0.92 0.8 0.96 0.1Z"/><circle cx="-1.04" cy="-0.28" r="0.15" fill="#e8433f"/><circle cx="1.04" cy="-0.28" r="0.15" fill="#e8433f"/>`);
-    return { back, front: T(HAIR_FRONT[style] || "") + (style === "spiky" ? "" : `<g transform="translate(200 ${g.oy}) scale(${g.hrx})">${shine}</g>`) };
+    return { back: "", front: "" };
   }
 
   /* ---- things worn on the head (hats, ears, halo, horns), in head units ---- */
@@ -237,12 +342,54 @@
     }
     return out;
   }
+  /* ---- the instruments, drawn lying flat: neck along +x, strings on y = -2, the body around 0,0 ---- */
+  const INSTR_SIZE = { acoustic: 1.04, bass: 1.06, ukulele: 0.68 };
+  // a spike (or stud) on a jacket: base centred on x,y, pointing along angle a (radians)
+  const spike = (x, y, a, len, w) => { const c = Math.cos(a), sn = Math.sin(a), f = n => n.toFixed(1);
+    return `<path d="M${f(x - sn * w)} ${f(y + c * w)} L${f(x + c * len)} ${f(y + sn * len)} L${f(x + sn * w)} ${f(y - c * w)}Z" fill="#dfe3e8" ${sw(2.2)}/><path d="M${f(x - sn * w * 0.3)} ${f(y + c * w * 0.3)} L${f(x + c * len * 0.7)} ${f(y + sn * len * 0.7)}" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`; };
+  function instrumentSvg(kind, c){
+    const dark = "#2a2a2e", guard = c === "#f7f4ee" ? dark : "#f7f4ee", nl = kind === "bass" ? 34 : 0, end = 128 + nl;
+    const frets = n => { let d = ""; for(let x = 50; x < end - 8; x += 22) d += `M${x} -9 V5 `; return `<path d="${d}" stroke="${INK}" stroke-opacity=".4" stroke-width="2"/>`; };
+    const neck = from => `<rect x="${from}" y="-9" width="${end - from}" height="14" rx="4" fill="#e0bf82" ${sw(5)}/>${frets()}`;
+    const pegs = (n, x, y, gap) => { let o = ""; for(let i = 0; i < n; i++) o += `<circle cx="${x + i * gap}" cy="${y}" r="2.5" fill="#fff"/>`; return o; };
+    const strings = (from, n) => { let d = ""; for(let i = 0; i < n; i++){ const y = -6 + i * 8 / Math.max(1, n - 1); d += `M${from} ${y.toFixed(1)} L${end} ${y.toFixed(1)} `; } return `<path d="${d}" stroke="#fff" stroke-opacity=".6" stroke-width="1.1"/>`; };
+    // Strat-style double cutaway: the upper horn (the -y side) reaches further along the neck than the lower one
+    const STRAT = "M40 -21 C30 -31 12 -28 4 -22 C-6 -32 -28 -38 -44 -32 C-62 -24 -64 4 -56 18 C-48 32 -28 36 -14 28 C-4 22 8 28 20 25 C31 22 34 15 28 11 C21 9 15 6 15 -1 L15 -7 C16 -13 30 -12 40 -21Z";
+    switch(kind){
+      case "acoustic": case "ukulele": {      // round bouts, a sound hole and a bridge; slotted headstock
+        const n = kind === "ukulele" ? 4 : 6;
+        return neck(24) + `<path d="M${end - 2} -12 H${end + 30} Q${end + 34} -12 ${end + 34} -8 V4 Q${end + 34} 8 ${end + 30} 8 H${end - 2}Z" fill="${shade(c, 0.6)}" ${sw(5)}/>${pegs(n / 2, end + 6, -7, 10)}${pegs(n / 2, end + 6, 3, 10)}
+          <g fill="${c}" ${sw(5)}><circle cx="-26" cy="-2" r="34"/><circle cx="14" cy="-2" r="25"/></g><g fill="${c}" stroke="none"><circle cx="-26" cy="-2" r="31.5"/><circle cx="14" cy="-2" r="22.5"/></g>
+          <path d="M-58 -2 A32 32 0 0 1 -26 -34" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="-8" cy="11" rx="12" ry="7" fill="${shade(c, 0.6)}"/><circle cx="4" cy="-2" r="12" fill="none" stroke="${shade(c, 0.6)}" stroke-width="3"/><circle cx="4" cy="-2" r="9" fill="${dark}"/>
+          <rect x="-40" y="-14" width="8" height="24" rx="3" fill="#5b3a1e" ${sw(3)}/>${strings(-36, n === 6 ? 3 : 2)}`; }
+      case "flyingv": {                       // a V with its point at the neck, two wings swept back
+        return neck(14) + `<path d="M${end - 2} -9 L${end + 34} -16 L${end + 26} -2 L${end + 34} 12 L${end - 2} 5Z" fill="${shade(c, 0.7)}" ${sw(5)}/>${pegs(3, end + 6, -8, 9)}${pegs(3, end + 6, 4, 9)}
+          <path d="M26 -11 L-56 -44 Q-66 -43 -63 -33 L-18 -2 L-63 29 Q-66 39 -56 40 L26 7 Q32 -2 26 -11Z" fill="${c}" ${sw(5)}/>
+          <path d="M18 -12 L-6 -21 L-36 -3 L-6 17 L18 8Z" fill="${guard}" ${sw(3)}/>
+          <rect x="-4" y="-11" width="10" height="18" rx="2" fill="${dark}"/><rect x="10" y="-11" width="10" height="18" rx="2" fill="${dark}"/><rect x="-16" y="-7" width="5" height="10" rx="1" fill="#c9ccd2" ${sw(1.6)}/>
+          <path d="M-50 -38 L10 -14" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>${strings(-13, 3)}`; }
+      case "bass": {                          // a long neck, four big tuners, one split pickup
+        return neck(14) + `<path d="M${end - 2} -9 L${end + 34} -12 Q${end + 40} -10 ${end + 38} -2 L${end + 30} 6 L${end - 2} 5Z" fill="${shade(c, 0.7)}" ${sw(5)}/>${pegs(4, end + 4, -13, 9)}
+          <path d="${STRAT}" fill="${c}" ${sw(5)}/><path d="M12 -12 C0 -16 -14 -18 -24 -12 L-30 4 C-24 18 -8 20 2 16 L12 8Z" fill="${guard}" ${sw(3)}/>
+          <rect x="-12" y="-11" width="8" height="10" rx="2" fill="${dark}"/><rect x="-6" y="-2" width="8" height="10" rx="2" fill="${dark}"/><rect x="-48" y="-10" width="7" height="16" rx="1.5" fill="#c9ccd2" ${sw(1.6)}/>
+          <circle cx="-34" cy="18" r="3.2" fill="${dark}"/><circle cx="-24" cy="22" r="3.2" fill="${dark}"/><path d="M-50 -28 C-58 -18 -58 4 -52 14" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>${strings(-44, 2)}`; }
+      default: {                              // "guitar": the Strat, three single-coil pickups and a white scratchplate
+        return neck(14) + `<path d="M${end - 2} -9 L${end + 24} -15 Q${end + 34} -16 ${end + 33} -8 L${end + 30} 2 Q${end + 24} 6 ${end + 14} 5 L${end - 2} 5Z" fill="${shade(c, 0.7)}" ${sw(5)}/>${pegs(6, end + 2, -10, 5.4)}
+          <path d="${STRAT}" fill="${c}" ${sw(5)}/><path d="M14 -10 C2 -17 -18 -20 -30 -14 L-36 6 C-28 20 -10 22 4 18 L14 8Z" fill="${guard}" ${sw(3)}/>
+          ${[-24, -12, 0].map((x, i) => `<rect x="${x + (i ? 0 : -2)}" y="-10" width="5" height="16" rx="2.5" fill="${dark}" transform="rotate(${i ? 0 : -8} ${x} -2)"/>`).join("")}
+          <rect x="-46" y="-11" width="8" height="18" rx="1.5" fill="#c9ccd2" ${sw(1.6)}/><circle cx="-26" cy="14" r="3" fill="#fff" ${sw(1.4)}/><circle cx="-16" cy="16" r="3" fill="#fff" ${sw(1.4)}/>
+          <path d="M-50 -28 C-58 -18 -58 4 -52 14" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>${strings(-42, 3)}`; }
+    }
+  }
   /* ---- gear worn on the body: guitar on a strap, a headset mic, a cape. ---- */
   function gearSvg(kind, g, c){
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH, s = g.tW / 90;
     switch(kind){
-      case "guitar": case "bass": case "ukulele": { const ga = guitarAt(g), k = kind === "ukulele" ? ga.k * 0.68 : kind === "bass" ? ga.k * 1.06 : ga.k, nl = kind === "bass" ? 34 : 0, strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`; return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
-        <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})"><rect x="26" y="-9" width="${104 + nl}" height="14" rx="4" fill="#e0bf82" ${sw(5)}/><path d="M50 -9 V5 M72 -9 V5 M94 -9 V5 M114 -9 V5${nl ? " M134 -9 V5" : ""}" stroke="${INK}" stroke-opacity=".4" stroke-width="2"/><rect x="${126 + nl}" y="-13" width="30" height="21" rx="6" fill="${shade(c, 0.7)}" ${sw(5)}/><circle cx="${136 + nl}" cy="-6" r="2.5" fill="#fff"/><circle cx="${146 + nl}" cy="-6" r="2.5" fill="#fff"/><g fill="${c}" ${sw(5)}><ellipse cx="-12" cy="8" rx="38" ry="30"/><ellipse cx="14" cy="-8" rx="26" ry="21"/></g><g fill="${c}" stroke="none"><ellipse cx="-12" cy="8" rx="35" ry="27"/><ellipse cx="14" cy="-8" rx="23" ry="18"/></g><circle cx="-6" cy="8" r="9" fill="#2a2a2e"/><rect x="-34" y="2" width="12" height="9" rx="2" fill="#2a2a2e"/><path d="M-30 -2 L${130 + nl} -2 M-30 2 L${130 + nl} 2" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/></g>` }; }
+      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": {
+        const ga = guitarAt(g), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
+        return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
+        <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})">${instrumentSvg(kind, c)}</g>` }; }
       case "mic": { const W = x => (x / g.hrx).toFixed(4), U = body => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="none" ${ST} stroke-width="${W(6)}">${body}</g>`;
         return { head: U(`<path d="M-1.02 -0.1 C-1.1 -1.3 1.1 -1.3 1.02 -0.1" stroke-width="${W(7)}"/><circle cx="-1.04" cy="0.1" r="0.2" fill="${c}"/><path d="M-1.0 0.28 C-0.98 0.9 -0.6 1.04 -0.26 0.9" stroke-width="${W(6)}"/><circle cx="-0.2" cy="0.9" r="0.13" fill="#2a2a2e"/>`) }; }
       case "cape": { const y0 = g.tTop + 8, y1 = FEET + 6;       // (an accessory now: drawn via extraSvg)
@@ -272,6 +419,7 @@
   /* ---- arms and hands ---- */
   const shoulder = (g, right) => [right ? 200 + g.tW / 2 - 6 : 200 - g.tW / 2 + 6, g.tTop + 16];
   // the guitar on its strap (also where its attack notes come from)
+  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "ukulele"];
   const guitarAt = g => { const s = g.tW / 90; return { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
   const guitarPt = (g, lx, ly) => { const t = guitarAt(g), a = t.rot * Math.PI / 180;
     return [t.x + t.k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + t.k * (lx * Math.sin(a) + ly * Math.cos(a))]; };
@@ -355,6 +503,11 @@
     let arm = sleeve.only ? "" : tube(whole, AW, skin);
     const SW = AW + 1 + (sleeve.puffy ? 7 : 0);
     if(sleeve.long){ const sl = qsplit(S, C, E, tAt(26)), cf = qsplit(S, C, E, tAt(15)); arm += tube(cf.head, SW, shade(col, 0.82)) + tube(sl.head, SW, col);
+      if(sleeve.spikes){      // a row of spikes along the top of the shoulder, pointing outwards
+        const at = t => [(1 - t) * (1 - t) * S[0] + 2 * (1 - t) * t * C[0] + t * t * E[0], (1 - t) * (1 - t) * S[1] + 2 * (1 - t) * t * C[1] + t * t * E[1]];
+        arm += [0.06, 0.2, 0.34].map(t => { const p = at(t), q = at(t + 0.02); let nx = -(q[1] - p[1]), ny = q[0] - p[0];
+          if(nx * sgn - ny < 0){ nx = -nx; ny = -ny; } const n = Math.hypot(nx, ny) || 1;
+          return spike(p[0] + nx / n * (SW / 2 + 3), p[1] + ny / n * (SW / 2 + 3), Math.atan2(ny, nx), 10, 3.4); }).join(""); }
       if(sleeve.stripe) arm += `<path d="${sl.head}" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>`;
       if(sleeve.puffy){ const k = qsplit(S, C, E, 0.5).head.split(" ").slice(-2).join(" "); arm += `<circle cx="${k.split(" ")[0]}" cy="${k.split(" ")[1]}" r="2.6" fill="${shade(col, 0.7)}"/>`; } }
     else if(!sleeve.none) arm += tube(qsplit(S, C, E, 0.4).head, SW, col);
@@ -454,6 +607,15 @@
     if(cfg.top === "jacket"){        // open jacket over a tee: the tee down the middle, lapels, a zip edge each side
       nameOn = false; torso += openFront(white, shade(col, 0.8));
       torso += `<path d="M${x0 + 12} ${tBot - g.tH * 0.3} h${g.tW * 0.14}" fill="none" ${sw(3.4)}/><circle cx="${x1 - 14}" cy="${g.tTop + g.tH * 0.62}" r="4" fill="#ffc42b" ${sw(2.6)}/>`; }
+    if(cfg.top === "leather"){       // punk leather jacket: open over a tee, shiny creases, a belt at the hem, spikes up both lapels
+      nameOn = false; const iw = g.tW * 0.17;
+      torso += clip(`<path d="M${x0 + 10} ${g.tTop + 10} Q${x0 + 16} ${mid} ${x0 + 12} ${tBot - 14} M${x1 - 22} ${g.tTop + 12} Q${x1 - 16} ${mid} ${x1 - 20} ${tBot - 16}" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3.4" stroke-linecap="round"/>`);
+      torso += openFront(white, shade(col, 0.72));
+      torso += `<path d="M${x0 + 2} ${tBot - 13} H${200 - iw} M${200 + iw} ${tBot - 13} H${x1 - 2}" fill="none" ${sw(3)}/><rect x="${x0 + 8}" y="${tBot - 12}" width="9" height="9" rx="1.5" fill="none" stroke="#dfe3e8" stroke-width="2.4"/>`;
+      torso += `<path d="M${x1 - 12} ${g.tTop + g.tH * 0.3} L${x1 - 24} ${g.tTop + g.tH * 0.42}" fill="none" stroke="#dfe3e8" stroke-width="2.6" stroke-linecap="round"/>`;
+      torso += [-1, 1].map(sg => [0.25, 0.5, 0.75].map(t => { const ax = 200 + sg * iw, ay = g.tTop + g.tH * 0.46, bx = 200 + sg * g.tW * 0.33, by = g.tTop + 2;
+        let nx = by - ay, ny = -(bx - ax); if(nx * sg < 0){ nx = -nx; ny = -ny; }      // the lapel edge's outward side
+        return spike(ax + (bx - ax) * t, ay + (by - ay) * t, Math.atan2(ny, nx), 11, 3.8); }).join("")).join(""); }
     if(cfg.top === "flannel"){       // 90s grunge: an open plaid flannel shirt over a white tee, chest pocket
       nameOn = false; let a = "", b = "";
       for(let x = x0 + 7; x < x1; x += 16){ a += `M${x} ${g.tTop} V${tBot} `; b += `M${x + 6} ${g.tTop} V${tBot} `; }
@@ -503,7 +665,7 @@
       : cfg.neck === "bowtie" ? `<g transform="translate(200 ${ny + 4})"><path d="M0 0 L-15 -9 Q-18 0 -15 9Z M0 0 L15 -9 Q18 0 15 9Z" fill="${nc}" ${sw(3.6)}/><rect x="-4.5" y="-5" width="9" height="10" rx="3" fill="${shade(nc, 0.78)}" ${sw(3)}/></g>` : "";
 
     // arms. The live version also carries a second, arms-up set for celebrating (shown by the "joy" class).
-    const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin"].includes(cfg.top), none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer" };
+    const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin", "leather"].includes(cfg.top), spikes: cfg.top === "leather", none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer" };
     const pose = (POSES[cfg.pose] || POSES.wave)(g);
     const armSet = specs => specs.map((sp, i) => armSvg(sp, i === 1, g, skin, col, sleeve));
     const main = armSet(pose), behind = main.filter(a => !a.front).map(a => a.svg).join(""), front = main.filter(a => a.front).map(a => a.svg).join("");
@@ -535,7 +697,7 @@
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
-      : ["guitar", "bass", "ukulele"].includes(cfg.gear) ? { kind: "notes", pts: [guitarPt(g, -6, 6)] }
+      : INSTRUMENTS.includes(cfg.gear) ? { kind: "notes", pts: [guitarPt(g, -6, 6)] }
       : { kind: "notes", pts: null, hands: main.map(a => a.hand) };
     if(only){
       const bottom = cfg.bottom === "shorts" ? leg(lx, lf, tBot + 26, pants) + leg(rx, rf, tBot + 26, pants) : SKIRTS[cfg.bottom] ? skirt : legs;
@@ -664,7 +826,7 @@
     return base;
   }
 
-  const DEFAULTS = { name: "", body: "kid", skin: SKINS[1], hair: "crop", hairColor: HAIR_COLORS[1], eyes: "calm", mouth: "smile", mark: "none", eyewear: "none", top: "tee", color: PALETTE[7], bottom: "pants", pants: PALETTE[8], accent: PALETTE[0], pose: "cheer", acc: "none", accColor: PALETTE[0], gear: "none", gearColor: PALETTE[6], shoes: "sneakers", neck: "none", neckColor: PALETTE[0], beard: "none", extra: "none", extraColor: PALETTE[10] };
+  const DEFAULTS = { name: "", body: "kid", skin: SKINS[1], hair: "crop", hairColor: HAIR_COLORS[1], eyes: "calm", mouth: "smile", mark: "none", eyewear: "none", top: "tee", color: PALETTE[7], bottom: "pants", pants: PALETTE[8], accent: PALETTE[0], pose: "relax", acc: "none", accColor: PALETTE[0], gear: "none", gearColor: PALETTE[6], shoes: "sneakers", neck: "none", neckColor: PALETTE[0], beard: "none", extra: "none", extraColor: PALETTE[10] };
   const inList = (v, list) => list.some(x => (Array.isArray(x) ? x[0] : x) === v);
   const isHex = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
   // fills in anything missing; values from older versions that no longer exist fall back to a default
@@ -675,7 +837,7 @@
     if(c.gear === "cape"){ c.extra = "cape"; c.extraColor = c.gearColor; c.gear = "none"; }                        // older saves
     if(!inList(c.extra, OPTIONS.extras)) c.extra = "none";
     if(!AGES[c.body]) c.body = DEFAULTS.body;
-    if(!POSES[c.pose]) c.pose = DEFAULTS.pose;
+    c.pose = "relax";                              // poses belong to game moments now, not the saved character
     if(!inList(c.eyes, OPTIONS.eyes)) c.eyes = DEFAULTS.eyes;
     if(!inList(c.mouth, OPTIONS.mouths)) c.mouth = DEFAULTS.mouth;
     if(!inList(c.hair, OPTIONS.hair)) c.hair = DEFAULTS.hair;
@@ -696,7 +858,8 @@
      tap (on by default): tapping the character makes it react or cheer. */
   function PlayerArt(el, cfg, opts){
     injectCss(); cfg = norm(cfg); opts = Object.assign({ idle: true, tap: true }, opts || {});
-    const b = build(cfg, true);
+    if(POSES[opts.pose]) cfg.pose = opts.pose;       // a game can choose the resting pose
+    let b = build(cfg, true), shown = cfg.pose, poseT = null;
     el.innerHTML = `<svg class="pa" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true" style="--look:${b.look.toFixed(1)}px"><ellipse cx="200" cy="384" rx="92" ry="9" fill="${INK}" opacity=".14"/><g class="pa-hitg"><g class="pa-all"><g class="pa-fid">${b.svg}</g></g></g><g class="pa-fxl"></g></svg>`;
     const svg = el.querySelector("svg"), timers = new Set();
     let stage = 0, ko = false, dir = 1, idle = opts.idle;
@@ -705,7 +868,12 @@
     const busy = () => ACTIONS.some(c => svg.classList.contains(c));
     const flick = (cls, ms) => { svg.classList.remove(cls); void svg.getBoundingClientRect(); svg.classList.add(cls); later(() => svg.classList.remove(cls), ms); };
     const calm = () => FIDGETS.forEach(c => svg.classList.remove(c));
-    const pool = fidgetsFor(cfg);
+    let pool = fidgetsFor(cfg);
+    // swap the drawn pose; damage and action classes live on the svg, so they carry over
+    function draw(p){
+      const c = Object.assign({}, cfg, { pose: p }); b = build(c, true); shown = p; pool = fidgetsFor(c);
+      svg.querySelector(".pa-fid").innerHTML = b.svg; svg.style.setProperty("--look", b.look.toFixed(1) + "px");
+    }
     function fidget(name){
       if(name === "look"){ const first = Math.random() < 0.5 ? "lookl" : "lookr"; svg.classList.add(first);
         later(() => { svg.classList.remove(first); if(Math.random() < 0.6) svg.classList.add(first === "lookl" ? "lookr" : "lookl"); }, 800);
@@ -735,9 +903,16 @@
       // a little jump, for when something changes (the editor uses it). The face stays as chosen.
       react(){ if(ko) return; calm(); flick("hop", 600); },
       fidget(name){ if(!ko && !busy()) fidget(name); },
+      pose(name, ms){
+        if(ko || !POSES[name]) return;
+        if(poseT){ clearTimeout(poseT); timers.delete(poseT); poseT = null; }
+        if(shown !== name) draw(name);
+        calm(); flick("hop", 600);
+        if(ms > 0){ poseT = setTimeout(() => { timers.delete(poseT); poseT = null; if(!ko && shown !== cfg.pose) draw(cfg.pose); }, ms); timers.add(poseT); }
+      },
       idle(on){ idle = on !== false; if(!idle) calm(); },
       ko(){ if(ko) return; ko = true; calm(); svg.classList.remove("joy", "glad", "hurt"); svg.classList.add("ko"); },
-      reset(){ ko = false; stage = 0; svg.classList.remove("st1", "st2", "st3", "ko", "hurt", "atk", "cheer", "joy", "glad"); calm(); },
+      reset(){ ko = false; stage = 0; if(shown !== cfg.pose) draw(cfg.pose); svg.classList.remove("st1", "st2", "st3", "ko", "hurt", "atk", "cheer", "joy", "glad"); calm(); },
       destroy(){ live.delete(ctl); timers.forEach(clearTimeout); timers.clear(); }
     };
     if(opts.tap){ let taps = 0; svg.style.cursor = "pointer";
@@ -762,6 +937,8 @@
     return `<svg viewBox="${vb}" xmlns="${NS}"><g>${body}</g></svg>`;
   };
   PlayerArt.options = OPTIONS;
+  // which pose each game moment uses (all poses stay friendly: there is no sad or losing pose)
+  PlayerArt.MOMENTS = { hello: "wave", wait: "hips", start: "point", hit: "thumbs", streak: "flex", best: "star", win: "rock", cheer: "cheer", done: "peace" };
   PlayerArt.presets = [];
   PlayerArt.norm = norm;
   window.PlayerArt = PlayerArt;
@@ -775,10 +952,15 @@
       return norm({ body: pick(OPTIONS.bodies)[0], skin: pick(SKINS), hair: pick(OPTIONS.hair)[0], hairColor: pick(HAIR_COLORS), eyes: pick(OPTIONS.eyes)[0],
         mouth: pick(OPTIONS.mouths)[0], mark: pick(["none", "none", "none", ...OPTIONS.marks.map(a => a[0])]), eyewear: pick(["none", "none", "none", ...OPTIONS.eyewear.map(a => a[0])]),
         beard: Math.random() < 0.2 ? pick(OPTIONS.beards)[0] : "none", top: pick(OPTIONS.tops)[0], color: pick(PALETTE), bottom: pick(OPTIONS.bottoms)[0], pants: pick(PALETTE), accent: pick(PALETTE),
-        pose: pick(OPTIONS.poses)[0],
         acc: pick(["none", ...OPTIONS.acc.map(a => a[0])]), accColor: pick(PALETTE), gear, gearColor: pick(PALETTE),
         shoes: pick(OPTIONS.shoes)[0], neck: pick(["none", "none", ...OPTIONS.neck.map(a => a[0])]), neckColor: pick(PALETTE),
         extra: pick(["none", "none", ...OPTIONS.extras.map(a => a[0])]), extraColor: pick(PALETTE) });
+    },
+    // the clear-out: bald, medium skin, plain tee and pants, nothing else (keeps the body type)
+    plain(body){
+      return norm({ body: body || "kid", skin: SKINS[2], hair: "none", beard: "none", eyes: "calm", mouth: "smile", mark: "none", eyewear: "none",
+        top: "tee", color: PALETTE[10], bottom: "pants", pants: PALETTE[12], shoes: "sneakers", accent: PALETTE[12], pose: "relax",
+        acc: "none", gear: "none", neck: "none", extra: "none" });
     },
     get(){
       try{ const v = JSON.parse(localStorage.getItem(KEY)); if(v && v.body) return norm(v); }catch(e){}

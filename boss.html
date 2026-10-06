@@ -164,18 +164,18 @@ function chordInfo(name){
   const r = PCS[m[1]], pcs = iv.map(i => (r + i) % 12);
   return { name, root:r, pcs, mask:pcs.reduce((a, p) => a | (1 << p), 0), tones:pcs.map(p => NOTE_NAMES[p]) };
 }
-/* Ten songs, each as its main chord loop (one chord per bar). Chord loops are simplified and can differ between versions. */
+/* Ten songs, each as its main chord loop (one chord per bar), and which boss guards it (BossArt kinds: amp, cables). Chord loops are simplified and can differ between versions. */
 const SONGS = [
-  {t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
-  {t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
-  {t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]},
-  {t:"Stand By Me", a:"Ben E. King", c:["A","F#m","D","E"]},
-  {t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
-  {t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
-  {t:"Someone Like You", a:"Adele", c:["A","E","F#m","D"]},
-  {t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
-  {t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
-  {t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]}
+  {b:"amp", t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
+  {b:"cables", t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
+  {b:"amp", t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]},
+  {b:"cables", t:"Stand By Me", a:"Ben E. King", c:["A","F#m","D","E"]},
+  {b:"amp", t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
+  {b:"cables", t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
+  {b:"amp", t:"Someone Like You", a:"Adele", c:["A","E","F#m","D"]},
+  {b:"cables", t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
+  {b:"amp", t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
+  {b:"cables", t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]}
 ];
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
 const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
@@ -347,9 +347,10 @@ function startFight(){
   buildFight();
   Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
   G.latched.fill(false); G.onFor.fill(0);
-  art = BossArt($("bimg"), { hue:(S.song - 1) * 36 });
+  art = BossArt($("bimg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 });
   me = Player.get();
   pArt = PlayerArt($("pimg"), me);
+  setTimeout(() => pArt.pose(PlayerArt.MOMENTS.start, 1800), 300);
   $("pname").textContent = me.name || "You";
   $("combo").className = "combo"; $("combo").textContent = "";
   setHp();
@@ -424,11 +425,11 @@ function tick(){
     G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
     const m = multOf(G.streak), dmg = Math.round(100 / G.need * m);
     G.bossHp = Math.max(0, G.bossHp - dmg);
-    setHp(); pArt.attack(1); art.setDamage(1 - G.bossHp / 100); art.hit(m > 1 ? 2 : 1);
+    setHp(); pArt.pose([3, 5, 8].includes(G.streak) ? PlayerArt.MOMENTS.streak : PlayerArt.MOMENTS.hit, 1100); pArt.attack(1); art.setDamage(1 - G.bossHp / 100); art.hit(m > 1 ? 2 : 1);
     floatNum($("bimg"), "-" + dmg, m > 1);
     comboUI(m);
     $("status").textContent = m > 1 ? "Hit! x" + m : "Hit!"; $("status").style.color = "var(--good)";
-    if(G.bossHp <= 0){ G.done = true; art.die(); setTimeout(() => pArt.cheer(), 700); setTimeout(() => finish(), 1600); }
+    if(G.bossHp <= 0){ G.done = true; art.die(); setTimeout(() => { pArt.pose(PlayerArt.MOMENTS.win, 0); pArt.cheer(); }, 700); setTimeout(() => finish(), 1600); }
   }
 }
 function finish(){
@@ -437,8 +438,8 @@ function finish(){
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
   const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
-  const endArt = BossArt($("endImg"), { hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
-  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else if(win) setTimeout(() => endP.cheer(), 300);
+  const endArt = BossArt($("endImg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
+  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.hits > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
@@ -458,7 +459,7 @@ function draw(){
   chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
-  { const m = Player.get(); PlayerArt($("mart"), m); $("mname").textContent = m.name || "Your character"; }
+  { const m = Player.get(); const mp = PlayerArt($("mart"), m); setTimeout(() => mp.pose(PlayerArt.MOMENTS.hello, 2600), 400); $("mname").textContent = m.name || "Your character"; }
   const best = store.get().best || {}, k = S.song + "-" + S.speed + "-" + S.mode;
   $("bests").textContent = best[k] ? "Your best for this song, speed and mode: " + best[k] + " hits" : "";
 }

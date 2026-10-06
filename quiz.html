@@ -4,7 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EFEAD9">
-<title>Note Quiz</title>
+<title>Note Quiz | Forbes Music Academy</title>
+<meta name="description" content="Can you find the note on your guitar faster than the CPUs? Play the answer, hold it, score points. Free guitar game from Forbes Music Academy.">
+<link rel="canonical" href="https://games.forbesmusic.com.au/quiz.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Forbes Music Academy">
+<meta property="og:title" content="Note Quiz: can you find the note faster?">
+<meta property="og:description" content="Play the answer on your real guitar and hold it to lock in. Race the CPUs, beat your best score.">
+<meta property="og:url" content="https://games.forbesmusic.com.au/quiz.html">
+<meta property="og:image" content="https://games.forbesmusic.com.au/og-quiz.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Note Quiz: can you find the note faster?">
+<meta name="twitter:description" content="Play the answer on your real guitar and hold it to lock in. Race the CPUs, beat your best score.">
+<meta name="twitter:image" content="https://games.forbesmusic.com.au/og-quiz.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -114,6 +128,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div class="levels" id="levels"></div>
     <p><b>Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
     <p>Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
+    <p id="playingAs" style="color:var(--fg)"></p>
     <button class="big" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
     <div class="best" id="bests"></div>
@@ -145,6 +160,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div id="endPlace" style="font-family:var(--head);font-weight:900;font-size:22px"></div>
     <div class="board" id="endBoard" hidden></div>
     <div id="endBest"></div>
+    <div class="best" id="savedMsg" role="status"></div>
     <button class="big" id="again" style="margin-top:10px">Play again</button>
   </section>
 
@@ -152,6 +168,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <div class="sim" id="sim" hidden></div>
 </div>
 
+<script src="fma-student.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -281,7 +298,8 @@ function readNote(){
         const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
         const raw = Array.from(ch, v => Math.max(v - floor, 0) / span), sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
         let best = 0; sc.forEach((v, i) => { if(v > sc[best]) best = i; });
-        if(sc[best] > 0.5) top = best;      // (overtones are taken off, so a played E doesn't also read as B)
+        // overtones are taken off (a played E doesn't also read as B), and the note must clearly beat both neighbouring semitones
+        if(sc[best] > 0.5 && sc[best] - Math.max(sc[(best + 1) % 12], sc[(best + 11) % 12]) >= 0.25) top = best;
         if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + "  tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
       }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + " (needs " + TONAL_MIN + "): not musical";
     }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate (" + det.gateDb + ")";
@@ -377,6 +395,11 @@ function endGame(){
     const place = 1 + G.bots.filter(b => b.score > G.score).length;
     $("endPlace").textContent = place === 1 ? "You won! 🏆" : "You came " + ord(place) + " of " + (G.bots.length + 1);
   }
+  $("savedMsg").textContent = "";
+  if(!SIM && window.FMAStudent && FMAStudent.active()){
+    FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length})
+      .then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
+  }
   $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
 }
 
@@ -450,7 +473,7 @@ async function begin(){
 }
 $("go").onclick = begin;
 $("again").onclick = () => { drawLevels(); drawModes(); show("start"); $("go").disabled = false; G.phase = "start"; };
-drawLevels(); drawModes();
+drawLevels(); drawModes(); if(window.FMAStudent) FMAStudent.mount($("playingAs"));
 setInterval(tick, 90);
 
 /* ---------- No-microphone test mode: ?sim ---------- */

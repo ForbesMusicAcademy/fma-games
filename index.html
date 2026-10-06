@@ -114,6 +114,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
             <input id="ename" maxlength="10" placeholder="Name" autocomplete="off" autocapitalize="words" aria-label="Character name">
             <div class="efoot">
               <button id="erand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/></svg>Mix it up</button>
+              <button id="eclear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Clear</button>
               <button id="edone" class="go">Done</button>
             </div>
             </div>
@@ -146,8 +147,9 @@ const TOUCHED = "fma-player-touched";
 const touched = () => { try{ return !!localStorage.getItem(TOUCHED); }catch(e){ return true; } };
 const markTouched = () => { try{ localStorage.setItem(TOUCHED, "1"); }catch(e){} };
 
-function drawYou(){
-  PlayerArt($("yart"), cfg);
+function drawYou(hello){
+  const p = PlayerArt($("yart"), cfg);
+  if(hello) setTimeout(() => p.pose(PlayerArt.MOMENTS.hello, 2600), 400);
   $("yname").textContent = cfg.name || "";
   $("yedit").classList.toggle("pulse", !touched());
   $("yedit").textContent = touched() ? "Customise" : "Make it yours!";
@@ -163,7 +165,7 @@ const ICON = {
   gear: '<svg viewBox="0 0 32 32"><g transform="rotate(-38 16 16)"><rect x="15" y="2" width="4" height="16" rx="1.5" fill="#e0bf82" stroke="#26211f" stroke-width="1.8"/><ellipse cx="17" cy="22" rx="7" ry="7.5" fill="#4fd0c0" stroke="#26211f" stroke-width="2"/><circle cx="17" cy="22" r="2.2" fill="#26211f"/></g></svg>'
 };
 const TABS = [
-  { id: "body", label: "Body", sections: [["grid", "body", O.bodies, "fig", "", true], ["swatch", "Skin", "skin", O.skins], ["grid", "pose", O.poses, "fig", "Pose"]] },
+  { id: "body", label: "Body", sections: [["grid", "body", O.bodies, "fig", "", true], ["swatch", "Skin", "skin", O.skins]] },
   { id: "hair", label: "Hair", sections: [["grid", "hair", O.hair, "head"], ["swatch", "Hair colour", "hairColor", O.hairColors], ["grid", "beard", O.beards, "head", "Beard"]] },
   { id: "face", label: "Face", sections: [["grid", "eyes", O.eyes, "face", "Eyes"], ["grid", "mouth", O.mouths, "face", "Mouth"], ["grid", "mark", O.marks, "face", "Marks"]] },
   { id: "outfit", label: "Outfit", sections: [["grid", "top", O.tops, "item:top", "Top"], ["swatch", "Top colour", "color", O.palette], ["grid", "bottom", O.bottoms, "item:bottom", "Bottoms"], ["swatch", "Bottoms colour", "pants", O.palette],
@@ -210,7 +212,7 @@ function openEditor(){
   document.documentElement.classList.add("editing");
 }
 function closeEditor(){
-  $("top").classList.remove("editing"); $("yeditor").hidden = true; $("yview").hidden = false; markTouched(); drawYou();
+  $("top").classList.remove("editing"); $("yeditor").hidden = true; $("yview").hidden = false; markTouched(); drawYou(true);
   document.documentElement.classList.remove("editing");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -220,8 +222,10 @@ $("edone").onclick = closeEditor;
 document.querySelector(".eleft").addEventListener("wheel", e => e.preventDefault(), { passive: false });
 document.querySelector(".eleft").addEventListener("touchmove", e => { if(e.target.tagName !== "INPUT") e.preventDefault(); }, { passive: false });
 $("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawPanel(); previews(); };
+// back to a plain, bald character in a tee and pants (keeps the name and body type), so you build up from nothing
+$("eclear").onclick = () => { const keep = cfg.name; cfg = Player.plain(cfg.body); cfg.name = keep; save(); drawPanel(); previews(); };
 $("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); previews(); };
-drawYou();
+drawYou(true);
 if(location.hash === "#character") openEditor();
 </script>
 </body>

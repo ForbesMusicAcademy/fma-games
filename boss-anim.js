@@ -1,5 +1,8 @@
-/* The animated boss (an amp monster), shared by the home Boss Battle and the classroom screen. Plain SVG + CSS, no files.
-   const boss = BossArt(containerElement, { hue: 0 });
+/* The animated bosses, shared by the home Boss Battle and the classroom screen. Plain SVG + CSS, no files.
+   const boss = BossArt(containerElement, { kind: "amp", hue: 0 });
+   kind: "amp"     a grumpy amp monster (the default)
+         "cables"  a tangled knot of guitar leads; beating it shakes loops loose, and defeated it ends up neatly coiled
+   BossArt.kinds lists them with their names.
    boss.setDamage(0..1)  how beaten up it looks (cracks at 25%, a horn snaps at 50%, tilt and dizzy at 75%)
    boss.hit(n)           reacts to n hits (knock-back, flash, POW burst; streaks of hits hit harder)
    boss.taunt()          smirks and bobs (a player missed)
@@ -65,14 +68,15 @@
 `;
   function injectCss(){
     if(document.getElementById("ba-css")) return;
-    const s = document.createElement("style"); s.id = "ba-css"; s.textContent = css; document.head.appendChild(s);
+    const s = document.createElement("style"); s.id = "ba-css"; s.textContent = css + cableCss; document.head.appendChild(s);
   }
   const burstPath = (cx, cy, r1, r2, n) => {
     let d = ""; for(let i = 0; i < n * 2; i++){ const a = Math.PI * i / n, r = i % 2 ? r2 : r1; d += (i ? "L" : "M") + (cx + r * Math.cos(a)).toFixed(1) + " " + (cy + r * Math.sin(a)).toFixed(1); }
     return d + "Z";
   };
   const starP = "M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z";
-  const sp = (x, y, delay) => `<g class="d1"><path class="ba-spark" d="${starP}" fill="${GOLD}" transform="translate(${x} ${y})" style="animation-delay:${delay}s"/></g>`;
+  // (the spark's own animation sets transform, so its position goes on a wrapper)
+  const sp = (x, y, delay) => `<g class="d1"><g transform="translate(${x} ${y})"><path class="ba-spark" d="${starP}" fill="${GOLD}" style="animation-delay:${delay}s"/></g></g>`;
   const stroke = `stroke="${INK}" stroke-linejoin="round" stroke-linecap="round"`;
   const SVG = `<svg class="ba" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true">
   <ellipse cx="200" cy="380" rx="130" ry="14" fill="${INK}" opacity=".18"/>
@@ -108,14 +112,80 @@
   </g></g>
   <g class="ba-fx"></g>
 </svg>`;
+  /* ---- the cable knot ---- */
+  const SKY = "#4A9CC2";
+  const ell = (cx, cy, rx, ry) => `M${cx - rx} ${cy} A${rx} ${ry} 0 1 0 ${cx + rx} ${cy} A${rx} ${ry} 0 1 0 ${cx - rx} ${cy}`;
+  // a lead: a thick ink outline with the coloured cable on top
+  const lead = (d, col, cls, tf) => `<g${cls ? ` class="${cls}"` : ""}${tf ? ` transform="${tf}"` : ""}><path d="${d}" fill="none" stroke="${INK}" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${d}" fill="none" stroke="${col}" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  // a jack plug with two little eyes, drawn pointing up from 0,0 (where its lead joins)
+  const plug = () => `<rect x="-12" y="-46" width="24" height="44" rx="6" fill="${GOLD}" ${stroke} stroke-width="6"/>
+      <rect x="-15" y="-54" width="30" height="11" rx="4" fill="${INK}"/>
+      <rect x="-5.5" y="-84" width="11" height="32" rx="3" fill="#d9dde0" ${stroke} stroke-width="5"/>
+      <circle cy="-88" r="7" fill="#d9dde0" ${stroke} stroke-width="5"/>
+      <circle cx="-5" cy="-24" r="5" fill="#fff" stroke="${INK}" stroke-width="2.5"/><circle cx="5" cy="-24" r="5" fill="#fff" stroke="${INK}" stroke-width="2.5"/>
+      <circle cx="-4" cy="-23" r="2.2" fill="${INK}"/><circle cx="6" cy="-23" r="2.2" fill="${INK}"/>
+      <g transform="translate(0 -100)"><path class="ba-spark" d="${starP}" fill="${GOLD}"/></g>`;
+  // a lead's tail out of the knot, ending in a plug; the whole thing pivots at the knot (for drooping)
+  const tail = (cls, x0, y0, d, col, px, py, ang, delay) => `<g class="ba-plug ${cls}" style="transform-box:view-box;transform-origin:${x0}px ${y0}px">${lead(d, col)}` +
+    `<g transform="translate(${px} ${py}) rotate(${ang})" style="--d:${delay}s">${plug()}</g></g>`;
+  const CABLES = `<svg class="ba cables" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true">
+  <ellipse cx="200" cy="380" rx="130" ry="14" fill="${INK}" opacity=".18"/>
+  <g class="ba-hitg"><g class="ba-all">
+    <g class="ba-knot"><g transform="translate(200 222) scale(1.1) translate(-200 -215)">
+      ${tail("l", 108, 250, "M108 250 C70 240 52 210 58 176", SKY, 58, 176, -14, 0)}
+      ${tail("r", 296, 160, "M296 160 C326 150 340 136 338 118", PINK, 338, 118, 24, .7)}
+      ${tail("t", 200, 104, "M200 104 C200 80 182 66 160 66", GOLD, 160, 66, -70, 1.4)}
+      <circle cx="200" cy="215" r="112" fill="#2f2f2d" ${stroke} stroke-width="10"/>
+      ${lead(ell(200, 215, 108, 50), PINK, "ba-loop a", "rotate(22 200 215)")}
+      ${lead(ell(200, 215, 108, 50), SKY, "ba-loop b", "rotate(-38 200 215)")}
+      ${lead(ell(200, 215, 108, 50), GOLD, "ba-loop c", "rotate(84 200 215)")}
+      ${lead(ell(200, 215, 92, 40), "#4fb86a", "ba-loop d", "rotate(-4 200 215)")}
+      <circle cx="200" cy="222" r="70" fill="#3a3a38" ${stroke} stroke-width="6"/>
+      <g class="ba-eye l"><circle cx="172" cy="206" r="25" fill="#fff" ${stroke} stroke-width="5"/><circle class="ba-pup l" cx="178" cy="211" r="10" fill="${INK}"/></g>
+      <g class="ba-eye r"><circle cx="228" cy="206" r="25" fill="#fff" ${stroke} stroke-width="5"/><circle class="ba-pup r" cx="222" cy="211" r="10" fill="${INK}"/>
+        <path class="d3 ba-spiral" d="M228 206 m0 0 a3 3 0 1 1 6 0 a7 7 0 1 1 -14 0 a11 11 0 1 1 22 0 a15 15 0 1 1 -30 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/></g>
+      <path class="ba-brow" d="M140 178 L190 194 M260 178 L210 194" fill="none" stroke="${INK}" stroke-width="11" stroke-linecap="round"/>
+      <path d="M164 262 Q200 240 236 262 L228 282 L212 268 L200 284 L188 268 L172 282 Z" fill="#fff" ${stroke} stroke-width="5"/>
+      <g class="d3"><path class="ba-sweat" d="M276 170 Q286 188 276 198 Q266 188 276 170Z" fill="#8ECAE6" stroke="${INK}" stroke-width="3"/></g>
+      <circle class="ba-flash" cx="200" cy="215" r="118" fill="#fff"/>
+    </g></g>
+    ${lead("M136 300 C104 344 100 376 140 372 C178 368 170 336 162 320", PINK, "d1 ba-loose")}
+    ${lead("M262 304 C298 342 306 376 268 374 C232 372 238 340 244 324", SKY, "d2 ba-loose")}
+    ${lead("M308 236 C356 252 368 296 336 310 C308 322 302 288 310 270", GOLD, "d3 ba-loose")}
+    <g class="dd">
+      ${lead(ell(200, 332, 158, 46), PINK)}${lead(ell(200, 324, 128, 36), PINK)}${lead(ell(200, 316, 98, 26), PINK)}
+      <rect x="184" y="272" width="32" height="96" rx="8" fill="${GOLD}" ${stroke} stroke-width="5"/>
+      <g transform="translate(352 344) rotate(70)">${plug()}</g>
+      <g transform="translate(200 312)"><circle cx="-34" r="17" fill="#fff" ${stroke} stroke-width="4.5"/><circle cx="34" r="17" fill="#fff" ${stroke} stroke-width="4.5"/>
+        <path d="M-43 -9 L-25 9 M-25 -9 L-43 9 M25 -9 L43 9 M43 -9 L25 9" stroke="${INK}" stroke-width="5" stroke-linecap="round"/></g>
+    </g>
+  </g></g>
+  <g class="ba-fx"></g>
+</svg>`;
+  const cableCss = `
+.ba.cables .ba-loop{transition:opacity .45s,transform .45s}
+.ba.cables.st1 .ba-loop.a,.ba.cables.st2 .ba-loop.b,.ba.cables.st3 .ba-loop.d{opacity:0}
+.ba.cables .ba-plug{transition:transform .7s cubic-bezier(.3,1.4,.5,1)}
+.ba.cables.st2 .ba-plug.l{transform:rotate(-95deg)}
+.ba.cables.st3 .ba-plug.t{transform:rotate(-55deg)}
+.ba.cables .ba-spark{animation-delay:var(--d,0s)}
+.ba.cables.taunt .ba-spark{animation-duration:.5s}
+.ba.cables .ba-knot{transition:opacity .5s}
+.ba.cables.dead .ba-knot,.ba.cables.dead .ba-loose{opacity:0}
+.ba.cables.dead{--tilt:0deg}
+.ba.cables.dead .ba-hitg{animation:none;transform:none}
+`;
+  const KINDS = { amp: () => SVG, cables: () => CABLES };
   const WORDS = ["POW", "BAM", "WHAM", "ZAP", "BOOM", "THWACK"];
   window.BossArt = function(el, opt){
     injectCss();
     opt = opt || {};
-    el.innerHTML = SVG;
+    const kind = KINDS[opt.kind] ? opt.kind : "amp";
+    el.innerHTML = KINDS[kind]();
     const svg = el.querySelector("svg"), fx = svg.querySelector(".ba-fx");
     let stage = 0, dead = false, combo = 0, comboAt = 0, dir = 1, hueDeg = opt.hue || 0;
-    const wrapFilter = () => { el.style.filter = (hueDeg ? "hue-rotate(" + hueDeg + "deg) " : "") + (dead ? "grayscale(.9) brightness(.85)" : ""); };
+    const wrapFilter = () => { el.style.filter = (hueDeg ? "hue-rotate(" + hueDeg + "deg) " : "") + (dead && kind === "amp" ? "grayscale(.9) brightness(.85)" : ""); };
     wrapFilter();
     const flick = (cls, ms) => { svg.classList.remove(cls); void svg.getBoundingClientRect(); svg.classList.add(cls); setTimeout(() => svg.classList.remove(cls), ms); };
     function pow(scale){
@@ -158,4 +228,5 @@
       }
     };
   };
+  window.BossArt.kinds = [["amp", "The Amp"], ["cables", "The Tangle"]];
 })();
