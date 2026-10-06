@@ -45,7 +45,7 @@
     bottoms: [["pants", "Pants"], ["shorts", "Shorts"], ["skirt", "Skirt"], ["pleated", "Pleated skirt"], ["tutu", "Tutu"], ["maxi", "Long skirt"],
       ["leggings", "Leggings"], ["flares", "Flares"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
     shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"]],
-    neck: [["none", "None"], ["chain", "Chain"], ["scarf", "Scarf"], ["bowtie", "Bow tie"]],
+    neck: [["none", "None"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"]],
     acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"]],
     gear: [["none", "None"], ["guitar", "Guitar"], ["bass", "Bass"], ["ukulele", "Ukulele"], ["mic", "Mic"]],
     extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"]],
@@ -488,6 +488,13 @@
     const nc = cfg.neckColor, ny = g.tTop + 4;
     const chainD = `M${200 - g.tW * 0.26} ${ny - 2} Q200 ${g.tTop + g.tH * 0.66} ${200 + g.tW * 0.26} ${ny - 2}`;
     const neck = cfg.neck === "chain" ? `<path d="${chainD}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="${chainD}" fill="none" stroke="#ffc42b" stroke-width="5.6" stroke-linecap="round"/><path d="${chainD}" fill="none" stroke="#b07a10" stroke-width="2" stroke-dasharray="2 4"/><g transform="translate(200 ${(g.tTop + g.tH * 0.38).toFixed(1)}) scale(.85)"><ellipse cx="0" cy="8" rx="8.5" ry="6.5" transform="rotate(-22 0 8)" fill="#ffc42b" ${sw(4)}/><path d="M7.4 6 V-20 Q15 -16 18 -6" fill="none" ${sw(5)}/></g>`
+      // a big old-school clock on a gold chain (the rim takes the neck colour)
+      : cfg.neck === "clock" ? (() => { const cr = g.tW * 0.27, cy = g.tTop + g.tH * 0.5 + 2, d = `M${200 - g.tW * 0.26} ${ny - 2} Q200 ${cy - cr * 0.2} ${200 + g.tW * 0.26} ${ny - 2}`;
+          const ticks = [0, 1, 2, 3].map(i => { const a = i * Math.PI / 2; return `M${(200 + Math.sin(a) * cr * 0.62).toFixed(1)} ${(cy - Math.cos(a) * cr * 0.62).toFixed(1)} L${(200 + Math.sin(a) * cr * 0.78).toFixed(1)} ${(cy - Math.cos(a) * cr * 0.78).toFixed(1)}`; }).join(" ");
+          return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#ffc42b" stroke-width="5.6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b07a10" stroke-width="2" stroke-dasharray="2 4"/>
+            <circle cx="200" cy="${cy.toFixed(1)}" r="${(cr + 6).toFixed(1)}" fill="${nc}" ${sw(4.5)}/><circle cx="200" cy="${cy.toFixed(1)}" r="${cr.toFixed(1)}" fill="#fffdf6" ${sw(3)}/>
+            <path d="${ticks}" fill="none" ${sw(2.6)}/><path d="M200 ${cy.toFixed(1)} L200 ${(cy - cr * 0.5).toFixed(1)} M200 ${cy.toFixed(1)} L${(200 + cr * 0.4).toFixed(1)} ${(cy + cr * 0.12).toFixed(1)}" fill="none" ${sw(3)}/><circle cx="200" cy="${cy.toFixed(1)}" r="2.6" fill="${INK}"/>
+            <path d="M${(200 - cr * 0.55).toFixed(1)} ${(cy - cr * 0.5).toFixed(1)} Q${(200 - cr * 0.2).toFixed(1)} ${(cy - cr * 0.78).toFixed(1)} ${(200 + cr * 0.1).toFixed(1)} ${(cy - cr * 0.75).toFixed(1)}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>`; })()
       : cfg.neck === "scarf" ? `<path d="${rrect(200 - g.tW * 0.3, g.tTop - 6, 200 + g.tW * 0.3, g.tTop + 10, 8)}" fill="${nc}" ${sw(4)}/><path d="M${200 + g.tW * 0.08} ${g.tTop + 4} L${200 + g.tW * 0.06} ${g.tTop + g.tH * 0.6} L${200 + g.tW * 0.24} ${g.tTop + g.tH * 0.58} L${200 + g.tW * 0.24} ${g.tTop + 6}Z" fill="${nc}" ${sw(4)}/><path d="M${200 + g.tW * 0.09} ${g.tTop + g.tH * 0.6 + 2} v5 M${200 + g.tW * 0.15} ${g.tTop + g.tH * 0.6 + 1} v5 M${200 + g.tW * 0.21} ${g.tTop + g.tH * 0.59 + 1} v5" fill="none" ${sw(2.4)}/><path d="M${200 + g.tW * 0.07} ${g.tTop + g.tH * 0.35} H${200 + g.tW * 0.24}" stroke="${shade(nc, 0.7)}" stroke-width="3"/>`
       : cfg.neck === "bowtie" ? `<g transform="translate(200 ${ny + 4})"><path d="M0 0 L-15 -9 Q-18 0 -15 9Z M0 0 L15 -9 Q18 0 15 9Z" fill="${nc}" ${sw(3.6)}/><rect x="-4.5" y="-5" width="9" height="10" rx="3" fill="${shade(nc, 0.78)}" ${sw(3)}/></g>` : "";
 
@@ -745,7 +752,7 @@
     const vb = part === "top" ? box(200, g.tTop + g.tH / 2 + 4, Math.max(g.tW + 70, g.tH + 44))
       : part === "bottom" ? (["skirt", "pleated", "tutu"].includes(cfg.bottom) ? box(200, tBot + 18, g.tW + 66) : box(200, (tBot + FEET) / 2 + 2, Math.max(FEET - tBot + 34, g.tW + 70)))
       : part === "shoes" ? box(200, FEET + 2, 120)
-      : box(200, g.tTop + g.tH * 0.22, g.tW * 1.1);
+      : cfg.neck === "clock" ? box(200, g.tTop + g.tH * 0.36, g.tW * 1.3) : box(200, g.tTop + g.tH * 0.22, g.tW * 1.1);
     const [vx, vy, vs] = vb.split(" ").map(Number), body = build(cfg, false, part).svg
       || `<g fill="none" stroke="#c9c2b2" stroke-width="${(vs * 0.05).toFixed(1)}" stroke-linecap="round"><circle cx="${vx + vs / 2}" cy="${vy + vs / 2}" r="${vs * 0.22}"/><path d="M${vx + vs * 0.345} ${vy + vs * 0.655} L${vx + vs * 0.655} ${vy + vs * 0.345}"/></g>`;   // "none"
     return `<svg viewBox="${vb}" xmlns="${NS}"><g>${body}</g></svg>`;
