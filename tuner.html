@@ -110,7 +110,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
       <label class="set">How close counts as in tune: <b id="tolV">5</b> cents<input type="range" id="tol" min="3" max="12" step="1" value="5"></label>
-      <p style="color:var(--muted);font-size:14px;margin:6px 0">Playing the wrong string? The page will tell you which one it wants. A string can drift while you tune its neighbours, so it's worth a final strum of all six.</p>
+      <p style="color:var(--muted);font-size:14px;margin:6px 0">If your string sounds more than 2 semitones from the target, the page asks you to check you have the right string and peg. A string can drift while you tune its neighbours, so it's worth a final strum of all six.</p>
       <div id="dbg" hidden></div>
     </details>
     <details id="testbox" style="margin-top:10px" hidden><summary>Self-test (no microphone)</summary>
@@ -250,11 +250,11 @@ const race = {
     // Fold octave slips: the detector sometimes reports a string's note an octave out. Take whichever reading sits nearest the target.
     let f = r.f, c = cents(f, s.hz);
     // Only when the raw reading is nowhere near, and only if the fold lands close, so a neighbouring string isn't mistaken for a very flat one.
-    if(c < -400 || c > 200) for(const k of [2, 0.5]){ const c2 = cents(f * k, s.hz); if(Math.abs(c2) <= 60){ c = c2; f *= k; break; } }
+    if(Math.abs(c) > 200) for(const k of [2, 0.5]){ const c2 = cents(f * k, s.hz); if(Math.abs(c2) <= 60){ c = c2; f *= k; break; } }
     $("hz").textContent = f.toFixed(1) + " Hz";
-    if(c < -400 || c > 200){   // that's a different string, not this one being out of tune
-      this.setNeedle(null); this.holdFrom = null; $("holdBar").style.width = "0";
-      $("status").textContent = "That's not the " + s.name + ". Pluck " + s.desc; $("status").className = "";
+    if(Math.abs(c) > 200){   // more than 2 semitones out: probably the wrong string or the wrong peg, so ask rather than coach
+      this.setNeedle(null); this.holdFrom = null; this.smooth = []; $("holdBar").style.width = "0";
+      $("status").textContent = "That's a long way " + (c < 0 ? "below" : "above") + " the " + s.name + ". Are you plucking " + s.desc + ", and turning the right peg?"; $("status").className = "";
       if(DEBUG) this.dbg(db, r, c); return;
     }
     // median of the last few readings keeps the pin steady
