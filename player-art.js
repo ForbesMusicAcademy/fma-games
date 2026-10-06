@@ -35,7 +35,7 @@
       ["pigtails", "Pigtails"], ["bob", "Bob"], ["long", "Long"], ["grunge", "Grunge"]],
     beards: [["none", "None"], ["stubble", "Stubble"], ["moustache", "Moustache"], ["handlebar", "Handlebar"], ["goatee", "Goatee"],
       ["chinstrap", "Chinstrap"], ["full", "Full beard"], ["bushy", "Big beard"]],
-    eyes: [["calm", "Calm"], ["happy", "Happy"], ["wide", "Wide"], ["sleepy", "Sleepy"], ["sad", "Sad"], ["wink", "Wink"], ["sly", "Sly"], ["grumpy", "Grumpy"]],
+    eyes: [["calm", "Calm"], ["happy", "Happy"], ["wide", "Wide"], ["sleepy", "Sleepy"], ["tired", "Tired"], ["sad", "Sad"], ["wink", "Wink"], ["sly", "Sly"], ["grumpy", "Grumpy"]],
     mouths: [["smile", "Smile"], ["kitty", "Kitty"], ["open", "Open"], ["tongue", "Tongue"], ["wow", "Wow"], ["grin", "Teeth"], ["smirk", "Smirk"], ["fangs", "Fangs"], ["snarl", "Snarl"]],
     marks: [["none", "None"], ["freckles", "Freckles"], ["plaster", "Plaster"], ["warpaint", "Paint"], ["scar", "Scar"]],
     eyewear: [["none", "None"], ["glasses", "Specs"], ["shades", "Shades"], ["mask", "Mask"], ["patch", "Eye patch"]],
@@ -70,13 +70,14 @@
     const eye = (x, side, kind) => {            // side: -1 for the left eye on screen, +1 for the right
       const id = "pe" + (++uid), lw = Math.max(3.2, R * 0.2);
       const pupil = kind === "wide" ? R * 0.2 : R * 0.36;
-      const dotY = kind === "sleepy" || kind === "sly" ? cy + R * 0.12 : cy;
+      const dotY = kind === "tired" ? cy + R * 0.32 : kind === "sleepy" || kind === "sly" ? cy + R * 0.12 : cy;
       // a lid covers the top (or bottom) of the eye along a line from the outer corner to the inner corner
       const upper = (yOuter, yInner) => { const xo = x + side * R * 1.2, xi = x - side * R * 1.2;
         return `<path d="M${xo.toFixed(1)} ${(cy + yOuter * R).toFixed(1)} L${xi.toFixed(1)} ${(cy + yInner * R).toFixed(1)} L${xi.toFixed(1)} ${cy - R * 1.4} L${xo.toFixed(1)} ${cy - R * 1.4}Z" fill="${skin}" ${sw(lw)}/>`; };
       let lid = "";
       switch(kind){
         case "sleepy": lid = upper(-0.02, -0.02); break;
+        case "tired": lid = upper(0.12, 0.2); break;                // heavy lids, more than half shut
         case "sly": lid = upper(-0.12, -0.44); break;
         case "grumpy": lid = upper(-0.72, -0.02); break;          // slants down towards the nose
         case "sad": lid = upper(-0.12, -0.72); break;             // droops at the outside
@@ -87,7 +88,10 @@
     };
     const closed = (x) => `<path d="M${x - R * 0.9} ${cy + R * 0.1} Q${x} ${cy + R * 0.6} ${x + R * 0.9} ${cy + R * 0.1}" fill="none" ${sw(Math.max(3.6, R * 0.24))}/>`;
     if(style === "wink") return eye(xs[0], -1, "winkopen") + closed(xs[1]);
-    return eye(xs[0], -1, style) + eye(xs[1], 1, style);
+    // exhausted: dark bags under both eyes
+    const bags = style !== "tired" ? "" : xs.map(x => `<path d="M${x - R * 1.0} ${cy + R * 0.86} Q${x} ${cy + R * 1.78} ${x + R * 1.0} ${cy + R * 0.86} Q${x} ${cy + R * 1.2} ${x - R * 1.0} ${cy + R * 0.86}Z" fill="${shade(skin, 0.5)}" opacity=".6"/>`
+      + `<path d="M${x - R * 0.9} ${cy + R * 1.1} Q${x} ${cy + R * 1.72} ${x + R * 0.9} ${cy + R * 1.1} M${x - R * 0.55} ${cy + R * 1.62} Q${x} ${cy + R * 1.92} ${x + R * 0.55} ${cy + R * 1.62}" fill="none" stroke="${shade(skin, 0.38)}" stroke-width="${Math.max(2.6, R * 0.13).toFixed(1)}" stroke-linecap="round"/>`).join("");
+    return bags + eye(xs[0], -1, style) + eye(xs[1], 1, style);
   }
   function mouthSvg(style, y){      // drawn around x=200 for a mouth 64 wide, scaled to the head by the caller
     const dark = "#5b1f24";
@@ -195,7 +199,7 @@
     let out = "";
     switch(mark){
       case "freckles": out += U(`<g fill="#b5764a" stroke="none">${[[-0.18, 0.3], [-0.06, 0.38], [0.06, 0.3], [0.18, 0.38], [-0.3, 0.42], [0.3, 0.42], [0, 0.2]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.035"/>`).join("")}</g>`); break;
-      case "plaster": out += U(`<g transform="translate(0 0.3) rotate(-16)"><rect x="-0.26" y="-0.09" width="0.52" height="0.18" rx="0.07" fill="#f2cf9a" stroke-width="${W(3.4)}"/><rect x="-0.07" y="-0.09" width="0.14" height="0.18" fill="#e5b97a" stroke="none"/></g>`); break;
+      case "plaster": out += U(`<g transform="translate(0.56 0.42) rotate(-24) scale(.8)"><rect x="-0.26" y="-0.09" width="0.52" height="0.18" rx="0.07" fill="#f2cf9a" stroke-width="${W(3.4)}"/><rect x="-0.07" y="-0.09" width="0.14" height="0.18" fill="#e5b97a" stroke="none"/></g>`); break;
       case "warpaint": out += U(`<g fill="none" stroke="#d7262f" stroke-width="${W(7)}"><path d="M${-ex - 0.22} 0.34 L${-ex + 0.2} 0.34 M${-ex - 0.2} 0.46 L${-ex + 0.16} 0.46"/><path d="M${ex - 0.2} 0.34 L${ex + 0.22} 0.34 M${ex - 0.16} 0.46 L${ex + 0.2} 0.46"/></g>`); break;
       case "scar": out += U(`<path d="M0.52 -0.34 L0.86 0.34" fill="none" stroke="#b5483f" stroke-width="${W(7)}"/><path d="M0.56 -0.14 l0.18 -0.07 M0.64 0.04 l0.18 -0.07 M0.72 0.2 l0.18 -0.07" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="${W(3.4)}"/>`); break;
     }
