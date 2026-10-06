@@ -7,7 +7,7 @@
 <title>Forbes Music Academy: Practice Games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--accent:#FFB805;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
@@ -32,27 +32,30 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .you button.pulse{animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
-/* the editor */
-.editor{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4);overflow:hidden}
-.ehead{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:12px}
-.ehead .big{width:104px;flex:none;aspect-ratio:1}
-.ehead .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
-.ehead input{width:100%;font:inherit;font-weight:700;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:#fff}
-.ehead .row{display:flex;gap:8px}
-.ehead .row button{flex:1;min-height:42px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800}
-.ehead .row button.go{background:var(--accent);border-color:var(--fg)}
-.ebody{padding:4px 14px 16px}
-.ebody h3{margin:16px 0 8px;font-family:var(--head);font-weight:900;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.opt{position:relative;border:2px solid var(--line);background:#fff;border-radius:14px;padding:2px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:0}
-.opt svg{width:100%;aspect-ratio:1;display:block}
-.opt span{font-size:12px;font-weight:700;color:var(--muted);line-height:1.1;text-align:center}
-.opt.on{border-color:var(--fg);background:#FFF1C7}
-.opt.on span{color:var(--fg)}
-.sw{display:flex;flex-wrap:wrap;gap:8px}
-.sw button{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line)}
-.sw button.on{box-shadow:0 0 0 3px var(--fg)}
-.sub{font-size:13px;font-weight:700;color:var(--muted);margin:10px 0 6px}
+/* the editor: a preview, a name, and one arrow row per choice */
+.editor{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4);padding:12px 14px 14px}
+.estage{display:flex;gap:12px;align-items:center}
+.eprev{width:136px;flex:none;aspect-ratio:1;background:var(--bg);border-radius:18px;padding:6px}
+.ectl{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.ectl input{width:100%;font:inherit;font-weight:700;padding:9px 12px;border:2px solid var(--fg);border-radius:12px;background:#fff}
+.ectl .row{display:flex;gap:8px}
+.ectl button{flex:1;min-height:42px;border-radius:12px;border:2px solid var(--fg);background:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+.ectl button.go{background:var(--accent)}
+.ectl svg{width:22px;height:22px}
+.tabs{display:flex;gap:6px;margin:12px 0 10px}
+.tabs button{flex:1;min-height:38px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:15px}
+.tabs button.on{border-color:var(--fg);background:var(--accent)}
+.egrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 10px}
+.sel .lab{font-family:var(--head);font-weight:900;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:0 0 3px 2px}
+.sel .ctl{display:flex;align-items:center;gap:5px}
+.sel .val{flex:1;min-width:0;height:42px;border:2px solid var(--fg);border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;padding:0 4px;text-align:center;line-height:1.05}
+.sel .val i{width:24px;height:24px;border-radius:50%;border:2.5px solid var(--fg);display:block}
+.ar{width:38px;height:42px;flex:none;border:2px solid var(--fg);border-radius:12px;background:var(--accent);position:relative;padding:0}
+.ar::after{content:"";position:absolute;top:50%;left:50%;border:8px solid transparent}
+.ar.l::after{border-right:11px solid var(--fg);border-left:0;transform:translate(-62%,-50%)}
+.ar.r::after{border-left:11px solid var(--fg);border-right:0;transform:translate(-38%,-50%)}
+.ar:active{transform:scale(.94)}
+.egrid .full{grid-column:1/-1}
 
 /* games */
 a.game{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;color:inherit;text-decoration:none;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
@@ -78,14 +81,18 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   </header>
 
   <section class="editor" id="editor" hidden aria-label="Customise your character">
-    <div class="ehead">
-      <div class="big" id="ebig"></div>
-      <div class="col">
+    <div class="estage">
+      <div class="eprev" id="ebig"></div>
+      <div class="ectl">
         <input id="ename" maxlength="10" placeholder="Name (optional)" autocomplete="off" autocapitalize="words" aria-label="Character name">
-        <div class="row"><button id="erand">Surprise me</button><button id="edone" class="go">Done</button></div>
+        <div class="row">
+          <button id="erand" aria-label="Surprise me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/></svg>Mix</button>
+          <button id="edone" class="go">Done</button>
+        </div>
       </div>
     </div>
-    <div class="ebody" id="ebody"></div>
+    <div class="tabs" id="etabs"><button data-t="body" class="on">Body</button><button data-t="face">Face</button><button data-t="hair">Hair &amp; extras</button></div>
+    <div class="egrid" id="egrid"></div>
   </section>
 
   <h1>Practice games</h1>
@@ -113,28 +120,44 @@ function drawYou(){
   $("yedit").classList.toggle("pulse", !touched());
   $("yedit").textContent = touched() ? "Customise" : "Make it yours!";
 }
-const thumb = patch => PlayerArt.svg(Object.assign({}, cfg, { name: "" }, patch));
-function opts(list, key, labelOf){
-  return `<div class="opts">` + list.map(([v, label]) => `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${thumb({ [key]: v })}<span>${label}</span></button>`).join("") + `</div>`;
+const COLS = { color: O.palette, accent: O.palette, eyeColor: O.palette, accColor: O.palette, hairColor: O.hairColors };
+const ROWS = {
+  body: [["Start from", "preset"], ["Body", "body", O.bodies], ["Colour", "color"], ["Trim colour", "accent"], ["Pose", "pose", O.poses]],
+  face: [["Eyes", "eyes", O.eyes], ["Eye colour", "eyeColor"], ["Mouth", "mouth", O.mouths]],
+  hair: [["Hair", "hair", O.hair], ["Hair colour", "hairColor"], ["Extra", "acc", O.acc], ["Extra colour", "accColor"]]
+};
+let tab = "body", presetAt = -1;
+function valueHtml(key, list){
+  if(key === "preset") return presetAt < 0 ? "Pick one" : O_presets[presetAt][0];
+  if(COLS[key]) return `<i style="background:${cfg[key]}"></i>`;
+  const hit = list.find(x => x[0] === cfg[key]); return hit ? hit[1] : "";
 }
-function swatches(list, key){
-  return `<div class="sw">` + list.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="colour ${c}"></button>`).join("") + `</div>`;
+const O_presets = PlayerArt.presets;
+function drawGrid(){
+  $("egrid").innerHTML = ROWS[tab].map(([label, key, list], i) =>
+    `<div class="sel"><div class="lab">${label}</div><div class="ctl"><button class="ar l" data-i="${i}" data-d="-1" aria-label="${label}: previous"></button><div class="val" id="val-${i}">${valueHtml(key, list)}</div><button class="ar r" data-i="${i}" data-d="1" aria-label="${label}: next"></button></div></div>`).join("");
+  $("egrid").querySelectorAll(".ar").forEach(b => b.onclick = () => step(Number(b.dataset.i), Number(b.dataset.d)));
 }
-function drawEditor(){
-  PlayerArt($("ebig"), cfg);
-  $("ebody").innerHTML =
-    `<h3>Body</h3>${opts(O.bodies, "body")}` +
-    `<h3>Colours</h3><div class="sub">Body</div>${swatches(O.palette, "color")}<div class="sub">Hands, shoes and accessories</div>${swatches(O.palette, "accent")}` +
-    `<h3>Hair</h3>${opts(O.hair, "hair")}<div class="sub">Hair colour</div>${swatches(O.hairColors, "hairColor")}` +
-    `<h3>Eyes</h3>${opts(O.eyes, "eyes")}<h3>Mouth</h3>${opts(O.mouths, "mouth")}` +
-    `<h3>Extras</h3>${opts(O.acc, "acc")}`;
-  $("ebody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cfg[b.dataset.k] = b.dataset.v; save(); drawEditor(); drawYou(); });
+function step(i, d){
+  const [label, key, list] = ROWS[tab][i];
+  if(key === "preset"){
+    presetAt = (presetAt + d + O_presets.length) % O_presets.length;
+    cfg = PlayerArt.norm(Object.assign({}, cfg, { hair: "none", acc: "none", accColor: "" }, O_presets[presetAt][1], { name: cfg.name }));
+    save(); redraw(); return;
+  }
+  const values = COLS[key] || list.map(x => x[0]), at = Math.max(0, values.indexOf(cfg[key]));
+  cfg[key] = values[(at + d + values.length) % values.length];
+  if(key === "accent" && !cfg.accColor) cfg.accColor = cfg.accent;
+  save(); $("val-" + i).innerHTML = valueHtml(key, list); previews();
 }
+function previews(){ PlayerArt($("ebig"), cfg); drawYou(); }
+function redraw(){ drawGrid(); previews(); }
 function save(){ Player.set(cfg); markTouched(); }
-$("yedit").onclick = () => { $("editor").hidden = false; $("ename").value = cfg.name || ""; drawEditor(); $("editor").scrollIntoView({ behavior: "smooth", block: "start" }); };
+$("etabs").querySelectorAll("button").forEach(b => b.onclick = () => { tab = b.dataset.t; $("etabs").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); drawGrid(); });
+$("yedit").onclick = () => { $("editor").hidden = false; $("ename").value = cfg.name || ""; redraw(); $("editor").scrollIntoView({ behavior: "smooth", block: "start" }); };
 $("edone").onclick = () => { $("editor").hidden = true; markTouched(); drawYou(); window.scrollTo({ top: 0, behavior: "smooth" }); };
-$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawEditor(); drawYou(); };
-$("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); PlayerArt($("ebig"), cfg); drawYou(); };
+$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; presetAt = -1; save(); redraw(); };
+$("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); previews(); };
 drawYou();
 if(location.hash === "#character") $("yedit").click();
 </script>
