@@ -10,6 +10,7 @@
    PlayerArt(container, cfg, { idle, pose })  -> a live, animated character and its controller:
        setDamage(0..1), hurt(), attack(dir), cheer(), react(), ko(), reset(), fidget(name), idle(on), destroy(),
        pose(name, ms)  strike a pose for ms (0 = hold it) and then go back to the resting one
+       moment(name, ms)  the pose for a game moment from PlayerArt.MOMENTS, with a jump for joy on win/best/cheer
    Poses are not chosen in the editor (the character always stands relaxed there): the games use them for moments.
    PlayerArt.MOMENTS maps game moments to poses (hello, start, hit, streak, best, win, done); games call pose(MOMENTS.x).
        Left alone it blinks, glances about and fidgets in a way that suits its pose (waving, pumping, headbanging).
@@ -913,6 +914,11 @@
       },
       idle(on){ idle = on !== false; if(!idle) calm(); },
       ko(){ if(ko) return; ko = true; calm(); svg.classList.remove("joy", "glad", "hurt"); svg.classList.add("ko"); },
+      moment(name, ms){
+        const p = PlayerArt.MOMENTS[name]; if(!p || ko) return;
+        ctl.pose(p, ms === undefined ? 1400 : ms);
+        if(["win", "best", "cheer"].includes(name)) ctl.cheer();
+      },
       reset(){ ko = false; stage = 0; if(shown !== cfg.pose) draw(cfg.pose); svg.classList.remove("st1", "st2", "st3", "ko", "hurt", "atk", "cheer", "joy", "glad"); calm(); },
       destroy(){ live.delete(ctl); timers.forEach(clearTimeout); timers.clear(); }
     };
@@ -938,6 +944,12 @@
     return `<svg viewBox="${vb}" xmlns="${NS}"><g>${body}</g></svg>`;
   };
   PlayerArt.options = OPTIONS;
+  // the student's own character beside a game (waves hello), and one inside a celebration popup holding a moment's pose
+  PlayerArt.buddy = (el, opts) => { if(!el) return null; const c = PlayerArt(el, window.Player.get(), opts); setTimeout(() => c.moment("hello", 2000), 400); return c; };
+  PlayerArt.popIn = (box, moment) => {
+    const d = document.createElement("div"); d.style.cssText = "width:124px;height:124px;margin:-8px auto 0"; box.prepend(d);
+    const c = PlayerArt(d, window.Player.get(), { tap: false }); setTimeout(() => c.moment(moment, 0), 150); return c;
+  };
   // which pose each game moment uses (all poses stay friendly: there is no sad or losing pose)
   PlayerArt.MOMENTS = { hello: "wave", wait: "hips", start: "point", hit: "thumbs", streak: "flex", best: "star", win: "rock", cheer: "cheer", done: "peace" };
   PlayerArt.presets = [];

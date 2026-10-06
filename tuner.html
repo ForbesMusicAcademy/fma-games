@@ -76,6 +76,8 @@ label.set input[type=range]{width:100%}
 .test{display:flex;flex-wrap:wrap;gap:8px}
 .test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
 .test button.on{background:var(--accent)}
+.stage{position:relative}
+.buddy{position:absolute;left:-8px;bottom:-4px;width:clamp(70px,21vw,108px);aspect-ratio:1/1}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
@@ -98,7 +100,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <div class="card">
       <div class="top"><span id="streak"></span><span id="clock">0:00.0</span></div>
       <div class="chips" id="chips"></div>
-      <div id="note">E</div>
+      <div class="stage"><div class="buddy" id="buddy"></div><div id="note">E</div></div>
       <div id="which"></div>
       <div id="gauge"><div class="rail"></div><div class="zone"></div><div class="pin"></div>
         <span class="tick" style="left:0%">♭ flat</span><span class="tick" style="left:50%">in tune</span><span class="tick" style="left:100%">sharp ♯</span></div>
@@ -121,6 +123,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
+<script src="player-art.js"></script>
 <script>
 /* ============================================================
    Tuning Race (home). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
@@ -210,11 +213,13 @@ function starsFor(ms){ return ms <= 75000 ? 3 : ms <= 150000 ? 2 : 1; }   // und
 
 /* ---------- The race ---------- */
 const HOLD_MS = 700, SETTLE_MS = 250;
+let buddy = null;          // your character, beside the big note
 const race = {
   cur: 0, t0: null, over: false, tol: 5, splits: [], strStart: 0, holdFrom: null, smooth: [], lastHeard: 0,
   begin(){
     this.cur = 0; this.t0 = null; this.over = false; this.splits = []; this.holdFrom = null; this.smooth = [];
     $("clock").textContent = "0:00.0";
+    if(!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("start", 1600);
     this.show();
   },
   show(){
@@ -280,6 +285,7 @@ const race = {
     this.splits.push(now - this.strStart);
     $("status").textContent = "✓ " + STRINGS[this.cur].name + " is in tune!"; $("status").className = "ok";
     this.setNeedle(0, true);
+    if(buddy) buddy.moment("hit", 1100);
     this.cur++;
     if(this.cur >= STRINGS.length){ this.finish(now); return; }
     // brief pause so the string can ring out and the student sees the tick, then the next string lights up
@@ -292,6 +298,8 @@ const race = {
     $("chips").innerHTML = STRINGS.map(x => `<div class="chip done">✓<small>${x.note}</small></div>`).join("");
     $("clock").textContent = fmt(total);
     const stars = starsFor(total), prevBest = P.best, isBest = prevBest === null || total < prevBest;
+    const mom = stars === 3 ? "win" : isBest ? "best" : "done";
+    if(buddy) buddy.moment(mom, 0);
     if(isBest) P.best = total;
     const today = dayStr(new Date()); if(!P.days.includes(today)) P.days.push(today);
     P.days = P.days.slice(-120); P.runs++; save();
@@ -305,6 +313,7 @@ const race = {
         <div class="splits">${sp}</div>
         <p style="font-size:14px">Seconds per string. Give all six a final strum: tuning one string can nudge the others.</p>
         <button class="big" id="again">Race again</button>`;
+      PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };
     }, 1000);

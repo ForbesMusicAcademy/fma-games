@@ -52,16 +52,6 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 .levels button.on small{color:var(--fg)}
 .best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
 
-/* Pick a player */
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.cc{position:relative;aspect-ratio:1/1.1;border:3px solid var(--line);border-radius:16px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 0 4px;overflow:hidden;font-family:var(--head);font-weight:900;font-size:18px}
-.cc img{width:100%;flex:1;min-height:0;object-fit:contain}
-.cc .soon{flex:1;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--line)}
-.cc.empty{opacity:.55}
-.cc.hov{border-color:var(--rhythm-edge);background:var(--rhythm-soft)}
-.cc::after{content:"";position:absolute;left:0;bottom:0;height:6px;width:calc(var(--p,0) * 1%);background:var(--rhythm-edge)}
-.cc.chosen{border-color:var(--good);background:var(--green-soft)}
-.hint{text-align:center;color:var(--muted);font-weight:600;margin:10px 0 0}
 
 /* Question */
 .qhead{display:flex;justify-content:space-between;color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
@@ -105,7 +95,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 
 /* End */
 .end{text-align:center}
-.end > img{height:150px;object-fit:contain}
+#endImg{width:150px;height:150px;margin:0 auto}
 .end .score{font-family:var(--head);font-weight:900;font-size:64px;line-height:1}
 .end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700}
 .end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
@@ -134,14 +124,6 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div class="best" id="bests"></div>
   </section>
 
-  <section class="card" id="pick" hidden>
-    <h2 style="text-align:center">Pick your player!</h2>
-    <p class="hint" style="margin:0 0 10px">Play a character's note and hold it to lock in (or just tap one)</p>
-    <div class="grid" id="grid"></div>
-    <div class="meter"><i id="lvl0"></i></div>
-    <div id="status0" class="hint"></div>
-  </section>
-
   <section class="card" id="ask" hidden>
     <div class="qhead"><span id="qcat"></span><span id="qnum"></span></div>
     <div id="qtext"></div>
@@ -154,7 +136,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   </section>
 
   <section class="card end" id="end" hidden>
-    <img id="endImg" alt="">
+    <div id="endImg"></div>
     <div class="score" id="endScore">0</div>
     <div class="rows"><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
     <div id="endPlace" style="font-family:var(--head);font-weight:900;font-size:22px"></div>
@@ -169,6 +151,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 </div>
 
 <script src="fma-student.js"></script>
+<script src="player-art.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -291,7 +274,7 @@ function readNote(){
   if(SIM) top = simNote;
   else if(det.ready){
     const db = det.level();
-    $("lvl").style.width = $("lvl0").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
+    $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
     if(db > det.gateDb){
       const ch = det.chroma();
       if(ch){
@@ -311,7 +294,7 @@ function readNote(){
 
 /* ---------- The game ---------- */
 const G = { phase:"start", level:LEVELS[0], pc:null, qs:[], qi:0, qStart:0, revealAt:0, mode:"solo", bots:[], score:0, hover:null, holdFrom:0, lastSeen:0, lock:null, armed:true, startNote:-1, gain:0, right:0, times:[] };
-const show = id => ["start","pick","ask","end"].forEach(s => { $(s).hidden = s !== id; });
+const show = id => ["start","ask","end"].forEach(s => { $(s).hidden = s !== id; });
 function hold(pc, ok, now){      // hold the same note for HOLD_MS to lock it in; a gap shorter than DROP_MS is forgiven
   if(pc >= 0 && ok(pc)){ if(pc !== G.hover){ G.hover = pc; G.holdFrom = now; } G.lastSeen = now; }
   else if(G.hover !== null && now - G.lastSeen > DROP_MS) G.hover = null;
@@ -319,26 +302,18 @@ function hold(pc, ok, now){      // hold the same note for HOLD_MS to lock it in
 }
 const prog = now => G.hover === null ? 0 : Math.min(100, 100 * (now - G.holdFrom) / HOLD_MS);
 
-function buildPick(){
-  $("grid").innerHTML = NOTE_NAMES.map((nm, pc) => CHARS[pc]
-    ? `<button class="cc" data-pc="${pc}"><img src="${CHARS[pc].img}" alt="${esc(CHARS[pc].name)}">${nm}</button>`
-    : `<div class="cc empty"><div class="soon">?</div>${nm}</div>`).join("");
-  document.querySelectorAll("button.cc").forEach(b => b.onclick = () => choose(Number(b.dataset.pc)));
-  show("pick"); G.phase = "pick"; G.hover = null;
-}
-function choose(pc){
-  G.pc = pc; G.phase = "chosen"; $("status0").textContent = CHARS[pc].name + " it is!";
-  document.querySelectorAll(".cc").forEach(el => el.classList.toggle("chosen", Number(el.dataset.pc) === pc));
-  setTimeout(startGame, 900);
-}
+/* You play as your own character (made on the games menu); the CPUs are the pick characters. Its head marks the answer you're
+   on, and a live copy beside your score reacts: thumbs up for a right answer, a flex for three in a row. */
 function startGame(){
-  G.qs = makeQuestions(Q_COUNT, G.level.pool); G.qi = -1; G.score = 0; G.right = 0; G.times = [];
-  $("who").innerHTML = `<img src="${CHARS[G.pc].img}" alt="" style="height:34px;vertical-align:middle"> ${esc(CHARS[G.pc].name)}`;
+  G.qs = makeQuestions(Q_COUNT, G.level.pool); G.qi = -1; G.score = 0; G.right = 0; G.times = []; G.run = 0;
+  const pc = Player.get(); G.me = { name:pc.name || "You", img:"data:image/svg+xml;charset=utf-8," + encodeURIComponent(PlayerArt.svg(pc, "head")) };
+  $("who").innerHTML = `<span id="qbuddy" style="display:inline-block;width:58px;height:58px;vertical-align:middle;margin:-14px 0 -10px -6px"></span> ${esc(G.me.name)}`;
+  G.buddy = PlayerArt.buddy($("qbuddy"), { tap:false });
   G.bots = [];
   if(G.mode === "cpu"){
     // Three other characters, each with a personality: careful, steady, quick-but-sloppy (accuracy, average seconds to lock in).
     const profs = shuffle([{acc:0.85, mu:11}, {acc:0.7, mu:8}, {acc:0.5, mu:5}]);
-    shuffle(Object.keys(CHARS).map(Number).filter(pc => pc !== G.pc)).slice(0, 3).forEach((pc, i) =>
+    shuffle(Object.keys(CHARS).map(Number)).slice(0, 3).forEach((pc, i) =>
       G.bots.push({pc, name:CHARS[pc].name, img:CHARS[pc].img, acc:profs[i].acc, mu:profs[i].mu, score:0, ans:0, t:99, gain:0}));
   }
   $("board").hidden = !G.bots.length;
@@ -346,7 +321,7 @@ function startGame(){
 }
 const ord = n => n + (["th","st","nd","rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
 function boardRows(){
-  const all = [{me:true, name:CHARS[G.pc].name + " (you)", img:CHARS[G.pc].img, score:G.score}, ...G.bots.map(b => ({name:b.name, img:b.img, score:b.score}))].sort((a, b) => b.score - a.score);
+  const all = [{me:true, name:G.me.name === "You" ? "You" : G.me.name + " (you)", img:G.me.img, score:G.score}, ...G.bots.map(b => ({name:b.name, img:b.img, score:b.score}))].sort((a, b) => b.score - a.score);
   return all;
 }
 function drawBoard(el){
@@ -364,7 +339,7 @@ function nextQ(){
     b.ans = Math.random() < b.acc ? right : wrong; b.t = 2.5 + Math.random() * (2 * b.mu - 2.5); b.gain = 0;
   });
   if(G.bots.length) drawBoard($("board"));
-  $("tiles").innerHTML = qn.opts.map((o, i) => `<div class="tile" data-i="${i}"><div id="gain"></div><div class="bk"></div><div class="n">${NOTE_NAMES[o.pc]}</div><div class="a">${esc(o.text)}</div><div class="tok"><img src="${CHARS[G.pc].img}" alt=""></div></div>`).join("");
+  $("tiles").innerHTML = qn.opts.map((o, i) => `<div class="tile" data-i="${i}"><div id="gain"></div><div class="bk"></div><div class="n">${NOTE_NAMES[o.pc]}</div><div class="a">${esc(o.text)}</div><div class="tok"><img src="${G.me.img}" alt=""></div></div>`).join("");
 }
 function reveal(now){
   G.phase = "reveal"; G.revealAt = now;
@@ -372,7 +347,9 @@ function reveal(now){
   if(G.lock && qn.opts[G.lock.i].ok){
     G.gain = Math.round(MAX_PTS * (1 - 0.5 * Math.min(G.lock.t, Q_SECS) / Q_SECS)); G.score += G.gain; G.right++; G.times.push(G.lock.t);
     $("status").textContent = "Yes! +" + G.gain; $("status").style.color = "var(--good)";
+    G.run++; G.buddy.moment(G.run % 3 === 0 ? "streak" : "hit", 1500);
   }else{
+    G.run = 0;
     $("status").textContent = G.lock ? "Not quite" : "Out of time"; $("status").style.color = "var(--bad)";
   }
   G.bots.forEach(b => {      // a CPU is scored on the time it would have locked in, even if you were quicker
@@ -385,7 +362,7 @@ function endGame(){
   G.phase = "end"; show("end");
   const st = store.get(), best = st["best" + G.level.n] || 0, isBest = G.score > best;
   if(isBest){ st["best" + G.level.n] = G.score; store.set(st); }
-  $("endImg").src = CHARS[G.pc].img;
+  const endP = PlayerArt($("endImg"), Player.get(), { tap:false });
   $("endScore").textContent = G.score;
   $("endRight").textContent = G.right + " / " + G.qs.length;
   $("endAvg").textContent = G.times.length ? (G.times.reduce((a, b) => a + b, 0) / G.times.length).toFixed(1) + "s" : "–";
@@ -395,6 +372,8 @@ function endGame(){
     const place = 1 + G.bots.filter(b => b.score > G.score).length;
     $("endPlace").textContent = place === 1 ? "You won! 🏆" : "You came " + ord(place) + " of " + (G.bots.length + 1);
   }
+  const won = G.bots.length && G.bots.every(b => b.score <= G.score);
+  setTimeout(() => endP.moment(won ? "win" : isBest && G.score > 0 ? "best" : "done", 0), 300);
   $("savedMsg").textContent = "";
   if(!SIM && window.FMAStudent && FMAStudent.active()){
     FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length})
@@ -406,14 +385,7 @@ function endGame(){
 function tick(){
   if(!(det.ready || SIM)) return;
   const now = performance.now(), note = readNote();
-  if(G.phase === "pick"){
-    $("status0").textContent = "";
-    if(hold(note, pc => !!CHARS[pc], now)) return choose(G.hover);
-    document.querySelectorAll("button.cc").forEach(el => {
-      const on = G.hover === Number(el.dataset.pc);
-      el.classList.toggle("hov", on); el.style.setProperty("--p", on ? prog(now).toFixed(0) : 0);
-    });
-  }else if(G.phase === "ask"){
+  if(G.phase === "ask"){
     const qn = G.qs[G.qi], left = Math.max(0, Q_SECS - (now - G.qStart) / 1000);
     $("timer").firstChild.style.transform = "scaleX(" + (left / Q_SECS) + ")"; $("timer").classList.toggle("low", left <= 8);
     let pc = note;
@@ -464,7 +436,7 @@ async function begin(){
   try{
     if(!(await loadBank())) throw new Error("Couldn't load the question list (quiz-questions.csv).");
     if(!SIM) await det.start();
-    buildPick();
+    startGame();
   }catch(e){
     $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone is blocked. Allow it for this page (the address-bar icon) and try again."
       : e && e.name === "NotFoundError" ? "No microphone was found." : String(e && e.message || e);

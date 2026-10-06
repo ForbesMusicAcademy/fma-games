@@ -104,6 +104,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <div class="row"><span id="heard">Hearing: –</span><span id="lvl"><i></i></span><span id="bars"></span></div>
     <div id="last"></div>
     <div class="row">
+      <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
       <button class="big" id="go" style="flex:2">Start (allow microphone)</button>
       <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
     </div>
@@ -118,6 +119,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
 <script src="lib/alphaTab.min.js"></script>
+<script src="player-art.js"></script>
 <script>
 /* ============================================================
    Song Practice (home). The song list is songs/songs.json (add a song with add-song.py). Progress is kept on this
@@ -286,7 +288,7 @@ function listenFrame(){
   /* or the pitch moves to a new, steady note (catches soft plucks) */
   if (midi != null) {
     recentV.push({ t: now, midi }); if (recentV.length > 4) recentV.shift();
-    const last3 = recentV.slice(-3), mid = last3[2].midi, steady = last3.length === 3 && last3.every(v => Math.abs(v.midi - mid) < 0.4);
+    const last3 = recentV.slice(-3), mid = last3[last3.length - 1].midi, steady = last3.length === 3 && last3.every(v => Math.abs(v.midi - mid) < 0.4);
     if (steady && stableMidi != null && Math.abs(mid - stableMidi) > 0.7 && now - 0.065 - lastOnsetT > 0.11) { lastOnsetT = now - 0.065; pending.push({ t: lastOnsetT, src: "pitch" }); }
     if (steady) stableMidi = mid;
   } else if (now - (recentV.length ? recentV[recentV.length - 1].t : -9) > 0.3) { stableMidi = null; recentV.length = 0; }
@@ -337,8 +339,11 @@ function waitJudge(){
   if (!finished && !finishing && idx >= expected.length) { finishing = true; setTimeout(finish, 500); }
 }
 /* DIAMOND: judged against the beat as well. */
+let buddy = null, buddyRun = 0;          // your character beside the Start button, and notes right in a row
 function mark(e, cls, text){
   e.res = { cls, text }; paint(e, cls); stats[cls]++; stats.done++;
+  buddyRun = cls === "hit" ? buddyRun + 1 : 0;
+  if (buddy && buddyRun && buddyRun % 8 === 0) buddy.moment("streak", 1200);
   $("score").textContent = "✔ " + stats.hit + " / " + expected.length; $("last").textContent = text;
 }
 function judge(now){
@@ -391,6 +396,8 @@ function finish(){
   }
   save(); drawList(); refreshButtons();
   showPop(html);
+  const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
+  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
   const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
   const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
 }
@@ -460,7 +467,8 @@ async function startRun(learn){
   if (!ready || !expected.length) { $("last").textContent = "The song is still loading…"; return; }
   try { await openInput(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone: " + (e && e.message || e); return; }
   waitMode = learn; document.body.classList.toggle("wait", learn); $("latBox").hidden = learn;
-  resetRun(); running = true; $("go").textContent = "Stop"; markNow(true);
+  resetRun(); running = true; $("go").textContent = "Stop"; markNow(true); buddyRun = 0;
+  if (buddy) buddy.moment("start", 1500);
   if (learn) { setApiPlaying(true); if (sim) startSimWait(); }
   else { scheduleClicks(); if (sim) startSimTimed(); }
 }
@@ -494,6 +502,7 @@ $("back").onclick = goMenu;
 function openSong(s){
   cur = s; trackNo = s.track || 0; expected = []; ready = ready && !!api;
   $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
+  if (!buddy) buddy = PlayerArt.buddy($("buddy"));
   $("msg").style.display = "flex"; $("msg").textContent = "Loading tab…"; $("go").disabled = true;
   waitMode = true; document.body.classList.add("wait"); $("latBox").hidden = true; stopRun(); refreshButtons();
   const url = "songs/" + encodeURIComponent(s.file);

@@ -90,7 +90,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
       <div id="timer"><i id="timerBar"></i></div>
       <div class="meter"><i id="lvl"></i></div>
       <div class="sub"><span id="tune"></span><span id="today"></span></div>
-      <div class="row"><button class="ghost" id="skip">Skip this chord</button></div>
+      <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button></div>
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
       <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
@@ -106,6 +106,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
+<script src="player-art.js"></script>
 <script>
 /* ============================================================
    Chord Practice (home). One file. The chord list comes from chord-ladder.json, the same file the
@@ -273,12 +274,14 @@ const det = {
 };
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
+let buddy = null, streak = 0;          // your character beside the Skip button, and chords in a row
 const game = {
   idx: 0, run: 0, latched: new Array(12).fill(false), onFor: new Array(12).fill(0), heard: 0, started: 0, over: false, thr: 0.40, strays: 0,
   begin(idx){
     this.idx = idx; this.run = 0; this.latched.fill(false); this.onFor.fill(0); this.heard = 0; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
     $("chord").textContent = c.name;
+    if(!buddy) buddy = PlayerArt.buddy($("buddy"));
     $("chips").innerHTML = c.tones.map(t => `<span class="chip">${t}</span>`).join("");
     $("status").textContent = "Play it!"; $("status").className = "";
     $("tierName").textContent = t.name;
@@ -332,6 +335,8 @@ const game = {
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
     $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
+    streak = hit ? streak + 1 : 0;
+    if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
     $("status").className = hit ? "ok" : "";
     $("today").textContent = "";
     let delay = hit ? 1300 : 1500;
@@ -345,6 +350,7 @@ const game = {
 function popQueue(items, done){
   if(!items.length){ $("pop").hidden = true; done(); return; }
   $("popBox").parentElement.hidden = false; $("popBox").innerHTML = items[0];
+  PlayerArt.popIn($("popBox"), items[0].includes("unlocked.png") ? "best" : "win");
   setTimeout(() => popQueue(items.slice(1), done), 2300);
 }
 $("pop").onclick = () => { /* taps do nothing, so a stray tap can't skip a celebration */ };
