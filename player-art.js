@@ -957,7 +957,7 @@
   window.PlayerArt = PlayerArt;
 
   /* ---- the saved character ---- */
-  const KEY = "fma-player-v1";
+  const key = () => window.fmaKey ? window.fmaKey("fma-player-v1") : "fma-player-v1";      // one character per player on the device
   const pick = a => a[Math.floor(Math.random() * a.length)];
   window.Player = {
     random(){
@@ -976,10 +976,10 @@
         acc: "none", gear: "none", neck: "none", extra: "none" });
     },
     get(){
-      try{ const v = JSON.parse(localStorage.getItem(KEY)); if(v && v.body) return norm(v); }catch(e){}
+      try{ const v = JSON.parse(localStorage.getItem(key())); if(v && v.body) return norm(v); }catch(e){}
       const r = this.random(); this.set(r); return r;
     },
-    set(cfg){ try{ localStorage.setItem(KEY, JSON.stringify(norm(cfg))); }catch(e){} },
-    has(){ try{ return !!localStorage.getItem(KEY); }catch(e){ return false; } }
+    set(cfg){ try{ localStorage.setItem(key(), JSON.stringify(norm(cfg))); }catch(e){} },
+    has(){ try{ return !!localStorage.getItem(key()); }catch(e){ return false; } }
   };
 })();

@@ -150,8 +150,8 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <div class="sim" id="sim" hidden></div>
 </div>
 
-<script src="fma-student.js"></script>
-<script src="player-art.js"></script>
+<script src="fma-student.js?v=2"></script>
+<script src="player-art.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -169,7 +169,7 @@ const LEVELS = [
 ];
 const Q_SECS = 30, HOLD_MS = 1000, DROP_MS = 350, MAX_PTS = 1000, REVEAL_MS = 3800;   // an instant answer = 1000, a last-second one = 500
 const Q_COUNT = Math.max(3, Math.min(40, Number(q.get("n")) || 10));
-const KEY = "fma-note-quiz-v1";
+const KEY = fmaKey("fma-note-quiz-v1");          // each player on this device has their own best scores
 const store = {
   get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } },
   set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }

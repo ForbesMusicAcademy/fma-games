@@ -123,7 +123,8 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="player-art.js"></script>
+<script src="fma-student.js?v=2"></script>
+<script src="player-art.js?v=2"></script>
 <script>
 /* ============================================================
    Tuning Race (home). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
@@ -193,7 +194,7 @@ const pitch = {
 };
 
 /* ---------- Progress (this device only) ---------- */
-const KEY = "fma-tuner-v1";
+const KEY = fmaKey("fma-tuner-v1");          // each player on this device has their own best time
 let P = null;
 function load(){
   try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
@@ -299,6 +300,7 @@ const race = {
     $("clock").textContent = fmt(total);
     const stars = starsFor(total), prevBest = P.best, isBest = prevBest === null || total < prevBest;
     const mom = stars === 3 ? "win" : isBest ? "best" : "done";
+    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3});
     if(buddy) buddy.moment(mom, 0);
     if(isBest) P.best = total;
     const today = dayStr(new Date()); if(!P.days.includes(today)) P.days.push(today);

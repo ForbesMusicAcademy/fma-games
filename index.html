@@ -105,6 +105,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
         <div class="yart" id="yart"></div>
         <div class="yname" id="yname"></div>
         <button id="yedit">Customise</button>
+        <div id="playingAs" style="font-size:14px;color:var(--muted);margin-top:8px;text-align:center"></div>
       </div>
       <div class="yeditor" id="yeditor" hidden>
         <div class="ecols">
@@ -138,12 +139,13 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   <small class="foot">Forbes Music Academy</small>
 </main>
 
-<script src="player-art.js"></script>
+<script src="fma-student.js?v=2"></script>
+<script src="player-art.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
 let cfg = Player.get();
 const O = PlayerArt.options;
-const TOUCHED = "fma-player-touched";
+const TOUCHED = fmaKey("fma-player-touched");
 const touched = () => { try{ return !!localStorage.getItem(TOUCHED); }catch(e){ return true; } };
 const markTouched = () => { try{ localStorage.setItem(TOUCHED, "1"); }catch(e){} };
 
@@ -241,6 +243,7 @@ function showOff(now){
 }
 setInterval(() => showOff(false), 5500);
 drawYou(true);
+FMAStudent.mount($("playingAs"));
 if(location.hash === "#character") openEditor();
 </script>
 </body>

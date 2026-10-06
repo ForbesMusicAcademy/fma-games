@@ -150,8 +150,9 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
   <div class="sim" id="sim" hidden></div>
 </div>
 
+<script src="fma-student.js?v=2"></script>
 <script src="boss-anim.js"></script>
-<script src="player-art.js"></script>
+<script src="player-art.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -181,7 +182,7 @@ const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:
 const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
 const BARS = 16, WIN = 0.6;       // each song plays 16 bars (whole loops); you win with 60% of them landed
-const KEY = "fma-boss-v1";
+const KEY = fmaKey("fma-boss-v1");          // each player on this device has their own bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
 const S = Object.assign({ song:1, speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
 
@@ -440,6 +441,7 @@ function finish(){
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
   const endArt = BossArt($("endImg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
   const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.hits > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
+  if(!SIM && FMAStudent.active()) FMAStudent.send("boss-battle", {detail:SONGS[S.song - 1].t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars});
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;

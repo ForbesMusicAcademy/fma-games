@@ -106,7 +106,8 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="player-art.js"></script>
+<script src="fma-student.js?v=2"></script>
+<script src="player-art.js?v=2"></script>
 <script>
 /* ============================================================
    Chord Practice (home). One file. The chord list comes from chord-ladder.json, the same file the
@@ -144,7 +145,7 @@ function buildChords(ladder){
    NEW_PER_WEEK new chords in any 7 days (a new shape needs teaching, so home practice is mostly review). Home practice can earn up to three stars; the diamond (mastery)
    is only earned in class. */
 const START_POOL = 2, NEW_PER_WEEK = 2, GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 3;
-const KEY = "fma-home-chords-v1";
+const KEY = fmaKey("fma-home-chords-v1");          // each player on this device has their own progress
 let P = null;
 function load(){
   try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
@@ -336,6 +337,7 @@ const game = {
     const r = score(this.idx, hit);
     $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
     streak = hit ? streak + 1 : 0;
+    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
     $("status").className = hit ? "ok" : "";
     $("today").textContent = "";
