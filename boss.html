@@ -49,10 +49,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 
 /* The fight */
 .stage{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
-.bimg{width:min(58vw,250px);height:auto;aspect-ratio:1;transition:filter .1s}
-.bimg.hurt{animation:bhurt .35s}
-.bimg.dead{filter:grayscale(1) brightness(.8)!important;transform:rotate(-8deg) scale(.92)}
-@keyframes bhurt{0%{transform:translateX(0)}20%{transform:translateX(-12px) rotate(-3deg)}40%{transform:translateX(10px) rotate(3deg)}60%{transform:translateX(-6px)}100%{transform:none}}
+.bimg{width:min(58vw,250px);aspect-ratio:1}
 .bhp{width:100%;height:30px;border-radius:15px;background:var(--line);border:3px solid var(--fg);overflow:hidden;position:relative}
 .bhp i{display:block;height:100%;background:linear-gradient(#e0507a,#c0392b);width:100%;transition:width .35s}
 .bhp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:15px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.4)}
@@ -124,7 +121,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 
   <section class="card" id="play" hidden>
     <div class="stage">
-      <img class="bimg" id="bimg" src="characters/boss.svg" alt="Boss">
+      <div class="bimg" id="bimg" role="img" aria-label="The boss"></div>
       <div id="dmg">-1</div>
       <div class="bhp"><i id="hpbar"></i><span id="hptxt"></span></div>
       <div class="call" id="call"></div>
@@ -141,7 +138,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
   </section>
 
   <section class="card end" id="end" hidden>
-    <img class="bimg" id="endImg" src="characters/boss.svg" alt="">
+    <div class="bimg" id="endImg" role="img" aria-label="The boss"></div>
     <h2 id="endTitle"></h2>
     <div class="rows"><div><b id="endHits">0</b>hits</div><div><b id="endAcc">0%</b>of bars</div></div>
     <div id="endBest"></div>
@@ -152,6 +149,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
   <div class="sim" id="sim" hidden></div>
 </div>
 
+<script src="boss-anim.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -323,7 +321,7 @@ const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 
 
 /* ---------- The fight ---------- */
 const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false };
-let song, info;
+let song, info, art;
 function buildFight(){
   song = SONGS[S.song - 1];
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
@@ -335,7 +333,7 @@ function startFight(){
   buildFight();
   Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false });
   G.latched.fill(false); G.onFor.fill(0);
-  $("bimg").style.filter = "hue-rotate(" + ((S.song - 1) * 36) + "deg)"; $("bimg").classList.remove("dead", "hurt");
+  art = BossArt($("bimg"), { hue:(S.song - 1) * 36 });
   $("meImg").src = "characters/" + CHARS[S.who] + ".png";
   $("hits").textContent = "0"; $("phpbar").style.width = "100%"; $("phptxt").textContent = "HP 100"; $("php").classList.remove("low");
   $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
@@ -376,6 +374,7 @@ function miss(){
   G.hp = Math.max(0, G.hp - G.dmgPer);
   $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = "HP " + Math.round(G.hp); $("php").classList.toggle("low", G.hp <= 35);
   $("me").classList.remove("ouch"); void $("me").offsetWidth; $("me").classList.add("ouch");
+  art.taunt();
   $("status").textContent = "Ouch!"; $("status").style.color = "var(--bad)";
   if(G.hp <= 0.5){ G.done = true; G.ko = true; setTimeout(() => finish(), 1000); }
 }
@@ -407,12 +406,12 @@ function tick(){
   if(hit && !G.hit){
     G.hit = true; G.hits++;
     $("hits").textContent = G.hits; $("me").classList.add("hit"); setTimeout(() => $("me").classList.remove("hit"), 400);
-    const b = $("bimg"); b.classList.remove("hurt"); void b.offsetWidth; b.classList.add("hurt");
+    art.setDamage(G.hits / G.need); art.hit(1);
     const d = $("dmg"); d.classList.remove("go"); void d.offsetWidth; d.classList.add("go");
     const left = Math.max(0, G.need - G.hits);
     $("hpbar").style.width = (100 * left / G.need) + "%"; $("hptxt").textContent = left ? left + " to go" : "DEFEATED!";
     $("status").textContent = "Hit!"; $("status").style.color = "var(--good)";
-    if(left === 0){ G.done = true; setTimeout(() => finish(), 1200); }
+    if(left === 0){ G.done = true; art.die(); setTimeout(() => finish(), 1400); }
   }
 }
 function finish(){
@@ -421,7 +420,7 @@ function finish(){
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
   const win = G.hits >= G.need, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
-  $("endImg").style.filter = "hue-rotate(" + ((S.song - 1) * 36) + "deg)"; $("endImg").classList.toggle("dead", win);
+  const endArt = BossArt($("endImg"), { hue:(S.song - 1) * 36 }); endArt.setDamage(G.hits / G.need); if(win) endArt.die();
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%";
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
