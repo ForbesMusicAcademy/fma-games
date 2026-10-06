@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Note Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Home Note Quiz: one player, one column, phone first. A question appears with four answers, each on a note.
+   Play the note of the answer you think is right on your guitar and hold it to lock in. Quicker = more points.
+   Listens through the microphone, never records. Same game as the classroom screen, minus the classmates. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+  --rhythm-soft:#FFF1C7;--rhythm-edge:#D99A00;--lead-soft:#E2F2FA;--lead-edge:#4A9CC2;--pink-soft:#FADDE8;--pink-edge:#D4668C;--green-soft:#DDF1E1;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+header a{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px}
+.big:disabled{opacity:.5}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700}
+[hidden]{display:none!important}
+.levels{display:flex;gap:8px;margin:12px 0}
+.levels button{flex:1;min-height:64px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;line-height:1.2;padding:6px}
+.levels button b{display:block;font-family:var(--head);font-weight:900;font-size:18px}
+.levels button small{color:var(--muted);font-weight:600}
+.levels button.on{border-color:var(--fg);background:var(--accent)}
+.levels button.on small{color:var(--fg)}
+.best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
+
+/* Pick a player */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cc{position:relative;aspect-ratio:1/1.1;border:3px solid var(--line);border-radius:16px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 0 4px;overflow:hidden;font-family:var(--head);font-weight:900;font-size:18px}
+.cc img{width:100%;flex:1;min-height:0;object-fit:contain}
+.cc .soon{flex:1;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--line)}
+.cc.empty{opacity:.55}
+.cc.hov{border-color:var(--rhythm-edge);background:var(--rhythm-soft)}
+.cc::after{content:"";position:absolute;left:0;bottom:0;height:6px;width:calc(var(--p,0) * 1%);background:var(--rhythm-edge)}
+.cc.chosen{border-color:var(--good);background:var(--green-soft)}
+.hint{text-align:center;color:var(--muted);font-weight:600;margin:10px 0 0}
+
+/* Question */
+.qhead{display:flex;justify-content:space-between;color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+#qtext{font-family:var(--head);font-weight:900;font-size:clamp(24px,7vw,34px);line-height:1.1;text-align:center;margin:12px 0;text-wrap:balance}
+#timer{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+#timer i{display:block;height:100%;width:100%;background:var(--fg);transform-origin:left}
+#timer.low i{background:var(--pink-edge)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.tile{position:relative;min-height:128px;border:3px solid var(--edge);background:var(--soft);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 6px;overflow:hidden;transition:opacity .3s,transform .3s}
+.tile:nth-child(1){--soft:var(--rhythm-soft);--edge:var(--rhythm-edge)}
+.tile:nth-child(2){--soft:var(--lead-soft);--edge:var(--lead-edge)}
+.tile:nth-child(3){--soft:var(--pink-soft);--edge:var(--pink-edge)}
+.tile:nth-child(4){--soft:var(--green-soft);--edge:var(--good)}
+.tile .n{font-family:var(--head);font-weight:900;font-size:52px;line-height:1}
+.tile .a{font-family:var(--head);font-weight:900;font-size:20px;line-height:1.1;text-align:center;overflow-wrap:anywhere}
+.tile .tok{position:absolute;right:4px;bottom:2px;width:64px;height:64px;pointer-events:none;display:none}
+.tile .tok::before{content:"";position:absolute;inset:6px;border-radius:50%;background:conic-gradient(var(--fg) calc(var(--p,0) * 1%),transparent 0);opacity:.85}
+.tile .tok img{position:relative;width:100%;height:100%;object-fit:contain}
+.tile.has .tok{display:block}
+.tile.lock .tok::before{background:var(--good);opacity:1}
+.tile.right{border-width:6px;border-color:var(--good);background:var(--green-soft);transform:scale(1.02)}
+.tile.wrong{opacity:.4}
+.bk{position:absolute;right:4px;top:4px;display:flex;gap:2px;pointer-events:none}
+.btok{position:relative;width:34px;height:34px}
+.btok::before{content:"";position:absolute;inset:4px;border-radius:50%;background:conic-gradient(var(--fg) calc(var(--p,0) * 1%),transparent 0);opacity:.7}
+.btok.lock::before{background:var(--good);opacity:1}
+.btok img{position:relative;width:100%;height:100%;object-fit:contain}
+.board{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.lrow{display:flex;align-items:center;gap:8px;border-radius:12px;background:var(--bg);padding:2px 10px 2px 4px;font-family:var(--head);font-weight:900}
+.lrow img{height:30px;width:30px;object-fit:contain}
+.lrow b{flex:1}
+.lrow.me{outline:2px solid var(--fg);background:var(--rhythm-soft)}
+.lrow i{font-style:normal;color:var(--muted);width:1.4em;text-align:center}
+#gain{position:absolute;left:6px;top:6px;font-family:var(--head);font-weight:900;font-size:18px;color:var(--good);background:#fff;border:2px solid var(--good);border-radius:999px;padding:0 10px;display:none}
+.tile.right #gain{display:block}
+.scorebar{display:flex;justify-content:space-between;align-items:center;font-family:var(--head);font-weight:900;margin-top:12px}
+.scorebar b{font-size:28px}
+#status{text-align:center;font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em;margin-top:8px}
+.meter{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+
+/* End */
+.end{text-align:center}
+.end > img{height:150px;object-fit:contain}
+.end .score{font-family:var(--head);font-weight:900;font-size:64px;line-height:1}
+.end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700}
+.end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
+.end .newbest{display:inline-block;background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800;margin:6px 0}
+#dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
+.sim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.sim button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:800;user-select:none;touch-action:none}
+.sim button.on{background:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Note Quiz</h1><a href="./">All games</a></header>
+
+  <section class="card" id="start">
+    <h2>Find the note, win the points</h2>
+    <p>Each question has four answers. Every answer sits on a note. Work out the right answer, then <b>find its note on your guitar</b> and hold it to lock in. Faster = more points.</p>
+    <div class="levels" id="modes"></div>
+    <div class="levels" id="levels"></div>
+    <p><b>Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
+    <p>Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
+    <button class="big" id="go">Start (allow microphone)</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    <div class="best" id="bests"></div>
+  </section>
+
+  <section class="card" id="pick" hidden>
+    <h2 style="text-align:center">Pick your player!</h2>
+    <p class="hint" style="margin:0 0 10px">Play a character's note and hold it to lock in (or just tap one)</p>
+    <div class="grid" id="grid"></div>
+    <div class="meter"><i id="lvl0"></i></div>
+    <div id="status0" class="hint"></div>
+  </section>
+
+  <section class="card" id="ask" hidden>
+    <div class="qhead"><span id="qcat"></span><span id="qnum"></span></div>
+    <div id="qtext"></div>
+    <div id="timer"><i></i></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="scorebar"><span id="who"></span><b id="score">0</b></div>
+    <div class="board" id="board" hidden></div>
+    <div class="meter"><i id="lvl"></i></div>
+    <div id="status"></div>
+  </section>
+
+  <section class="card end" id="end" hidden>
+    <img id="endImg" alt="">
+    <div class="score" id="endScore">0</div>
+    <div class="rows"><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
+    <div id="endPlace" style="font-family:var(--head);font-weight:900;font-size:22px"></div>
+    <div class="board" id="endBoard" hidden></div>
+    <div id="endBest"></div>
+    <button class="big" id="again" style="margin-top:10px">Play again</button>
+  </section>
+
+  <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
+  <div class="sim" id="sim" hidden></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+// A character is a note (same table as the classroom screen). More to come as they're drawn.
+const CHARS = {
+  4:{name:"Shredder", img:"characters/shredder.png"}, 9:{name:"Clang", img:"characters/clang.png"}, 2:{name:"Fret", img:"characters/fret.png"},
+  7:{name:"Plucky", img:"characters/plucky.png"}, 11:{name:"Scales", img:"characters/scales.png"}, 0:{name:"Callus", img:"characters/callus.png"}
+};
+const LEVELS = [
+  {n:1, name:"Level 1", sub:"Open strings", pool:[4,9,2,7,11]},
+  {n:2, name:"Level 2", sub:"Natural notes", pool:[0,2,4,5,7,9,11]},
+  {n:3, name:"Level 3", sub:"All 12 notes", pool:[0,1,2,3,4,5,6,7,8,9,10,11]}
+];
+const Q_SECS = 30, HOLD_MS = 1000, DROP_MS = 350, MAX_PTS = 1000, REVEAL_MS = 3800;   // an instant answer = 1000, a last-second one = 500
+const Q_COUNT = Math.max(3, Math.min(40, Number(q.get("n")) || 10));
+const KEY = "fma-note-quiz-v1";
+const store = {
+  get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } },
+  set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+};
+const shuffle = a => { a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- Question bank: quiz-questions.csv beside this page, or ?sheet=<published Google Sheet CSV link> ---------- */
+function parseCSV(t){
+  const rows = []; let row = [], f = "", inq = false;
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if(inq){ if(c === '"'){ if(t[i + 1] === '"'){ f += '"'; i++; } else inq = false; } else f += c; }
+    else if(c === '"') inq = true;
+    else if(c === ","){ row.push(f); f = ""; }
+    else if(c === "\n" || c === "\r"){ if(c === "\r" && t[i + 1] === "\n") i++; row.push(f); f = ""; rows.push(row); row = []; }
+    else f += c;
+  }
+  if(f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim()));
+}
+let bank = null;
+async function loadBank(){
+  for(const u of [q.get("sheet"), "quiz-questions.csv"].filter(Boolean)){
+    try{
+      const rows = parseCSV(await (await fetch(u, {cache:"no-store"})).text());
+      const h = rows[0].map(c => c.trim().toLowerCase()), col = k => h.indexOf(k);
+      const b = rows.slice(1).map(r => ({ q:(r[col("question")] || "").trim(), correct:(r[col("correct")] || "").trim(),
+        wrong:["wrong1","wrong2","wrong3"].map(k => (r[col(k)] || "").trim()).filter(Boolean), cat:(r[col("category")] || "").trim() }))
+        .filter(x => x.q && x.correct && x.wrong.length);
+      if(b.length >= 4){ bank = b; return true; }
+    }catch(e){}
+  }
+  return false;
+}
+function makeQuestions(n, pool){
+  return shuffle(bank).slice(0, n).map(b => {
+    const wrongs = shuffle(b.wrong).slice(0, 3);
+    while(wrongs.length < 3){ const o = bank[Math.floor(Math.random() * bank.length)].correct; if(o !== b.correct && !wrongs.includes(o)) wrongs.push(o); }
+    const pcs = shuffle(pool).slice(0, 4);
+    return { q:b.q, cat:b.cat, opts:shuffle([{text:b.correct, ok:true}, ...wrongs.map(t => ({text:t, ok:false}))]).map((o, i) => ({...o, pc:pcs[i]})) };
+  });
+}
+
+/* ---------- The listener (same as chord practice): sound in, "which of the 12 notes?" out ---------- */
+const FFT = 16384, TONAL_MIN = 0.30;
+const det = {
+  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false,
+  async start(){
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
+    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
+    // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
+    const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+    this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
+    if(this.ctx.state === "suspended") await this.ctx.resume();
+    this.ready = true;
+  },
+  level(){
+    this.an.getFloatTimeDomainData(this.td);
+    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
+    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
+  },
+  chroma(){
+    this.an.getFloatFrequencyData(this.buf);
+    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
+    const mag = new Float32Array(n); let mx = 0;
+    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
+    // Is this sound tonal at all? Notes are sharp spectral peaks; a cough, a rustle or room hiss is energy spread over everything.
+    { let tot = 0, pk = 0; const W = 15;
+      for(let i = 0; i < n; i++){
+        const e = mag[i] * mag[i]; tot += e;
+        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
+          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
+          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
+        }
+      }
+      this.tonal = pk / (tot + 1e-30);
+    }
+    if(this.tonal < TONAL_MIN) return null;
+    // tuning: where do the strong peaks sit relative to the nearest semitone? (so a slightly flat guitar still reads right)
+    let sx = 0, sy = 0;
+    for(let i = 1; i < n - 1; i++){
+      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
+        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
+        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
+        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
+      }
+    }
+    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
+    const ch = new Float32Array(12);
+    for(let i = 0; i < n; i++){
+      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
+      ch[pc] += Math.sqrt(mag[i]);
+    }
+    return ch;
+  }
+};
+// One reading -> the single strongest note (0-11) or -1. Needs the same note on two readings in a row.
+let simNote = -1, lastTop = -1, topRun = 0, dbgText = "";
+function readNote(){
+  let top = -1;
+  if(SIM) top = simNote;
+  else if(det.ready){
+    const db = det.level();
+    $("lvl").style.width = $("lvl0").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
+    if(db > det.gateDb){
+      const ch = det.chroma();
+      if(ch){
+        const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
+        const raw = Array.from(ch, v => Math.max(v - floor, 0) / span), sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
+        let best = 0; sc.forEach((v, i) => { if(v > sc[best]) best = i; });
+        if(sc[best] > 0.5) top = best;      // (overtones are taken off, so a played E doesn't also read as B)
+        if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + "  tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
+      }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + " (needs " + TONAL_MIN + "): not musical";
+    }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate (" + det.gateDb + ")";
+  }
+  if(top === lastTop) topRun++; else { lastTop = top; topRun = 1; }
+  if(DEBUG){ $("dbgBox").hidden = false; $("dbg").textContent = (SIM ? "sim note " + simNote : dbgText) + "\nstable note " + (topRun >= 2 && top >= 0 ? NOTE_NAMES[top] : "-"); }
+  return topRun >= 2 ? top : -1;
+}
+
+/* ---------- The game ---------- */
+const G = { phase:"start", level:LEVELS[0], pc:null, qs:[], qi:0, qStart:0, revealAt:0, mode:"solo", bots:[], score:0, hover:null, holdFrom:0, lastSeen:0, lock:null, armed:true, startNote:-1, gain:0, right:0, times:[] };
+const show = id => ["start","pick","ask","end"].forEach(s => { $(s).hidden = s !== id; });
+function hold(pc, ok, now){      // hold the same note for HOLD_MS to lock it in; a gap shorter than DROP_MS is forgiven
+  if(pc >= 0 && ok(pc)){ if(pc !== G.hover){ G.hover = pc; G.holdFrom = now; } G.lastSeen = now; }
+  else if(G.hover !== null && now - G.lastSeen > DROP_MS) G.hover = null;
+  return G.hover !== null && now - G.holdFrom >= HOLD_MS;
+}
+const prog = now => G.hover === null ? 0 : Math.min(100, 100 * (now - G.holdFrom) / HOLD_MS);
+
+function buildPick(){
+  $("grid").innerHTML = NOTE_NAMES.map((nm, pc) => CHARS[pc]
+    ? `<button class="cc" data-pc="${pc}"><img src="${CHARS[pc].img}" alt="${esc(CHARS[pc].name)}">${nm}</button>`
+    : `<div class="cc empty"><div class="soon">?</div>${nm}</div>`).join("");
+  document.querySelectorAll("button.cc").forEach(b => b.onclick = () => choose(Number(b.dataset.pc)));
+  show("pick"); G.phase = "pick"; G.hover = null;
+}
+function choose(pc){
+  G.pc = pc; G.phase = "chosen"; $("status0").textContent = CHARS[pc].name + " it is!";
+  document.querySelectorAll(".cc").forEach(el => el.classList.toggle("chosen", Number(el.dataset.pc) === pc));
+  setTimeout(startGame, 900);
+}
+function startGame(){
+  G.qs = makeQuestions(Q_COUNT, G.level.pool); G.qi = -1; G.score = 0; G.right = 0; G.times = [];
+  $("who").innerHTML = `<img src="${CHARS[G.pc].img}" alt="" style="height:34px;vertical-align:middle"> ${esc(CHARS[G.pc].name)}`;
+  G.bots = [];
+  if(G.mode === "cpu"){
+    // Three other characters, each with a personality: careful, steady, quick-but-sloppy (accuracy, average seconds to lock in).
+    const profs = shuffle([{acc:0.85, mu:11}, {acc:0.7, mu:8}, {acc:0.5, mu:5}]);
+    shuffle(Object.keys(CHARS).map(Number).filter(pc => pc !== G.pc)).slice(0, 3).forEach((pc, i) =>
+      G.bots.push({pc, name:CHARS[pc].name, img:CHARS[pc].img, acc:profs[i].acc, mu:profs[i].mu, score:0, ans:0, t:99, gain:0}));
+  }
+  $("board").hidden = !G.bots.length;
+  show("ask"); nextQ();
+}
+const ord = n => n + (["th","st","nd","rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
+function boardRows(){
+  const all = [{me:true, name:CHARS[G.pc].name + " (you)", img:CHARS[G.pc].img, score:G.score}, ...G.bots.map(b => ({name:b.name, img:b.img, score:b.score}))].sort((a, b) => b.score - a.score);
+  return all;
+}
+function drawBoard(el){
+  el.innerHTML = boardRows().map((r, i) => `<div class="lrow ${r.me ? "me" : ""}"><i>${i + 1}</i><img src="${r.img}" alt=""><b>${esc(r.name)}</b><span>${r.score}</span></div>`).join("");
+}
+function nextQ(){
+  G.qi++;
+  if(G.qi >= G.qs.length) return endGame();
+  const qn = G.qs[G.qi], now = performance.now();
+  G.phase = "ask"; G.qStart = now; G.lock = null; G.hover = null; G.armed = false; G.startNote = lastTop >= 0 && topRun >= 2 ? lastTop : -1; G.gain = 0;
+  $("qcat").textContent = qn.cat; $("qnum").textContent = "Question " + (G.qi + 1) + " of " + G.qs.length;
+  $("qtext").textContent = qn.q; $("score").textContent = G.score; $("status").textContent = "Play the note of your answer";
+  G.bots.forEach(b => {
+    const right = qn.opts.findIndex(o => o.ok), wrong = shuffle(qn.opts.map((_, i) => i).filter(i => i !== right))[0];
+    b.ans = Math.random() < b.acc ? right : wrong; b.t = 2.5 + Math.random() * (2 * b.mu - 2.5); b.gain = 0;
+  });
+  if(G.bots.length) drawBoard($("board"));
+  $("tiles").innerHTML = qn.opts.map((o, i) => `<div class="tile" data-i="${i}"><div id="gain"></div><div class="bk"></div><div class="n">${NOTE_NAMES[o.pc]}</div><div class="a">${esc(o.text)}</div><div class="tok"><img src="${CHARS[G.pc].img}" alt=""></div></div>`).join("");
+}
+function reveal(now){
+  G.phase = "reveal"; G.revealAt = now;
+  const qn = G.qs[G.qi];
+  if(G.lock && qn.opts[G.lock.i].ok){
+    G.gain = Math.round(MAX_PTS * (1 - 0.5 * Math.min(G.lock.t, Q_SECS) / Q_SECS)); G.score += G.gain; G.right++; G.times.push(G.lock.t);
+    $("status").textContent = "Yes! +" + G.gain; $("status").style.color = "var(--good)";
+  }else{
+    $("status").textContent = G.lock ? "Not quite" : "Out of time"; $("status").style.color = "var(--bad)";
+  }
+  G.bots.forEach(b => {      // a CPU is scored on the time it would have locked in, even if you were quicker
+    b.gain = (b.t <= Q_SECS && qn.opts[b.ans].ok) ? Math.round(MAX_PTS * (1 - 0.5 * b.t / Q_SECS)) : 0; b.score += b.gain;
+  });
+  $("score").textContent = G.score;
+  if(G.bots.length) drawBoard($("board"));
+}
+function endGame(){
+  G.phase = "end"; show("end");
+  const st = store.get(), best = st["best" + G.level.n] || 0, isBest = G.score > best;
+  if(isBest){ st["best" + G.level.n] = G.score; store.set(st); }
+  $("endImg").src = CHARS[G.pc].img;
+  $("endScore").textContent = G.score;
+  $("endRight").textContent = G.right + " / " + G.qs.length;
+  $("endAvg").textContent = G.times.length ? (G.times.reduce((a, b) => a + b, 0) / G.times.length).toFixed(1) + "s" : "–";
+  $("endBoard").hidden = !G.bots.length; $("endPlace").textContent = "";
+  if(G.bots.length){
+    drawBoard($("endBoard"));
+    const place = 1 + G.bots.filter(b => b.score > G.score).length;
+    $("endPlace").textContent = place === 1 ? "You won! 🏆" : "You came " + ord(place) + " of " + (G.bots.length + 1);
+  }
+  $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
+}
+
+function tick(){
+  if(!(det.ready || SIM)) return;
+  const now = performance.now(), note = readNote();
+  if(G.phase === "pick"){
+    $("status0").textContent = "";
+    if(hold(note, pc => !!CHARS[pc], now)) return choose(G.hover);
+    document.querySelectorAll("button.cc").forEach(el => {
+      const on = G.hover === Number(el.dataset.pc);
+      el.classList.toggle("hov", on); el.style.setProperty("--p", on ? prog(now).toFixed(0) : 0);
+    });
+  }else if(G.phase === "ask"){
+    const qn = G.qs[G.qi], left = Math.max(0, Q_SECS - (now - G.qStart) / 1000);
+    $("timer").firstChild.style.transform = "scaleX(" + (left / Q_SECS) + ")"; $("timer").classList.toggle("low", left <= 8);
+    let pc = note;
+    if(!G.armed){ if(pc < 0 || pc !== G.startNote) G.armed = true; else pc = -1; }   // let the last answer ring out first
+    if(!G.lock && hold(pc, p => qn.opts.some(o => o.pc === p), now)){
+      G.lock = { i:qn.opts.findIndex(o => o.pc === G.hover), t:(now - G.qStart) / 1000 };
+      $("status").textContent = "Locked in!";
+    }
+    const el0 = (now - G.qStart) / 1000;
+    document.querySelectorAll(".tile").forEach(el => {
+      const i = Number(el.dataset.i);
+      el.querySelector(".bk").innerHTML = G.bots.filter(b => b.ans === i && el0 >= b.t - 1 && b.t <= Q_SECS).map(b =>
+        `<div class="btok ${el0 >= b.t ? "lock" : ""}" style="--p:${Math.min(100, (el0 - (b.t - 1)) * 100).toFixed(0)}"><img src="${b.img}" alt=""></div>`).join("");
+    });
+    document.querySelectorAll(".tile").forEach(el => {
+      const i = Number(el.dataset.i), here = G.lock ? G.lock.i === i : (G.hover !== null && qn.opts[i].pc === G.hover);
+      el.classList.toggle("has", here); el.classList.toggle("lock", !!G.lock && here);
+      el.querySelector(".tok").style.setProperty("--p", G.lock ? 100 : prog(now).toFixed(0));
+    });
+    if(G.lock || left <= 0) reveal(now);
+  }else if(G.phase === "reveal"){
+    const qn = G.qs[G.qi];
+    document.querySelectorAll(".tile").forEach(el => {
+      const i = Number(el.dataset.i), ok = qn.opts[i].ok;
+      el.classList.toggle("right", ok); el.classList.toggle("wrong", !ok);
+      if(ok && G.gain) el.querySelector("#gain").textContent = "+" + G.gain;
+      el.querySelector(".bk").innerHTML = G.bots.filter(b => b.ans === i && b.t <= Q_SECS).map(b => `<div class="btok lock"><img src="${b.img}" alt=""></div>`).join("");
+    });
+    $("timer").firstChild.style.transform = "scaleX(0)";
+    if(now - G.revealAt >= REVEAL_MS){ $("status").style.color = ""; nextQ(); }
+  }
+}
+
+/* ---------- Start screen ---------- */
+function drawLevels(){
+  $("levels").innerHTML = LEVELS.map(l => `<button data-n="${l.n}" class="${G.level.n === l.n ? "on" : ""}"><b>${l.name}</b><small>${l.sub}</small></button>`).join("");
+  $("levels").querySelectorAll("button").forEach(b => b.onclick = () => { G.level = LEVELS[Number(b.dataset.n) - 1]; drawLevels(); });
+  const st = store.get(), bits = LEVELS.filter(l => st["best" + l.n]).map(l => l.name + ": " + st["best" + l.n]);
+  $("bests").textContent = bits.length ? "Your best scores. " + bits.join(" · ") : "";
+}
+const MODES = [{k:"solo", name:"Just me", sub:"Beat your best score"}, {k:"cpu", name:"Race the CPUs", sub:"Three rivals, same questions"}];
+function drawModes(){
+  $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${G.mode === m.k ? "on" : ""}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
+  $("modes").querySelectorAll("button").forEach(b => b.onclick = () => { G.mode = b.dataset.k; drawModes(); });
+}
+async function begin(){
+  $("go").disabled = true; $("err").hidden = true;
+  try{
+    if(!(await loadBank())) throw new Error("Couldn't load the question list (quiz-questions.csv).");
+    if(!SIM) await det.start();
+    buildPick();
+  }catch(e){
+    $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone is blocked. Allow it for this page (the address-bar icon) and try again."
+      : e && e.name === "NotFoundError" ? "No microphone was found." : String(e && e.message || e);
+    $("err").hidden = false; $("go").disabled = false;
+  }
+}
+$("go").onclick = begin;
+$("again").onclick = () => { drawLevels(); drawModes(); show("start"); $("go").disabled = false; G.phase = "start"; };
+drawLevels(); drawModes();
+setInterval(tick, 90);
+
+/* ---------- No-microphone test mode: ?sim ---------- */
+if(SIM){
+  $("sim").hidden = false; $("go").textContent = "Start (test mode, no microphone)";
+  $("sim").innerHTML = NOTE_NAMES.map((n, i) => `<button data-pc="${i}">${n}</button>`).join("");
+  $("sim").querySelectorAll("button").forEach(b => {
+    const pc = Number(b.dataset.pc);
+    b.onpointerdown = e => { e.preventDefault(); simNote = pc; b.classList.add("on"); };
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => { if(simNote === pc){ simNote = -1; } b.classList.remove("on"); }));
+  });
+  document.addEventListener("keydown", e => {
+    const base = {c:0, d:2, e:4, f:5, g:7, a:9, b:11}[e.key.toLowerCase()];
+    if(base !== undefined) simNote = base + (e.shiftKey && ![4, 11].includes(base) ? 1 : 0);
+  });
+  document.addEventListener("keyup", () => { simNote = -1; });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Chord Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Home chord practice: one column, phone first. Listens through the microphone, never records.
+   Layout: header, the big chord, its notes lighting up as they are heard, a level meter, a status line. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+header small{color:var(--muted);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px;color:var(--fg)}
+.big:disabled{opacity:.5}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--fg)}
+[hidden]{display:none!important}
+.tier{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--muted);font-size:14px}
+.bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--fg);width:0}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(88px,34vw,170px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+.chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:54px}
+.chip{min-width:58px;padding:6px 14px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:26px;text-align:center;transition:background .2s,color .2s}
+.chip.on{background:var(--good);color:#fff}
+#status{text-align:center;font-family:var(--head);font-weight:900;font-size:24px;min-height:1.3em;margin-top:8px}
+#status.ok{color:var(--good)}
+.meter{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+.sub{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-top:6px;gap:10px}
+.row{display:flex;gap:10px;margin-top:14px}
+.row .ghost{flex:1}
+#timer{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:12px}
+#timer i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left}
+.pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;animation:fade .25s}
+.pop #popBox{background:#fff;border-radius:26px;padding:22px 26px;text-align:center;max-width:320px;animation:rise .35s ease-out}
+.pop img{height:96px;width:auto;display:inline-block;margin:0 4px}
+.pop img.off{opacity:.55}
+.pop b{display:block;font-family:var(--head);font-weight:900;font-size:24px;margin-top:8px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
+summary{cursor:pointer;color:var(--muted);font-weight:700;min-height:28px;display:flex;align-items:center}
+label.set{display:flex;flex-direction:column;gap:4px;margin:10px 0;color:var(--muted);font-size:14px}
+label.set input[type=range]{width:100%}
+#dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
+.test{display:flex;flex-wrap:wrap;gap:8px}
+.test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Chord Practice</h1><a href="songs.html" style="color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff">Songs</a></header>
+
+  <section class="card" id="intro">
+    <h2>Play the chord you see</h2>
+    <p>Your device listens through its microphone and lights up each note it hears. Hit every note of the chord to score.</p>
+    <p><b>Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away.</p>
+    <p>Tip: find a quiet spot, tune your guitar first, and don't play music or videos through the speaker while you practise.</p>
+    <button class="big" id="start">Start (allow microphone)</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+  </section>
+
+  <section class="card" id="cal" hidden>
+    <h2>Shh… listening to the room</h2>
+    <p>Keep quiet and don't play for two seconds.</p>
+    <div class="meter"><i id="calBar"></i></div>
+  </section>
+
+  <section id="game" hidden>
+    <div class="card">
+      <div class="tier"><span id="tierName"></span><div class="bar"><i id="prog"></i></div><span id="progTxt"></span></div>
+      <div id="chord">–</div>
+      <div class="chips" id="chips"></div>
+      <div id="status">Play it!</div>
+      <div id="timer"><i id="timerBar"></i></div>
+      <div class="meter"><i id="lvl"></i></div>
+      <div class="sub"><span id="tune"></span><span id="today"></span></div>
+      <div class="row"><button class="ghost" id="skip">Skip this chord</button></div>
+    </div>
+    <details style="margin-top:14px"><summary>Settings and help</summary>
+      <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
+      <label class="set">How loud a note must be: <b id="thrV">40</b>%<input type="range" id="thr" min="20" max="70" step="5" value="40"></label>
+      <button class="ghost" id="recal">Listen to the room again</button>
+      <div id="dbg" hidden></div>
+    </details>
+    <details id="testbox" style="margin-top:10px" hidden><summary>Self-test (no microphone)</summary>
+      <label class="set">Out of tune by (cents): <b id="detV">0</b><input type="range" id="det" min="-50" max="50" step="5" value="0"></label>
+      <div class="test" id="testBtns"></div>
+    </details>
+  </section>
+</div>
+<div class="pop" id="pop" hidden><div id="popBox"></div></div>
+
+<script>
+/* ============================================================
+   Chord Practice (home). One file. The chord list comes from chord-ladder.json, the same file the
+   classroom rig reads, so the two can't drift apart. Progress is kept on this device only.
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
+
+/* ---------- Chord list (built from the shared ladder file) ---------- */
+const PCV = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"], FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+let CHORDS = [], TIERS = [];
+function buildChords(ladder){
+  CHORDS = []; TIERS = [];
+  ladder.tiers.forEach((t, ti) => {
+    const first = CHORDS.length;
+    t.chords.forEach(name => {
+      const m = /^([A-G][#b]?)(.*)$/.exec(name), ivs = m && ladder.qualities[m[2]];
+      if(!ivs) return;
+      const rpc = (PCV[m[1][0]] + (m[1][1] === "#" ? 1 : m[1][1] === "b" ? -1 : 0) + 12) % 12;
+      const spell = (m[1].includes("b") || m[1] === "F") ? FLAT : SHARP;
+      let mask = 0; const tones = [];
+      ivs.forEach(iv => { const pc = (rpc + iv) % 12; mask |= 1 << pc; tones.push(spell[pc]); });
+      CHORDS.push({name, tones, mask, pcs: ivs.map(iv => (rpc + iv) % 12), tier: ti});
+    });
+    TIERS.push({name: t.name, first, last: CHORDS.length - 1});
+  });
+}
+
+/* ---------- Spaced repetition (the same rules as the classroom rig, with practice DAYS as the lessons) ----------
+   A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (star 1). It is then due for review
+   after GAPS[0] days of practice, then GAPS[1] ... after each review passed (stars 2 and 3). Missing a due review
+   is a lapse (back to learning, shorter gaps). The next chord unlocks when the newest has graduated, at most
+   NEW_PER_WEEK new chords in any 7 days (a new shape needs teaching, so home practice is mostly review). Home practice can earn up to three stars; the diamond (mastery)
+   is only earned in class. */
+const START_POOL = 2, NEW_PER_WEEK = 2, GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 3;
+const KEY = "fma-home-chords-v1";
+let P = null;
+function load(){
+  try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
+  if(!P || !P.cards) P = {unlocked: START_POOL, cards: {}, intro: {}, sess: 0, lastDate: null, last: null, fresh: null};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
+const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const sessionNow = () => P.lastDate === today() ? P.sess : P.sess + 1;
+const dayNum = () => { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); };
+function cardOf(name){
+  return P.cards[name] || (P.cards[name] = {streak: 0, miss: 0, grad: false, k: 0, due: null, lapses: 0});
+}
+const isDue = (c, s) => c.grad && c.due !== null && s >= c.due;
+function starsOf(c){ if(!c) return 0; return c.grad ? Math.min(MAX_STARS, c.k + 1) : Math.min(MAX_STARS, c.k); }
+function applyResult(name, hit, sess){
+  const c = cardOf(name);
+  if(c.grad && !isDue(c, sess)) return;                    // extra practice: schedule unchanged
+  if(hit){
+    c.miss = 0;
+    if(c.grad){ c.k++; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
+    else if(++c.streak >= LEARN_STREAK){ c.grad = true; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
+  }else{
+    c.streak = 0;
+    if(c.grad){ c.grad = false; c.lapses++; c.k = Math.max(0, c.k - 1); c.due = null; }
+    else c.miss++;
+  }
+}
+function maybeUnlock(sess){
+  if(P.unlocked >= CHORDS.length) return false;
+  const c = P.cards[CHORDS[P.unlocked - 1].name];
+  if(!(c && c.grad)) return false;
+  let introduced = 0;
+  for(let k = START_POOL + 1; k <= P.unlocked; k++) if(P.intro[k] !== undefined && dayNum() - P.intro[k] < 7) introduced++;
+  if(introduced >= NEW_PER_WEEK) return false;
+  P.unlocked++; P.intro[P.unlocked] = dayNum(); P.fresh = P.unlocked - 1;
+  return true;
+}
+function score(idx, hit){
+  const name = CHORDS[idx].name;
+  if(P.lastDate !== today()){ P.sess++; P.lastDate = today(); }
+  const before = starsOf(P.cards[name]), ub = P.unlocked;
+  applyResult(name, hit, P.sess);
+  maybeUnlock(P.sess);
+  save();
+  return {stars: starsOf(P.cards[name]), starsBefore: before, unlocked: P.unlocked > ub ? CHORDS[P.unlocked - 1].name : null};
+}
+function pickChord(){
+  const sess = sessionNow();
+  maybeUnlock(sess);
+  if(P.fresh !== null){ const c = P.fresh; P.fresh = null; P.last = c; save(); return c; }
+  const w = [], total = {v: 0};
+  for(let i = 0; i < P.unlocked; i++){
+    const c = P.cards[CHORDS[i].name];
+    let wt;
+    if(!c || !c.grad){ wt = i >= P.unlocked - 3 ? 6 : 3; wt += 2 * (c ? c.miss : 0); }
+    else if(isDue(c, sess)) wt = 8 + Math.min(4, sess - c.due);
+    else wt = 0.5;
+    if(i === P.last) wt = 0;
+    w.push(wt); total.v += wt;
+  }
+  let r = Math.random() * total.v;
+  for(let i = 0; i < w.length; i++){ r -= w[i]; if(r <= 0 && w[i] > 0){ P.last = i; save(); return i; } }
+  P.last = P.unlocked - 1; save(); return P.last;
+}
+
+/* ---------- The listener: turns sound into "which of the 12 notes are being played" ---------- */
+const FFT = 16384, TONAL_MIN = 0.30;
+const det = {
+  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false, testGain: null,
+  async start(){
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
+    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
+    if(SELFTEST){
+      this.testGain = this.ctx.createGain(); this.testGain.connect(this.an);   // synthetic chords go straight in, never to the speaker
+    }else{
+      // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
+      const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+      this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
+    }
+    if(this.ctx.state === "suspended") await this.ctx.resume();
+    this.ready = true;
+  },
+  level(){   // loudness in dB (0 = full scale)
+    this.an.getFloatTimeDomainData(this.td);
+    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
+    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
+  },
+  // Chroma: how much energy sits on each of the 12 note names (70 Hz to 1.1 kHz), after correcting for a
+  // guitar that is a little sharp or flat. Also returns the estimated tuning offset in cents.
+  chroma(){
+    this.an.getFloatFrequencyData(this.buf);
+    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
+    const mag = new Float32Array(n); let mx = 0;
+    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
+    // Is this sound tonal at all? A chord is a handful of sharp spectral peaks; a cough, a rustle or a room's hiss is
+    // energy spread over everything. Measure how much of the energy sits in peaks that stand well above their
+    // neighbours. Chords score about 0.85-1.0 (even with noise on top), noise well under 0.15.
+    { let tot = 0, pk = 0; const W = 15;
+      for(let i = 0; i < n; i++){
+        const e = mag[i] * mag[i]; tot += e;
+        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
+          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
+          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
+        }
+      }
+      this.tonal = pk / (tot + 1e-30);
+    }
+    if(this.tonal < TONAL_MIN) return null;     // not musical: don't guess notes (and don't touch the tuning estimate)
+    // tuning: where do the strong peaks sit relative to the nearest semitone? (circular mean, weighted by size)
+    let sx = 0, sy = 0;
+    for(let i = 1; i < n - 1; i++){
+      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
+        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
+        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
+        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
+      }
+    }
+    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
+    const ch = new Float32Array(12);
+    for(let i = 0; i < n; i++){
+      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
+      ch[pc] += Math.sqrt(mag[i]);
+    }
+    return ch;
+  }
+};
+
+/* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
+const game = {
+  idx: 0, run: 0, latched: new Array(12).fill(false), onFor: new Array(12).fill(0), heard: 0, started: 0, over: false, thr: 0.40, strays: 0,
+  begin(idx){
+    this.idx = idx; this.run = 0; this.latched.fill(false); this.onFor.fill(0); this.heard = 0; this.started = performance.now(); this.over = false;
+    const c = CHORDS[idx], t = TIERS[c.tier];
+    $("chord").textContent = c.name;
+    $("chips").innerHTML = c.tones.map(t => `<span class="chip">${t}</span>`).join("");
+    $("status").textContent = "Play it!"; $("status").className = "";
+    $("tierName").textContent = t.name;
+    $("prog").style.width = (100 * P.unlocked / CHORDS.length) + "%";
+    $("progTxt").textContent = P.unlocked + "/" + CHORDS.length;
+    this.settle = performance.now() + 500;
+  },
+  // Called about 11 times a second with the latest reading.
+  step(){
+    if(this.over) return;
+    const db = det.level();
+    $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
+    const secs = (performance.now() - this.started) / 1000;
+    $("timerBar").style.transform = "scaleX(" + Math.max(0, 1 - secs / 30) + ")";
+    if(secs > 30){ this.finish(false); return; }
+    if(db <= det.gateDb || performance.now() < this.settle){ this.run = 0; $("tune").textContent = ""; if(DEBUG) this.dbg(db, null); return; }
+    const ch = det.chroma();
+    if(!ch){   // a cough, a clatter or the room: nothing musical to read
+      this.run = 0; this.latched.fill(false); this.onFor.fill(0); $("tune").textContent = "";
+      if(DEBUG) this.dbg(db, null); return;
+    }
+    const sh = det.tune * 100; $("tune").textContent = Math.abs(sh) < 8 ? "In tune ✓" : "Sounds " + Math.abs(Math.round(sh)) + " cents " + (sh > 0 ? "sharp" : "flat");
+    const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, mx = sorted[11], span = mx - floor + 1e-9;
+    const c = CHORDS[this.idx]; let missing = 0, strays = 0; const raw = [], sc = [];
+    for(let i = 0; i < 12; i++) raw.push(Math.max(ch[i] - floor, 0) / span);
+    // Every note also rings overtones: the 3rd overtone of a note sits 7 semitones up, the 5th 4 semitones up. Take a
+    // small share of each note's own overtones off the notes where they land, so a C chord doesn't light up the B
+    // (an overtone of its E) and look like part of Em.
+    for(let i = 0; i < 12; i++) sc.push(Math.max(0, raw[i] - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
+    for(let i = 0; i < 12; i++){
+      const v = sc[i];
+      // once a note has been counted it stays counted until it drops a little below the line
+      this.latched[i] = v >= this.thr || (this.latched[i] && v >= this.thr - 0.10);
+      const inChord = (c.mask >> i) & 1;
+      this.onFor[i] = this.latched[i] ? this.onFor[i] + 1 : 0;
+      if(this.onFor[i] >= 2 && inChord) this.heard |= 1 << i;   // a chip lights only after two readings in a row
+      if(inChord && !this.latched[i]) missing++;
+      if(!inChord && this.latched[i]) strays++;
+    }
+    c.pcs.forEach(pc => { if((this.heard >> pc) & 1){ const el = $("chips").children[c.pcs.indexOf(pc)]; if(el) el.classList.add("on"); } });
+    this.run = (missing === 0 && strays <= this.strays) ? this.run + 1 : 0;
+    if(DEBUG) this.dbg(db, {sc, missing, strays});
+    if(this.run >= 3) this.finish(true);
+  },
+  dbg(db, x){
+    $("dbg").hidden = false;
+    $("dbg").textContent = "level " + db.toFixed(1) + " dB  gate " + det.gateDb.toFixed(1) + "  tonal " + det.tonal.toFixed(2) + " (needs " + TONAL_MIN + ")  tuning " + (det.tune * 100).toFixed(0) + " cents\n" +
+      (x ? "missing " + x.missing + "  strays " + x.strays + "\n" + SHARP.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(x.sc[i] * 20))).join("\n") : "(below the gate or settling)");
+  },
+  finish(hit){
+    if(this.over) return; this.over = true;
+    const r = score(this.idx, hit);
+    $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
+    $("status").className = hit ? "ok" : "";
+    $("today").textContent = "";
+    let delay = hit ? 1300 : 1500;
+    const queue = [];
+    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${CHORDS[this.idx].name}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
+    if(r.unlocked) queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${r.unlocked}</b></span>`);
+    const next = () => { game.begin(pickChord()); };
+    if(queue.length){ setTimeout(() => popQueue(queue, next), 900); } else setTimeout(next, delay);
+  }
+};
+function popQueue(items, done){
+  if(!items.length){ $("pop").hidden = true; done(); return; }
+  $("popBox").parentElement.hidden = false; $("popBox").innerHTML = items[0];
+  setTimeout(() => popQueue(items.slice(1), done), 2300);
+}
+$("pop").onclick = () => { /* taps do nothing, so a stray tap can't skip a celebration */ };
+
+/* ---------- Setup flow ---------- */
+async function calibrate(){
+  $("game").hidden = true; $("cal").hidden = false;
+  const samples = [], t0 = performance.now();
+  await new Promise(res => {
+    const tick = () => {
+      const e = performance.now() - t0; samples.push(det.level()); $("calBar").style.width = Math.min(100, e / 20) + "%";
+      if(e >= 2000) res(); else setTimeout(tick, 60);
+    };
+    tick();
+  });
+  samples.sort((a, b) => a - b);
+  const quiet = samples[Math.floor(samples.length * 0.8)];
+  det.gateDb = Math.max(-75, Math.min(-38, quiet + 9));      // a note has to be well above the room's own noise
+  $("cal").hidden = true; $("game").hidden = false;
+}
+$("start").onclick = async () => {
+  $("err").hidden = true; $("start").disabled = true;
+  try{
+    const ladder = await (await fetch("chord-ladder.json", {cache: "no-store"})).json();
+    buildChords(ladder); load();
+    await det.start();
+    $("intro").hidden = true;
+    await calibrate();
+    $("today").textContent = "";
+    game.begin(pickChord());
+    setInterval(() => game.step(), 90);
+    if(SELFTEST) setupSelfTest();
+  }catch(e){
+    $("start").disabled = false; $("err").hidden = false;
+    $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start: " + (e && e.message || e);
+  }
+};
+$("skip").onclick = () => game.begin(pickChord());
+$("recal").onclick = () => calibrate();
+$("stray").oninput = e => { game.strays = Number(e.target.value); $("strayV").textContent = e.target.value; };
+$("thr").oninput = e => { game.thr = Number(e.target.value) / 100; $("thrV").textContent = e.target.value; };
+if(SELFTEST) $("testbox").hidden = false;
+if(DEBUG) $("dbg").hidden = false;
+
+/* ---------- Self-test: make a chord out of tones and feed it to the listener (no microphone needed) ---------- */
+function setupSelfTest(){
+  $("det").oninput = e => { $("detV").textContent = e.target.value; };
+  const names = ["Em","Am","G","C","D","A","E","F","Cmaj7","Bm"];
+  $("testBtns").innerHTML = names.map(n => `<button data-n="${n}">${n}</button>`).join("") + `<button data-n="__quiet">silence</button>`;
+  $("testBtns").onclick = ev => {
+    const b = ev.target.closest("button[data-n]"); if(!b) return;
+    if(b.dataset.n === "__quiet") return;
+    const c = CHORDS.find(x => x.name === b.dataset.n); if(c) playTest(c, Number($("det").value));
+  };
+  window.playTest = playTest;
+}
+function playTest(c, cents){
+  const t0 = det.ctx.currentTime, dur = 2.2;
+  c.pcs.forEach((pc, i) => {
+    // choose an octave that puts the note between about 110 and 330 Hz, like open guitar strings
+    let midi = 36 + pc; while(midi < 45) midi += 12; midi += (i % 2 ? 12 : 0);
+    const f = 440 * Math.pow(2, (midi - 69 + cents / 100) / 12);
+    [1, 2, 3, 4].forEach(h => {
+      const o = det.ctx.createOscillator(), g = det.ctx.createGain();
+      o.frequency.value = f * h; g.gain.setValueAtTime(0.08 / h, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(det.testGain); o.start(t0); o.stop(t0 + dur);
+    });
+  });
+}
+window.__home = {game, det, score, get P(){ return P; }, get CHORDS(){ return CHORDS; }, buildChords, load, pickChord};
+</script>
+</body>
+</html>
