@@ -42,17 +42,31 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .chips button.on small{color:var(--fg)}
 .who{display:flex;gap:8px;justify-content:space-between}
 .who button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:4px;aspect-ratio:1/1}
-.who button img{width:100%;height:100%;object-fit:contain}
+.who button svg{width:100%;height:100%;display:block}
 .who button.on{border-color:var(--fg);background:#FFF1C7}
 .best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
 .tip{background:#FFF1C7;border-radius:12px;padding:8px 12px;font-weight:600;font-size:15px;margin:12px 0;color:var(--fg)!important}
 
 /* The fight */
 .stage{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
-.bimg{width:min(58vw,250px);aspect-ratio:1}
-.bhp{width:100%;height:30px;border-radius:15px;background:var(--line);border:3px solid var(--fg);overflow:hidden;position:relative}
-.bhp i{display:block;height:100%;background:linear-gradient(#e0507a,#c0392b);width:100%;transition:width .35s}
-.bhp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:15px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.arena{display:flex;gap:6px;width:100%;align-items:flex-end}
+.fighter{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fart{width:100%;aspect-ratio:1;position:relative}
+.fhp{width:100%;height:24px;border-radius:12px;background:var(--line);border:3px solid var(--fg);overflow:hidden;position:relative}
+.fhp i{display:block;height:100%;width:100%;transition:width .35s,background .3s}
+.fhp.boss i{background:linear-gradient(#e0507a,#c0392b)}
+.fhp.you i{background:linear-gradient(#5fae6f,#3E7D4C)}
+.fhp.you.low i{background:linear-gradient(#f08a5d,#C0392B)}
+.fhp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:13px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+.fname{font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.endarena{max-width:420px;margin:0 auto 6px}
+.dnum{position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:var(--head);font-weight:900;font-size:34px;color:var(--bad);-webkit-text-stroke:2px #fff;paint-order:stroke fill;pointer-events:none;animation:dnum 1s ease-out forwards;z-index:3;white-space:nowrap}
+.dnum.big{font-size:44px;color:#e07b00}
+@keyframes dnum{from{transform:translate(-50%,0) scale(.7);opacity:1}25%{transform:translate(-50%,-8px) scale(1.15)}to{transform:translate(-50%,-70px) scale(1);opacity:0}}
+.combo{min-height:30px;font-family:var(--head);font-weight:900;font-size:18px;text-align:center;color:var(--muted)}
+.combo b{color:var(--fg)}
+.combo.x15 b{color:#d98200}.combo.x2 b{color:#d9490b}.combo.x3 b{color:#c0141c}
+.combo.pop{animation:cpop .3s ease-out}
 .call{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-size:14px;margin-top:6px}
 #chord{font-family:var(--head);font-weight:900;font-size:clamp(90px,34vw,170px);line-height:.95;letter-spacing:-.02em;text-align:center}
 #chord.pop{animation:cpop .25s ease-out}
@@ -70,19 +84,6 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .bars i.hit{background:var(--good)}
 .bars i.miss{background:var(--pink)}
 .bars i.now{background:var(--fg)}
-.me{display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;font-family:var(--head);font-weight:900}
-.me img{height:54px;transition:transform .15s}
-.me.hit img{transform:translateY(-8px) scale(1.12)}
-.me .hits b{font-size:24px}
-.me.ouch img{animation:ouch .5s}
-@keyframes ouch{0%,100%{transform:none;filter:none}20%{transform:translateX(-8px) rotate(-8deg);filter:sepia(1) saturate(6) hue-rotate(-30deg)}50%{transform:translateX(8px) rotate(8deg)}80%{transform:translateX(-4px)}}
-.php{width:100%;height:20px;border-radius:10px;background:var(--line);border:2px solid var(--fg);overflow:hidden;position:relative}
-.php i{display:block;height:100%;width:100%;background:linear-gradient(#5fae6f,#3E7D4C);transition:width .35s,background .3s}
-.php.low i{background:linear-gradient(#f08a5d,#C0392B)}
-.php span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:12px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
-#dmg{position:absolute;right:20%;top:30%;font-family:var(--head);font-weight:900;font-size:34px;color:var(--bad);-webkit-text-stroke:2px #fff;paint-order:stroke fill;opacity:0;pointer-events:none}
-#dmg.go{animation:dmg 1s ease-out}
-@keyframes dmg{from{transform:translateY(0);opacity:1}to{transform:translateY(-70px);opacity:0}}
 .meter{height:10px;border-radius:6px;background:var(--line);overflow:hidden;width:100%}
 .meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
 #status{text-align:center;font-family:var(--head);font-weight:900;font-size:18px;min-height:1.3em}
@@ -121,26 +122,26 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 
   <section class="card" id="play" hidden>
     <div class="stage">
-      <div class="bimg" id="bimg" role="img" aria-label="The boss"></div>
-      <div id="dmg">-1</div>
-      <div class="bhp"><i id="hpbar"></i><span id="hptxt"></span></div>
+      <div class="arena">
+        <div class="fighter"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
+        <div class="fighter"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname">Boss</div></div>
+      </div>
+      <div class="combo" id="combo"></div>
       <div class="call" id="call"></div>
       <div id="chord">–</div>
       <div class="ctones" id="tones"></div>
       <div class="next" id="next"></div>
       <div class="beats" id="beats"></div>
       <div class="bars" id="bars"></div>
-      <div class="me" id="me"><span><img id="meImg" alt=""></span><span class="hits"><b id="hits">0</b> hits</span></div>
-      <div class="php" id="php"><i id="phpbar"></i><span id="phptxt"></span></div>
       <div class="meter"><i id="lvl"></i></div>
       <div id="status"></div>
     </div>
   </section>
 
   <section class="card end" id="end" hidden>
-    <div class="bimg" id="endImg" role="img" aria-label="The boss"></div>
+    <div class="arena endarena"><div class="fart" id="endPlayer"></div><div class="fart" id="endImg"></div></div>
     <h2 id="endTitle"></h2>
-    <div class="rows"><div><b id="endHits">0</b>hits</div><div><b id="endAcc">0%</b>of bars</div></div>
+    <div class="rows"><div><b id="endHits">0</b>hits</div><div><b id="endAcc">0%</b>of bars</div><div><b id="endStreak">0</b>best streak</div></div>
     <div id="endBest"></div>
     <div class="btns"><button class="big" id="again">Fight again</button><button class="ghost" id="other">Pick another song or speed</button></div>
   </section>
@@ -150,6 +151,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 </div>
 
 <script src="boss-anim.js"></script>
+<script src="char-anim.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -320,8 +322,8 @@ const barDur = () => 4 * 60 / snd.bpm;
 const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 during the count-in
 
 /* ---------- The fight ---------- */
-const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false };
-let song, info, art;
+const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false, bossHp:100, streak:0, bestStreak:0 };
+let song, info, art, pArt;
 function buildFight(){
   song = SONGS[S.song - 1];
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
@@ -329,16 +331,30 @@ function buildFight(){
   G.bars = n; G.need = Math.max(1, Math.round(n * WIN));
   G.dmgPer = 100 / Math.max(1, G.bars - G.need + 1);       // knocked out on the miss that makes winning impossible
 }
+function setHp(){
+  $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = Math.round(G.hp); $("phpw").classList.toggle("low", G.hp <= 35);
+  $("hpbar").style.width = G.bossHp + "%"; $("hptxt").textContent = G.bossHp > 0 ? Math.ceil(G.bossHp) : "DEFEATED!";
+}
+// Hit streaks pay more: 3 in a row = x1.5, 5 = x2, 8 = x3 damage. A miss resets the streak.
+const multOf = n => n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1.5 : 1;
+function floatNum(host, text, big){ const d = document.createElement("div"); d.className = "dnum" + (big ? " big" : ""); d.textContent = text; host.appendChild(d); setTimeout(() => d.remove(), 1000); }
+function comboUI(m){
+  const el = $("combo");
+  el.className = "combo " + (m >= 3 ? "x3" : m >= 2 ? "x2" : m > 1 ? "x15" : "");
+  el.innerHTML = G.streak >= 2 ? `STREAK <b>${G.streak}</b>${m > 1 ? " · DAMAGE <b>x" + m + "</b>" : ""}` : "";
+  void el.offsetWidth; el.classList.add("pop");
+}
 function startFight(){
   buildFight();
-  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false });
+  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
   G.latched.fill(false); G.onFor.fill(0);
   art = BossArt($("bimg"), { hue:(S.song - 1) * 36 });
-  $("meImg").src = "characters/" + CHARS[S.who] + ".png";
-  $("hits").textContent = "0"; $("phpbar").style.width = "100%"; $("phptxt").textContent = "HP 100"; $("php").classList.remove("low");
+  pArt = CharArt($("pimg"), CHARS[S.who]);
+  $("pname").textContent = "You";
+  $("combo").className = "combo"; $("combo").textContent = "";
+  setHp();
   $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
   $("beats").innerHTML = "<i></i><i></i><i></i><i></i>";
-  $("hpbar").style.width = "100%"; $("hptxt").textContent = G.need + " hits to win";
   $("status").textContent = "";
   const sp = SPEEDS.find(x => x.k === S.speed);
   sndStart(sp.bpm, S.back);
@@ -371,12 +387,13 @@ function frame(){
 }
 function miss(){
   if(G.done) return;
+  const lost = G.streak; G.streak = 0;
   G.hp = Math.max(0, G.hp - G.dmgPer);
-  $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = "HP " + Math.round(G.hp); $("php").classList.toggle("low", G.hp <= 35);
-  $("me").classList.remove("ouch"); void $("me").offsetWidth; $("me").classList.add("ouch");
-  art.taunt();
+  setHp(); pArt.hurt(); pArt.setDamage(1 - G.hp / 100); art.taunt();
+  floatNum($("pimg"), "-" + Math.round(G.dmgPer));
+  $("combo").className = "combo"; $("combo").textContent = lost >= 3 ? "Streak lost!" : "";
   $("status").textContent = "Ouch!"; $("status").style.color = "var(--bad)";
-  if(G.hp <= 0.5){ G.done = true; G.ko = true; setTimeout(() => finish(), 1000); }
+  if(G.hp <= 0.5){ G.done = true; G.ko = true; pArt.ko(); setTimeout(() => finish(), 1200); }
 }
 function tick(){
   if(!G.on || G.done || G.idx < 0 || !(det.ready || SIM)) return;
@@ -404,25 +421,26 @@ function tick(){
     [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!G.latched[c.pcs[i]]));
   }
   if(hit && !G.hit){
-    G.hit = true; G.hits++;
-    $("hits").textContent = G.hits; $("me").classList.add("hit"); setTimeout(() => $("me").classList.remove("hit"), 400);
-    art.setDamage(G.hits / G.need); art.hit(1);
-    const d = $("dmg"); d.classList.remove("go"); void d.offsetWidth; d.classList.add("go");
-    const left = Math.max(0, G.need - G.hits);
-    $("hpbar").style.width = (100 * left / G.need) + "%"; $("hptxt").textContent = left ? left + " to go" : "DEFEATED!";
-    $("status").textContent = "Hit!"; $("status").style.color = "var(--good)";
-    if(left === 0){ G.done = true; art.die(); setTimeout(() => finish(), 1400); }
+    G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
+    const m = multOf(G.streak), dmg = Math.round(100 / G.need * m);
+    G.bossHp = Math.max(0, G.bossHp - dmg);
+    setHp(); pArt.attack(1); art.setDamage(1 - G.bossHp / 100); art.hit(m > 1 ? 2 : 1);
+    floatNum($("bimg"), "-" + dmg, m > 1);
+    comboUI(m);
+    $("status").textContent = m > 1 ? "Hit! x" + m : "Hit!"; $("status").style.color = "var(--good)";
+    if(G.bossHp <= 0){ G.done = true; art.die(); setTimeout(() => pArt.cheer(), 700); setTimeout(() => finish(), 1600); }
   }
 }
 function finish(){
   if(!G.on) return;
   G.on = false; sndStop();
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
-  const win = G.hits >= G.need, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
+  const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
-  const endArt = BossArt($("endImg"), { hue:(S.song - 1) * 36 }); endArt.setDamage(G.hits / G.need); if(win) endArt.die();
+  const endArt = BossArt($("endImg"), { hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
+  const endP = CharArt($("endPlayer"), CHARS[S.who]); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else if(win) setTimeout(() => endP.cheer(), 300);
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
-  $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%";
+  $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
   show("end");
 }
@@ -440,7 +458,7 @@ function draw(){
   chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
-  $("who").innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${S.who === i ? "on" : ""}"><img src="characters/${c}.png" alt="${c}"></button>`).join("");
+  $("who").innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${S.who === i ? "on" : ""}" aria-label="${c}">${CharArt.svg(c)}</button>`).join("");
   $("who").querySelectorAll("button").forEach(b => b.onclick = () => { S.who = Number(b.dataset.i); saveSel(); draw(); });
   const best = store.get().best || {}, k = S.song + "-" + S.speed + "-" + S.mode;
   $("bests").textContent = best[k] ? "Your best for this song, speed and mode: " + best[k] + " hits" : "";
