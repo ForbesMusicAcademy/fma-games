@@ -43,15 +43,15 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .eprev > div,.eprev svg{width:100%;height:100%}
 .eleft input{width:100%;font:inherit;font-weight:700;padding:9px 10px;border:2px solid var(--fg);border-radius:12px;background:#fff;text-align:center}
 .eright{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
-.icons{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.icons{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .icons button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:11px;font-weight:800;color:var(--muted)}
 .icons button svg{width:26px;height:26px;display:block}
 .icons button.on{border-color:var(--fg);background:var(--accent);color:var(--fg)}
 .epanel{display:flex;flex-direction:column;gap:10px;min-height:170px}
-.ogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ogrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:5px}
 .opt{border:2px solid var(--line);background:#fff;border-radius:14px;padding:2px 2px 4px;display:flex;flex-direction:column;align-items:center}
 .opt svg{width:100%;aspect-ratio:1;display:block}
-.opt span{font-size:10px;font-weight:700;color:var(--muted);line-height:1.1;text-align:center}
+.opt span{font-size:10px;font-weight:700;color:var(--muted);line-height:1.1;text-align:center;white-space:nowrap}
 .opt.on{border-color:var(--fg);background:#FFF1C7}
 .opt.on span{color:var(--fg)}
 .sub{font-family:var(--head);font-weight:900;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:0 0 4px 2px}
@@ -136,14 +136,12 @@ const ICON = {
   body: '<svg viewBox="0 0 32 32"><path d="M16 29C10 27 5 20 5 13C5 7 9 4 16 4C23 4 27 7 27 13C27 20 22 27 16 29Z" fill="#ff6fa3" stroke="#1d1d1b" stroke-width="2.2" stroke-linejoin="round"/></svg>',
   eyes: '<svg viewBox="0 0 32 32"><ellipse cx="10" cy="16" rx="5" ry="6.5" fill="#fff" stroke="#1d1d1b" stroke-width="2.2"/><ellipse cx="22" cy="16" rx="5" ry="6.5" fill="#fff" stroke="#1d1d1b" stroke-width="2.2"/><circle cx="11" cy="17" r="2.6" fill="#1d1d1b"/><circle cx="21" cy="17" r="2.6" fill="#1d1d1b"/></svg>',
   mouth: '<svg viewBox="0 0 32 32"><path d="M5 12Q16 28 27 12Q24 24 16 24Q8 24 5 12Z" fill="#5b1f24" stroke="#1d1d1b" stroke-width="2.2" stroke-linejoin="round"/><path d="M11 21Q16 17 21 21" fill="#ff7a94"/></svg>',
-  hair: '<svg viewBox="0 0 32 32"><path d="M4 24L7 9L12 17L16 4L20 17L25 9L28 24Q16 17 4 24Z" fill="#ffc42b" stroke="#1d1d1b" stroke-width="2.2" stroke-linejoin="round"/></svg>',
   acc: '<svg viewBox="0 0 32 32"><path d="M5 22Q5 8 16 8Q27 8 27 22Z" fill="#4aa8ff" stroke="#1d1d1b" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 22Q26 17 30 23Q26 26 14 25Z" fill="#4aa8ff" stroke="#1d1d1b" stroke-width="2.2" stroke-linejoin="round"/></svg>'
 };
 const TABS = [
   { id: "body", label: "Body", sections: [["grid", "body", O.bodies, "full"], ["swatch", "Colour", "color", O.palette], ["swatch", "Hands & shoes", "accent", O.palette], ["grid", "pose", O.poses, "full", "Pose"]] },
   { id: "eyes", label: "Eyes", sections: [["grid", "eyes", O.eyes, "face"], ["swatch", "Eye colour", "eyeColor", O.palette]] },
   { id: "mouth", label: "Mouth", sections: [["grid", "mouth", O.mouths, "face"]] },
-  { id: "hair", label: "Hair", sections: [["grid", "hair", O.hair, "head"], ["swatch", "Hair colour", "hairColor", O.hairColors]] },
   { id: "acc", label: "Extras", sections: [["grid", "acc", O.acc, "head"], ["swatch", "Colour", "accColor", O.palette]] }
 ];
 let tab = "body";
@@ -157,7 +155,7 @@ function drawPanel(){
     if(sec[0] === "grid"){
       const [, key, list, view, title] = sec;
       return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + list.map(([v, label]) =>
-        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${PlayerArt.svg(Object.assign({}, cfg, { name: "", [key]: v }), view)}<span>${label}</span></button>`).join("") + `</div>`;
+        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${PlayerArt.svg(Object.assign({}, cfg, { name: "" }, tab === "acc" ? {} : { acc: "none" }, { [key]: v }), view)}<span>${label}</span></button>`).join("") + `</div>`;
     }
     const [, label, key, colours] = sec;
     return `<div><div class="sub">${label}</div><div class="sw">` + colours.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${label} ${c}"></button>`).join("") + `</div></div>`;
