@@ -1,77 +1,60 @@
 /* "Your character": a customisable, animated vector player used across the Forbes Music Academy practice games.
-   Classic friendly cartoon style: round bodies, thick outlines, simple shiny eyes, rosy cheeks, big smiles, mitten hands.
+   A classic chibi cartoon kid, teen or adult: big round head, thick even outlines, tiny dot eyes, stubby limbs, flat colours.
+   (The things you battle in the games are instruments and equipment, so the player is always a person.)
    A character is a small config, saved on the student's device:
-     { name, body, color, accent, pose, eyes, eyeColor, mouth, acc, accColor }
+     { name, body (kid/teen/adult), skin, hair, hairColor, eyes, eyeColor, mouth, top, color, bottom, pants, accent (shoes), pose, acc, accColor }
    Player.get() / Player.set(cfg) / Player.random()          the saved character (a random one the first time)
    PlayerArt(container, cfg)  -> animated controller:  setDamage(0..1), hurt(), attack(dir), cheer(), ko(), reset()
    PlayerArt.svg(cfg, view)   -> plain SVG string (menus, thumbnails); view = "full" | "head" | "face"
-   PlayerArt.options          -> what the editor offers */
+   PlayerArt.options          -> what the editor offers
+   Everything worn on the head (hair, hats, glasses) is drawn once in "head units" (the head is a circle of radius 1) and
+   scaled to the age's head, so it fits kids, teens and adults alike. */
 (function(){
   const NS = "http://www.w3.org/2000/svg";
-  const INK = "#1d1d1b";
+  const INK = "#26211f";
   const ST = `stroke="${INK}" stroke-linejoin="round" stroke-linecap="round"`;
   const sw = w => `${ST} stroke-width="${w}"`;
 
-  const PALETTE = ["#ff6fa3", "#e8433f", "#ff8a1c", "#ffc42b", "#9be04a", "#4fb86a", "#4fd0c0", "#4aa8ff", "#5470f0", "#a070e8", "#f7f4ee", "#a8723c", "#3a3a3d"];
-    const OPTIONS = {
-    bodies: [["pick", "Pick"], ["amp", "Amp"], ["drum", "Drum"], ["metro", "Metronome"]],
+  const SKINS = ["#ffe2c9", "#f6c9a2", "#e5ab7f", "#c98c5e", "#9b6a45", "#6d4730"];
+  const PALETTE = ["#e8433f", "#ff6fa3", "#ff8a1c", "#ffc42b", "#9be04a", "#4fb86a", "#4fd0c0", "#4aa8ff", "#5470f0", "#a070e8", "#f7f4ee", "#a8723c", "#3a3a3d"];
+  const HAIR_COLORS = ["#2b2623", "#5b3a1e", "#8b5a2b", "#c8761f", "#ffd34d", "#e8433f", "#ff6fa3", "#4aa8ff", "#a070e8", "#f7f4ee"];
+  const EYE_COLORS = ["#2b2623", "#5b3a1e", "#4aa8ff", "#4fb86a", "#a070e8"];
+  const OPTIONS = {
+    bodies: [["kid", "Kid"], ["teen", "Teen"], ["adult", "Adult"]],
     poses: [["cheer", "Cheer"], ["wave", "Wave"], ["thumbs", "Thumbs up"], ["rock", "Rock on"], ["relax", "Relaxed"]],
+    hair: [["none", "None"], ["crop", "Short"], ["sweep", "Sweep"], ["spiky", "Spiky"], ["curly", "Curly"], ["bun", "Bun"], ["long", "Long"], ["pigtails", "Pigtails"]],
     eyes: [["dots", "Dots"], ["sparkle", "Sparkle"], ["googly", "Googly"], ["happy", "Happy"], ["wink", "Wink"], ["sleepy", "Sleepy"], ["starry", "Starry"]],
     mouths: [["smile", "Smile"], ["open", "Open smile"], ["grin", "Teeth"], ["tongue", "Tongue out"], ["wow", "Wow"], ["kitty", "Kitty"]],
-    acc: [["none", "None"], ["beanie", "Beanie"], ["cap", "Cap"], ["tophat", "Top hat"], ["party", "Party"], ["crown", "Crown"], ["band", "Band"], ["phones", "Phones"], ["glasses", "Specs"], ["shades", "Shades"], ["bow", "Bow tie"], ["cape", "Cape"]],
-    palette: PALETTE
+    tops: [["tee", "T-shirt"], ["hoodie", "Hoodie"], ["stripes", "Stripes"], ["overalls", "Dungarees"]],
+    bottoms: [["pants", "Pants"], ["shorts", "Shorts"], ["skirt", "Skirt"]],
+    acc: [["none", "None"], ["beanie", "Beanie"], ["cap", "Cap"], ["santa", "Santa"], ["pirate", "Pirate"], ["elf", "Elf"], ["party", "Party"], ["crown", "Crown"], ["band", "Band"], ["phones", "Phones"], ["glasses", "Specs"], ["shades", "Shades"], ["mask", "Mask"], ["cape", "Cape"]],
+    skins: SKINS, palette: PALETTE, hairColors: HAIR_COLORS, eyeColors: EYE_COLORS
   };
   const shade = (h, f) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
   const darkText = c => ["#f7f4ee", "#ffc42b", "#9be04a", "#ffd34d", "#4fd0c0", "#ff8a1c", "#4aa8ff"].includes(c);
 
-  /* ---- bodies: shape, face positions and where things attach ---- */
-  const BODIES = {
-    pick: {
-      R: 20, eyes: [[170, 152], [230, 152]], mouth: 204, nameY: 262, shoulders: [[104, 214], [296, 214]], legs: [[180, 308], [222, 308]], top: [200, 74, 104], half: 100, hat: { l: 101, r: 299, y0: 72, y1: 124, shape: "round" }, bowY: 288,
-      path: "M200 324 C150 310 96 242 94 164 C92 104 138 72 200 72 C262 72 308 104 306 164 C304 242 250 310 200 324Z",
-      draw: c => `<path d="M200 324 C150 310 96 242 94 164 C92 104 138 72 200 72 C262 72 308 104 306 164 C304 242 250 310 200 324Z" fill="${c}" ${sw(5)}/><path d="M122 126 C130 102 150 90 172 88" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="9" stroke-linecap="round"/>`,
-      cracks: ["M146 118 L162 136 L150 152 L168 170", "M262 104 L248 128 L266 144 L252 166"], band: [246, 244]
-    },
-    amp: {
-      R: 20, eyes: [[162, 180], [238, 180]], mouth: 232, nameY: 285, shoulders: [[88, 210], [312, 210]], legs: [[158, 294], [242, 294]], top: [200, 106, 196], half: 116, hat: { l: 86, r: 314, y0: 104, y1: 152, shape: "square" }, bowY: 278,
-      path: "M124 104 H276 Q314 104 314 142 V262 Q314 296 280 296 H120 Q86 296 86 262 V142 Q86 104 124 104Z",
-      draw: c => `<path d="M170 106 Q200 72 230 106" fill="none" ${sw(8)}/><path d="M124 104 H276 Q314 104 314 142 V262 Q314 296 280 296 H120 Q86 296 86 262 V142 Q86 104 124 104Z" fill="${c}" ${sw(5)}/>
-        <circle cx="130" cy="130" r="8" fill="#fff" fill-opacity=".85" ${sw(3)}/><circle cx="160" cy="130" r="8" fill="#fff" fill-opacity=".85" ${sw(3)}/><circle cx="190" cy="130" r="8" fill="#fff" fill-opacity=".85" ${sw(3)}/><rect x="222" y="124" width="66" height="12" rx="6" fill="#fff" fill-opacity=".5"/>
-        <rect x="106" y="152" width="188" height="130" rx="22" fill="#fff" fill-opacity=".22"/>`,
-      cracks: ["M120 154 L138 172 L124 190 L146 208", "M280 152 L264 176 L284 194"], band: [270, 266]
-    },
-    drum: {
-      R: 20, eyes: [[166, 200], [234, 200]], mouth: 242, nameY: 289, shoulders: [[90, 218], [310, 218]], legs: [[160, 294], [240, 294]], top: [200, 134, 196], half: 112, hat: { l: 90, r: 310, y0: 112, y1: 172, shape: "square" }, bowY: 272,
-      path: "M90 138 V278 Q200 310 310 278 V138 Q200 112 90 138Z",
-      draw: c => `<path d="M90 138 V278 Q200 310 310 278 V138Z" fill="${c}" ${sw(5)}/>
-        <path d="M90 254 Q200 284 310 254" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="12"/>
-        <path d="M110 152 L126 270 L142 154 M258 154 L274 270 L290 152" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-        <ellipse cx="200" cy="138" rx="110" ry="26" fill="#f7f4ee" ${sw(5)}/>`,
-      cracks: ["M128 170 L146 188 L132 206 L152 224", "M274 168 L258 192 L278 210"], band: [262, 252]
-    },
-    metro: {
-      R: 18, eyes: [[174, 176], [226, 176]], mouth: 228, nameY: 272, shoulders: [[118, 240], [282, 240]], legs: [[160, 300], [240, 300]], top: [200, 92, 104], half: 68, hat: { l: 131, r: 269, y0: 92, y1: 134, shape: "round" }, bowY: 274,
-      path: "M158 92 H242 Q258 92 262 108 L306 282 Q312 302 290 302 H110 Q88 302 94 282 L138 108 Q142 92 158 92Z",
-      draw: c => `<g class="pa-pend"><rect x="194" y="26" width="12" height="104" rx="6" fill="#e0bf82" ${sw(4)}/><rect x="186" y="52" width="28" height="20" rx="6" fill="#ffc42b" ${sw(4)}/></g>
-        <path d="M158 92 H242 Q258 92 262 108 L306 282 Q312 302 290 302 H110 Q88 302 94 282 L138 108 Q142 92 158 92Z" fill="${c}" ${sw(5)}/>
-        <path d="M170 106 L152 290" stroke="#fff" stroke-opacity=".35" stroke-width="8" stroke-linecap="round" fill="none"/>`,
-      cracks: ["M164 120 L180 142 L166 160 L184 180", "M246 140 L232 164 L250 182"], band: [250, 252]
-    }
+  /* ---- the three ages: proportions only (kids have the biggest heads and the shortest legs) ---- */
+  const AGES = {
+    kid:   { hy: 152, hrx: 86, hry: 78, tTop: 226, tH: 62, tW: 86, hand: 0.78, reach: 0.82 },
+    teen:  { hy: 140, hrx: 72, hry: 68, tTop: 204, tH: 80, tW: 90, hand: 0.88, reach: 0.92 },
+    adult: { hy: 128, hrx: 62, hry: 60, tTop: 182, tH: 96, tW: 94, hand: 0.98, reach: 1.0 }
   };
+  Object.values(AGES).forEach(a => { a.oy = a.hy + a.hrx - a.hry; });   // the unit head circle's centre
+  const FEET = 344;           // ankles; shoes sit just below
 
-  /* ---- faces: simple, round, friendly ---- */
+  /* ---- faces: simple and round ---- */
   function star(cx, cy, r1, r2){
     let d = ""; for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + Math.PI * i / 5, r = i % 2 ? r2 : r1; d += (i ? "L" : "M") + (cx + r * Math.cos(a)).toFixed(1) + " " + (cy + r * Math.sin(a)).toFixed(1); }
     return d + "Z";
   }
-  function eyesSvg(style, b, cfg){
-    const [[lx, ly], [rx, ry]] = b.eyes, k = b.R / 20, ec = cfg.eyeColor;
-    const arc = (x, y) => `<path d="M${x - 15 * k} ${y + 6 * k} Q${x} ${y - 16 * k} ${x + 15 * k} ${y + 6 * k}" fill="none" stroke="${INK}" stroke-width="${6 * k}" stroke-linecap="round"/>`;
-    const dot = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="${12 * k}" ry="${15 * k}" fill="${ec}" ${sw(3)}/><circle cx="${x - 3.5 * k}" cy="${y - 5.5 * k}" r="${4.4 * k}" fill="#fff"/><circle cx="${x + 4 * k}" cy="${y + 5 * k}" r="${2 * k}" fill="#fff" opacity=".8"/>`;
+  function eyesSvg(style, eyes, k, ec){
+    const [[lx, ly], [rx, ry]] = eyes;
+    const arc = (x, y) => `<path d="M${x - 15 * k} ${y + 6 * k} Q${x} ${y - 16 * k} ${x + 15 * k} ${y + 6 * k}" fill="none" stroke="${INK}" stroke-width="${Math.max(3, 6 * k)}" stroke-linecap="round"/>`;
+    const dot = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="${12 * k}" ry="${15 * k}" fill="${ec}" ${sw(Math.max(2, 3 * k))}/><circle cx="${x - 3.5 * k}" cy="${y - 5.5 * k}" r="${4.4 * k}" fill="#fff"/>`;
     const sparkle = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="${16 * k}" ry="${20 * k}" fill="${INK}"/><ellipse cx="${x}" cy="${y + 3 * k}" rx="${12.5 * k}" ry="${15.5 * k}" fill="${ec}"/><ellipse cx="${x}" cy="${y + 4 * k}" rx="${7 * k}" ry="${9 * k}" fill="${INK}"/><circle cx="${x - 5.5 * k}" cy="${y - 7 * k}" r="${5.6 * k}" fill="#fff"/><circle cx="${x + 5 * k}" cy="${y + 8 * k}" r="${2.7 * k}" fill="#fff"/>`;
-    const googly = (x, y, s) => `<circle cx="${x}" cy="${y}" r="${19 * k}" fill="#fff" ${sw(3.5)}/><circle cx="${x + s * 5 * k}" cy="${y + 5 * k}" r="${9 * k}" fill="${ec}"/><circle cx="${x + s * 5 * k - 2.5 * k}" cy="${y + 2.5 * k}" r="${3 * k}" fill="#fff"/>`;
-    const sleepy = (x, y) => `<path d="M${x - 14 * k} ${y - 2 * k} A${14 * k} ${14 * k} 0 0 0 ${x + 14 * k} ${y - 2 * k}Z" fill="${INK}"/><path d="M${x - 17 * k} ${y - 2 * k} H${x + 17 * k}" stroke="${INK}" stroke-width="${5 * k}" stroke-linecap="round"/>`;
-    const starry = (x, y) => `<path d="${star(x, y, 19 * k, 8.5 * k)}" fill="#ffc42b" ${sw(3)}/>`;
+    const googly = (x, y, s) => `<circle cx="${x}" cy="${y}" r="${19 * k}" fill="#fff" ${sw(Math.max(2, 3.5 * k))}/><circle cx="${x + s * 5 * k}" cy="${y + 5 * k}" r="${9 * k}" fill="${ec}"/><circle cx="${x + s * 5 * k - 2.5 * k}" cy="${y + 2.5 * k}" r="${3 * k}" fill="#fff"/>`;
+    const sleepy = (x, y) => `<path d="M${x - 14 * k} ${y - 2 * k} A${14 * k} ${14 * k} 0 0 0 ${x + 14 * k} ${y - 2 * k}Z" fill="${INK}"/><path d="M${x - 17 * k} ${y - 2 * k} H${x + 17 * k}" stroke="${INK}" stroke-width="${Math.max(3, 5 * k)}" stroke-linecap="round"/>`;
+    const starry = (x, y) => `<path d="${star(x, y, 19 * k, 8.5 * k)}" fill="#ffc42b" ${sw(Math.max(2, 3 * k))}/>`;
     switch(style){
       case "sparkle": return sparkle(lx, ly) + sparkle(rx, ry);
       case "googly": return googly(lx, ly, 1) + googly(rx, ry, -1);
@@ -82,102 +65,150 @@
       default: return dot(lx, ly) + dot(rx, ry);
     }
   }
-  const cheeks = b => `<ellipse cx="${b.eyes[0][0] - 20}" cy="${b.eyes[0][1] + 26}" rx="12" ry="8" fill="#ff5f8f" fill-opacity=".38"/><ellipse cx="${b.eyes[1][0] + 20}" cy="${b.eyes[1][1] + 26}" rx="12" ry="8" fill="#ff5f8f" fill-opacity=".38"/>`;
-  function mouthSvg(style, y){
+  function mouthSvg(style, y){      // drawn around x=200 for a mouth 64 wide, scaled to the head by the caller
     switch(style){
-      case "open": return `<path d="M170 ${y - 2} Q200 ${y + 8} 230 ${y - 2} Q226 ${y + 34} 200 ${y + 34} Q174 ${y + 34} 170 ${y - 2}Z" fill="#5b1f24" ${sw(4)}/><path d="M184 ${y + 24} Q200 ${y + 14} 216 ${y + 24} Q212 ${y + 33} 200 ${y + 33} Q188 ${y + 33} 184 ${y + 24}Z" fill="#ff7a94"/>`;
-      case "grin": return `<path d="M166 ${y - 4} Q200 ${y + 10} 234 ${y - 4} Q232 ${y + 28} 200 ${y + 30} Q168 ${y + 28} 166 ${y - 4}Z" fill="#fff" ${sw(4)}/><path d="M170 ${y + 11} H230 M200 ${y + 3} V${y + 30}" stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-      case "tongue": return `<path d="M172 ${y} Q200 ${y + 20} 228 ${y}" fill="none" stroke="${INK}" stroke-width="5.5" stroke-linecap="round"/><path d="M188 ${y + 11} Q200 ${y + 42} 214 ${y + 11} Q201 ${y + 18} 188 ${y + 11}Z" fill="#ff7a94" ${sw(3.5)}/>`;
-      case "wow": return `<ellipse cx="200" cy="${y + 12}" rx="13" ry="17" fill="#5b1f24" ${sw(4)}/><ellipse cx="200" cy="${y + 21}" rx="7" ry="6" fill="#ff7a94"/>`;
-      case "kitty": return `<path d="M178 ${y + 2} Q189 ${y + 18} 200 ${y + 4} Q211 ${y + 18} 222 ${y + 2}" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
-      default: return `<path d="M168 ${y - 4} Q200 ${y + 26} 232 ${y - 4}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+      case "open": return `<path d="M170 ${y - 2} Q200 ${y + 8} 230 ${y - 2} Q226 ${y + 34} 200 ${y + 34} Q174 ${y + 34} 170 ${y - 2}Z" fill="#5b1f24" ${sw(5)}/><path d="M184 ${y + 24} Q200 ${y + 14} 216 ${y + 24} Q212 ${y + 33} 200 ${y + 33} Q188 ${y + 33} 184 ${y + 24}Z" fill="#ff7a94"/>`;
+      case "grin": return `<path d="M166 ${y - 4} Q200 ${y + 10} 234 ${y - 4} Q232 ${y + 28} 200 ${y + 30} Q168 ${y + 28} 166 ${y - 4}Z" fill="#fff" ${sw(5)}/><path d="M170 ${y + 11} H230 M200 ${y + 3} V${y + 30}" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      case "tongue": return `<path d="M172 ${y} Q200 ${y + 20} 228 ${y}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><path d="M188 ${y + 11} Q200 ${y + 42} 214 ${y + 11} Q201 ${y + 18} 188 ${y + 11}Z" fill="#ff7a94" ${sw(4)}/>`;
+      case "wow": return `<ellipse cx="200" cy="${y + 12}" rx="13" ry="17" fill="#5b1f24" ${sw(5)}/><ellipse cx="200" cy="${y + 21}" rx="7" ry="6" fill="#ff7a94"/>`;
+      case "kitty": return `<path d="M178 ${y + 2} Q189 ${y + 18} 200 ${y + 4} Q211 ${y + 18} 222 ${y + 2}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+      default: return `<path d="M168 ${y - 4} Q200 ${y + 26} 232 ${y - 4}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>`;
     }
   }
 
-  /* ---- accessories (coloured with accColor). Hats are fitted to each body's own top: a beanie covers the whole top of a pick, and is boxy on an amp. ---- */
-  function accSvg(kind, b, c){
-    const h = b.hat, cx = 200, w = h.r - h.l, [[lx, ly], [rx, ry]] = b.eyes, R = b.R + 7, dk = shade(c, 0.72);
-    const k = Math.min(28, w * 0.12);
-    // a dome from the base line y1 up to height yt, in the body's own shape (rounded for a pick, boxy for an amp or drum)
-    const dome = (yt, y1) => {
-      if(h.shape === "square") return `M${h.l} ${y1} V${yt + k} Q${h.l} ${yt} ${h.l + k} ${yt} H${h.r - k} Q${h.r} ${yt} ${h.r} ${yt + k} V${y1}Z`;
-      const cy = y1 + (yt - y1) / 0.75; return `M${h.l} ${y1} C${h.l} ${cy} ${h.r} ${cy} ${h.r} ${y1}Z`;
-    };
-    const sc = Math.max(0.7, Math.min(1.3, w / 170));
+  /* ---- hair, in head units (head = circle of radius 1 at 0,0; face is the lower half) ---- */
+  const HAIR_FRONT = {
+    crop: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`,
+    sweep: `<path d="M-1.06 0.14 C-1.16 -0.78 -0.6 -1.24 0.1 -1.24 C0.82 -1.24 1.16 -0.7 1.06 0.14 C1.0 -0.28 0.86 -0.5 0.62 -0.56 C0.3 -0.18 -0.32 -0.5 -0.7 -0.42 C-0.9 -0.36 -1.0 -0.2 -1.06 0.14Z"/><path d="M-0.5 -1.18 C-0.55 -1.5 -0.2 -1.62 0.1 -1.46 C-0.1 -1.4 -0.2 -1.3 -0.1 -1.2Z"/>`,
+    spiky: `<path d="M-1.05 0.05 L-1.12 -0.55 L-0.78 -0.78 L-0.86 -1.3 L-0.42 -0.98 L-0.22 -1.5 L0.04 -1.0 L0.34 -1.46 L0.5 -0.94 L0.86 -1.3 L0.84 -0.76 L1.14 -0.58 L1.05 0.05 C0.92 -0.4 0.5 -0.6 0 -0.6 C-0.5 -0.6 -0.92 -0.4 -1.05 0.05Z"/>`,
+    bun: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/><circle cx="0" cy="-1.42" r="0.34"/>`,
+    long: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`,
+    pigtails: `<path d="M-1.04 0.08 C-1.14 -0.7 -0.7 -1.2 0 -1.2 C0.7 -1.2 1.14 -0.7 1.04 0.08 C0.95 -0.36 0.6 -0.62 0 -0.62 C-0.6 -0.62 -0.95 -0.36 -1.04 0.08Z"/>`
+  };
+  function hairSvg(style, color, g){
+    if(style === "none") return { back: "", front: "" };
+    const W = x => (x / g.hrx).toFixed(4), sS = `${ST} stroke-width="${W(5)}"`;
+    const T = body => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="${color}" ${sS}>${body}</g>`;
+    if(style === "curly"){
+      const cs = [[-0.86, -0.4, 0.4], [-0.58, -0.92, 0.42], [0, -1.08, 0.46], [0.58, -0.92, 0.42], [0.86, -0.4, 0.4]];
+      const ring = cs.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join("");
+      return { back: "", front: `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="${color}" ${sS}><g stroke-width="${W(11)}">${ring}</g><g stroke="none">${ring}</g></g>` };
+    }
+    let back = "";
+    if(style === "long") back = T(`<path d="M-1.0 -0.3 C-1.28 0.4 -1.32 1.4 -1.0 1.85 C-0.8 1.95 -0.5 1.85 -0.5 1.62 L-0.6 0.2Z"/><path d="M1.0 -0.3 C1.28 0.4 1.32 1.4 1.0 1.85 C0.8 1.95 0.5 1.85 0.5 1.62 L0.6 0.2Z"/>`);
+    if(style === "pigtails") back = T(`<path d="M-1.0 -0.4 C-1.5 -0.2 -1.62 0.7 -1.38 1.3 C-1.08 1.3 -0.92 0.8 -0.96 0.1Z"/><path d="M1.0 -0.4 C1.5 -0.2 1.62 0.7 1.38 1.3 C1.08 1.3 0.92 0.8 0.96 0.1Z"/><circle cx="-1.04" cy="-0.28" r="0.15" fill="#e8433f"/><circle cx="1.04" cy="-0.28" r="0.15" fill="#e8433f"/>`);
+    return { back, front: T(HAIR_FRONT[style] || "") };
+  }
+
+  /* ---- things worn on the head and face, in head units ---- */
+  function accSvg(kind, g, c, cfg){
+    const dk = shade(c, 0.72), W = x => (x / g.hrx).toFixed(4), U = body => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" ${ST} stroke-width="${W(5)}">${body}</g>`;
+    const dome = (top, base) => `M-1.1 ${base} C-1.18 ${top + 0.08} -0.6 ${top} 0 ${top} C0.6 ${top} 1.18 ${top + 0.08} 1.1 ${base}Z`;
     switch(kind){
-      case "beanie": { const yt = h.y0 - 12;
-        const ribs = Array.from({ length: 9 }, (_, i) => { const x = h.l + (i + 1) * (w + 16) / 10 - 8; return `M${x.toFixed(1)} ${h.y1 - 28} V${h.y1 + 2}`; }).join(" ");
-        return { front: `<path d="${dome(yt, h.y1 - 14)}" fill="${c}" ${sw(4)}/><rect x="${h.l - 8}" y="${h.y1 - 34}" width="${w + 16}" height="38" rx="14" fill="${c}" ${sw(4)}/><path d="${ribs}" stroke="${INK}" stroke-opacity=".28" stroke-width="2.6" fill="none"/><circle cx="${cx}" cy="${yt - (h.shape === "square" ? 8 : 4)}" r="${15 * sc}" fill="#fff" ${sw(4)}/>` }; }
-      case "cap": { const yt = h.y0 - 4;
-        return { front: `<path d="${dome(yt, h.y1 - 12)}" fill="${c}" ${sw(4)}/><path d="M${cx} ${yt + 6} V${h.y1 - 24}" stroke="${INK}" stroke-opacity=".25" stroke-width="3"/><circle cx="${cx}" cy="${yt - 2}" r="6" fill="${dk}" ${sw(3)}/><path d="M${h.l + 14} ${h.y1 - 12} Q${cx} ${h.y1 + 30} ${h.r - 14} ${h.y1 - 12} Q${cx} ${h.y1 - 4} ${h.l + 14} ${h.y1 - 12}Z" fill="${dk}" ${sw(4)}/>` }; }
-      case "tophat": { const bw = w * 0.5, ty = h.y0 - 64;
-        return { front: `<path d="M${cx - bw / 2} ${h.y0 + 8} L${cx - bw / 2 + 4} ${ty + 8} Q${cx - bw / 2 + 4} ${ty} ${cx - bw / 2 + 14} ${ty} H${cx + bw / 2 - 14} Q${cx + bw / 2 - 4} ${ty} ${cx + bw / 2 - 4} ${ty + 8} L${cx + bw / 2} ${h.y0 + 8}Z" fill="${c}" ${sw(4)}/><rect x="${cx - bw / 2 + 1}" y="${h.y0 - 12}" width="${bw - 2}" height="20" fill="${dk}" ${sw(3.4)}/><ellipse cx="${cx}" cy="${h.y0 + 8}" rx="${w * 0.46}" ry="13" fill="${c}" ${sw(4)}/>` }; }
-      case "party": { const s2 = sc, ay = h.y0 - 92 * s2, bx = 52 * s2;
-        return { front: `<g transform="rotate(8 ${cx} ${h.y0 + 10})"><path d="M${cx - bx} ${h.y0 + 12} L${cx} ${ay} L${cx + bx} ${h.y0 + 12} Q${cx} ${h.y0 + 28} ${cx - bx}  ${h.y0 + 12}Z" fill="${c}" ${sw(4)}/><path d="M${cx - bx * 0.62} ${h.y0 - 22 * s2} Q${cx} ${h.y0 - 8 * s2} ${cx + bx * 0.62} ${h.y0 - 22 * s2} M${cx - bx * 0.32} ${h.y0 - 56 * s2} Q${cx} ${h.y0 - 46 * s2} ${cx + bx * 0.32} ${h.y0 - 56 * s2}" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="6" stroke-linecap="round"/><circle cx="${cx}" cy="${ay}" r="${10 * s2}" fill="#ffc42b" ${sw(3.6)}/></g>` }; }
-      case "crown": { const y0 = h.y0 + 6;
-        return { front: `<path d="M${cx - 46 * sc} ${y0 + 8} L${cx - 54 * sc} ${y0 - 30 * sc} L${cx - 24 * sc} ${y0 - 8 * sc} L${cx} ${y0 - 38 * sc} L${cx + 24 * sc} ${y0 - 8 * sc} L${cx + 54 * sc} ${y0 - 30 * sc} L${cx + 46 * sc} ${y0 + 8} Q${cx} ${y0 + 22} ${cx - 46 * sc} ${y0 + 8}Z" fill="#ffc42b" ${sw(4)}/><circle cx="${cx - 54 * sc}" cy="${y0 - 30 * sc}" r="5.5" fill="#e8433f" ${sw(2.4)}/><circle cx="${cx}" cy="${y0 - 38 * sc}" r="5.5" fill="#4aa8ff" ${sw(2.4)}/><circle cx="${cx + 54 * sc}" cy="${y0 - 30 * sc}" r="5.5" fill="#e8433f" ${sw(2.4)}/>` }; }
-      case "band": { const ins = h.shape === "square" ? 0 : 11;
-        return { front: `<path d="M${h.l + ins} ${h.y1 - 30} Q${cx} ${h.y1 - 38} ${h.r - ins} ${h.y1 - 30} L${h.r} ${h.y1 - 4} Q${cx} ${h.y1 - 12} ${h.l} ${h.y1 - 4}Z" fill="${c}" ${sw(4)}/><path d="M${h.r - 26} ${h.y1 - 18} L${h.r + 10} ${h.y1 - 40} L${h.r + 12} ${h.y1 - 4}Z" fill="${c}" ${sw(3.4)}/>` }; }
-      case "phones": { const yt = h.y0 - 4, cy = h.y1 - 12 + (yt - (h.y1 - 12)) / 0.75;
-        return { front: `<path d="M${h.l} ${h.y1 - 12} C${h.l} ${cy} ${h.r} ${cy} ${h.r} ${h.y1 - 12}" fill="none" stroke="${INK}" stroke-width="11" stroke-linecap="round"/><path d="M${h.l} ${h.y1 - 12} C${h.l} ${cy} ${h.r} ${cy} ${h.r} ${h.y1 - 12}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/><rect x="${h.l - 17}" y="${h.y1 - 26}" width="26" height="48" rx="12" fill="${c}" ${sw(4)}/><rect x="${h.r - 9}" y="${h.y1 - 26}" width="26" height="48" rx="12" fill="${c}" ${sw(4)}/>` }; }
-      case "glasses": return { front: `<circle cx="${lx}" cy="${ly}" r="${R + 4}" fill="#d9efff" fill-opacity=".35" stroke="${INK}" stroke-width="5"/><circle cx="${rx}" cy="${ry}" r="${R + 4}" fill="#d9efff" fill-opacity=".35" stroke="${INK}" stroke-width="5"/><path d="M${lx + R + 4} ${ly} Q200 ${ly - 8} ${rx - R - 4} ${ry}" fill="none" stroke="${INK}" stroke-width="5"/>` };
-      case "shades": return { front: `<rect x="${lx - R - 4}" y="${ly - R + 4}" width="${2 * R + 8}" height="${2 * R - 8}" rx="15" fill="${INK}"/><rect x="${rx - R - 4}" y="${ry - R + 4}" width="${2 * R + 8}" height="${2 * R - 8}" rx="15" fill="${INK}"/><path d="M${lx + R} ${ly - 6} H${rx - R}" stroke="${INK}" stroke-width="7"/><path d="M${lx - R + 8} ${ly - R + 12} l12 -2 M${rx - R + 8} ${ry - R + 12} l12 -2" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>` };
-      case "bow": return { front: `<g transform="translate(200 ${b.bowY})"><path d="M0 0 L-34 -18 V18Z M0 0 L34 -18 V18Z" fill="${c}" ${sw(4)}/><circle cx="0" cy="0" r="9" fill="${c}" ${sw(4)}/></g>` };
-      case "cape": return { back: `<g class="pa-cape"><path d="M104 150 C70 220 56 300 52 372 C120 340 160 330 200 330 C240 330 280 340 348 372 C344 300 330 220 296 150Z" fill="${c}" ${sw(4)}/><path d="M104 160 C90 220 80 290 76 350 C112 332 140 326 168 324 C150 270 140 210 150 160Z" fill="#000" fill-opacity=".14"/></g>`, front: "" };
+      case "beanie": return { front: U(`<path d="${dome(-1.5, -0.3)}" fill="${c}"/><rect x="-1.16" y="-0.58" width="2.32" height="0.46" rx="0.16" fill="${c}"/><path d="M-0.84 -0.54 V-0.16 M-0.56 -0.54 V-0.16 M-0.28 -0.54 V-0.16 M0 -0.54 V-0.16 M0.28 -0.54 V-0.16 M0.56 -0.54 V-0.16 M0.84 -0.54 V-0.16" fill="none" stroke-opacity=".28" stroke-width="${W(3)}"/><circle cx="0" cy="-1.58" r="0.24" fill="#fff"/>`) };
+      case "cap": return { front: U(`<path d="${dome(-1.38, -0.16)}" fill="${c}"/><path d="M0 -1.34 V-0.2" fill="none" stroke-opacity=".25" stroke-width="${W(3)}"/><circle cx="0" cy="-1.38" r="0.07" fill="${dk}"/><path d="M-0.98 -0.2 C-0.5 0.16 0.5 0.16 0.98 -0.2 C0.5 -0.4 -0.5 -0.4 -0.98 -0.2Z" fill="${dk}"/>`) };
+      case "santa": return { front: U(`<path d="M-1.1 -0.3 C-1.18 -1.1 -0.5 -1.55 0.2 -1.5 C0.9 -1.45 1.5 -1.1 1.56 -0.5 C1.2 -0.95 0.8 -1.08 0.4 -1.08 C-0.2 -1.0 -0.8 -0.7 -1.1 -0.3Z" fill="${c}"/><path d="M-1.1 -0.3 C-1.18 -1.1 -0.5 -1.5 0.3 -1.2 C0.8 -1.0 1.1 -0.7 1.1 -0.3Z" fill="${c}"/><rect x="-1.18" y="-0.62" width="2.36" height="0.5" rx="0.25" fill="#fff"/><circle cx="1.58" cy="-0.36" r="0.24" fill="#fff"/>`) };
+      case "pirate": return { front: U(`<path d="M-1.5 -0.32 C-1.1 -0.95 -0.55 -1.4 0 -1.4 C0.55 -1.4 1.1 -0.95 1.5 -0.32 C1.0 -0.14 0.5 -0.5 0 -0.5 C-0.5 -0.5 -1.0 -0.14 -1.5 -0.32Z" fill="#2a2a2e"/><path d="M-1.38 -0.4 C-0.95 -0.12 -0.45 -0.5 0 -0.5 C0.45 -0.5 0.95 -0.12 1.38 -0.4" fill="none" stroke="#ffc42b" stroke-width="${W(7)}"/><circle cx="0" cy="-0.95" r="0.18" fill="#fff"/><path d="M-0.34 -0.7 L0.34 -0.7 M-0.3 -0.6 L0.3 -0.6" fill="none" stroke="#fff" stroke-width="${W(4)}"/>`) };
+      case "elf": return { front: U(`<path d="M-1.1 -0.3 C-1.16 -1.0 -0.9 -1.5 -1.5 -1.95 C-0.7 -1.85 0.4 -1.6 0.8 -1.1 C1.1 -0.8 1.14 -0.5 1.1 -0.3Z" fill="${c}"/><rect x="-1.16" y="-0.6" width="2.32" height="0.46" rx="0.16" fill="#e8433f"/><circle cx="-1.52" cy="-1.98" r="0.16" fill="#ffc42b"/>`) };
+      case "party": return { front: U(`<g transform="rotate(10)"><path d="M-0.62 -0.86 L0.1 -2.0 L0.66 -0.8 Q0 -0.55 -0.62 -0.86Z" fill="${c}"/><path d="M-0.4 -1.14 Q0.05 -0.98 0.45 -1.12 M-0.2 -1.5 Q0.1 -1.4 0.3 -1.5" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${W(5)}"/><circle cx="0.1" cy="-2.02" r="0.16" fill="#ffc42b"/></g>`) };
+      case "crown": return { front: U(`<path d="M-0.72 -0.86 L-0.88 -1.5 L-0.42 -1.14 L0 -1.62 L0.42 -1.14 L0.88 -1.5 L0.72 -0.86 Q0 -0.7 -0.72 -0.86Z" fill="#ffc42b"/><circle cx="-0.88" cy="-1.5" r="0.08" fill="#e8433f"/><circle cx="0" cy="-1.62" r="0.08" fill="#4aa8ff"/><circle cx="0.88" cy="-1.5" r="0.08" fill="#e8433f"/>`) };
+      case "band": return { front: U(`<path d="M-1.04 -0.36 Q0 -0.74 1.04 -0.36 L1.04 -0.12 Q0 -0.5 -1.04 -0.12Z" fill="${c}"/><path d="M0.82 -0.4 L1.3 -0.66 L1.24 -0.04Z" fill="${c}"/>`) };
+      case "phones": return { front: U(`<path d="M-1.02 -0.04 C-1.12 -1.5 1.12 -1.5 1.02 -0.04" fill="none" stroke="${INK}" stroke-width="${W(12)}"/><path d="M-1.02 -0.04 C-1.12 -1.5 1.12 -1.5 1.02 -0.04" fill="none" stroke="${c}" stroke-width="${W(6)}" /><rect x="-1.2" y="-0.28" width="0.3" height="0.62" rx="0.14" fill="${c}"/><rect x="0.9" y="-0.28" width="0.3" height="0.62" rx="0.14" fill="${c}"/>`) };
+      case "glasses": return { front: U(`<circle cx="-0.36" cy="0.1" r="0.3" fill="#d9efff" fill-opacity=".35"/><circle cx="0.36" cy="0.1" r="0.3" fill="#d9efff" fill-opacity=".35"/><path d="M-0.06 0.06 Q0 0 0.06 0.06" fill="none"/><path d="M-0.66 0.06 L-1.0 0.0 M0.66 0.06 L1.0 0.0" fill="none"/>`) };
+      case "shades": return { front: U(`<rect x="-0.7" y="-0.12" width="0.68" height="0.5" rx="0.18" fill="${INK}"/><rect x="0.02" y="-0.12" width="0.68" height="0.5" rx="0.18" fill="${INK}"/><path d="M-0.1 -0.02 H0.1 M-0.7 -0.04 L-1.0 -0.1 M0.7 -0.04 L1.0 -0.1" fill="none"/><path d="M-0.58 0.0 l0.18 -0.04 M0.14 0.0 l0.18 -0.04" stroke="#fff" stroke-opacity=".55" stroke-width="${W(4)}" fill="none"/>`) };
+      case "mask": return { front: U(`<path d="M-1.0 -0.16 Q0 -0.5 1.0 -0.16 Q1.06 0.36 0.56 0.4 Q0.3 0.3 0 0.34 Q-0.3 0.3 -0.56 0.4 Q-1.06 0.36 -1.0 -0.16Z" fill="${c}"/><ellipse cx="-0.36" cy="0.08" rx="0.22" ry="0.17" fill="#fff"/><ellipse cx="0.36" cy="0.08" rx="0.22" ry="0.17" fill="#fff"/><circle cx="-0.34" cy="0.1" r="0.07" fill="${INK}" stroke="none"/><circle cx="0.34" cy="0.1" r="0.07" fill="${INK}" stroke="none"/>`) };
+      case "cape": { const x0 = 200 - g.tW / 2 - 2, x1 = 200 + g.tW / 2 + 2, y0 = g.tTop + 8, y1 = FEET + 6;
+        return { back: `<g class="pa-cape"><path d="M${x0} ${y0} C${x0 - 34} ${y0 + 70} ${x0 - 40} ${y1 - 30} ${x0 - 30} ${y1} C${x0 + 20} ${y1 - 18} ${x1 - 20} ${y1 - 18} ${x1 + 30} ${y1} C${x1 + 40} ${y1 - 30} ${x1 + 34} ${y0 + 70} ${x1} ${y0}Z" fill="${c}" ${sw(6)}/></g>`, front: "" }; }
     }
     return { front: "", back: "" };
   }
 
-  /* ---- arms and gloves. Every hand is built from its own fingers and thumb, so gestures read clearly. ---- */
-  // [dx, dy, rotation, hand] for the left and right hand, relative to each shoulder (hands that hang down are turned 180 degrees)
+  /* ---- arms and gloves (skin-coloured hands; each finger and thumb is its own shape) ---- */
   const POSES = {
-    cheer: [[-44, -80, -12, "open"], [44, -80, 12, "open"]],
-    wave: [[-52, 44, 188, "open"], [46, -86, 10, "open"]],
-    thumbs: [[-56, -24, -10, "thumbs"], [56, -24, 10, "thumbs"]],
-    rock: [[-44, -84, -14, "rock"], [44, -84, 14, "rock"]],
-    relax: [[-50, 46, 172, "open"], [50, 46, -172, "open"]]
+    cheer: [[-46, -84, -12, "open"], [46, -84, 12, "open"]],
+    wave: [[-54, 42, 188, "open"], [48, -90, 10, "open"]],
+    thumbs: [[-58, -26, -10, "thumbs"], [58, -26, 10, "thumbs"]],
+    rock: [[-46, -88, -14, "rock"], [46, -88, 14, "rock"]],
+    relax: [[-52, 46, 172, "open"], [52, 46, -172, "open"]]
   };
-  const finger = (x, y, len, rot, c, wd) => `<rect x="${x - (wd || 10.4) / 2}" y="${y - len}" width="${wd || 10.4}" height="${len + 5}" rx="${(wd || 10.4) / 2}" fill="${c}" ${sw(3.2)} transform="rotate(${rot} ${x} ${y})"/>`;
-  // the thumb is on the left of the drawing; the palm outline only runs round the bottom so the fingers join it without a seam
-  const palm = c => `<ellipse cx="0" cy="4" rx="17" ry="15" fill="${c}"/><path d="M-17 2 C-19 14 -9 20.5 0 20.5 C9 20.5 19 14 17 2" fill="none" ${sw(3.2)}/>`;
+  const finger = (x, y, len, rot, c, wd) => `<rect x="${x - (wd || 10.4) / 2}" y="${y - len}" width="${wd || 10.4}" height="${len + 5}" rx="${(wd || 10.4) / 2}" fill="${c}" ${sw(3.4)} transform="rotate(${rot} ${x} ${y})"/>`;
+  const palm = c => `<ellipse cx="0" cy="4" rx="17" ry="15" fill="${c}"/><path d="M-17 2 C-19 14 -9 20.5 0 20.5 C9 20.5 19 14 17 2" fill="none" ${sw(3.4)}/>`;
   const HANDS = {
     open: c => `${finger(-15, 7, 18, -64, c, 11)}${finger(-9, -4, 23, -17, c)}${finger(0, -7, 27, 0, c)}${finger(9, -4, 23, 17, c)}${palm(c)}`,
-    thumbs: c => `<rect x="-14" y="-33" width="14" height="34" rx="7" fill="${c}" ${sw(3.2)} transform="rotate(-12 -7 0)"/><rect x="-20" y="-6" width="40" height="34" rx="14" fill="${c}" ${sw(3.2)}/><path d="M-4 5 H15 M-4 13 H15 M-4 21 H13" ${sw(2.4)} fill="none"/>`,
-    rock: c => `${finger(-12, -2, 25, -15, c)}${finger(12, -2, 22, 15, c, 9.6)}<rect x="-20" y="-6" width="40" height="32" rx="13" fill="${c}" ${sw(3.2)}/><circle cx="-3" cy="-5" r="6.5" fill="${c}" ${sw(2.8)}/><circle cx="6" cy="-5" r="6" fill="${c}" ${sw(2.8)}/><ellipse cx="-3" cy="15" rx="13" ry="7.5" fill="${c}" ${sw(3)} transform="rotate(-14 -3 15)"/>`
+    thumbs: c => `<rect x="-14" y="-33" width="14" height="34" rx="7" fill="${c}" ${sw(3.4)} transform="rotate(-12 -7 0)"/><rect x="-20" y="-6" width="40" height="34" rx="14" fill="${c}" ${sw(3.4)}/><path d="M-4 5 H15 M-4 13 H15 M-4 21 H13" ${sw(2.6)} fill="none"/>`,
+    rock: c => `${finger(-12, -2, 25, -15, c)}${finger(12, -2, 22, 15, c, 9.6)}<rect x="-20" y="-6" width="40" height="32" rx="13" fill="${c}" ${sw(3.4)}/><circle cx="-3" cy="-5" r="6.5" fill="${c}" ${sw(3)}/><circle cx="6" cy="-5" r="6" fill="${c}" ${sw(3)}/><ellipse cx="-3" cy="15" rx="13" ry="7.5" fill="${c}" ${sw(3.2)} transform="rotate(-14 -3 15)"/>`
   };
-  const limb = d => `<path d="${d}" fill="none" ${ST} stroke-width="12"/>`;
-  const shoe = (c, x, y, flip) => `<g transform="translate(${x} ${y}) scale(${flip ? -1 : 1} 1)"><path d="M-28 2 C-30 -14 -8 -24 10 -20 C26 -16 34 -4 32 6 C30 14 -28 14 -28 2Z" fill="${c}" ${sw(4.5)}/></g>`;
+  // a limb drawn as a tube: dark outline underneath, colour on top
+  const tube = (d, w, col) => `<path d="${d}" fill="none" ${ST} stroke-width="${w + 9}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // the first part (0..t) and the rest (t..1) of a quadratic curve S-C-E, so a sleeve can cover part of an arm
+  function qsplit(S, C, E, t){
+    const mx = S[0] + t * (C[0] - S[0]), my = S[1] + t * (C[1] - S[1]);
+    const px = (1 - t) * (1 - t) * S[0] + 2 * (1 - t) * t * C[0] + t * t * E[0], py = (1 - t) * (1 - t) * S[1] + 2 * (1 - t) * t * C[1] + t * t * E[1];
+    const nx = (1 - t) * C[0] + t * E[0], ny = (1 - t) * C[1] + t * E[1], f = n => n.toFixed(1);
+    return { head: `M${f(S[0])} ${f(S[1])} Q${f(mx)} ${f(my)} ${f(px)} ${f(py)}`, rest: `M${f(px)} ${f(py)} Q${f(nx)} ${f(ny)} ${f(E[0])} ${f(E[1])}` };
+  }
+  const shoe = (c, x, y, flip) => `<g transform="translate(${x} ${y}) scale(${flip ? -1 : 1} 1)"><path d="M-20 4 C-22 -12 -8 -18 6 -16 C20 -14 28 -4 26 6 C24 13 -20 14 -20 4Z" fill="${c}" ${sw(5)}/><path d="M-19 8 H25" stroke="${INK}" stroke-opacity=".35" stroke-width="3" fill="none"/></g>`;
+  const rrect = (x0, y0, x1, y1, r) => `M${x0 + r} ${y0} H${x1 - r} Q${x1} ${y0} ${x1} ${y0 + r} V${y1 - r} Q${x1} ${y1} ${x1 - r} ${y1} H${x0 + r} Q${x0} ${y1} ${x0} ${y1 - r} V${y0 + r} Q${x0} ${y0} ${x0 + r} ${y0}Z`;
 
   function build(cfg, anim){
-    const b = BODIES[cfg.body] || BODIES.pick, col = cfg.color, ac = cfg.accent;
-    const [[lsx, lsy], [rsx, rsy]] = b.shoulders, [[llx, lly], [rlx, rly]] = b.legs;
-    const acc = accSvg(cfg.acc, b, cfg.accColor);
-    const legs = limb(`M${llx} ${lly} C${llx - 2} ${lly + 22} ${llx - 6} ${lly + 40} ${llx - 8} 356`) + limb(`M${rlx} ${rly} C${rlx + 2} ${rly + 22} ${rlx + 6} ${rly + 40} ${rlx + 8} 356`);
-    const feet = shoe(ac, llx - 14, 366, false) + shoe(ac, rlx + 14, 366, true);
-    const pose = POSES[cfg.pose] || POSES.cheer;
-    const arms = pose.map(([dx, dy, rot, hs], i) => {
-      const right = i === 1, sgn = right ? 1 : -1, sx = right ? rsx : lsx, sy = right ? rsy : lsy, hx = sx + dx, hy = sy + dy, r = rot * Math.PI / 180;
-      const wx = hx - Math.sin(r) * 19, wy = hy + Math.cos(r) * 19;          // the wrist, just below the palm
-      return `<g class="pa-arm ${right ? "r" : "l"}" style="transform-origin:${sx}px ${sy}px">${limb(`M${sx} ${sy} Q${sx + sgn * Math.abs(dx) * 0.9} ${sy + (dy > 0 ? dy * 0.2 : 8)} ${wx.toFixed(1)} ${wy.toFixed(1)}`)}<g transform="translate(${hx} ${hy}) rotate(${rot}) scale(${right ? 1 : -1} 1)">${HANDS[hs](ac)}</g></g>`;
-    }).join("");
+    const g = AGES[cfg.body] || AGES.kid, skin = cfg.skin, col = cfg.color, pants = cfg.pants, shoeC = cfg.accent;
+    const tBot = g.tTop + g.tH, x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, r = g.tW * 0.26;
+    const acc = accSvg(cfg.acc, g, cfg.accColor, cfg), hair = hairSvg(cfg.hair, cfg.hairColor, g);
+    const lx = 200 - g.tW * 0.2, rx = 200 + g.tW * 0.2;
+
+    // legs and shoes
+    let legs = "";
+    const leg = (x, y0, y1, c) => tube(`M${x} ${y0} L${x} ${y1}`, 15, c);
+    if(cfg.bottom === "pants"){ legs = leg(lx, tBot - 10, FEET, pants) + leg(rx, tBot - 10, FEET, pants); }
+    else if(cfg.bottom === "shorts"){ legs = leg(lx, tBot - 10, FEET, skin) + leg(rx, tBot - 10, FEET, skin) + leg(lx, tBot - 10, tBot + 26, pants) + leg(rx, tBot - 10, tBot + 26, pants); }
+    else { legs = leg(lx, tBot - 10, FEET, skin) + leg(rx, tBot - 10, FEET, skin); }
+    const skirt = cfg.bottom === "skirt" ? `<path d="M${x0 - 2} ${tBot - 8} L${x0 - 20} ${tBot + 36} Q200 ${tBot + 46} ${x1 + 20} ${tBot + 36} L${x1 + 2} ${tBot - 8}Z" fill="${pants}" ${sw(5)}/>` : "";
+    const feet = shoe(shoeC, lx - 6, FEET + 12, false) + shoe(shoeC, rx + 6, FEET + 12, true);
+
+    // torso and top
+    let torso = `<path d="${rrect(x0, g.tTop, x1, tBot, r)}" fill="${col}" ${sw(6)}/>`;
+    const mid = g.tTop + g.tH / 2;
+    if(cfg.top === "stripes"){ for(let i = 1; i <= 3; i++){ const y = g.tTop + (g.tH * i) / 4; torso += `<path d="M${x0 + 3} ${y} H${x1 - 3}" stroke="${shade(col, 0.6)}" stroke-width="${g.tH * 0.12}" fill="none"/>`; } torso += `<path d="${rrect(x0, g.tTop, x1, tBot, r)}" fill="none" ${sw(6)}/>`; }
+    if(cfg.top === "hoodie"){ torso += `<path d="M${200 - g.tW * 0.34} ${tBot - g.tH * 0.42} H${200 + g.tW * 0.34} L${200 + g.tW * 0.4} ${tBot - 8} H${200 - g.tW * 0.4}Z" fill="${shade(col, 0.88)}" ${sw(4)}/><path d="M${200 - 8} ${g.tTop + 8} V${g.tTop + g.tH * 0.38} M${200 + 8} ${g.tTop + 8} V${g.tTop + g.tH * 0.38}" ${sw(3.4)} fill="none"/>`; }
+    if(cfg.top === "overalls"){ torso += `<path d="M${x0 + 6} ${g.tTop + g.tH * 0.4} H${x1 - 6} V${tBot - 2} H${x0 + 6}Z" fill="${pants}" ${sw(4.5)}/><path d="M${x0 + 18} ${g.tTop + g.tH * 0.4} V${g.tTop + 3} M${x1 - 18} ${g.tTop + g.tH * 0.4} V${g.tTop + 3}" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M${x0 + 18} ${g.tTop + g.tH * 0.4} V${g.tTop + 3} M${x1 - 18} ${g.tTop + g.tH * 0.4} V${g.tTop + 3}" fill="none" stroke="${pants}" stroke-width="7" stroke-linecap="round"/><circle cx="${x0 + 18}" cy="${g.tTop + g.tH * 0.4 + 6}" r="3.6" fill="#ffc42b"/><circle cx="${x1 - 18}" cy="${g.tTop + g.tH * 0.4 + 6}" r="3.6" fill="#ffc42b"/>`; }
     const nm = (cfg.name || "").trim().slice(0, 10).replace(/[<>&"]/g, "");
-    const name = nm ? `<text x="200" y="${b.nameY}" text-anchor="middle" font-family="'Caveat','Patrick Hand','Comic Sans MS',cursive" font-weight="700" font-size="${nm.length > 7 ? 27 : 32}" fill="${darkText(col) ? INK : "#fff"}" stroke="none">${nm}</text>` : "";
-    const eyes = eyesSvg(cfg.eyes, b, cfg), mouth = mouthSvg(cfg.mouth, b.mouth), R2 = b.R + 4;
+    const lightTop = darkText(cfg.top === "overalls" ? pants : col);
+    const name = nm ? `<text x="200" y="${(mid + 8).toFixed(0)}" text-anchor="middle" font-family="'Caveat','Patrick Hand','Comic Sans MS',cursive" font-weight="700" font-size="${nm.length > 7 ? 19 : 23}" fill="${lightTop ? INK : "#fff"}" stroke="none">${nm}</text>` : "";
+
+    // arms with sleeves
+    const pose = POSES[cfg.pose] || POSES.cheer;
+    const long = cfg.top === "hoodie" || cfg.top === "stripes";
+    const arms = pose.map(([dx, dy, rot, hnd], i) => {
+      const right = i === 1, sgn = right ? 1 : -1, S = [right ? x1 - 5 : x0 + 5, g.tTop + 18], hx = S[0] + dx * g.reach, hy = S[1] + dy * g.reach, rr = rot * Math.PI / 180, hsz = g.hand;
+      const E = [hx - Math.sin(rr) * 19 * hsz, hy + Math.cos(rr) * 19 * hsz], C = [S[0] + sgn * Math.abs(dx) * g.reach * 0.9, S[1] + (dy > 0 ? dy * g.reach * 0.2 : 8)];
+      const whole = `M${S[0]} ${S[1]} Q${C[0].toFixed(1)} ${C[1].toFixed(1)} ${E[0].toFixed(1)} ${E[1].toFixed(1)}`;
+      const cut = qsplit(S, C, E, long ? 0.86 : 0.42), cuff = long ? qsplit(S, C, E, 0.86) : null;
+      let arm = tube(whole, 12, skin) + tube(cut.head, 12.5, col);
+      if(long) arm += tube(cuff.rest, 12.5, shade(col, 0.82));
+      return `<g class="pa-arm ${right ? "r" : "l"}" style="transform-origin:${S[0]}px ${S[1]}px">${arm}<g transform="translate(${hx.toFixed(1)} ${hy.toFixed(1)}) rotate(${rot}) scale(${(right ? hsz : -hsz).toFixed(2)} ${hsz})">${HANDS[hnd](skin)}</g></g>`;
+    }).join("");
+
+    // head and face
+    const k = g.hrx / 141, oy = g.oy, ey = oy + g.hrx * 0.1, eyes = [[200 - g.hrx * 0.36, ey], [200 + g.hrx * 0.36, ey]];
+    const my = oy + g.hrx * 0.44, m = g.hrx * 0.32 / 32;
+    const ears = `<circle cx="${200 - g.hrx * 0.98}" cy="${oy + g.hrx * 0.12}" r="${g.hrx * 0.17}" fill="${skin}" ${sw(5)}/><circle cx="${200 + g.hrx * 0.98}" cy="${oy + g.hrx * 0.12}" r="${g.hrx * 0.17}" fill="${skin}" ${sw(5)}/>`;
+    const head = `<ellipse cx="200" cy="${g.hy}" rx="${g.hrx}" ry="${g.hry}" fill="${skin}" ${sw(6)}/>`;
+    const cheeks = `<ellipse cx="${200 - g.hrx * 0.58}" cy="${oy + g.hrx * 0.38}" rx="${g.hrx * 0.13}" ry="${g.hrx * 0.085}" fill="#ff5f8f" fill-opacity=".34"/><ellipse cx="${200 + g.hrx * 0.58}" cy="${oy + g.hrx * 0.38}" rx="${g.hrx * 0.13}" ry="${g.hrx * 0.085}" fill="#ff5f8f" fill-opacity=".34"/>`;
+    const mouth = `<g transform="translate(${(200 - 200 * m).toFixed(1)} ${(my - 0 * m).toFixed(1)}) scale(${m.toFixed(3)})">${mouthSvg(cfg.mouth, 0)}</g>`;
+    const R2 = g.hrx * 0.26;
     const dmg = anim ? `
-      <g class="d1"><path d="${b.cracks[0]}" fill="none" stroke="${INK}" stroke-width="3.6" ${ST}/><ellipse cx="${b.band[0] + 6}" cy="${b.band[1] + 30}" rx="15" ry="8" fill="#000" opacity=".2"/></g>
-      <g class="d2"><path d="${b.cracks[1]}" fill="none" stroke="${INK}" stroke-width="3.6" ${ST}/>
-        <g transform="translate(${b.band[0]} ${b.band[1]}) rotate(-24)"><rect x="-20" y="-7" width="40" height="14" rx="4" fill="#f2cf9a" ${sw(2.6)}/><rect x="-8" y="-7" width="16" height="14" fill="#e5b97a"/></g></g>
-      <g class="d2"><path class="pa-sweat" d="M${b.eyes[1][0] + 40} ${b.eyes[1][1] - 24} Q${b.eyes[1][0] + 48} ${b.eyes[1][1] - 8} ${b.eyes[1][0] + 40} ${b.eyes[1][1]} Q${b.eyes[1][0] + 32} ${b.eyes[1][1] - 8} ${b.eyes[1][0] + 40} ${b.eyes[1][1] - 24}Z" fill="#8ecae6" ${sw(2.4)}/></g>
-      <g class="d3">${b.eyes.map(e => `<circle cx="${e[0]}" cy="${e[1]}" r="${R2}" fill="#fff" ${sw(3)}/><path d="M${e[0]} ${e[1]} m0 0 a3 3 0 1 1 6 0 a7 7 0 1 1 -14 0 a11 11 0 1 1 22 0 a15 15 0 1 1 -30 0" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`).join("")}</g>
-      <g class="dko">${b.eyes.map(e => `<circle cx="${e[0]}" cy="${e[1]}" r="${R2}" fill="#fff" ${sw(3)}/><path d="M${e[0] - 10} ${e[1] - 10} L${e[0] + 10} ${e[1] + 10} M${e[0] + 10} ${e[1] - 10} L${e[0] - 10} ${e[1] + 10}" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`).join("")}</g>
-      <g class="dko pa-stars"><g transform="translate(200 ${Math.max(30, b.top[1] - 36)})"><path d="${star(0, 0, 11, 5)}" fill="#ffc42b" ${sw(2.6)} transform="translate(-44 8)"/><path d="${star(0, 0, 13, 6)}" fill="#ffc42b" ${sw(2.6)} transform="translate(0 -8)"/><path d="${star(0, 0, 11, 5)}" fill="#ffc42b" ${sw(2.6)} transform="translate(44 8)"/></g></g>` : "";
-    const flash = anim ? `<path class="pa-flash" d="${b.path}" fill="#ff3b3b"/>` : "";
-    return `${acc.back || ""}${legs}${feet}${arms}<g class="pa-body">${b.draw(col)}${cheeks(b)}${eyes}${mouth}${name}${dmg}</g>${flash}${acc.front || ""}`;
+      <g class="d1"><g transform="translate(${200 + g.hrx * 0.5} ${g.hy + g.hry * 0.5}) rotate(-24) scale(${g.hrx / 70})"><rect x="-17" y="-6" width="34" height="12" rx="4" fill="#f2cf9a" ${sw(3)}/><rect x="-6" y="-6" width="12" height="12" fill="#e5b97a"/></g></g>
+      <g class="d2"><g transform="translate(${200 - g.hrx * 0.46} ${g.hy - g.hry * 0.5}) rotate(20) scale(${g.hrx / 70})"><rect x="-17" y="-6" width="34" height="12" rx="4" fill="#f2cf9a" ${sw(3)}/><rect x="-6" y="-6" width="12" height="12" fill="#e5b97a"/></g><path class="pa-sweat" d="M${200 + g.hrx * 0.9} ${g.hy - g.hry * 0.4} q9 15 0 22 q-9 -7 0 -22Z" fill="#8ecae6" ${sw(3)}/></g>
+      <g class="d3">${eyes.map(e => `<circle cx="${e[0]}" cy="${e[1]}" r="${R2}" fill="#fff" ${sw(3.4)}/><path d="M${e[0]} ${e[1]} m0 0 a${R2 * 0.1} ${R2 * 0.1} 0 1 1 ${R2 * 0.2} 0 a${R2 * 0.25} ${R2 * 0.25} 0 1 1 -${R2 * 0.5} 0 a${R2 * 0.4} ${R2 * 0.4} 0 1 1 ${R2 * 0.8} 0 a${R2 * 0.55} ${R2 * 0.55} 0 1 1 -${R2 * 1.1} 0" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`).join("")}</g>
+      <g class="dko">${eyes.map(e => `<circle cx="${e[0]}" cy="${e[1]}" r="${R2}" fill="#fff" ${sw(3.4)}/><path d="M${e[0] - R2 * 0.55} ${e[1] - R2 * 0.55} L${e[0] + R2 * 0.55} ${e[1] + R2 * 0.55} M${e[0] + R2 * 0.55} ${e[1] - R2 * 0.55} L${e[0] - R2 * 0.55} ${e[1] + R2 * 0.55}" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`).join("")}</g>
+      <g class="dko pa-stars"><g transform="translate(200 ${Math.max(26, g.hy - g.hry - 34)})"><path d="${star(0, 0, 11, 5)}" fill="#ffc42b" ${sw(2.6)} transform="translate(-48 8)"/><path d="${star(0, 0, 13, 6)}" fill="#ffc42b" ${sw(2.6)} transform="translate(0 -8)"/><path d="${star(0, 0, 11, 5)}" fill="#ffc42b" ${sw(2.6)} transform="translate(48 8)"/></g></g>` : "";
+    const flash = anim ? `<g class="pa-flash" fill="#ff3b3b"><ellipse cx="200" cy="${g.hy}" rx="${g.hrx}" ry="${g.hry}"/><path d="${rrect(x0, g.tTop, x1, tBot, r)}"/></g>` : "";
+    return `${acc.back || ""}${hair.back}${legs}${skirt}${feet}${torso}${name}${arms}<g class="pa-body">${ears}${head}${cheeks}${eyesSvg(cfg.eyes, eyes, k, cfg.eyeColor)}${mouth}${hair.front}${acc.front || ""}${dmg}</g>${flash}`;
   }
   const viewBox = (cfg, view) => {
-    const b = BODIES[cfg.body] || BODIES.pick;
-    if(view === "face") return `110 ${b.eyes[0][1] - 56} 180 ${b.mouth - b.eyes[0][1] + 100}`;
-    if(view === "head") { const y = b.hat.y0 - 100; return `60 ${y} 280 ${b.mouth + 54 - y}`; }
+    const g = AGES[cfg.body] || AGES.kid;
+    if(view === "face") return `${200 - g.hrx * 1.2} ${g.oy - g.hrx * 0.72} ${g.hrx * 2.4} ${g.hrx * 1.8}`;
+    if(view === "head") return `${200 - g.hrx * 1.5} ${g.oy - g.hrx * 2.05} ${g.hrx * 3} ${g.hrx * 3.5}`;
     return "0 0 400 400";
   };
 
@@ -189,10 +220,8 @@
 .pa-arm{transform-box:view-box;animation:pa-sway 2.8s ease-in-out infinite}
 .pa-arm.r{animation-direction:reverse}
 @keyframes pa-sway{0%,100%{transform:rotate(0)}50%{transform:rotate(5deg)}}
-.pa-cape{transform-box:view-box;transform-origin:200px 150px;animation:pa-cape 1.8s ease-in-out infinite}
+.pa-cape{transform-box:view-box;transform-origin:200px 200px;animation:pa-cape 1.8s ease-in-out infinite}
 @keyframes pa-cape{0%,100%{transform:skewX(0)}50%{transform:skewX(2.5deg)}}
-.pa-pend{transform-box:view-box;transform-origin:200px 120px;animation:pa-tick 1.4s ease-in-out infinite alternate}
-@keyframes pa-tick{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
 .pa-flash{opacity:0}
 .pa.hurt .pa-flash{animation:pa-flash .4s ease-out}
 @keyframes pa-flash{0%{opacity:.7}100%{opacity:0}}
@@ -216,24 +245,27 @@
 `;
   function injectCss(){ if(document.getElementById("pa-css")) return; const s = document.createElement("style"); s.id = "pa-css"; s.textContent = css; document.head.appendChild(s); }
 
-  const DEFAULTS = { name: "", body: "pick", color: PALETTE[0], accent: "#f7f4ee", pose: "cheer", eyes: "dots", eyeColor: "#3a3a3d", mouth: "smile", acc: "none", accColor: "" };
+  const DEFAULTS = { name: "", body: "kid", skin: SKINS[1], hair: "crop", hairColor: HAIR_COLORS[1], eyes: "dots", eyeColor: EYE_COLORS[0], mouth: "smile", top: "tee", color: PALETTE[7], bottom: "pants", pants: PALETTE[8], accent: PALETTE[0], pose: "cheer", acc: "none", accColor: PALETTE[0] };
   const inList = (v, list) => list.some(x => (Array.isArray(x) ? x[0] : x) === v);
-  // fills in anything missing and swaps values from older versions that no longer exist for the nearest current one
+  const isHex = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
+  // fills in anything missing; values from older versions that no longer exist (picks, amps, old hats...) fall back to a default
   const norm = cfg => {
     const c = Object.assign({}, DEFAULTS, cfg || {});
-    if(!BODIES[c.body]) c.body = DEFAULTS.body;
+    if(!AGES[c.body]) c.body = DEFAULTS.body;
     if(!POSES[c.pose]) c.pose = DEFAULTS.pose;
     if(!inList(c.eyes, OPTIONS.eyes)) c.eyes = DEFAULTS.eyes;
     if(!inList(c.mouth, OPTIONS.mouths)) c.mouth = DEFAULTS.mouth;
+    if(!inList(c.hair, OPTIONS.hair)) c.hair = DEFAULTS.hair;
+    if(!inList(c.top, OPTIONS.tops)) c.top = DEFAULTS.top;
+    if(!inList(c.bottom, OPTIONS.bottoms)) c.bottom = DEFAULTS.bottom;
     if(!inList(c.acc, OPTIONS.acc)) c.acc = "none";
-    if(!/^#[0-9a-f]{6}$/i.test(c.eyeColor)) c.eyeColor = DEFAULTS.eyeColor;
-    if(!c.accColor) c.accColor = c.accent;
+    ["skin", "hairColor", "eyeColor", "color", "pants", "accent", "accColor"].forEach(k => { if(!isHex(c[k])) c[k] = DEFAULTS[k]; });
     return c;
   };
 
   function PlayerArt(el, cfg){
     injectCss(); cfg = norm(cfg);
-    el.innerHTML = `<svg class="pa" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true"><ellipse cx="200" cy="384" rx="104" ry="10" fill="${INK}" opacity=".14"/><g class="pa-hitg"><g class="pa-all">${build(cfg, true)}</g></g></svg>`;
+    el.innerHTML = `<svg class="pa" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true"><ellipse cx="200" cy="384" rx="92" ry="9" fill="${INK}" opacity=".14"/><g class="pa-hitg"><g class="pa-all">${build(cfg, true)}</g></g></svg>`;
     const svg = el.querySelector("svg");
     let stage = 0, ko = false, dir = 1;
     const flick = (cls, ms) => { svg.classList.remove(cls); void svg.getBoundingClientRect(); svg.classList.add(cls); setTimeout(() => svg.classList.remove(cls), ms); };
@@ -262,8 +294,9 @@
   const pick = a => a[Math.floor(Math.random() * a.length)];
   window.Player = {
     random(){
-      return norm({ body: pick(OPTIONS.bodies)[0], color: pick(PALETTE.slice(0, 11)), accent: pick(["#f7f4ee", "#f7f4ee", pick(PALETTE)]), pose: pick(OPTIONS.poses)[0],
-        eyes: pick(OPTIONS.eyes.slice(0, 5))[0], eyeColor: pick(["#3a3a3d", "#3a3a3d", "#4aa8ff", "#4fb86a", "#a8723c"]), mouth: pick(OPTIONS.mouths)[0], acc: pick(OPTIONS.acc)[0], accColor: pick(PALETTE) });
+      return norm({ body: pick(OPTIONS.bodies)[0], skin: pick(SKINS), hair: pick(OPTIONS.hair)[0], hairColor: pick(HAIR_COLORS), eyes: pick(OPTIONS.eyes.slice(0, 5))[0], eyeColor: pick(EYE_COLORS),
+        mouth: pick(OPTIONS.mouths)[0], top: pick(OPTIONS.tops)[0], color: pick(PALETTE), bottom: pick(OPTIONS.bottoms)[0], pants: pick(PALETTE), accent: pick(PALETTE), pose: pick(OPTIONS.poses)[0],
+        acc: pick(["none", "none", ...OPTIONS.acc.map(a => a[0])]), accColor: pick(PALETTE) });
     },
     get(){
       try{ const v = JSON.parse(localStorage.getItem(KEY)); if(v && v.body) return norm(v); }catch(e){}
