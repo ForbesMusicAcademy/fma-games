@@ -793,7 +793,7 @@ let lastRegion = -1, bannerT;
 function regionBanner(){
   if(S.mode !== "main") return; const r = MAIN.regions.findIndex(r => S.pz < r.z1); if(r === lastRegion || r < 0) return;
   const first = lastRegion === -1; lastRegion = r; const b = $("banner");
-  b.innerHTML = `${REGIONS[r].name}<small>${first ? (resumed ? "Welcome back!" : "Your adventure starts here") : "A new region!"}</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2400);
+  b.innerHTML = `${REGIONS[r].name}<small>${(first ? (resumed ? "Welcome back!" : "Your adventure starts here") : "A new region!") + ` · Gate song: ${["Zombie", "Wagon Wheel", "Stand By Me"][r] || "?"}`}</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2400);
 }
 
 /* ============================== effects ============================== */
