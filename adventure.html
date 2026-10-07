@@ -501,6 +501,7 @@ function drawStone(n, now, isPebble){
   const top = n.type === "golden" ? "#ffd34d" : n.type === "surprise" ? "#b9a0ff" : n.done ? "#e9dfc4" : "#bdb6a8";
   ctx.fillStyle = "#5f5a52"; ctx.beginPath(); ctx.ellipse(p.x, cy + th * 0.5, rx, ry, 0, 0, 7); ctx.fill();
   ctx.fillStyle = top; ol(Math.max(1, p.s * 0.04)); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx, ry, 0, 0, 7); ctx.fill(); ctx.stroke();
+  if(n.s && n.type !== "surprise" && n.type !== "golden"){ ctx.strokeStyle = (SKILLS[n.s] || SKILLS.repertoire).c; ctx.lineWidth = Math.max(1.5, p.s * 0.07); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * 0.82, ry * 0.82, 0, 0, 7); ctx.stroke(); }
   ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(p.x - rx * 0.25, cy - th * 0.5 - ry * 0.2, rx * 0.35, ry * 0.3, 0, 0, 7); ctx.fill();
   if(n === S.nextN && !n.done){ const k = (now % 1400) / 1400; ctx.strokeStyle = `rgba(255,196,43,${0.9 * (1 - k)})`; ctx.lineWidth = Math.max(2, p.s * 0.08); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * (1.05 + k * 0.5), ry * (1.05 + k * 0.5), 0, 0, 7); ctx.stroke(); }
   if(n.cracked){ ol(p.s * 0.05); ctx.beginPath(); ctx.moveTo(p.x - rx * 0.5, cy - th); ctx.lineTo(p.x - rx * 0.1, cy - th * 0.4); ctx.lineTo(p.x - rx * 0.3, cy); ctx.moveTo(p.x + rx * 0.4, cy - th); ctx.lineTo(p.x + rx * 0.1, cy - th * 0.2); ctx.stroke(); }
@@ -541,13 +542,21 @@ function drawGateArch(n, now){
 }
 function drawBoss(n, now){
   if(n.done && !n.koT) return;
-  const t = n.koT ? (now - n.koT) / 900 : 0; if(t > 1) return;
-  const p = P(n.x + 0.2, 0, n.z + 1.9); if(!p || !BOSS_IMG.complete) return; ctx.globalAlpha = fogA(p.dz) * (1 - t);
+  const t = n.koT ? Math.max(0, (now - n.koT) / 900) : 0; if(t > 1) return;
+  const p = P(n.x + 1.7, 0, n.z + 3.6); if(!p || !BOSS_IMG.complete) return; ctx.globalAlpha = fogA(p.dz) * (1 - t);
   const size = 2.6 * p.s, near = !n.done && n.z - S.pz < 24 ? 1 - Math.max(0, n.z - S.pz - 4) / 20 : 0, shake = near * size * 0.03 * Math.sin(now / 28), bob = Math.sin(now / 300) * size * 0.03 + shake;
   if(near > 0.5 && audio.on && Math.random() < 0.01) grumble();
   ctx.save(); ctx.translate(p.x + t * size, p.y - size * 0.5 + bob - t * size * 0.8); ctx.rotate(t * 3 + Math.sin(now / 500) * 0.04);
-  if(n.boss === "cables") ctx.filter = "hue-rotate(160deg)";
+  // the fight: three volleys of notes, each one makes the boss flash and reel
+  let hit = 0; if(n.fight && now < n.koT){ const e = now - n.fight; for(const h of [500, 1100, 1700]) if(e > h && e < h + 220) hit = 1 - (e - h) / 220; }
+  if(hit) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
+  ctx.filter = (n.boss === "cables" ? "hue-rotate(160deg) " : "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
   ctx.drawImage(BOSS_IMG, -size / 2, -size / 2, size, size); ctx.restore(); ctx.filter = "none"; ctx.globalAlpha = 1;
+  if(n.fight && now < n.koT){ const e = now - n.fight, from = P(S.px, 1.3, S.pz), to = P(n.x + 1.7, 1.3, n.z + 3.6);
+    if(from && to) for(const h of [0, 600, 1200]) for(let k = 0; k < 3; k++){ const q = (e - h - k * 90) / 500; if(q < 0 || q > 1) continue;
+      const x = from.x + (to.x - from.x) * q, y = from.y + (to.y - from.y) * q - Math.sin(Math.PI * q) * size * 0.4, fs = Math.max(12, (from.s + (to.s - from.s) * q) * 0.6);
+      ctx.fillStyle = ["#ffc42b", "#ff6fa3", "#4aa8ff"][k]; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.font = `900 ${fs}px Nunito, sans-serif`; ctx.textAlign = "center"; ctx.strokeText(k % 2 ? "♫" : "♪", x, y); ctx.fillText(k % 2 ? "♫" : "♪", x, y); }
+    if(e > 1700 && e < 2100){ ctx.fillStyle = `rgba(255,255,255,${(e - 1700) / 400 * 0.5})`; ctx.fillRect(0, 0, W, H); } }
 }
 function drawNpc(n, now){
   const p = P(n.x, 0, n.z); if(!p || p.dz > 60) return;
@@ -734,6 +743,7 @@ setInterval(musicTick, 120);
 const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3];
 let scaleStep = 0;
 function stoneNote(){ if(!audio.on) return; const f = SCALE[scaleStep % SCALE.length]; scaleStep++; const t = audio.ctx.currentTime; tone(f, t, 0.5, "triangle", 0.06); tone(f * 2, t, 0.3, "sine", 0.02); }
+function hitSound(i){ if(!audio.on) return; const t = audio.ctx.currentTime; tone([392, 494, 587][i], t, 0.18, "square", 0.04, [196, 247, 294][i]); tone(90, t, 0.2, "sawtooth", 0.05, 50); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
 const IDLE = { t: performance.now() }, RAINBOW = { t: 0 };
@@ -762,7 +772,7 @@ function frame(now){
     all.forEach(n => { if(n.z < zMin - 2 || n.z > zMax) return;
       list.push({ z: n.z + 0.01, d: () => drawStone(n, now, false) });
       if(n.pebbles) n.pebbles.forEach(pb => list.push({ z: pb.z, d: () => drawStone(pb, now, true) }));
-      if(n.type === "gate"){ list.push({ z: n.z - 1.8, d: () => drawGateArch(n, now) }); list.push({ z: n.z + 1.9, d: () => drawBoss(n, now) }); } });
+      if(n.type === "gate"){ list.push({ z: n.z - 1.8, d: () => drawGateArch(n, now) }); list.push({ z: n.z + 3.6, d: () => drawBoss(n, now) }); } });
   });
   for(const c of S.critters) list.push({ z: c.z, d: () => drawCritter(c, now) });
   if(S.mode === "main") MAIN.regions.forEach((rg, ri) => { const z = rg.z0 + 1.2; if(z > zMin && z < zMax) list.push({ z, d: () => drawArch(ri, z, now) }); });
@@ -982,11 +992,11 @@ $("sheet").addEventListener("click", e => {
   }
 });
 function pass(){
-  const n = node(), base = baseNode(); n.done = true; hideSheet(); turnAround(n.type === "gate" ? "star" : ["rock", "cheer", "flex", "thumbs"][Math.floor(Math.random() * 4)], 1500); burst(n.x, 1.2, n.z, (SKILLS[n.s] || SKILLS.repertoire).c);
+  const n = node(), base = baseNode(); n.done = true; hideSheet(); if(n.type !== "gate") turnAround(["rock", "cheer", "flex", "thumbs"][Math.floor(Math.random() * 4)], 1500); burst(n.x, 1.2, n.z, (SKILLS[n.s] || SKILLS.repertoire).c);
   let msg = ["Stone cleared!", n.n];
   if(n.power && !S.powers.includes(n.power)){ S.powers.push(n.power); msg = ["New power!", POWERS[n.power]]; }
   if(S.peb >= 0 && base.pebbles.every(p => p.done)){ base.done = true; msg = ["The whole stone counts!", base.n]; }
-  if(n.type === "gate"){ n.koT = performance.now(); S.region = Math.max(S.region, n.region + 1); burst(n.x, 2, n.z + 1.5, "#e8433f", 60);
+  if(n.type === "gate"){ n.fight = performance.now(); n.koT = n.fight + 2100; [500, 1100, 1700].forEach((ms, i) => setTimeout(() => hitSound(i), ms)); S.region = Math.max(S.region, n.region + 1); burst(n.x, 2, n.z + 1.5, "#e8433f", 60);
     msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 1500); RAINBOW.t = performance.now(); }
   toast(msg[0], msg[1]); bump(n.s); drawHud(); renderControls(); winSound();
 }
