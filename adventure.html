@@ -600,13 +600,13 @@ function drawBoss(n, now){
   if(n.done && !n.koT) return;
   const t = n.koT ? Math.max(0, (now - n.koT) / 900) : 0; if(t > 1) return;
   const p = P(n.x + 1.7, 0, n.z + 3.6); if(!p || !BOSS_IMG.complete) return; ctx.globalAlpha = fogA(p.dz) * (1 - t);
-  const size = 2.6 * p.s, near = !n.done && n.z - S.pz < 24 ? 1 - Math.max(0, n.z - S.pz - 4) / 20 : 0, shake = near * size * 0.03 * Math.sin(now / 28), bob = Math.sin(now / 300) * size * 0.03 + shake;
+  const size = 2.6 * p.s, near = !n.done && n.z - S.pz < 24 ? 1 - Math.max(0, n.z - S.pz - 4) / 20 : 0, shake = RM ? 0 : near * size * 0.03 * Math.sin(now / 28), bob = Math.sin(now / 300) * size * 0.03 + shake;
   if(near > 0.5 && audio.on && Math.random() < 0.01) grumble();
   ctx.save(); ctx.translate(p.x + t * size, p.y - size * 0.5 + bob - t * size * 0.8); ctx.rotate(t * 3 + Math.sin(now / 500) * 0.04);
   // the fight: three volleys of notes, each one makes the boss flash and reel
   let hit = 0; if(n.fight && now < n.koT){ const e = now - n.fight; for(const h of [500, 1100, 1700]) if(e > h && e < h + 220) hit = 1 - (e - h) / 220; }
   if(n.poke && now - n.poke < 600) hit = Math.max(hit, 0.5 * (1 - (now - n.poke) / 600));
-  if(hit) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
+  if(hit && !RM) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
   if(!n.done) HITS.push({ x0: p.x - size / 2, y0: p.y - size, x1: p.x + size / 2, y1: p.y, o: n, kind: "boss" });
   ctx.filter = ({ 0: "", 1: "hue-rotate(160deg) ", 2: "hue-rotate(250deg) saturate(1.4) " }[n.region] || "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
   ctx.drawImage(BOSS_IMG, -size / 2, -size / 2, size, size); ctx.restore(); ctx.filter = "none"; ctx.globalAlpha = 1;
@@ -614,7 +614,7 @@ function drawBoss(n, now){
     if(from && to) for(const h of [0, 600, 1200]) for(let k = 0; k < 3; k++){ const q = (e - h - k * 90) / 500; if(q < 0 || q > 1) continue;
       const x = from.x + (to.x - from.x) * q, y = from.y + (to.y - from.y) * q - Math.sin(Math.PI * q) * size * 0.4, fs = Math.max(12, (from.s + (to.s - from.s) * q) * 0.6);
       ctx.fillStyle = ["#ffc42b", "#ff6fa3", "#4aa8ff"][k]; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.font = `900 ${fs}px Nunito, sans-serif`; ctx.textAlign = "center"; ctx.strokeText(k % 2 ? "♫" : "♪", x, y); ctx.fillText(k % 2 ? "♫" : "♪", x, y); }
-    if(e > 1700 && e < 2100){ ctx.fillStyle = `rgba(255,255,255,${(e - 1700) / 400 * 0.5})`; ctx.fillRect(0, 0, W, H); } }
+    if(e > 1700 && e < 2100 && !RM){ ctx.fillStyle = `rgba(255,255,255,${(e - 1700) / 400 * 0.5})`; ctx.fillRect(0, 0, W, H); } }
 }
 function drawNpc(n, now){
   const p = P(n.x, 0, n.z); if(!p || p.dz > 60) return;
@@ -768,7 +768,7 @@ function drawWeather(dt, now){
     FINALE.sparks = FINALE.sparks.filter(p => (p.t += dt) < 1.4); FINALE.sparks.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; ctx.fillStyle = p.c; ctx.globalAlpha = 1 - p.t / 1.4; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }); ctx.globalAlpha = 1; }
   // now and then a passing shower in the meadow or by the river, then a rainbow
   const wet = tn === "meadow" || tn === "river";
-  if(!RAIN.on && wet && now > RAIN.next){ RAIN.on = true; RAIN.t0 = now; RAIN.len = 14000 + Math.random() * 8000; rainSound(true); }
+  if(!RAIN.on && wet && now > RAIN.next && !RM){ RAIN.on = true; RAIN.t0 = now; RAIN.len = 14000 + Math.random() * 8000; rainSound(true); }
   if(RAIN.on && (now - RAIN.t0 > RAIN.len || !wet)){ RAIN.on = false; RAIN.next = now + 70000 + Math.random() * 60000; rainSound(false); if(wet) RAINBOW.t = now; }
   if(RAIN.on){ const k = Math.min(1, (now - RAIN.t0) / 2500, (RAIN.t0 + RAIN.len - now) / 2500);
     ctx.fillStyle = `rgba(60,70,100,${0.16 * k})`; ctx.fillRect(0, 0, W, H);
@@ -985,6 +985,7 @@ function drawBuddy(now){ const b = S.buddy; if(!b || !b.img.complete || !b.img.n
 function buddyArrive(){ const b = S.buddy; if(!b || b.bye) return; b.left--; if(b.left <= 0){ b.bye = performance.now() + 600; setTimeout(() => toast(`${b.f.name.split(" ")[1] || b.f.name}: “See you up the road!”`, "Your friend heads off."), 500); } }
 
 /* ============================== saving (this device only, one save per player) ============================== */
+const GAME_ICON = { "quiz.html": "characters/plucky.png", "boss.html": "characters/boss.svg", "chords.html": "star-on.png", "tuner.html": "characters/fret.png", "songs.html": "diamond.png" };
 const PENDING_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-pending-v1") : "fma-adventure-pending-v1";
 const SAVE_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-v1") : "fma-adventure-v1";
 const allNodes = () => { const out = []; MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => out.push(n))); return out; };
@@ -1062,7 +1063,7 @@ function showSheet(){
     else if(n.cracked) btns = `<button data-a="close">Close</button>`;
     else if(n.classOnly) btns = `<button class="go" data-a="pass">💎 Dave clears this in class (demo: clear it)</button>`;
     else if(isGate && !ready) btns = `<button class="go" data-a="close">OK</button>`;
-    else btns = (n.game ? `<a href="${n.game}" data-a="play">▶ Play the game</a>` : "") + `<button class="go" data-a="pass">✓ Passed (demo)</button><button data-a="fail">✗ Not yet (demo)</button>`
+    else btns = (n.game ? `<a href="${n.game}" data-a="play"><img src="${GAME_ICON[n.game] || "star-on.png"}" alt="" style="width:28px;height:28px;margin-right:6px;object-fit:contain">Play the game</a>` : "") + `<button class="go" data-a="pass">✓ Passed (demo)</button><button data-a="fail">✗ Not yet (demo)</button>`
       + (S.powers.length && n.type !== "gate" && !n.classOnly ? `<button data-a="power" style="flex-basis:100%;background:#efe6ff">✨ Use a power to get past (${S.powers.map(k => POWERS[k]).join(", ")})</button>` : "");
     if(TEACHER && !n.done && !n.cracked) btns += `<button data-a="mentor" style="flex-basis:100%;background:#d9f0ff">🎓 Mentor Pass (teacher): cleared in class</button>`;
     if(n.mentor) body += ` <i>(Cleared with a Mentor Pass.)</i>`;
