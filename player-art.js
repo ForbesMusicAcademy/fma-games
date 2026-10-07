@@ -29,13 +29,13 @@
 
   const SKINS = ["#ffe2c9", "#f6c9a2", "#e5ab7f", "#c98c5e", "#9b6a45", "#6d4730"];
   const PALETTE = ["#e8433f", "#ff6fa3", "#ff8a1c", "#ffc42b", "#9be04a", "#4fb86a", "#4fd0c0", "#4aa8ff", "#5470f0", "#a070e8", "#f7f4ee", "#a8723c", "#3a3a3d"];
-  const HAIR_COLORS = ["#2b2623", "#5b3a1e", "#8b5a2b", "#c8761f", "#ffd34d", "#e8433f", "#ff6fa3", "#4aa8ff", "#a070e8", "#f7f4ee"];
+  const HAIR_COLORS = ["#2b2623", "#5b3a1e", "#8b5a2b", "#c8761f", "#ffd34d", "#e8433f", "#ff6fa3", "#4aa8ff", "#a070e8", "#9a958e", "#f7f4ee"];
   // Every list runs from sweet to wicked.
   const OPTIONS = {
     bodies: [["kid", "Kid"], ["teen", "Teen"], ["adult", "Adult"]],
     poses: [["wave", "Wave"], ["cheer", "Cheer"], ["thumbs", "Thumbs up"], ["peace", "Peace"], ["star", "Star jump"],
       ["hips", "Hands on hips"], ["flex", "Flex"], ["rock", "Rock on"], ["relax", "Relaxed"]],
-    hair: [["none", "None"], ["buzz", "Buzz cut"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["quiff", "Flick-up"], ["mop", "Mop"], ["bowl", "Mop-top"],
+    hair: [["none", "None"], ["buzz", "Buzz cut"], ["balding", "Balding"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["quiff", "Flick-up"], ["mop", "Mop"], ["bowl", "Mop-top"],
       ["curly", "Curly"], ["afro", "Afro"], ["spiky", "Spiky"], ["mohawk", "Mohawk"], ["bun", "Bun"], ["spacebuns", "Space buns"], ["ponytail", "Ponytail"],
       ["pigtails", "Pigtails"], ["plait", "Plaits"], ["bob", "Bob"], ["long", "Long"], ["wavy", "Long and wavy"], ["grunge", "Grunge"]],
     beards: [["none", "None"], ["stubble", "Stubble"], ["moustache", "Moustache"], ["handlebar", "Handlebar"], ["goatee", "Goatee"],
@@ -165,6 +165,13 @@
       case "buzz": {             // a see-through cap: the colour of the hair, the skin showing through, a fine stubble texture
         let dots = ""; for(let y = -0.92; y < -0.5; y += 0.12) for(let x = -0.86; x <= 0.86; x += 0.14){ const yy = y + Math.abs(x) * 0.36 * (y < -0.8 ? 0 : 1); if(x * x + (yy + 0.1) * (yy + 0.1) < 0.88) dots += `M${n3(x + (y * 7 % 0.05))} ${n3(yy)}h0.001`; }
         return { back: "", front: T(`<path d="${SKULL}" fill-opacity=".55" stroke="none"/>`) + T(ln(dots, dk, 2.4, 0.28) + ln("M-0.8 -0.42 C-0.5 -0.6 0.5 -0.6 0.8 -0.42", color, 4, 0.5)) };
+      }
+      case "balding": {         // grandpa style: a bald, shiny dome, and buzz-cut hair only round the sides, above and round the ears
+        const side = sg => { const P = (x, y) => `${n3(sg * x)} ${y}`;
+          return `M${P(0.84, -0.56)} C${P(0.7, -0.46)} ${P(0.66, -0.26)} ${P(0.7, -0.04)} C${P(0.72, 0.1)} ${P(0.78, 0.2)} ${P(0.86, 0.28)} L${P(0.98, 0.22)} C${P(1.02, -0.06)} ${P(1.0, -0.36)} ${P(0.84, -0.56)}Z`; };
+        let dots = ""; for(let y = -0.46; y <= 0.16; y += 0.1) for(let x = 0.76; x <= 0.96; x += 0.08){ if(x > 0.74 + Math.abs(y + 0.15) * 0.1) dots += `M${n3(x)} ${n3(y)}h0.001 M${n3(-x)} ${n3(y + 0.05)}h0.001 `; }
+        return { back: "", front: T(`<path d="${side(-1)} ${side(1)}" fill-opacity=".72" stroke="none"/>` + ln(dots, dk, 2.4, 0.35))
+          + T(ln("M-0.52 -0.8 Q-0.32 -0.94 -0.08 -0.96", "#fff", 5, 0.55) + ln("M0.08 -0.95 Q0.14 -0.95 0.2 -0.94", "#fff", 5, 0.55)) };
       }
       case "shortsides": {       // faded sides, a bit of length on top swept over, a little flick at the front
         const pts = [[0.86, -0.42], [0.66, -0.56], [0.58, -0.44], [0.36, -0.64], [0.24, -0.54], [-0.06, -0.66], [-0.5, -0.6], [-0.88, -0.36]];
