@@ -299,6 +299,12 @@ for(let z = MAIN.regions[2].z0 + 3; z < MAIN.regions[2].z1; z += 6) for(const d 
 PROPS.main.push({ kind: "picnic", x: MAIN.xfn(MAIN.regions[0].z0 + SP * 5.5) - 9, z: MAIN.regions[0].z0 + SP * 5.5, r: 0.5 });
 PROPS.main.push({ kind: "eagle", x: MAIN.xfn(MAIN.regions[1].z0 + 25), z: MAIN.regions[1].z0 + 25, r: 0.5 }, { kind: "eagle", x: MAIN.xfn(MAIN.regions[1].z0 + 75), z: MAIN.regions[1].z0 + 75, r: 0.2 });
 PROPS.main.push({ kind: "kite", x: MAIN.xfn(MAIN.regions[0].z0 + 30) + 7, z: MAIN.regions[0].z0 + 30, r: 0.5 });
+const randLoot = () => { const pool = LOOT.filter(l => !l.secret); return pool[Math.floor(Math.random() * pool.length)]; };
+// secrets: tap them to find something special
+const SECRETS = [{ kind: "fairyring", loot: { k: "acc", v: "flowers", n: "a flower crown", c: "#ff6fa3" }, z: MAIN.regions[0].z0 + 47, side: 1, d: 6.5 },
+  { kind: "gem", loot: { k: "gear", v: "guitar", n: "a golden Strat", c: "#ffc42b" }, z: MAIN.regions[1].z0 + 58, side: -1, d: 5.5 },
+  { kind: "bottle", loot: { k: "acc", v: "pirate", n: "a pirate hat", c: "#2b2623" }, z: MAIN.regions[2].z0 + 33, side: 1, d: 5 }];
+SECRETS.forEach(sc => { sc.loot.secret = true; LOOT.push(sc.loot); PROPS.main.push({ kind: sc.kind, x: MAIN.xfn(sc.z) + sc.side * sc.d, z: sc.z, r: 0.5, secret: sc }); });
 PROPS.main.push({ kind: "balloon", x: MAIN.xfn(MAIN.regions[1].z0 + 40) + 14, z: MAIN.regions[1].z0 + 40, r: 0.5 });
 // bridge posts at both ends of each crossing
 FEATURES.forEach(f => { if(f.kind === "ford") return; for(const z of [f.z0, f.z1]) for(const d of [-1.7, 1.7]) PROPS.main.push({ kind: f.kind === "chasm" ? "ropepost" : "post", x: MAIN.xfn(z) + d, z, r: 0.5 }); });
@@ -556,6 +562,13 @@ function drawProp(o, p, now){
       ol(s * 0.04); ctx.fillStyle = "#ff6fa3"; ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky + ks); ctx.lineTo(kx - ks * 0.7, ky); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#ffc42b"; ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky); ctx.closePath(); ctx.fill();
       for(let i = 0; i < 4; i++){ const tx = kx + Math.sin(now / 300 + i) * s * 0.2, ty = ky + ks + i * s * 0.35; ctx.fillStyle = ["#4aa8ff", "#9be04a", "#ffc42b", "#ff6fa3"][i]; ctx.beginPath(); ctx.ellipse(tx, ty, s * 0.12, s * 0.06, 0.5, 0, 7); ctx.fill(); } break; }
+    case "fairyring": case "gem": case "bottle": { const found = S.loot.includes(o.secret.loot.n), tw = 0.5 + 0.5 * Math.sin(now / 250 + k * 9); ol(s * 0.035);
+      if(o.kind === "fairyring") for(let i = 0; i < 7; i++){ const a = i / 7 * Math.PI * 2, mx = x + Math.cos(a) * s * 0.7, my = y + Math.sin(a) * s * 0.22; ctx.fillStyle = "#fff4e0"; ctx.fillRect(mx - s * 0.04, my - s * 0.18, s * 0.08, s * 0.18); ctx.fillStyle = i % 2 ? "#e8433f" : "#a070e8"; ctx.beginPath(); ctx.ellipse(mx, my - s * 0.18, s * 0.13, s * 0.08, 0, Math.PI, 0); ctx.fill(); ctx.stroke(); }
+      if(o.kind === "gem"){ ctx.fillStyle = "#a9a29a"; ctx.beginPath(); ctx.ellipse(x, y - s * 0.2, s * 0.7, s * 0.4, 0, Math.PI, 0); ctx.lineTo(x + s * 0.7, y); ctx.closePath(); ctx.fill(); ctx.stroke(); if(!found){ ctx.fillStyle = "#4fd0c0"; ctx.beginPath(); ctx.moveTo(x, y - s * 0.75); ctx.lineTo(x + s * 0.18, y - s * 0.5); ctx.lineTo(x, y - s * 0.32); ctx.lineTo(x - s * 0.18, y - s * 0.5); ctx.closePath(); ctx.fill(); ctx.stroke(); } }
+      if(o.kind === "bottle"){ const b = Math.sin(now / 600) * s * 0.06; ctx.save(); ctx.translate(x, y - s * 0.1 + b); ctx.rotate(0.4 + Math.sin(now / 900) * 0.2); ctx.fillStyle = "rgba(160,220,200,.85)"; ctx.beginPath(); roundRect(-s * 0.35, -s * 0.13, s * 0.6, s * 0.26, s * 0.1); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#a8723c"; ctx.fillRect(s * 0.25, -s * 0.06, s * 0.14, s * 0.12); if(!found){ ctx.fillStyle = "#fffdf6"; ctx.fillRect(-s * 0.22, -s * 0.06, s * 0.3, s * 0.12); } ctx.restore(); }
+      if(!found){ ctx.fillStyle = `rgba(255,240,150,${tw})`; for(let i = 0; i < 3; i++){ const sx = x + Math.cos(now / 400 + i * 2.1) * s * 0.5, sy = y - s * (0.5 + 0.3 * Math.sin(now / 300 + i)); circle(sx, sy, Math.max(1.5, s * 0.05 * tw)); ctx.fill(); }
+        HITS.push({ x0: x - s, y0: y - s * 1.2, x1: x + s, y1: y + s * 0.3, o, kind: "secret" }); }
+      break; }
     case "windmill": { const h = 6 * s, w = 1.4 * s; shadow(p, 1.6); ol(s * 0.05);
       ctx.fillStyle = "#f3ead8"; ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x - w * 0.6, y - h); ctx.lineTo(x + w * 0.6, y - h); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.moveTo(x - w * 0.8, y - h); ctx.lineTo(x, y - h - w * 1.1); ctx.lineTo(x + w * 0.8, y - h); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1064,7 +1077,7 @@ function surprise(n){
     const q = QUIZ[Math.floor(Math.random() * QUIZ.length)], fr = FRIENDS[Math.floor(Math.random() * FRIENDS.length)], who = fr.name, cfg = fr.cfg;
     const opts = q.a.map((t, i) => ({ t, ok: i === 0 })).sort(() => Math.random() - .5);
     n.event = { kind: "quiz", who, q, opts, cfg, fr };
-  } else n.event = { kind: "chest", loot: LOOT[Math.floor(Math.random() * LOOT.length)] };
+  } else n.event = { kind: "chest", loot: randLoot() };
   showSheet();
 }
 function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; if(!S.loot.includes(l.n)) S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
@@ -1073,7 +1086,7 @@ const TWINKLE = [[261.6, 261.6, 392.0, 392.0], [440.0, 440.0, 392.0], [349.2, 34
 function bonusTune(i){ if(!audio.on) return; const t = audio.ctx.currentTime, ph = TWINKLE[i % TWINKLE.length]; ph.forEach((f, k) => pluck(f, t + k * 0.28, 0.07)); }
 function collectBonus(n){ bonusTune(BONUSC.steps.filter(x => x.bonus && x.done).length);
   n.done = true; burst(n.x, 1.6, n.z, "#ffc42b", 40); toast("♪ Note collected!", n.end ? "Bonus stage complete!" : `${BONUSC.steps.filter(s => s.done).length} of ${BONUSC.steps.filter(x => x.bonus).length}`);
-  if(n.end){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
+  if(n.end){ const l = randLoot(); setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
   else setTimeout(forward, 900);
 }
 function enterBonus(){
@@ -1140,7 +1153,7 @@ $("sheet").addEventListener("click", e => {
     case "ans": { const o = n.event.opts[+a.dataset.j]; n.done = true;
       a.classList.add(o.ok ? "right" : "wrong");
       setTimeout(() => { hideSheet();
-        if(o.ok){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; giveLoot(l); burst(S.px, 1.4, S.pz, "#9be04a", 40); toast("Correct! " + n.event.who + " gives you " + l.n, "You're wearing it now."); }
+        if(o.ok){ const l = randLoot(); giveLoot(l); burst(S.px, 1.4, S.pz, "#9be04a", 40); toast("Correct! " + n.event.who + " gives you " + l.n, "You're wearing it now."); }
         else { toast("Good try!", `It was “${n.event.opts.find(x => x.ok).t}”. +1 effort point.`); }
         drawHud(); setTimeout(() => startBuddy(n.event.fr), 900); }, 700); break; }
   }
@@ -1274,6 +1287,7 @@ function poke(h){ const now = performance.now(), o = h.o;
   if(h.kind === "crowd" && audio.on) winSound();
   if(h.kind === "me" && !HERO.turn) turnAround(["wave", "peace", "thumbs", "rock", "flex"][Math.floor(Math.random() * 5)], 1100);
   if(h.kind === "boss" && audio.on) grumble();
+  if(h.kind === "secret" && !S.loot.includes(o.secret.loot.n)){ giveLoot(o.secret.loot); toast("✨ Secret found!", `You found ${o.secret.loot.n}! It's in your wardrobe.`); burst(o.x, 0.8, o.z, "#ffc42b", 40); drawHud(); }
   if(h.kind === "stone"){ if(S.choosing) choose(o.branch); else forward(); } }
 let toastT; function toast(a, b){ const t = $("toast"); t.innerHTML = a + (b ? `<small>${b}</small>` : ""); t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 1900); }
 function hint(on){ $("hint").style.opacity = on ? 1 : 0; }
