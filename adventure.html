@@ -301,7 +301,9 @@ NPCS.forEach((n, i) => { n.friend = FRIENDS[i % FRIENDS.length]; n.name = n.frie
 const regionName = z => REGIONS[Math.max(0, MAIN.regions.findIndex(r => z < r.z1))] ? REGIONS[Math.max(0, MAIN.regions.findIndex(r => z < r.z1))].name : "";
 function friendLine(n){
   const f = n.friend, first = f.name.split(" ")[1] || f.name; f.met++;
-  if(f.met === 1) return `Hi! I'm ${first}!`;
+  const you = ME.name ? ME.name.split(" ")[0] : "";
+  if(f.met === 1) return you ? `Hi ${you}! I'm ${first}!` : `Hi! I'm ${first}!`;
+  if(you && Math.random() < 0.35) return [`Go ${you}, go!`, `Nice one, ${you}!`, `${you}! Wait up!`][Math.floor(Math.random() * 3)];
   const where = regionName(n.z), lines = [`${first} again! Fancy seeing you in ${where}!`, `You made it to ${where}!`, `Told you we'd meet again!`, `Keep going, you're doing great!`, `I practised too! ${CHEERS[Math.floor(Math.random() * CHEERS.length)]}`];
   return f.met === 2 ? lines[0] : lines[1 + Math.floor(Math.random() * (lines.length - 1))];
 }
@@ -346,6 +348,9 @@ function drawSky(th, now){
     ctx.fillStyle = "rgba(255,244,200,.9)"; circle(W * 0.8 - S.cam.x * 1.5, HOR * 0.28, Math.min(W, H) * 0.07); ctx.fill();
     for(let i = 0; i < 6; i++){ const x = ((i * 233 + now / 90 - S.cam.x * 4) % (W + 300) + W + 300) % (W + 300) - 150, y = HOR * (0.15 + (i % 3) * 0.17);
       cloud(x, y, 22 + (i % 3) * 10); }
+    // a rainbow for a while after you beat a gate boss
+    if(RAINBOW.t && performance.now() - RAINBOW.t < 40000){ const a = Math.min(1, (performance.now() - RAINBOW.t) / 3000) * Math.min(1, (40000 - (performance.now() - RAINBOW.t)) / 5000), cx = W * 0.35 - S.cam.x * 2, cy = HOR + 10, R0 = Math.min(W, H) * 0.55;
+      ["#e8433f", "#ff8a1c", "#ffc42b", "#4fb86a", "#4aa8ff", "#a070e8"].forEach((c, i) => { ctx.strokeStyle = c; ctx.globalAlpha = 0.45 * a; ctx.lineWidth = R0 * 0.035; ctx.beginPath(); ctx.arc(cx, cy, R0 - i * R0 * 0.035, Math.PI, 0); ctx.stroke(); }); ctx.globalAlpha = 1; }
     // a little flock of birds drifting across
     ctx.strokeStyle = "rgba(38,33,31,.7)"; ctx.lineWidth = 2; ctx.lineCap = "round";
     for(let i = 0; i < 5; i++){ const fx = ((now / 55 - S.cam.x * 2 + (i % 3) * 22) % (W + 300) + W + 300) % (W + 300) - 150, fy = HOR * 0.42 + Math.abs(i - 2) * 9 + Math.sin(now / 900) * 6, fl = Math.sin(now / 120 + i) * 4;
@@ -706,8 +711,12 @@ function chime(){ tone([523, 659, 784, 1046][Math.floor(Math.random() * 4)], aud
 function grumble(){ tone(70, audio.ctx.currentTime, 0.5, "sawtooth", 0.04, 50); }
 function stepSound(){ if(audio.on) tone(140 + Math.random() * 40, audio.ctx.currentTime, 0.06, "triangle", 0.045, 90); }
 function winSound(){ if(!audio.on) return; const t = audio.ctx.currentTime; [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.09, 0.3, "triangle", 0.06)); }
+const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3];
+let scaleStep = 0;
+function stoneNote(){ if(!audio.on) return; const f = SCALE[scaleStep % SCALE.length]; scaleStep++; const t = audio.ctx.currentTime; tone(f, t, 0.5, "triangle", 0.06); tone(f * 2, t, 0.3, "sine", 0.02); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
+const IDLE = { t: performance.now() }, RAINBOW = { t: 0 };
 /* ============================== the frame ============================== */
 let last = performance.now();
 function frame(now){
@@ -718,6 +727,8 @@ function frame(now){
   S.cam.x += (tx - S.cam.x) * Math.min(1, dt * 4); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * 5); S.cam.y = 3.0 + S.py * 0.3;
   const th = themeAt(C, S.pz + 4);
   lifeTick(dt, now); regionBanner();
+  if(!S.moving && !HERO.turn && !document.getElementById("sheet").classList.contains("show") && now - IDLE.t > 9000){ IDLE.t = now; turnAround(["wave", "peace", "thumbs", "hips"][Math.floor(Math.random() * 4)], 1300); }
+  if(S.moving) IDLE.t = now;
   S.nextN = (() => { if(S.moving) return null; const nx = nextStep(); return nx && !nx.fork ? stepNode(nx) : null; })();
   drawSky(th, now); drawGround(now); drawCloudShadows(now, th); drawPrints(now);
   // everything that stands in the world, far to near
@@ -806,6 +817,7 @@ async function toPebble(k){ await go(async () => { const pb = baseNode().pebbles
 async function go(fn){ S.moving = true; hideSheet(); renderControls(); hint(false); await fn(); S.moving = false; renderControls(); }
 function arrive(){
   const n = node(); drawHud(); if(n.type === "start") return;
+  stoneNote(); IDLE.t = performance.now();
   buddyArrive();
   bossAhead();
   if(!n.done && n.type !== "surprise") turnAround("wave", 700);
@@ -954,7 +966,7 @@ function pass(){
   if(n.power && !S.powers.includes(n.power)){ S.powers.push(n.power); msg = ["New power!", POWERS[n.power]]; }
   if(S.peb >= 0 && base.pebbles.every(p => p.done)){ base.done = true; msg = ["The whole stone counts!", base.n]; }
   if(n.type === "gate"){ n.koT = performance.now(); S.region = Math.max(S.region, n.region + 1); burst(n.x, 2, n.z + 1.5, "#e8433f", 60);
-    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 1500); }
+    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 1500); RAINBOW.t = performance.now(); }
   toast(msg[0], msg[1]); bump(n.s); drawHud(); renderControls(); winSound();
 }
 function fail(){
