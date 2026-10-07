@@ -372,6 +372,10 @@ function drawSky(th, now){
     for(let i = 0; i < 90; i++){ const x = (i * 137.5 + -S.cam.x * 3) % W, y = (i * 61.3) % HOR, tw = 0.5 + 0.5 * Math.sin(now / 400 + i);
       ctx.fillStyle = `rgba(255,255,255,${0.3 + tw * 0.6})`; ctx.fillRect((x + W) % W, y, 2, 2); }
     ctx.fillStyle = "#fff6c8"; circle(W * 0.78 - S.cam.x * 2, HOR * 0.3, Math.min(W, H) * 0.06); ctx.fill();
+    // stage spotlights sweeping across the sky
+    for(let i = 0; i < 3; i++){ const bx = W * (0.2 + i * 0.3), ang = Math.sin(now / 1700 + i * 2) * 0.5, len = H * 0.9, wdt = 0.12, g = ctx.createLinearGradient(bx, HOR, bx + Math.sin(ang) * len, HOR - Math.cos(ang) * len);
+      g.addColorStop(0, ["rgba(255,111,163,.28)", "rgba(74,168,255,.28)", "rgba(255,196,43,.28)"][i]); g.addColorStop(1, "rgba(255,255,255,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(bx, HOR);
+      ctx.lineTo(bx + Math.sin(ang - wdt) * len, HOR - Math.cos(ang - wdt) * len); ctx.lineTo(bx + Math.sin(ang + wdt) * len, HOR - Math.cos(ang + wdt) * len); ctx.closePath(); ctx.fill(); }
     // a guitar-shaped constellation
     const gx = W * 0.25 - S.cam.x * 1.5, gy = HOR * 0.45, u = Math.min(W, H) * 0.045, stars = [[0, 0], [1.2, -0.4], [1.5, 0.9], [0.4, 1.7], [-0.9, 1.3], [-1.1, 0.2], [0.2, -1.3], [0.9, -3.4], [1.2, -4.4]];
     ctx.strokeStyle = "rgba(200,210,255,.35)"; ctx.lineWidth = 1.2; ctx.beginPath(); [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [1, 6], [6, 7], [7, 8]].forEach(([a, b]) => { ctx.moveTo(gx + stars[a][0] * u, gy + stars[a][1] * u); ctx.lineTo(gx + stars[b][0] * u, gy + stars[b][1] * u); }); ctx.stroke();
@@ -883,6 +887,8 @@ function frame(now){
       if(n.type === "gate"){ list.push({ z: n.z - 1.8, d: () => drawGateArch(n, now) }); list.push({ z: n.z + 0.2, d: () => drawCrowd(n, now) }); list.push({ z: n.z + 3.6, d: () => drawBoss(n, now) }); } });
   });
   for(const c of S.critters) list.push({ z: c.z, d: () => drawCritter(c, now) });
+  if(S.mode === "bonus") for(let z = 6; z < BONUSC.len; z += 7) for(const side of [-1, 1]){ if(z < zMin || z > zMax) continue; const i = Math.floor(z / 7) + (side > 0 ? 3 : 0);
+    list.push({ z, d: () => drawPick(PICKS[i % PICKS.length], BONUSC.xfn(z) + side * 3.4, z, 1.0, now, Math.abs(Math.sin(now / 280 + i)) * 0.12, -side) }); }
   if(S.mode === "main") MAIN.regions.forEach((rg, ri) => { const z = rg.z0 + 1.2; if(z > zMin && z < zMax) list.push({ z, d: () => drawArch(ri, z, now) }); });
   if(S.mode === "main") FEATURES.forEach(f => { if(f.kind === "chasm" && f.z0 > zMin - 3 && f.z0 < zMax) list.push({ z: f.z1 + 0.1, d: () => drawRopes(f, now) }); });
   stepBuddy(dt); if(S.buddy) list.push({ z: S.buddy.z, d: () => drawBuddy(now) });
