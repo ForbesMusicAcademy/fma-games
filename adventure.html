@@ -715,7 +715,7 @@ function drawNpc(n, now){
   ctx.globalAlpha = fogA(p.dz);
   // speech bubble when you walk past
   if(t >= 1 && p.dz < 16 && p.dz > 3){
-    if(!n.said){ n.said = now; n.line = friendLine(n); lick(); }
+    if(!n.said){ n.said = now; n.line = friendLine(n); lick(); if(n.friend && n.friend.met === 1) toast(`👋 New friend: ${n.friend.name}`, `${FRIENDS.filter(f => f.met).length} of ${FRIENDS.length} friends met`); }
     if(now - n.said < 2600){ const fs = Math.max(11, Math.min(16, p.s * 0.22)); ctx.font = `800 ${fs}px "Work Sans", sans-serif`; ctx.textAlign = "center";
       const text = n.line.replace("{me}", ME.name || "friend"), tw = ctx.measureText(text).width, bx = p.x, by = p.y - h - fs * 1.4 - jump;
       ctx.fillStyle = "#fff"; ol(2); roundRect(bx - tw / 2 - 9, by - fs, tw + 18, fs * 1.7, 9); ctx.fill(); ctx.stroke();
