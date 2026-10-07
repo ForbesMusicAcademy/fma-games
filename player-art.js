@@ -505,15 +505,15 @@
   function holdPose(g, kind, solo){
     const t = guitarAt(g, solo), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" ? 12 : 0;
     const at = (lx, ly) => [t.x + k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + k * (lx * Math.sin(a) + ly * Math.cos(a))];
-    // like a real player (from photos): the picking forearm rests over the top of the body, the hand back towards the bridge.
-    // The fretting arm and palm sit BEHIND the neck (the elbow dropped by the side); only three fingertips show, wrapped round
-    // from the bottom edge of the neck and across the fretboard.
+    // like a real player (from photos): the picking forearm rests over the top of the body, the hand back towards the bridge;
+    // the fretting elbow drops by the side and the hand comes up from under the neck, fingers across the fretboard pointing back
+    // towards the player's face. (Tried in Oct 2026 and rejected: the arm hidden behind the neck with only fingertips drawn on
+    // top. The fingertips ended in an outline where they should run into the hand.)
     const SL = shoulder(g, false), SR = shoulder(g, true), strum = at(-28, dy + 6), fx = kind === "bass" ? 118 : 96, fret = at(fx, dy - 2);
-    const below = [-Math.sin(a), Math.cos(a)], palm = [fret[0] + below[0] * 17, fret[1] + below[1] * 17];
-    const pose = [[strum[0], strum[1], "rest", { C: [SL[0] - 4, g.tTop + g.tH * 0.6], front: true, nosway: true }],
-      [palm[0], palm[1], "fist", { C: [SR[0] + 22, SR[1] + g.tH * 0.62], ang: t.rot, nosway: true }]];
-    pose.fingers = [-9, 0, 9].map(o => [at(fx + o + 1.5, dy + 8), at(fx + o - 1, dy - 6)]);
-    return pose;
+    const below = [-Math.sin(a), Math.cos(a)], hand = [fret[0] + below[0] * 22, fret[1] + below[1] * 22];     // just under the neck
+    const toFace = Math.atan2(200 - hand[0], -(g.oy - hand[1])) * 180 / Math.PI;
+    return [[strum[0], strum[1], "rest", { C: [SL[0] - 4, g.tTop + g.tH * 0.6], front: true, nosway: true }],
+      [hand[0], hand[1], "fret", { C: [SR[0] + 22, SR[1] + g.tH * 0.62], ang: toFace, front: true, nosway: true }]];
   }
   const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8, solo: 18 };      // how far apart the feet are
   /* Hands are drawn as ONE silhouette, the same trick as the curly hair: every part's thick ink outline goes down first,
@@ -802,16 +802,7 @@
     const armSet = specs => specs.map((sp, i) => armSvg(sp, i === 1, g, skin, col, sleeve));
     const main = armSet(pose), behind = main.filter(a => !a.front).map(a => a.svg).join(""), front = main.filter(a => a.front).map(a => a.svg).join("");
     // (a player holding an instrument keeps hold of it when celebrating)
-    const altSet = anim ? armSet(cfg.pose === "hold" ? pose : POSES.cheer(g)) : [];
-    // fretting fingertips over the neck (the rest of that hand is behind it)
-    // drawn as one shape (all the outline first, then all the skin), like the cartoon hands: from the front you see the back of
-    // the fingers, so only short creases between them near the tips
-    const fp = pose.fingers || [], fd = ([p, q]) => `M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
-    const crease = (a, b) => { const m = t => [(a[0][0] + b[0][0]) / 2 * (1 - t) + (a[1][0] + b[1][0]) / 2 * t, (a[0][1] + b[0][1]) / 2 * (1 - t) + (a[1][1] + b[1][1]) / 2 * t];
-      const u = m(0.62), v = m(1.02); return `M${u[0].toFixed(1)} ${u[1].toFixed(1)} L${v[0].toFixed(1)} ${v[1].toFixed(1)}`; };
-    const fingers = fp.length ? fp.map(f => `<path d="${fd(f)}" fill="none" stroke="${INK}" stroke-width="13.5" stroke-linecap="round"/>`).join("")
-      + fp.map(f => `<path d="${fd(f)}" fill="none" stroke="${skin}" stroke-width="8.5" stroke-linecap="round"/>`).join("")
-      + `<path d="${crease(fp[0], fp[1])} ${crease(fp[1], fp[2])}" fill="none" ${sw(1.8)}/>` : "";
+    const altSet = anim ? armSet(cfg.pose === "hold" || cfg.pose === "solo" ? pose : POSES.cheer(g)) : [];
     const alt = altSet.filter(a => !a.front).map(a => a.svg).join(""), altFront = altSet.filter(a => a.front).map(a => a.svg).join("");
 
     // head and face (no cheeks, no eyebrows)
@@ -836,7 +827,7 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
-    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${fingers}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
+    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
