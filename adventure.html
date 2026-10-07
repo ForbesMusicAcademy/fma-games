@@ -906,6 +906,8 @@ function arrive(){
   showSheet();
 }
 
+// teacher mode (add ?teacher to the address): Mentor Pass on every stone card, and tap stones on the map to clear or un-clear them
+const TEACHER = new URLSearchParams(location.search).has("teacher");
 // the stone before a gate: the boss lets you know it's waiting
 function bossAhead(){
   if(S.mode !== "main") return; const nx = nextStep(); if(!nx || nx.fork) return; const g = stepNode(nx);
@@ -945,7 +947,7 @@ function saveGame(){
   if(loading || S.mode !== "main") return;
   const data = { v: 1, pos: { i: S.i, b: S.b, k: S.k, lastBranch: S.lastBranch }, region: S.region, powers: S.powers, loot: S.loot,
     look: { acc: ME.acc, accColor: ME.accColor, extra: ME.extra, extraColor: ME.extraColor, gear: ME.gear, gearColor: ME.gearColor },
-    nodes: allNodes().map(n => [n.done ? 1 : 0, n.fails, n.cracked ? 1 : 0, n.pebbles ? n.pebbles.map(p => p.done ? 1 : 0) : 0, n.warned ? 1 : 0]) };
+    nodes: allNodes().map(n => [n.done ? 1 : 0, n.fails, n.cracked ? 1 : 0, n.pebbles ? n.pebbles.map(p => p.done ? 1 : 0) : 0, n.warned ? 1 : 0, n.mentor ? 1 : 0, n.withPower || 0]) };
   try { localStorage.setItem(SAVE_KEY(), JSON.stringify(data)); } catch(e){}
 }
 function loadGame(){
@@ -953,7 +955,7 @@ function loadGame(){
   if(!d || d.v !== 1) return false;
   const ns = allNodes(); if(!d.nodes || d.nodes.length !== ns.length) return false;   // the map changed: start fresh
   loading = true;
-  ns.forEach((n, i) => { const [done, fails, cracked, pebs, warned] = d.nodes[i]; n.done = !!done; n.fails = fails || 0; n.warned = !!warned;
+  ns.forEach((n, i) => { const [done, fails, cracked, pebs, warned, mentor, withPower] = d.nodes[i]; n.done = !!done; n.fails = fails || 0; n.warned = !!warned; n.mentor = !!mentor; n.withPower = withPower || null;
     if(cracked && n.cracks){ n.cracked = true; n.pebbles = n.cracks.map((c, k, a) => makeNode({ n: c, s: n.s, d: `A smaller piece of “${n.n}”.`, game: n.game }, { pebble: true, region: n.region, z: n.z + 0.4, x: n.x + (k - (a.length - 1) / 2) * 1.9 }));
       if(pebs) n.pebbles.forEach((p, k) => p.done = !!pebs[k]); }
     if(n.type === "gate" && n.done) n.koT = -1e9; });
@@ -1016,6 +1018,8 @@ function showSheet(){
     else if(isGate && !ready) btns = `<button class="go" data-a="close">OK</button>`;
     else btns = (n.game ? `<a href="${n.game}">▶ Play the game</a>` : "") + `<button class="go" data-a="pass">✓ Passed (demo)</button><button data-a="fail">✗ Not yet (demo)</button>`
       + (S.powers.length && n.type !== "gate" && !n.classOnly ? `<button data-a="power" style="flex-basis:100%;background:#efe6ff">✨ Use a power to get past (${S.powers.map(k => POWERS[k]).join(", ")})</button>` : "");
+    if(TEACHER && !n.done && !n.cracked) btns += `<button data-a="mentor" style="flex-basis:100%;background:#d9f0ff">🎓 Mentor Pass (teacher): cleared in class</button>`;
+    if(n.mentor) body += ` <i>(Cleared with a Mentor Pass.)</i>`;
     if(!n.done && n.power && !S.powers.includes(n.power)) body += `<br><b>Clear it to earn ${POWERS[n.power]}.</b>`;
     if(n.withPower) body += ` <i>(Cleared with a power: come back without it for the full stars.)</i>`;
     if(!n.done && n.cracks && !n.cracked && n.fails) btns += `<div class="demo" style="flex-basis:100%;border:0;min-height:0">Tries: ${n.fails} of ${CRACK_AFTER}. After ${CRACK_AFTER}, this stone cracks into smaller ones.</div>`;
@@ -1032,6 +1036,7 @@ $("sheet").addEventListener("click", e => {
     case "close": hideSheet(); break;
     case "pass": pass(); break;
     case "fail": fail(); break;
+    case "mentor": n.mentor = true; toast("🎓 Mentor Pass", "Cleared in class with Dave."); pass(); break;
     case "power": { const used = S.powers.shift(); n.withPower = used; toast(`${POWERS[used]} used!`, "That's what powers are for. Stone cleared."); pass(); break; }
     case "bonus": enterBonus(); break;
     case "peb": toPebble(+a.dataset.k); break;
@@ -1077,7 +1082,8 @@ function openMap(){
   g.lineCap = "round"; g.strokeStyle = "#26211f"; g.lineWidth = 9; road(MAIN.xfn); MAIN.forks.forEach(f => { for(const d of [-1, 1]){ g.beginPath(); for(let z = f.z0; z <= f.z1; z += 0.5){ const x = X(MAIN.xfn(z) + d * forkOff(f, z)), y = Y(z); z === f.z0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); } });
   g.strokeStyle = "#e2c08d"; g.lineWidth = 5; road(MAIN.xfn); MAIN.forks.forEach(f => { for(const d of [-1, 1]){ g.beginPath(); for(let z = f.z0; z <= f.z1; z += 0.5){ const x = X(MAIN.xfn(z) + d * forkOff(f, z)), y = Y(z); z === f.z0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); } });
   // the stones
-  MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(n.type === "start") return; const x = X(n.x), y = Y(n.z), sk = SKILLS[n.s] || SKILLS.repertoire;
+  MAP_HITS.length = 0;
+  MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(n.type === "start") return; const x = X(n.x), y = Y(n.z), sk = SKILLS[n.s] || SKILLS.repertoire; MAP_HITS.push({ n, x, y });
     g.fillStyle = n.done ? "#ffc42b" : n.type === "surprise" ? "#b9a0ff" : n.type === "golden" ? "#ffd34d" : "#fff"; g.strokeStyle = n.type === "gate" ? "#e8433f" : sk.c; g.lineWidth = 3;
     g.beginPath(); g.arc(x, y, n.type === "gate" ? 9 : 6, 0, 7); g.fill(); g.stroke(); if(n.done){ g.fillStyle = "#26211f"; g.font = "10px sans-serif"; g.textAlign = "center"; g.fillText("★", x, y + 3.5); } }));
   // fog over regions you haven't opened yet
@@ -1086,8 +1092,13 @@ function openMap(){
   const yx = X(S.mode === "main" ? S.px : MAIN.xfn(0)), yy = Y(S.mode === "main" ? S.pz : 0);
   g.fillStyle = "#fff"; g.strokeStyle = "#26211f"; g.lineWidth = 3; g.beginPath(); g.arc(yx, yy, 16, 0, 7); g.fill(); g.stroke(); if(faceImg.complete && faceImg.naturalWidth){ g.save(); g.beginPath(); g.arc(yx, yy, 14, 0, 7); g.clip(); g.drawImage(faceImg, yx - 14, yy - 14 * (1 / faceImg.ar), 28, 28 / faceImg.ar); g.restore(); }
   const cleared = MAIN.steps.reduce((a, st) => a + (st.fork ? [...st.L, ...st.R] : [st]).filter(n => n.done && n.type !== "start").length, 0);
-  $("mapNote").textContent = `${cleared} stones cleared · ${S.powers.length} powers · ${S.loot.length} things found`;
+  $("mapNote").textContent = `${cleared} stones cleared · ${S.powers.length} powers · ${S.loot.length} things found` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
 }
+const MAP_HITS = [];
+$("mapCv").addEventListener("click", e => { if(!TEACHER) return; const r = $("mapCv").getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const hit = MAP_HITS.find(h => Math.hypot(h.x - x, h.y - y) < 12); if(!hit || hit.n.type === "surprise" || hit.n.type === "golden") return;
+  hit.n.done = !hit.n.done; if(hit.n.done) hit.n.mentor = true; if(hit.n.type === "gate" && hit.n.done){ hit.n.koT = -1e9; S.region = Math.max(S.region, hit.n.region + 1); }
+  drawHud(); openMap(); toast(hit.n.done ? "🎓 Warped: cleared" : "Un-cleared", hit.n.n); });
 $("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start the adventure again from the beginning? Your stones and things you found on this device will be cleared.")) resetGame(); }; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
 $("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; } };
 
