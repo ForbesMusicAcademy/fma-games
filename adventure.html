@@ -854,7 +854,7 @@ function drawWeather(dt, now){
   // now and then a passing shower in the meadow or by the river, then a rainbow
   const wet = tn === "meadow" || tn === "river";
   if(!RAIN.on && wet && now > RAIN.next && !RM){ RAIN.on = true; RAIN.t0 = now; RAIN.len = 14000 + Math.random() * 8000; rainSound(true); }
-  if(RAIN.on && (now - RAIN.t0 > RAIN.len || !wet)){ RAIN.on = false; RAIN.next = now + 70000 + Math.random() * 60000; rainSound(false); if(wet) RAINBOW.t = now; }
+  if(RAIN.on && (now - RAIN.t0 > RAIN.len || !wet)){ RAIN.on = false; RAIN.next = now + 70000 + Math.random() * 60000; rainSound(false); if(wet){ RAINBOW.t = now; toast("🌈 A rainbow!", "The rain has passed."); } }
   if(RAIN.on){ const k = Math.min(1, (now - RAIN.t0) / 2500, (RAIN.t0 + RAIN.len - now) / 2500);
     ctx.fillStyle = `rgba(60,70,100,${0.16 * k})`; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = `rgba(220,235,255,${0.55 * k})`; ctx.lineWidth = 1.4; ctx.beginPath();
