@@ -366,7 +366,12 @@
     const jaw = (drop, inner, side, round) => { const by = chin + drop;
       return `M${f(-ox)} ${f(oyy)} C${f(-1.04)} ${f(by - 0.1 - round)} ${f(-0.55 - round)} ${f(by)} 0 ${f(by)} C${f(0.55 + round)} ${f(by)} ${f(1.04)} ${f(by - 0.1 - round)} ${f(ox)} ${f(oyy)} L${f(side)} ${f(oyy + 0.02)} C${f(side - 0.04)} ${f(inner - 0.06)} 0.36 ${f(inner)} 0 ${f(inner)} C-0.36 ${f(inner)} ${f(-side + 0.04)} ${f(inner - 0.06)} ${f(-side)} ${f(oyy + 0.02)}Z`; };
     switch(kind){
-      case "stubble": return U(`<g fill="${hc}" fill-opacity=".3" stroke="none"><path d="${jaw(0.02, 0.8, 0.74, 0)}"/>${tache.replace(`fill="${hc}"`, "")}</g>`);
+      // five o'clock shadow: lots of tiny dots over the jaw and top lip, clipped to the face so none sit outside its outline
+      case "stubble": { const id = "sb" + (++uid), id2 = "sf" + (++uid); let dots = "", i = 0;
+        for(let y = 0.24; y < chin + 0.06; y += 0.062, i++) for(let x = -1 + (i % 2) * 0.034; x < 1; x += 0.068){ const j = ((i * 31 + Math.round(x * 100) * 17) % 11) / 11 - 0.5;
+          dots += `<circle cx="${n3(x + j * 0.02)}" cy="${n3(y + j * 0.016)}" r="0.017"/>`; }
+        return U(`<clipPath id="${id}"><path d="${jaw(0.02, 0.8, 0.74, 0)}"/>${tache.replace(` fill="${hc}"`, "")}</clipPath><clipPath id="${id2}"><ellipse cx="0" cy="${f(cy)}" rx="0.95" ry="${f(ry - 0.05)}"/></clipPath>`
+          + `<g clip-path="url(#${id2})"><g clip-path="url(#${id})"><g fill="${hc}" fill-opacity=".8" stroke="none">${dots}</g></g></g>`); }
       case "moustache": return U(tache);
       case "handlebar": { const half = `<path d="M0 0.4 C-0.12 0.3 -0.36 0.31 -0.48 0.42 C-0.56 0.48 -0.66 0.42 -0.62 0.3 C-0.72 0.4 -0.66 0.58 -0.48 0.53 C-0.32 0.48 -0.14 0.5 0 0.45Z" fill="${hc}"/>`;
         return U(half + `<g transform="scale(-1 1)">${half}</g>`); }
