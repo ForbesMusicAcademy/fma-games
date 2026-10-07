@@ -439,11 +439,11 @@
     }
   }
   /* ---- gear worn on the body: guitar on a strap, a headset mic, a cape. ---- */
-  function gearSvg(kind, g, c){
+  function gearSvg(kind, g, c, solo){
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH, s = g.tW / 90;
     switch(kind){
       case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": {
-        const ga = guitarAt(g), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
+        const ga = guitarAt(g, solo), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
         return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
         <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})">${instrumentSvg(kind, c)}</g>` }; }
       case "mic": { const W = x => (x / g.hrx).toFixed(4), U = body => `<g transform="translate(200 ${g.oy}) scale(${g.hrx})" fill="none" ${ST} stroke-width="${W(6)}">${body}</g>`;
@@ -476,8 +476,9 @@
   const shoulder = (g, right) => [right ? 200 + g.tW / 2 - 6 : 200 - g.tW / 2 + 6, g.tTop + 16];
   // the guitar on its strap (also where its attack notes come from)
   const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele"];
-  const guitarAt = g => { const s = g.tW / 90; return { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
-  const guitarPt = (g, lx, ly) => { const t = guitarAt(g), a = t.rot * Math.PI / 180;
+  // solo = lifted high for a guitar solo, the neck pointing up at the sky
+  const guitarAt = (g, solo) => { const s = g.tW / 90; return solo ? { x: 200 + 34 * s, y: g.tTop + g.tH * 0.56, rot: -46, k: s * 0.92 } : { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
+  const guitarPt = (g, lx, ly, solo) => { const t = guitarAt(g, solo), a = t.rot * Math.PI / 180;
     return [t.x + t.k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + t.k * (lx * Math.sin(a) + ly * Math.cos(a))]; };
   /* Poses: [screen-left hand, screen-right hand], each [x, y, hand shape, options]. Raised hands are placed with reach():
      an angle out from straight up and the age's arm length, so arms stay short and chunky and the hands clear the big head.
@@ -497,22 +498,24 @@
     rock: g => [-1, 1].map(sg => [...reach(g, sg, 64, 1.06), "rock", { cls: "pumper" }]),
     relax: g => [restHand(g, -1), restHand(g, 1)]
   };
-  /* Holding an instrument: the fretting hand round the neck and the strumming hand over the strings, both in front of it.
-     This is the resting pose whenever the gear is an instrument, and game moments become strums instead of other poses.
-     The strumming hand is an open hand at the guitar's body (never a fist), and strums are small flicks. */
-  function holdPose(g, kind){
-    const t = guitarAt(g), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" ? 12 : 0;
+  /* Holding an instrument: the fretting hand on the neck and the picking hand over the strings, both in front of it.
+     This is the resting pose whenever the gear is an instrument. Big game moments lift it into a solo instead of other poses.
+     Deliberately no strumming movement at all: a hand moving at the guitar's body read badly (Oct 2026). The picking hand
+     stays still; the life comes from the solo lift, headbangs and hops. */
+  function holdPose(g, kind, solo){
+    const t = guitarAt(g, solo), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" ? 12 : 0;
     const at = (lx, ly) => [t.x + k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + k * (lx * Math.sin(a) + ly * Math.cos(a))];
-    // like a real player (from photos): the picking forearm rests over the top of the body, the hand back towards the bridge;
-    // the fretting elbow drops by the side and the hand comes up from under the neck, fingers across the fretboard pointing back
-    // towards the player's face
-    const SL = shoulder(g, false), SR = shoulder(g, true), strum = at(-28, dy + 6), fret = at(kind === "bass" ? 118 : 96, dy - 2);
-    const below = [-Math.sin(a), Math.cos(a)], hand = [fret[0] + below[0] * 22, fret[1] + below[1] * 22];     // just under the neck
-    const toFace = Math.atan2(200 - hand[0], -(g.oy - hand[1])) * 180 / Math.PI;
-    return [[strum[0], strum[1], "rest", { C: [SL[0] - 4, g.tTop + g.tH * 0.6], front: true, nosway: true, cls: "strummer" }],
-      [hand[0], hand[1], "fret", { C: [SR[0] + 22, SR[1] + g.tH * 0.62], ang: toFace, front: true, nosway: true }]];
+    // like a real player (from photos): the picking forearm rests over the top of the body, the hand back towards the bridge.
+    // The fretting arm and palm sit BEHIND the neck (the elbow dropped by the side); only three fingertips show, wrapped round
+    // from the bottom edge of the neck and across the fretboard.
+    const SL = shoulder(g, false), SR = shoulder(g, true), strum = at(-28, dy + 6), fx = kind === "bass" ? 118 : 96, fret = at(fx, dy - 2);
+    const below = [-Math.sin(a), Math.cos(a)], palm = [fret[0] + below[0] * 7, fret[1] + below[1] * 7];
+    const pose = [[strum[0], strum[1], "rest", { C: [SL[0] - 4, g.tTop + g.tH * 0.6], front: true, nosway: true }],
+      [palm[0], palm[1], "fist", { C: [SR[0] + 22, SR[1] + g.tH * 0.62], ang: t.rot, nosway: true }]];
+    pose.fingers = [-9, 0, 9].map(o => [at(fx + o + 1.5, dy + 8), at(fx + o - 1, dy - 6)]);
+    return pose;
   }
-  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8 };      // how far apart the feet are
+  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8, solo: 18 };      // how far apart the feet are
   /* Hands are drawn as ONE silhouette, the same trick as the curly hair: every part's thick ink outline goes down first,
      then every part's skin fill on top, so fingers fuse into the palm and only the outer edge gets a line.
      Drawn in hand space: the hand's centre at 0,0, fingers pointing up (-y), thumb towards the body (-x), wrist at WRIST.
@@ -627,7 +630,7 @@
   function build(cfg, anim, only){
     const g = AGES[cfg.body] || AGES.kid, skin = cfg.skin, col = cfg.color, pants = cfg.pants, shoeC = cfg.accent;
     const tBot = g.tTop + g.tH, x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, r = g.tW * 0.26;
-    const hair = hairSvg(cfg.hair, cfg.hairColor, g, cfg.acc), headAcc = headSvg(cfg.acc, g, cfg.accColor), gear = gearSvg(cfg.gear, g, cfg.gearColor), extra = extraSvg(cfg.extra, g, cfg.extraColor);
+    const hair = hairSvg(cfg.hair, cfg.hairColor, g, cfg.acc), headAcc = headSvg(cfg.acc, g, cfg.accColor), gear = gearSvg(cfg.gear, g, cfg.gearColor, cfg.pose === "solo"), extra = extraSvg(cfg.extra, g, cfg.extraColor);
 
     // legs and shoes; some poses stand with their feet apart
     const st = STANCE[cfg.pose] || 0, hipY = tBot - 10, lx = 200 - g.tW * 0.2, rx = 200 + g.tW * 0.2, lf = lx - st, rf = rx + st;
@@ -795,11 +798,14 @@
     // arms. The live version also carries a second, arms-up set for celebrating (shown by the "joy" class).
     const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin", "leather", "fringe", "military", "pepper", "collarless"].includes(cfg.top), spikes: cfg.top === "leather", none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer",
       epaulette: cfg.top === "pepper", cuffC: cfg.top === "pepper" ? (["#ffc42b", "#ffd34d", "#ff8a1c"].includes(col) ? "#e8433f" : "#ffc42b") : null };
-    const pose = cfg.pose === "hold" ? holdPose(g, cfg.gear) : (POSES[cfg.pose] || POSES.wave)(g);
+    const pose = cfg.pose === "hold" || cfg.pose === "solo" ? holdPose(g, cfg.gear, cfg.pose === "solo") : (POSES[cfg.pose] || POSES.wave)(g);
     const armSet = specs => specs.map((sp, i) => armSvg(sp, i === 1, g, skin, col, sleeve));
     const main = armSet(pose), behind = main.filter(a => !a.front).map(a => a.svg).join(""), front = main.filter(a => a.front).map(a => a.svg).join("");
     // (a player holding an instrument keeps hold of it when celebrating)
     const altSet = anim ? armSet(cfg.pose === "hold" ? pose : POSES.cheer(g)) : [];
+    // fretting fingertips over the neck (the rest of that hand is behind it)
+    const fingers = (pose.fingers || []).map(([p, q]) => { const d = `M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
+      return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="10.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${skin}" stroke-width="6.5" stroke-linecap="round"/>`; }).join("");
     const alt = altSet.filter(a => !a.front).map(a => a.svg).join(""), altFront = altSet.filter(a => a.front).map(a => a.svg).join("");
 
     // head and face (no cheeks, no eyebrows)
@@ -824,18 +830,18 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
-    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
+    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${fingers}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
-      : INSTRUMENTS.includes(cfg.gear) ? { kind: "notes", pts: [guitarPt(g, -6, 6)] }
+      : INSTRUMENTS.includes(cfg.gear) ? { kind: "notes", pts: [guitarPt(g, -6, 6, cfg.pose === "solo")] }
       : { kind: "notes", pts: null, hands: main.map(a => a.hand) };
     if(only){
       const bottom = cfg.bottom === "shorts" ? leg(lx, lf, tBot + 26, pants) + leg(rx, rf, tBot + 26, pants) : SKIRTS[cfg.bottom] ? skirt : legs;
       return { svg: only === "top" ? torso + behind : only === "bottom" ? bottom : only === "shoes" ? feet : neck };
     }
     // a Flying V shoots fire from its headstock now and then
-    if(cfg.gear === "flyingv") fx.fire = { pt: guitarPt(g, 160, -2), ang: guitarAt(g).rot };
+    if(cfg.gear === "flyingv") fx.fire = { pt: guitarPt(g, 160, -2, cfg.pose === "solo"), ang: guitarAt(g, cfg.pose === "solo").rot };
     return { svg, fx, look: R * 0.36 };
   }
   const viewBox = (cfg, view) => {
@@ -890,11 +896,6 @@
 @keyframes pa-pump{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg)}}
 .pa.pump .pa-arm.pumper.l{animation-name:pa-pumpl}
 @keyframes pa-pumpl{0%,100%{transform:rotate(0)}50%{transform:rotate(8deg)}}
-/* a smooth strum: the arm swings a little, the wrist follows through a moment later */
-.pa.strum .pa-arm.strummer{animation:pa-strum .34s cubic-bezier(.45,0,.55,1) 6 alternate}
-@keyframes pa-strum{from{transform:rotate(1.5deg)}to{transform:rotate(-4deg)}}
-.pa.strum .pa-arm.strummer .pa-hand{animation:pa-flick .34s cubic-bezier(.45,0,.55,1) .07s 6 alternate}
-@keyframes pa-flick{from{transform:rotate(-7deg)}to{transform:rotate(11deg)}}
 .pa-flash{opacity:0}
 .pa.hurt .pa-flash{animation:pa-flash .4s ease-out}
 @keyframes pa-flash{0%{opacity:.7}100%{opacity:0}}
@@ -968,11 +969,12 @@
     live.forEach(c => { if(!c.svg.isConnected){ live.delete(c); return; } if(!document.hidden) c.step(now); });
     if(!live.size){ clearInterval(ticker); ticker = null; }
   }
-  const FIDGET_MS = { strum: 2200, hop: 600, tilt: 1550, bob: 1750, bang: 1600, wavebig: 1500, pump: 1300 };
+  const SOLO_POSES = ["star", "rock", "cheer", "flex"];      // the moments a guitar player celebrates with a solo
+  const FIDGET_MS = { hop: 600, tilt: 1550, bob: 1750, bang: 1600, wavebig: 1500, pump: 1300 };
   // which fidgets suit which pose (repeats make one more likely)
   function fidgetsFor(cfg){
     const base = ["look", "look", "hop", "tilt", "bob"];
-    if(cfg.pose === "hold") return base.concat(["strum", "strum", "strum", "bang"]);
+    if(cfg.pose === "hold" || cfg.pose === "solo") return base.concat(["solo", "solo", "bang", "bob"]);
     if(cfg.pose === "wave") return base.concat(["wavebig", "wavebig"]);
     if(cfg.pose === "rock") return base.concat(["bang", "bang", "pump"]);
     if(["cheer", "thumbs", "peace", "star", "flex"].includes(cfg.pose)) return base.concat(["pump", "pump"]);
@@ -1019,7 +1021,7 @@
     const svg = el.querySelector("svg"), timers = new Set();
     let stage = 0, ko = false, dir = 1, idle = opts.idle;
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
-    const ACTIONS = ["hurt", "atk", "cheer", "joy", "glad", "ko"], FIDGETS = ["hop", "tilt", "bob", "bang", "wavebig", "pump", "strum", "lookl", "lookr", "lookup"];
+    const ACTIONS = ["hurt", "atk", "cheer", "joy", "glad", "ko"], FIDGETS = ["hop", "tilt", "bob", "bang", "wavebig", "pump", "lookl", "lookr", "lookup"];
     const busy = () => ACTIONS.some(c => svg.classList.contains(c));
     const flick = (cls, ms) => { svg.classList.remove(cls); void svg.getBoundingClientRect(); svg.classList.add(cls); later(() => svg.classList.remove(cls), ms); };
     const calm = () => FIDGETS.forEach(c => svg.classList.remove(c));
@@ -1030,6 +1032,7 @@
       svg.querySelector(".pa-fid").innerHTML = b.svg; svg.style.setProperty("--look", b.look.toFixed(1) + "px");
     }
     function fidget(name){
+      if(name === "solo"){ ctl.pose("star", 2000); return; }
       if(name === "look"){ const first = Math.random() < 0.5 ? "lookl" : "lookr"; svg.classList.add(first);
         later(() => { svg.classList.remove(first); if(Math.random() < 0.6) svg.classList.add(first === "lookl" ? "lookr" : "lookl"); }, 800);
         later(() => svg.classList.remove("lookl", "lookr"), 1700); return; }
@@ -1053,9 +1056,9 @@
       },
       hurt(){ if(ko) return; calm(); svg.classList.remove("joy", "glad"); dir = -dir; svg.style.setProperty("--hd", dir); flick("hurt", 560); },
       // an attack: a lunge, then notes (or sound waves, with the mic) fly off in direction d
-      attack(d){ if(ko) return; d = d || 1; calm(); svg.style.setProperty("--ad", d); flick("atk", 580); if(holding) flick("strum", 2200);
+      attack(d){ if(ko) return; d = d || 1; calm(); svg.style.setProperty("--ad", d); flick("atk", 580);
         later(() => spawn(svg, b.fx.kind, b.fx.pts || [b.fx.hands[d > 0 ? 1 : 0]], d), 180); },
-      cheer(){ if(ko) return; calm(); flick("cheer", 620); flick("joy", 1300); if(holding){ flick("strum", 2200); flick("bang", 1600); } },
+      cheer(){ if(ko) return; calm(); flick("cheer", 620); flick("joy", 1300); if(holding) flick("bang", 1600); },
       // a little jump, for when something changes (the editor uses it). The face stays as chosen.
       react(){ if(ko) return; calm(); flick("hop", 600); },
       fidget(name){ if(!ko && !busy()) fidget(name); },
@@ -1063,11 +1066,11 @@
       fire(){ if(!ko && !RM && b.fx.fire) spawnFire(svg, b.fx.fire); },
       pose(name, ms){
         if(ko || !POSES[name]) return;
-        // a player holding an instrument plays it instead (and rocks out, with a headbang, for the big poses)
-        if(holding){ calm(); flick("hop", 600); flick("strum", 2200); if(["star", "rock", "cheer", "flex"].includes(name)) flick("bang", 1600); return; }
+        // a player holding an instrument keeps playing it: the big poses become a solo (guitar lifted high, with a headbang)
+        if(holding) name = SOLO_POSES.includes(name) ? "solo" : "hold";
         if(poseT){ clearTimeout(poseT); timers.delete(poseT); poseT = null; }
         if(shown !== name) draw(name);
-        calm(); flick("hop", 600);
+        calm(); flick("hop", 600); if(name === "solo") flick("bang", 1600);
         if(ms > 0){ poseT = setTimeout(() => { timers.delete(poseT); poseT = null; if(!ko && shown !== cfg.pose) draw(cfg.pose); }, ms); timers.add(poseT); }
       },
       idle(on){ idle = on !== false; if(!idle) calm(); },
