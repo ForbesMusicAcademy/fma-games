@@ -1067,7 +1067,7 @@ let donePic = null;
 function regionComplete(ri){
   const r = REGIONS[ri], ns = allNodes().filter(n => n.region === ri && n.type !== "start"), cleared = ns.filter(n => n.done).length, next = REGIONS[ri + 1];
   $("doneT").textContent = `${r.name} complete!`;
-  $("doneP").innerHTML = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} power${S.powers.length === 1 ? "" : "s"} · ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found${next ? `<br>Next up: <b>${next.name}</b>` : "<br>That's the end of the test map. More regions coming!"}`;
+  $("doneP").innerHTML = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} power${S.powers.length === 1 ? "" : "s"} · ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found · ✨ ${SECRETS.filter(sc => S.loot.includes(sc.loot.n)).length}/${SECRETS.length} secrets${next ? `<br>Next up: <b>${next.name}</b>` : "<br>That's the end of the test map. More regions coming!"}`;
   $("doneGo").textContent = next ? `On to ${next.name} ▶` : "Keep exploring";
   if(donePic) donePic.destroy(); donePic = PlayerArt($("donePic"), ME, { tap: true }); setTimeout(() => donePic && donePic.moment("win", 0), 200);
   $("done").classList.add("show"); winSound(); setTimeout(winSound, 500);
