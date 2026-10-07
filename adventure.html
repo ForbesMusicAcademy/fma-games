@@ -384,6 +384,12 @@ function drawSky(th, now){
     for(let i = 0; i < 5; i++){ const fx = ((now / 55 - S.cam.x * 2 + (i % 3) * 22) % (W + 300) + W + 300) % (W + 300) - 150, fy = HOR * 0.42 + Math.abs(i - 2) * 9 + Math.sin(now / 900) * 6, fl = Math.sin(now / 120 + i) * 4;
       ctx.beginPath(); ctx.moveTo(fx - 7 - i * 16, fy - fl); ctx.quadraticCurveTo(fx - 3 - i * 16, fy - 4, fx - i * 16, fy); ctx.quadraticCurveTo(fx + 3 - i * 16, fy - 4, fx + 7 - i * 16, fy - fl); ctx.stroke(); }
   }
+  // The Summit: the end of the whole journey, always there on the horizon (barely moves, so it feels very far away)
+  if(th !== THEMES.stars){ const sx = W * 0.62 - S.cam.x * 0.4, base = HOR + 2, ph = Math.min(W, H) * 0.24, pw = ph * 1.1;
+    ctx.fillStyle = lerpHex(skyMix.far0, skyMix.bot, 0.62); ctx.beginPath(); ctx.moveTo(sx - pw, base); ctx.lineTo(sx - pw * 0.25, base - ph * 0.72); ctx.lineTo(sx - pw * 0.1, base - ph * 0.66); ctx.lineTo(sx, base - ph); ctx.lineTo(sx + pw * 0.2, base - ph * 0.7); ctx.lineTo(sx + pw * 0.35, base - ph * 0.76); ctx.lineTo(sx + pw, base); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.moveTo(sx - pw * 0.19, base - ph * 0.78); ctx.lineTo(sx, base - ph); ctx.lineTo(sx + pw * 0.16, base - ph * 0.8); ctx.lineTo(sx + pw * 0.06, base - ph * 0.83); ctx.lineTo(sx - pw * 0.05, base - ph * 0.77); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(38,33,31,.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx, base - ph); ctx.lineTo(sx, base - ph - ph * 0.12); ctx.stroke();
+    ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.moveTo(sx, base - ph - ph * 0.12); ctx.lineTo(sx + ph * 0.07 + Math.sin(now / 300) * 2, base - ph - ph * 0.095); ctx.lineTo(sx, base - ph - ph * 0.07); ctx.closePath(); ctx.fill(); }
   // far hills, two layers, sliding with the camera (parallax)
   [[skyMix.far0, 0.55, 2.2, 90], [skyMix.far1, 0.8, 4, 60]].forEach(([col, hgt, par, wl]) => {
     ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, HOR + 1);
