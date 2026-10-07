@@ -836,6 +836,9 @@ function drawWeather(dt, now){
   if(tn === "meadow"){ const sx = W * 0.8 - S.cam.x * 1.5, sy = HOR * 0.28, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(W, H) * 0.8);
     g.addColorStop(0, "rgba(255,248,210,.28)"); g.addColorStop(1, "rgba(255,248,210,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
   if(tn === "canyon"){ const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "rgba(255,140,60,.18)"); g.addColorStop(0.5, "rgba(255,170,90,.08)"); g.addColorStop(1, "rgba(255,120,40,.14)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+  // dusk deepens as you go through Riff River
+  if(tn === "river"){ const rr = MAIN.regions[2], k = Math.max(0, Math.min(1, (S.pz - rr.z0) / (rr.z1 - rr.z0))), d = ctx.createLinearGradient(0, 0, 0, H);
+    d.addColorStop(0, `rgba(90,60,140,${0.28 * k})`); d.addColorStop(0.45, `rgba(255,140,80,${0.18 * k})`); d.addColorStop(1, `rgba(30,30,80,${0.22 * k})`); ctx.fillStyle = d; ctx.fillRect(0, 0, W, H); }
   if(tn === "river"){ const g = ctx.createLinearGradient(0, HOR - H * 0.04, 0, HOR + H * 0.16); g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.4, "rgba(240,248,255,.45)"); g.addColorStop(1, "rgba(240,248,255,0)"); ctx.fillStyle = g; ctx.fillRect(0, HOR - H * 0.04, W, H * 0.2);
     const v = ctx.createLinearGradient(0, 0, 0, H); v.addColorStop(0, "rgba(255,160,120,.12)"); v.addColorStop(1, "rgba(60,80,160,.10)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); }
   // a soft vignette pulls the eye to the middle
@@ -862,7 +865,13 @@ function bird(){ const t = audio.ctx.currentTime, f = 2200 + Math.random() * 150
 function chirp(f){ tone(f, audio.ctx.currentTime, 0.12, "triangle", 0.05, f * 1.5); }
 function chime(){ tone([523, 659, 784, 1046][Math.floor(Math.random() * 4)], audio.ctx.currentTime, 1.2, "sine", 0.035); }
 function grumble(){ tone(70, audio.ctx.currentTime, 0.5, "sawtooth", 0.04, 50); }
-function stepSound(){ if(audio.on) tone(140 + Math.random() * 40, audio.ctx.currentTime, 0.06, "triangle", 0.045, 90); }
+// footsteps that match the ground: wood on bridges, splashes in the ford, soft crunch on sand, a padded step on grass
+function stepSound(){ if(!audio.on) return; const t = audio.ctx.currentTime, f = S.mode === "main" ? featureAt(S.pz) : null, tn = S.mode === "bonus" ? "stars" : themeName(S.pz);
+  if(f && f.kind !== "ford") { tone(220 + Math.random() * 30, t, 0.08, "square", 0.025, 140); return; }
+  if(f && f.kind === "ford"){ tone(600 + Math.random() * 300, t, 0.12, "sine", 0.03, 200); return; }
+  if(tn === "canyon"){ tone(900 + Math.random() * 500, t, 0.04, "sawtooth", 0.012, 300); return; }
+  if(tn === "stars"){ tone(660 + Math.random() * 60, t, 0.1, "sine", 0.02); return; }
+  tone(140 + Math.random() * 40, t, 0.06, "triangle", 0.045, 90); }
 function winSound(){ if(!audio.on) return; const t = audio.ctx.currentTime; [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.09, 0.3, "triangle", 0.06)); }
 const CHORD_NOTES = { Em: [164.8, 196.0, 246.9, 329.6], C: [130.8, 164.8, 196.0, 261.6], G: [98.0, 123.5, 146.8, 196.0], D: [146.8, 185.0, 220.0, 293.7],
   A: [110.0, 138.6, 164.8, 220.0], "F#m": [185.0, 220.0, 277.2, 370.0], E: [82.4, 123.5, 164.8, 207.7], Am: [110.0, 130.8, 164.8, 220.0] };
