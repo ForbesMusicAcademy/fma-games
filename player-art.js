@@ -792,8 +792,8 @@
     if(cfg.top === "bolt"){          // a band tee with a big lightning bolt instead of the name
       nameOn = false; const k = g.tH / 64, bc = darkText(col) ? INK : "#ffc42b";
       torso += `<path transform="translate(200 ${mid}) scale(${k.toFixed(3)})" d="M4 -22 L-11 3 L-1 3 L-6 22 L11 -5 L1 -5 L8 -22Z" fill="${bc}" ${sw(4 / k)}/>`; }
-    const nm = (cfg.name || "").trim().slice(0, 10).replace(/[<>&"]/g, "");
-    const name = nm && nameOn ? `<text x="200" y="${(mid + 8).toFixed(0)}" text-anchor="middle" font-family="'Caveat','Patrick Hand','Comic Sans MS',cursive" font-weight="700" font-size="${nm.length > 7 ? 19 : 23}" fill="${nameFill}" stroke="none">${nm}</text>` : "";
+    // (the name is no longer printed on the shirt: it shows under the character instead, Oct 2026)
+    const name = "";
 
     // things worn round the neck
     const nc = cfg.neckColor, ny = g.tTop + 4;
