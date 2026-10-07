@@ -117,13 +117,15 @@
   /* ---- hair, in head units ---- */
   // a fluffy cloud of circles, outlined as one shape (the outline goes down first, the fill on top)
   const cloud = (cs, w) => { const ring = cs.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join(""); return `<g stroke-width="${w}">${ring}</g><g stroke="none">${ring}</g>`; };
-  // hats that cover the crown: hair above this line (head units) is hidden under the hat, so nothing pokes through
-  const HAT_CLIP = { beanie: -0.33, cap: -0.36, sidecap: -0.36, bucket: -0.3, santa: -0.33, elf: -0.33, pirate: -0.6 };
+  // hats that cover the crown: the top of each hat (head units, after the hat's lift). The hat is drawn over the hair, so only hair
+  // that would stick up out of the top of the crown is hidden; curls and puffs at the sides still show, the way hair does under a hat.
+  const HAT_TOP = { beanie: -1.66, cap: -1.54, sidecap: -1.54, bucket: -1.54, santa: -1.66, elf: -1.7, pirate: -1.56 };
   const SKULL = "M-0.97 -0.12 C-1.0 -0.72 -0.58 -1.0 0 -1.0 C0.58 -1.0 1.0 -0.72 0.97 -0.12 C0.8 -0.42 0.48 -0.56 0 -0.56 C-0.48 -0.56 -0.8 -0.42 -0.97 -0.12Z";
   function hairSvg(style, color, g, hat){
-    const h = hairShapes(style, color, g), cy = HAT_CLIP[hat];
-    if(cy === undefined) return h;
-    const wrap = x => { if(!x) return ""; const id = "hc" + (++uid); return `<clipPath id="${id}"><rect x="0" y="${(g.oy + cy * g.hrx).toFixed(1)}" width="400" height="400"/></clipPath><g clip-path="url(#${id})">${x}</g>`; };
+    const h = hairShapes(style, color, g), top = HAT_TOP[hat];
+    if(top === undefined) return h;
+    const wrap = x => { if(!x) return ""; const id = "hc" + (++uid), u = v => (v * g.hrx).toFixed(1), y1 = g.oy + (top + 0.14) * g.hrx;
+      return `<mask id="${id}" maskUnits="userSpaceOnUse" x="-200" y="-200" width="800" height="800"><rect x="-200" y="-200" width="800" height="800" fill="#fff"/><rect x="${(200 - 0.56 * g.hrx).toFixed(1)}" y="-200" width="${u(1.12)}" height="${(y1 + 200).toFixed(1)}" fill="#000"/></mask><g mask="url(#${id})">${x}</g>`; };
     return { back: wrap(h.back), front: wrap(h.front) };
   }
   /* Hair is drawn in head units (the head is a unit circle; eyes sit on y = 0, so a fringe stops above y = -0.3).
@@ -495,7 +497,17 @@
     rock: g => [-1, 1].map(sg => [...reach(g, sg, 64, 1.06), "rock", { cls: "pumper" }]),
     relax: g => [restHand(g, -1), restHand(g, 1)]
   };
-  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12 };      // how far apart the feet are
+  /* Holding an instrument: the fretting hand round the neck and the strumming hand over the strings, both in front of it.
+     This is the resting pose whenever the gear is an instrument, and game moments become strums instead of other poses.
+     The strumming hand is an open hand at the guitar's body (never a fist), and strums are small flicks. */
+  function holdPose(g, kind){
+    const t = guitarAt(g), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" ? 12 : 0;
+    const at = (lx, ly) => [t.x + k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + k * (lx * Math.sin(a) + ly * Math.cos(a))];
+    const SL = shoulder(g, false), SR = shoulder(g, true), strum = at(-12, dy + 4), fret = at(kind === "bass" ? 118 : 96, dy - 2);
+    return [[strum[0], strum[1], "rest", { C: [SL[0] - 8, g.tTop + g.tH * 0.78], front: true, nosway: true, cls: "strummer" }],
+      [fret[0], fret[1], "fist", { C: [SR[0] + 26, SR[1] + 34], front: true, nosway: true }]];
+  }
+  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8 };      // how far apart the feet are
   /* Hands are drawn as ONE silhouette, the same trick as the curly hair: every part's thick ink outline goes down first,
      then every part's skin fill on top, so fingers fuse into the palm and only the outer edge gets a line.
      Drawn in hand space: the hand's centre at 0,0, fingers pointing up (-y), thumb towards the body (-x), wrist at WRIST.
@@ -578,17 +590,20 @@
     return { svg: `<g class="${cls}" style="transform-origin:${S[0]}px ${S[1]}px">${arm}${hand}</g>`, front: !!o.front, hand: H };
   }
   const FOOT = "M-20 4 C-22 -12 -8 -18 6 -16 C20 -14 28 -4 26 6 C24 13 -20 14 -20 4Z";
+  // trousers whose hems fall over the shoes (everything else, skirts aside, tucks in or shows bare legs)
+  const OVER_SHOES = ["pants", "stage", "baggy", "cargo", "flares", "trackies"];
+  const SHAFT = 8;          // boot shafts sit over the leg, which comes down at x = +6 in shoe space
   function shoe(c, x, y, flip, style){
     const shine = `<path d="M-12 -9 Q-6 -13 0 -12.5" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>`;
     let body;
     if(style === "hightops")         // basketball high-tops: a padded ankle, white sole and toe cap, laces
-      body = `<path d="M-15 -8 L-14 -32 Q-3 -36 8 -32 L9 -10Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-20 5 C-20 12 24 13 26 5 L26 8 C24 14 -20 14 -20 8Z" fill="#f7f4ee" ${sw(3.4)}/><path d="M13 -10 C20 -8 25 -3 25.5 3 L16 3 Q14 -3 13 -10Z" fill="#f7f4ee" ${sw(3)}/><path d="M-9 -27 L3 -24 M-9 -21 L3 -18 M-8 -15 L4 -12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`;
+      body = `<g transform="translate(${SHAFT} 0)"><path d="M-15 -8 L-14 -32 Q-3 -36 8 -32 L9 -10Z" fill="${c}" ${sw(5)}/></g><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-20 5 C-20 12 24 13 26 5 L26 8 C24 14 -20 14 -20 8Z" fill="#f7f4ee" ${sw(3.4)}/><path d="M13 -10 C20 -8 25 -3 25.5 3 L16 3 Q14 -3 13 -10Z" fill="#f7f4ee" ${sw(3)}/><path transform="translate(${SHAFT} 0)" d="M-9 -27 L3 -24 M-9 -21 L3 -18 M-8 -15 L4 -12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`;
     else if(style === "boots")       // chunky lace-up boots on a thick sole
-      body = `<path d="M-16 -6 L-15 -34 Q-3 -38 9 -34 L10 -8Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 Q29 15 24 15 H-19 Q-23 15 -22 4Z" fill="#2a2a2e" ${sw(3.4)}/><path d="M-10 -28 L2 -25 M-10 -21 L2 -18 M-9 -14 L3 -11" fill="none" stroke="#ffc42b" stroke-width="2.6" stroke-linecap="round"/><path d="M-21 9 H27" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>`;
+      body = `<g transform="translate(${SHAFT} 0)"><path d="M-16 -6 L-15 -34 Q-3 -38 9 -34 L10 -8Z" fill="${c}" ${sw(5)}/></g><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 Q29 15 24 15 H-19 Q-23 15 -22 4Z" fill="#2a2a2e" ${sw(3.4)}/><path transform="translate(${SHAFT} 0)" d="M-10 -28 L2 -25 M-10 -21 L2 -18 M-9 -14 L3 -11" fill="none" stroke="#ffc42b" stroke-width="2.6" stroke-linecap="round"/><path d="M-21 9 H27" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>`;
     else if(style === "chelsea")     // 60s Chelsea boots: ankle height, a pointed toe, a stacked heel and an elastic panel at the side
-      body = `<path d="M-15 -6 L-14 -30 Q-3 -33 8 -30 L9 -8Z" fill="${c}" ${sw(5)}/><path d="M-20 4 C-22 -12 -8 -18 6 -16 C18 -14 28 -4 35 5 C30 10 -20 12 -20 4Z" fill="${c}" ${sw(5)}/><path d="M-20 5 L-19 14 H-7 L-7 8Z" fill="${shade(c, 0.55)}" ${sw(3.4)}/><path d="M-6 -29 Q-3 -19 -6 -11 L1 -11 Q-1 -19 2 -29Z" fill="${shade(c, 0.6)}" ${sw(2.4)}/>`;
+      body = `<g transform="translate(${SHAFT} 0)"><path d="M-15 -6 L-14 -30 Q-3 -33 8 -30 L9 -8Z" fill="${c}" ${sw(5)}/></g><path d="M-20 4 C-22 -12 -8 -18 6 -16 C18 -14 26 -5 30 5 C26 10 -20 12 -20 4Z" fill="${c}" ${sw(5)}/><path d="M-20 5 L-19 14 H-7 L-7 8Z" fill="${shade(c, 0.55)}" ${sw(3.4)}/><path transform="translate(${SHAFT} 0)" d="M-6 -29 Q-3 -19 -6 -11 L1 -11 Q-1 -19 2 -29Z" fill="${shade(c, 0.6)}" ${sw(2.4)}/>`;
     else if(style === "platforms")   // glam-rock platform boots: tall, on a huge two-tone sole
-      body = `<path d="M-16 -8 L-15 -40 Q-3 -44 9 -40 L10 -10Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 V20 Q28 24 24 24 H-18 Q-22 24 -22 20Z" fill="${shade(c, 0.62)}" ${sw(4)}/><path d="M-21 13 H27" stroke="#fff" stroke-opacity=".45" stroke-width="3"/>`;
+      body = `<g transform="translate(${SHAFT} 0)"><path d="M-16 -8 L-15 -40 Q-3 -44 9 -40 L10 -10Z" fill="${c}" ${sw(5)}/></g><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 V20 Q28 24 24 24 H-18 Q-22 24 -22 20Z" fill="${shade(c, 0.62)}" ${sw(4)}/><path d="M-21 13 H27" stroke="#fff" stroke-opacity=".45" stroke-width="3"/>`;
     else body = `<path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-19 8 H25" stroke="${INK}" stroke-opacity=".35" stroke-width="3" fill="none"/>`;
     return `<g transform="translate(${x} ${y}) scale(${flip ? -1 : 1} 1)">${body}${shine}</g>`;
   }
@@ -771,11 +786,12 @@
     // arms. The live version also carries a second, arms-up set for celebrating (shown by the "joy" class).
     const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin", "leather", "fringe", "military", "pepper", "collarless"].includes(cfg.top), spikes: cfg.top === "leather", none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer",
       epaulette: cfg.top === "pepper", cuffC: cfg.top === "pepper" ? (["#ffc42b", "#ffd34d", "#ff8a1c"].includes(col) ? "#e8433f" : "#ffc42b") : null };
-    const pose = (POSES[cfg.pose] || POSES.wave)(g);
+    const pose = cfg.pose === "hold" ? holdPose(g, cfg.gear) : (POSES[cfg.pose] || POSES.wave)(g);
     const armSet = specs => specs.map((sp, i) => armSvg(sp, i === 1, g, skin, col, sleeve));
     const main = armSet(pose), behind = main.filter(a => !a.front).map(a => a.svg).join(""), front = main.filter(a => a.front).map(a => a.svg).join("");
-    const cheerArms = POSES.cheer(g);
-    const alt = anim ? armSet(cheerArms).map(a => a.svg).join("") : "";
+    // (a player holding an instrument keeps hold of it when celebrating)
+    const altSet = anim ? armSet(cfg.pose === "hold" ? pose : POSES.cheer(g)) : [];
+    const alt = altSet.filter(a => !a.front).map(a => a.svg).join(""), altFront = altSet.filter(a => a.front).map(a => a.svg).join("");
 
     // head and face (no cheeks, no eyebrows)
     const oy = g.oy, my = oy + g.hrx * 0.5, m = g.hrx * 0.27 / 32;
@@ -799,7 +815,7 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
-    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${legs}${skirt}${feet}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${flash}`;
+    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
@@ -865,6 +881,10 @@
 @keyframes pa-pump{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg)}}
 .pa.pump .pa-arm.pumper.l{animation-name:pa-pumpl}
 @keyframes pa-pumpl{0%,100%{transform:rotate(0)}50%{transform:rotate(8deg)}}
+.pa.strum .pa-arm.strummer{animation:pa-strum .24s ease-in-out 7}
+@keyframes pa-strum{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg)}}
+.pa.strum .pa-arm.strummer .pa-hand{animation:pa-flick .24s ease-in-out 7}
+@keyframes pa-flick{0%,100%{transform:rotate(0)}50%{transform:rotate(14deg)}}
 .pa-flash{opacity:0}
 .pa.hurt .pa-flash{animation:pa-flash .4s ease-out}
 @keyframes pa-flash{0%{opacity:.7}100%{opacity:0}}
@@ -938,10 +958,11 @@
     live.forEach(c => { if(!c.svg.isConnected){ live.delete(c); return; } if(!document.hidden) c.step(now); });
     if(!live.size){ clearInterval(ticker); ticker = null; }
   }
-  const FIDGET_MS = { hop: 600, tilt: 1550, bob: 1750, bang: 1600, wavebig: 1500, pump: 1300 };
+  const FIDGET_MS = { strum: 1750, hop: 600, tilt: 1550, bob: 1750, bang: 1600, wavebig: 1500, pump: 1300 };
   // which fidgets suit which pose (repeats make one more likely)
   function fidgetsFor(cfg){
     const base = ["look", "look", "hop", "tilt", "bob"];
+    if(cfg.pose === "hold") return base.concat(["strum", "strum", "strum", "bang"]);
     if(cfg.pose === "wave") return base.concat(["wavebig", "wavebig"]);
     if(cfg.pose === "rock") return base.concat(["bang", "bang", "pump"]);
     if(["cheer", "thumbs", "peace", "star", "flex"].includes(cfg.pose)) return base.concat(["pump", "pump"]);
@@ -980,13 +1001,15 @@
      tap (on by default): tapping the character makes it react or cheer. */
   function PlayerArt(el, cfg, opts){
     injectCss(); cfg = norm(cfg); opts = Object.assign({ idle: true, tap: true }, opts || {});
-    if(POSES[opts.pose]) cfg.pose = opts.pose;       // a game can choose the resting pose
+    const holding = INSTRUMENTS.includes(cfg.gear);
+    if(holding) cfg.pose = "hold";                   // holding an instrument: always holds it, even at rest
+    else if(POSES[opts.pose]) cfg.pose = opts.pose;  // a game can choose the resting pose
     let b = build(cfg, true), shown = cfg.pose, poseT = null;
     el.innerHTML = `<svg class="pa" viewBox="0 0 400 400" xmlns="${NS}" aria-hidden="true" style="--look:${b.look.toFixed(1)}px"><ellipse cx="200" cy="384" rx="92" ry="9" fill="${INK}" opacity=".14"/><g class="pa-hitg"><g class="pa-all"><g class="pa-fid">${b.svg}</g></g></g><g class="pa-fxl"></g></svg>`;
     const svg = el.querySelector("svg"), timers = new Set();
     let stage = 0, ko = false, dir = 1, idle = opts.idle;
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
-    const ACTIONS = ["hurt", "atk", "cheer", "joy", "glad", "ko"], FIDGETS = ["hop", "tilt", "bob", "bang", "wavebig", "pump", "lookl", "lookr", "lookup"];
+    const ACTIONS = ["hurt", "atk", "cheer", "joy", "glad", "ko"], FIDGETS = ["hop", "tilt", "bob", "bang", "wavebig", "pump", "strum", "lookl", "lookr", "lookup"];
     const busy = () => ACTIONS.some(c => svg.classList.contains(c));
     const flick = (cls, ms) => { svg.classList.remove(cls); void svg.getBoundingClientRect(); svg.classList.add(cls); later(() => svg.classList.remove(cls), ms); };
     const calm = () => FIDGETS.forEach(c => svg.classList.remove(c));
@@ -1020,9 +1043,9 @@
       },
       hurt(){ if(ko) return; calm(); svg.classList.remove("joy", "glad"); dir = -dir; svg.style.setProperty("--hd", dir); flick("hurt", 560); },
       // an attack: a lunge, then notes (or sound waves, with the mic) fly off in direction d
-      attack(d){ if(ko) return; d = d || 1; calm(); svg.style.setProperty("--ad", d); flick("atk", 580);
+      attack(d){ if(ko) return; d = d || 1; calm(); svg.style.setProperty("--ad", d); flick("atk", 580); if(holding) flick("strum", 1750);
         later(() => spawn(svg, b.fx.kind, b.fx.pts || [b.fx.hands[d > 0 ? 1 : 0]], d), 180); },
-      cheer(){ if(ko) return; calm(); flick("cheer", 620); flick("joy", 1300); },
+      cheer(){ if(ko) return; calm(); flick("cheer", 620); flick("joy", 1300); if(holding){ flick("strum", 1750); flick("bang", 1600); } },
       // a little jump, for when something changes (the editor uses it). The face stays as chosen.
       react(){ if(ko) return; calm(); flick("hop", 600); },
       fidget(name){ if(!ko && !busy()) fidget(name); },
@@ -1030,6 +1053,8 @@
       fire(){ if(!ko && !RM && b.fx.fire) spawnFire(svg, b.fx.fire); },
       pose(name, ms){
         if(ko || !POSES[name]) return;
+        // a player holding an instrument plays it instead (and rocks out, with a headbang, for the big poses)
+        if(holding){ calm(); flick("hop", 600); flick("strum", 1750); if(["star", "rock", "cheer", "flex"].includes(name)) flick("bang", 1600); return; }
         if(poseT){ clearTimeout(poseT); timers.delete(poseT); poseT = null; }
         if(shown !== name) draw(name);
         calm(); flick("hop", 600);
@@ -1053,7 +1078,7 @@
     if(!ticker) ticker = setInterval(tickAll, 120);
     return ctl;
   }
-  PlayerArt.svg = (cfg, view) => { cfg = norm(cfg); return `<svg viewBox="${viewBox(cfg, view)}" xmlns="${NS}"><g>${build(cfg, false).svg}</g></svg>`; };
+  PlayerArt.svg = (cfg, view) => { cfg = norm(cfg); if(INSTRUMENTS.includes(cfg.gear)) cfg.pose = "hold"; return `<svg viewBox="${viewBox(cfg, view)}" xmlns="${NS}"><g>${build(cfg, false).svg}</g></svg>`; };
   // one item of clothing on its own (part = "top" | "bottom" | "shoes" | "neck"), framed to fit, for the outfit menu
   PlayerArt.item = (cfg, part) => {
     cfg = norm(Object.assign({}, cfg, { pose: "relax", gear: "none", name: "" }));
