@@ -954,7 +954,7 @@ async function forward(){
   if(S.peb >= 0){ await go(async () => { await travel(here); S.peb = -1; }); }
   if(here.type === "gate" && !here.done){ toast("The gate's shut", `Beat ${here.n} to get through.`); showSheet(); return; }
   const nx = nextStep(); if(!nx){ toast(S.mode === "bonus" ? "Encore!" : "End of the test map", S.mode === "bonus" ? "" : "More regions coming."); return; }
-  if(nx.fork){ S.choosing = nx; renderControls(); toast("A fork in the road!", "Which way will you go?"); return; }
+  if(nx.fork){ AUTO.on = false; S.choosing = nx; renderControls(); toast("A fork in the road!", "Which way will you go?"); return; }
   await go(async () => { await travel(stepNode(nx)); Object.assign(S, { i: nx.i, b: nx.b, k: nx.k }); });
   arrive();
 }
@@ -974,6 +974,8 @@ async function toPebble(k){ await go(async () => { const pb = baseNode().pebbles
 async function go(fn){ S.moving = true; hideSheet(); renderControls(); hint(false); await fn(); S.moving = false; renderControls(); }
 function arrive(){
   const n = node(); drawHud(); if(n.type === "start") return;
+  // hold-to-walk: keep going past stones you've already cleared
+  if(AUTO.on){ if(n.done && n.type !== "gate" && !(n.type === "surprise" && !n.done)){ stoneNote(); setTimeout(() => AUTO.on && forward(), 120); return; } AUTO.on = false; }
   stoneNote(); IDLE.t = performance.now();
   buddyArrive();
   bossAhead();
@@ -1227,6 +1229,10 @@ function renderControls(){
     c.innerHTML = ["L", "R"].map(b => `<button class="choice" data-c="${b}">${b === "L" ? "⬅ " : ""}${SKILLS[f.sk[b]].i} ${f.names[b]}${b === "R" ? " ➡" : ""}<small>${SKILLS[f.sk[b]].n} stones</small></button>`).join("");
   } else c.innerHTML = `<button data-c="back" aria-label="Go back" ${S.moving ? "disabled" : ""}>◀</button><button class="go" data-c="go" ${S.moving ? "disabled" : ""}>▶ Walk on</button><button data-c="jump" aria-label="Jump">⤒</button>`;
 }
+// press and hold "Walk on" to walk on past cleared stones
+const AUTO = { on: false, timer: null };
+$("controls").addEventListener("pointerdown", e => { if(!e.target.closest('[data-c="go"]')) return; AUTO.timer = setTimeout(() => { AUTO.on = true; toast("Walking on…", "Stopping at the next new stone."); forward(); }, 550); });
+["pointerup", "pointerleave", "pointercancel"].forEach(ev => $("controls").addEventListener(ev, () => clearTimeout(AUTO.timer)));
 $("controls").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if(!b) return; const k = b.dataset.c;
   if(k === "go") forward(); else if(k === "back") back(); else if(k === "jump") jump(); else choose(k); });
 addEventListener("keydown", e => {
