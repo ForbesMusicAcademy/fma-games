@@ -872,6 +872,7 @@ function startAudio(){
       audio.wind.gain.setTargetAtTime(tn === "canyon" ? 0.2 : tn === "river" ? 0.15 : tn === "stars" ? 0.04 : 0.09, now, 1); audio.windF.frequency.setTargetAtTime(tn === "river" ? 950 : 480, now, 1);
       if(tn === "meadow" && Math.random() < 0.4) bird();
       if(tn === "meadow" && Math.random() < 0.05) baa();
+      const gold = S.mode === "main" ? MAIN.steps.find(x => x.type === "golden" && !x.done && Math.abs(x.z - S.pz) < 14) : null; if(gold && Math.random() < 0.5){ const t = audio.ctx.currentTime; [1046, 1318, 1568].forEach((f, i) => tone(f, t + i * 0.08, 0.5, "sine", 0.015)); }
       if(tn === "canyon" && Math.random() < 0.08){ const t = audio.ctx.currentTime; tone(1800, t, 0.9, "sine", 0.02, 1100); tone(1700, t + 0.05, 0.8, "triangle", 0.01, 1000); }
       if(tn === "river" && Math.random() < 0.2){ const t = audio.ctx.currentTime; for(let i = 0; i < 2; i++) tone(110 + Math.random() * 20, t + i * 0.18, 0.12, "square", 0.015, 80); } if(tn === "river" && Math.random() < 0.25) tone(220 + Math.random() * 80, now, 0.12, "sine", 0.03, 120); if(tn === "stars" && Math.random() < 0.35) chime(); }, 1100); }
   audio.ctx.resume(); audio.on = true;
