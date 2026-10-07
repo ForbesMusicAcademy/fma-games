@@ -104,7 +104,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 <div class="controls" id="controls"></div>
 <div id="sheet" role="dialog" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
-<div id="map" role="dialog" aria-label="Map of your adventure"><div class="mapcard"><button class="x" id="mapX" aria-label="Close">×</button><h2>Your adventure</h2><canvas id="mapCv"></canvas><p id="mapNote"></p></div></div>
+<div id="map" role="dialog" aria-label="Map of your adventure"><div class="mapcard"><button class="x" id="mapX" aria-label="Close">×</button><h2>Your adventure</h2><canvas id="mapCv"></canvas><p id="mapNote"></p><p><button id="mapReset" style="border:0;background:none;color:var(--muted);text-decoration:underline;font:inherit;font-size:12px">Start the adventure again</button></p></div></div>
 <div class="flash" id="flash"></div>
 <div class="banner" id="banner"></div>
 
@@ -610,7 +610,7 @@ let lastRegion = -1, bannerT;
 function regionBanner(){
   if(S.mode !== "main") return; const r = MAIN.regions.findIndex(r => S.pz < r.z1); if(r === lastRegion || r < 0) return;
   const first = lastRegion === -1; lastRegion = r; const b = $("banner");
-  b.innerHTML = `${REGIONS[r].name}<small>${first ? "Your adventure starts here" : "A new region!"}</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2400);
+  b.innerHTML = `${REGIONS[r].name}<small>${first ? (resumed ? "Welcome back!" : "Your adventure starts here") : "A new region!"}</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2400);
 }
 
 /* ============================== effects ============================== */
@@ -766,11 +766,45 @@ async function toPebble(k){ await go(async () => { const pb = baseNode().pebbles
 async function go(fn){ S.moving = true; hideSheet(); renderControls(); hint(false); await fn(); S.moving = false; renderControls(); }
 function arrive(){
   const n = node(); drawHud(); if(n.type === "start") return;
+  bossAhead();
   if(!n.done && n.type !== "surprise") turnAround("wave", 700);
   if(n.type === "surprise" && !n.done) return surprise(n);
   if(n.bonus){ collectBonus(n); return; }
   showSheet();
 }
+
+// the stone before a gate: the boss lets you know it's waiting
+function bossAhead(){
+  if(S.mode !== "main") return; const nx = nextStep(); if(!nx || nx.fork) return; const g = stepNode(nx);
+  if(g.type !== "gate" || g.done || g.warned) return; g.warned = true;
+  setTimeout(() => { const b = $("banner"); b.innerHTML = `⚠️ Boss ahead!<small>${g.n} is waiting at the gate</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2600); if(audio.on){ grumble(); setTimeout(grumble, 350); } }, 900);
+}
+
+/* ============================== saving (this device only, one save per player) ============================== */
+const SAVE_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-v1") : "fma-adventure-v1";
+const allNodes = () => { const out = []; MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => out.push(n))); return out; };
+let loading = false;
+function saveGame(){
+  if(loading || S.mode !== "main") return;
+  const data = { v: 1, pos: { i: S.i, b: S.b, k: S.k, lastBranch: S.lastBranch }, region: S.region, powers: S.powers, loot: S.loot,
+    look: { acc: ME.acc, accColor: ME.accColor, extra: ME.extra, extraColor: ME.extraColor, gear: ME.gear, gearColor: ME.gearColor },
+    nodes: allNodes().map(n => [n.done ? 1 : 0, n.fails, n.cracked ? 1 : 0, n.pebbles ? n.pebbles.map(p => p.done ? 1 : 0) : 0, n.warned ? 1 : 0]) };
+  try { localStorage.setItem(SAVE_KEY(), JSON.stringify(data)); } catch(e){}
+}
+function loadGame(){
+  let d = null; try { d = JSON.parse(localStorage.getItem(SAVE_KEY())); } catch(e){}
+  if(!d || d.v !== 1) return false;
+  const ns = allNodes(); if(!d.nodes || d.nodes.length !== ns.length) return false;   // the map changed: start fresh
+  loading = true;
+  ns.forEach((n, i) => { const [done, fails, cracked, pebs, warned] = d.nodes[i]; n.done = !!done; n.fails = fails || 0; n.warned = !!warned;
+    if(cracked && n.cracks){ n.cracked = true; n.pebbles = n.cracks.map((c, k, a) => makeNode({ n: c, s: n.s, d: `A smaller piece of “${n.n}”.`, game: n.game }, { pebble: true, region: n.region, z: n.z + 0.4, x: n.x + (k - (a.length - 1) / 2) * 1.9 }));
+      if(pebs) n.pebbles.forEach((p, k) => p.done = !!pebs[k]); }
+    if(n.type === "gate" && n.done) n.koT = -1e9; });
+  Object.assign(S, d.pos || {}); S.region = d.region || 0; S.powers = d.powers || []; S.loot = d.loot || [];
+  if(d.look) Object.assign(ME, d.look);
+  loading = false; return true;
+}
+function resetGame(){ try { localStorage.removeItem(SAVE_KEY()); } catch(e){} location.reload(); }
 
 /* ============================== surprises and the bonus stage ============================== */
 function surprise(n){
@@ -827,7 +861,7 @@ function showSheet(){
     if(!n.done && n.cracks && !n.cracked && n.fails) btns += `<div class="demo" style="flex-basis:100%;border:0;min-height:0">Tries: ${n.fails} of ${CRACK_AFTER}. After ${CRACK_AFTER}, this stone cracks into smaller ones.</div>`;
   }
   sh.innerHTML = `<button class="x" data-a="close" aria-label="Close">×</button><div class="row"><div class="pic" id="pic"></div><div><div class="kind">${kind}</div><h2>${title}</h2></div></div>
-    <p>${body}</p><div class="btns">${btns}</div><div class="demo">TEST: demo buttons stand in for playing the real game. Nothing is saved.</div>`;
+    <p>${body}</p><div class="btns">${btns}</div><div class="demo">TEST: the demo buttons stand in for playing the real game. Progress is saved on this device.</div>`;
   pic = PlayerArt($("pic"), who, { tap: false }); setTimeout(() => pic && pic.moment(n.done ? "done" : "hello", 1600), 120);
   sh.classList.add("show");
 }
@@ -893,11 +927,12 @@ function openMap(){
   const cleared = MAIN.steps.reduce((a, st) => a + (st.fork ? [...st.L, ...st.R] : [st]).filter(n => n.done && n.type !== "start").length, 0);
   $("mapNote").textContent = `${cleared} stones cleared · ${S.powers.length} powers · ${S.loot.length} things found`;
 }
-$("mapBtn").onclick = openMap; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
+$("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start the adventure again from the beginning? Your stones and things you found on this device will be cleared.")) resetGame(); }; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
 $("snd").onclick = () => { if(audio.on){ audio.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); $("snd").textContent = "🔊"; } };
 
 /* ============================== HUD and controls ============================== */
 function drawHud(){
+  saveGame();
   const tally = {}, total = {};
   MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(!n.s) return; total[n.s] = (total[n.s] || 0) + 1; if(n.done) tally[n.s] = (tally[n.s] || 0) + 1; }));
   $("skills").innerHTML = Object.entries(SKILLS).map(([k, s]) => `<div class="sk" data-s="${k}" style="--c:${s.c}"><i style="background:${s.c}22">${s.i}</i>${s.n}<span class="pips">${Array.from({ length: total[k] || 0 }, (_, j) => `<b class="${j < (tally[k] || 0) ? "on" : ""}"></b>`).join("")}</span></div>`).join("");
@@ -935,10 +970,10 @@ function hint(on){ $("hint").style.opacity = on ? 1 : 0; }
 /* ============================== start ============================== */
 addEventListener("resize", resize);
 resize();
-heroImages(); setAt(C.steps[0]); S.cam.x = S.px; S.cam.z = -7;
+const resumed = loadGame(); heroImages(); setAt(resumed ? baseNode() : C.steps[0]); S.cam.x = S.px; S.cam.z = S.pz - 7;
 drawHud(); renderControls();
 requestAnimationFrame(frame);
-setTimeout(() => toast(`Off you go${ME.name ? ", " + ME.name : ""}!`, "Walk on to the first stone."), 2800);
+if(!resumed) setTimeout(() => toast(`Off you go${ME.name ? ", " + ME.name : ""}!`, "Walk on to the first stone."), 2800);
 setTimeout(() => hint(false), 7000);
 // for testing without the animation running (e.g. a hidden browser tab)
 window.__adv = { S, MAIN, BONUSC, forward, back, choose, pass, fail, node, enterBonus };
