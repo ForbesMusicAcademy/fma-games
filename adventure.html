@@ -1251,7 +1251,7 @@ function openMap(){
   const yx = X(S.mode === "main" ? S.px : MAIN.xfn(0)), yy = Y(S.mode === "main" ? S.pz : 0);
   g.fillStyle = "#fff"; g.strokeStyle = "#26211f"; g.lineWidth = 3; g.beginPath(); g.arc(yx, yy, 16, 0, 7); g.fill(); g.stroke(); if(faceImg.complete && faceImg.naturalWidth){ g.save(); g.beginPath(); g.arc(yx, yy, 14, 0, 7); g.clip(); g.drawImage(faceImg, yx - 14, yy - 14 * (1 / faceImg.ar), 28, 28 / faceImg.ar); g.restore(); }
   const cleared = MAIN.steps.reduce((a, st) => a + (st.fork ? [...st.L, ...st.R] : [st]).filter(n => n.done && n.type !== "start").length, 0);
-  $("mapNote").textContent = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} powers · ${S.loot.length} things found · ✨ ${SECRETS.filter(sc => S.loot.includes(sc.loot.n)).length}/${SECRETS.length} secrets · 👋 ${FRIENDS.filter(f => f.met).length}/${FRIENDS.length} friends met` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
+  $("mapNote").textContent = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} powers (${allNodes().filter(n => n.withPower).length} used) · ${S.loot.length} things found · ✨ ${SECRETS.filter(sc => S.loot.includes(sc.loot.n)).length}/${SECRETS.length} secrets · 👋 ${FRIENDS.filter(f => f.met).length}/${FRIENDS.length} friends met` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
 }
 const MAP_HITS = [];
 $("mapCv").addEventListener("click", e => { const r = $("mapCv").getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
