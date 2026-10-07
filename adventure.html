@@ -1107,7 +1107,8 @@ function surprise(n){
     const q = QUIZ[Math.floor(Math.random() * QUIZ.length)], fr = FRIENDS[Math.floor(Math.random() * FRIENDS.length)], who = fr.name, cfg = fr.cfg;
     const opts = q.a.map((t, i) => ({ t, ok: i === 0 })).sort(() => Math.random() - .5);
     n.event = { kind: "quiz", who, q, opts, cfg, fr };
-  } else n.event = { kind: "chest", loot: randLoot() };
+  } else { const missing = Object.keys(POWERS).filter(k => !S.powers.includes(k));
+    n.event = missing.length && Math.random() < 0.5 ? { kind: "powerchest", power: missing[Math.floor(Math.random() * missing.length)] } : { kind: "chest", loot: randLoot() }; }
   showSheet();
 }
 function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; if(!S.loot.includes(l.n)) S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
@@ -1141,6 +1142,7 @@ function showSheet(){
     if(n.done){ kind = "Surprise"; title = "Already found!"; body = "You've had this surprise. Keep exploring."; btns = `<button class="go" data-a="close">Keep going</button>`; }
     else if(ev.kind === "quiz"){ kind = "Surprise challenge"; title = `${ev.who} jumps out!`; who = ev.cfg; body = `“Answer this and I'll give you something cool: <b>${ev.q.q}</b>”`;
       btns = ev.opts.map((o, j) => `<button data-a="ans" data-j="${j}">${o.t}</button>`).join(""); }
+    else if(ev.kind === "powerchest"){ kind = "Surprise"; title = "A glowing chest!"; body = `Inside: the power <b>${POWERS[ev.power]}</b>. Save it for a stone that's giving you trouble.`; btns = `<button class="go" data-a="pchest">✨ Take the power</button>`; }
     else { kind = "Surprise"; title = "A treasure chest!"; body = `Inside: <b>${ev.loot.n}</b>.`; btns = `<button class="go" data-a="chest">🎁 Open it and wear it</button>`; }
   } else if(n.type === "golden"){
     kind = "Bonus level"; title = "The Golden Stone"; body = n.done ? "You've played the Starlight Stage. Nice!" : "It hums with music… Step in to visit the <b>Starlight Stage</b> bonus level?";
@@ -1174,6 +1176,7 @@ $("sheet").addEventListener("click", e => {
     case "close": hideSheet(); break;
     case "pass": pass(); break;
     case "fail": fail(); break;
+    case "pchest": { if(!S.powers.includes(n.event.power)) S.powers.push(n.event.power); n.done = true; hideSheet(); burst(S.px, 1.4, S.pz, "#a070e8", 40); toast("✨ New power!", POWERS[n.event.power]); turnAround("flex", 1200); drawHud(); break; }
     case "play": saveGame(); try { localStorage.setItem(PENDING_KEY(), "1"); } catch(err){} break;
     case "mentor": n.mentor = true; toast("🎓 Mentor Pass", "Cleared in class with Dave."); pass(); break;
     case "power": { const used = S.powers.shift(); n.withPower = used; toast(`${POWERS[used]} used!`, "That's what powers are for. Stone cleared."); pass(); break; }
