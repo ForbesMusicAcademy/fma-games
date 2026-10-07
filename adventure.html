@@ -985,6 +985,7 @@ function drawBuddy(now){ const b = S.buddy; if(!b || !b.img.complete || !b.img.n
 function buddyArrive(){ const b = S.buddy; if(!b || b.bye) return; b.left--; if(b.left <= 0){ b.bye = performance.now() + 600; setTimeout(() => toast(`${b.f.name.split(" ")[1] || b.f.name}: “See you up the road!”`, "Your friend heads off."), 500); } }
 
 /* ============================== saving (this device only, one save per player) ============================== */
+const PENDING_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-pending-v1") : "fma-adventure-pending-v1";
 const SAVE_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-v1") : "fma-adventure-v1";
 const allNodes = () => { const out = []; MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => out.push(n))); return out; };
 let loading = false;
@@ -1061,7 +1062,7 @@ function showSheet(){
     else if(n.cracked) btns = `<button data-a="close">Close</button>`;
     else if(n.classOnly) btns = `<button class="go" data-a="pass">💎 Dave clears this in class (demo: clear it)</button>`;
     else if(isGate && !ready) btns = `<button class="go" data-a="close">OK</button>`;
-    else btns = (n.game ? `<a href="${n.game}">▶ Play the game</a>` : "") + `<button class="go" data-a="pass">✓ Passed (demo)</button><button data-a="fail">✗ Not yet (demo)</button>`
+    else btns = (n.game ? `<a href="${n.game}" data-a="play">▶ Play the game</a>` : "") + `<button class="go" data-a="pass">✓ Passed (demo)</button><button data-a="fail">✗ Not yet (demo)</button>`
       + (S.powers.length && n.type !== "gate" && !n.classOnly ? `<button data-a="power" style="flex-basis:100%;background:#efe6ff">✨ Use a power to get past (${S.powers.map(k => POWERS[k]).join(", ")})</button>` : "");
     if(TEACHER && !n.done && !n.cracked) btns += `<button data-a="mentor" style="flex-basis:100%;background:#d9f0ff">🎓 Mentor Pass (teacher): cleared in class</button>`;
     if(n.mentor) body += ` <i>(Cleared with a Mentor Pass.)</i>`;
@@ -1070,7 +1071,7 @@ function showSheet(){
     if(!n.done && n.cracks && !n.cracked && n.fails) btns += `<div class="demo" style="flex-basis:100%;border:0;min-height:0">Tries: ${n.fails} of ${CRACK_AFTER}. After ${CRACK_AFTER}, this stone cracks into smaller ones.</div>`;
   }
   sh.innerHTML = `<button class="x" data-a="close" aria-label="Close">×</button><div class="row"><div class="pic" id="pic"></div><div><div class="kind">${kind}</div><h2>${title}</h2></div></div>
-    <p>${body}</p><div class="btns">${btns}</div><div class="demo">TEST: the demo buttons stand in for playing the real game. Progress is saved on this device.</div>`;
+    ${RETURNED ? `<p style="margin:8px 0 0;color:var(--fg);font-weight:700">🎮 Welcome back from the game! How did you go?</p>` : ""}<p>${body}</p><div class="btns">${btns}</div><div class="demo">TEST: the demo buttons stand in for playing the real game. Progress is saved on this device.</div>`;
   pic = PlayerArt($("pic"), who, { tap: false }); setTimeout(() => pic && pic.moment(n.done ? "done" : "hello", 1600), 120);
   sh.classList.add("show");
 }
@@ -1081,6 +1082,7 @@ $("sheet").addEventListener("click", e => {
     case "close": hideSheet(); break;
     case "pass": pass(); break;
     case "fail": fail(); break;
+    case "play": saveGame(); try { localStorage.setItem(PENDING_KEY(), "1"); } catch(err){} break;
     case "mentor": n.mentor = true; toast("🎓 Mentor Pass", "Cleared in class with Dave."); pass(); break;
     case "power": { const used = S.powers.shift(); n.withPower = used; toast(`${POWERS[used]} used!`, "That's what powers are for. Stone cleared."); pass(); break; }
     case "bonus": enterBonus(); break;
@@ -1229,6 +1231,9 @@ resize();
 const resumed = loadGame(); heroImages(); setAt(resumed ? baseNode() : C.steps[0]); S.cam.x = S.px; S.cam.z = S.pz - 7;
 drawHud(); renderControls();
 requestAnimationFrame(frame);
+// back from playing a stone's game: open that stone's card and ask how it went
+let RETURNED = false; try { RETURNED = resumed && !!localStorage.getItem(PENDING_KEY()); localStorage.removeItem(PENDING_KEY()); } catch(e){}
+if(RETURNED) setTimeout(() => { if(!node().done) showSheet(); RETURNED = false; }, 1200);
 let seenIntro = false; try { seenIntro = !!localStorage.getItem(INTRO_KEY()); } catch(e){}
 if(!resumed && !seenIntro) setTimeout(showIntro, 2600);
 else if(!resumed) setTimeout(() => toast(`Off you go${ME.name ? ", " + ME.name : ""}!`, "Walk on to the first stone."), 2800);
