@@ -1232,7 +1232,7 @@ function openMap(){
   const zMax = MAIN.len - 20, pad = 70, Y = z => h - pad - (z / zMax) * (h - pad * 2), X = x => w / 2 + x * (w / 44);
   const cols = { meadow: "#bfe8a0", canyon: "#f5cf9e", river: "#bcdcf5" };
   MAIN.regions.forEach((rg, i) => { g.fillStyle = cols[rg.theme]; g.fillRect(0, Y(rg.z1), w, Y(rg.z0) - Y(rg.z1));
-    g.fillStyle = "rgba(38,33,31,.55)"; g.font = "900 13px Nunito, sans-serif"; g.textAlign = "left"; g.fillText(REGIONS[i].name, 8, Y(rg.z1) + 16); });
+    g.fillStyle = "rgba(38,33,31,.55)"; g.font = "900 13px Nunito, sans-serif"; g.textAlign = "left"; g.fillText(REGIONS[i].name + "  ·  🎵 " + (["Zombie", "Wagon Wheel", "Stand By Me"][i] || ""), 8, Y(rg.z1) + 16); });
   // the road, both branches where it forks
   const inFork = z => MAIN.forks.some(f => z > f.z0 + 0.5 && z < f.z1 - 0.5);
   const road = fx => { g.beginPath(); let pen = false; for(let z = 0; z <= zMax; z += 0.5){ const x = X(fx(z)), y = Y(z); if(inFork(z)){ pen = false; continue; } pen ? g.lineTo(x, y) : g.moveTo(x, y); pen = true; } g.stroke(); };
