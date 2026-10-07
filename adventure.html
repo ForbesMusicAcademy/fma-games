@@ -1255,7 +1255,7 @@ $("wardBtn").onclick = openWard; $("wardX").onclick = () => { $("ward").classLis
 $("ward").addEventListener("click", e => { if(e.target.id === "ward") $("wardX").onclick(); });
 // first visit: Plucky shows you round in three quick steps (once per player on this device)
 const INTRO = [
-  ["Hi, I'm Plucky!", "Welcome to the Adventure. Tap <b>▶ Walk on</b> to hop along the path, one stepping stone at a time.", "Next"],
+  ["Hi, I'm Plucky!", "Welcome to the Adventure. Tap <b>▶ Walk on</b> to hop along the path, one stepping stone at a time. Tap 🔇 at the top for music!", "Next"],
   ["Every stone is a skill", "Fretboard, chords, rhythm, lead… Play the game on a stone to clear it. Stuck? It cracks into smaller stones, or use a power.", "Next"],
   ["Gates are songs", "Clear enough stones and you can take on the gate boss: a real song! Beat it to open the next region. Have fun!", "Let's go!"]];
 const INTRO_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-intro-v1") : "fma-adventure-intro-v1";
@@ -1263,7 +1263,7 @@ let introStep = 0;
 function showIntro(){ const [t, p, b] = INTRO[introStep]; $("introT").textContent = t; $("introP").innerHTML = p; $("introGo").textContent = b; $("intro").classList.add("show"); }
 $("introGo").onclick = () => { introStep++; if(introStep < INTRO.length){ $("intro").classList.remove("show"); void $("intro").offsetWidth; showIntro(); } else { $("intro").classList.remove("show"); try { localStorage.setItem(INTRO_KEY(), "1"); } catch(e){} } };
 $("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start the adventure again from the beginning? Your stones and things you found on this device will be cleared.")) resetGame(); }; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
-$("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; } };
+$("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; toast("🔊 Sound on", "Each region plays its gate song’s chords. Listen out for the birds!"); } };
 
 /* ============================== HUD and controls ============================== */
 const BLOOM = [0.35, 0.35, 0.35];
