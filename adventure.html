@@ -346,6 +346,10 @@ function drawSky(th, now){
     ctx.fillStyle = "rgba(255,244,200,.9)"; circle(W * 0.8 - S.cam.x * 1.5, HOR * 0.28, Math.min(W, H) * 0.07); ctx.fill();
     for(let i = 0; i < 6; i++){ const x = ((i * 233 + now / 90 - S.cam.x * 4) % (W + 300) + W + 300) % (W + 300) - 150, y = HOR * (0.15 + (i % 3) * 0.17);
       cloud(x, y, 22 + (i % 3) * 10); }
+    // a little flock of birds drifting across
+    ctx.strokeStyle = "rgba(38,33,31,.7)"; ctx.lineWidth = 2; ctx.lineCap = "round";
+    for(let i = 0; i < 5; i++){ const fx = ((now / 55 - S.cam.x * 2 + (i % 3) * 22) % (W + 300) + W + 300) % (W + 300) - 150, fy = HOR * 0.42 + Math.abs(i - 2) * 9 + Math.sin(now / 900) * 6, fl = Math.sin(now / 120 + i) * 4;
+      ctx.beginPath(); ctx.moveTo(fx - 7 - i * 16, fy - fl); ctx.quadraticCurveTo(fx - 3 - i * 16, fy - 4, fx - i * 16, fy); ctx.quadraticCurveTo(fx + 3 - i * 16, fy - 4, fx + 7 - i * 16, fy - fl); ctx.stroke(); }
   }
   // far hills, two layers, sliding with the camera (parallax)
   [[skyMix.far0, 0.55, 2.2, 90], [skyMix.far1, 0.8, 4, 60]].forEach(([col, hgt, par, wl]) => {
@@ -417,6 +421,10 @@ function drawRopes(f, now){
     for(let z = f.z0; z <= f.z1 + 0.01; z += 0.25){ const k = (z - f.z0) / (f.z1 - f.z0), p = P(C.xfn(z) + d, 0.95 - Math.sin(Math.PI * k) * 0.3 + Math.sin(now / 400) * 0.03, z); if(!p) continue; if(!started){ ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
     ctx.stroke(); }
 }
+// footprints you leave on the path, fading away
+const PRINTS = [];
+function drawPrints(now){ for(const f of PRINTS){ if(f.mode !== S.mode) continue; const age = (now - f.t) / 7000; if(age > 1) continue; const p = P(f.x, 0, f.z); if(!p) continue;
+  ctx.fillStyle = `rgba(90,60,30,${0.28 * (1 - age)})`; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.s * 0.09, p.s * 0.035, 0, 0, 7); ctx.fill(); } }
 // soft shadows of passing clouds sliding over the ground
 function drawCloudShadows(now, th){
   if(th === THEMES.stars) return;
@@ -485,6 +493,7 @@ function drawStone(n, now, isPebble){
   ctx.fillStyle = "#5f5a52"; ctx.beginPath(); ctx.ellipse(p.x, cy + th * 0.5, rx, ry, 0, 0, 7); ctx.fill();
   ctx.fillStyle = top; ol(Math.max(1, p.s * 0.04)); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx, ry, 0, 0, 7); ctx.fill(); ctx.stroke();
   ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(p.x - rx * 0.25, cy - th * 0.5 - ry * 0.2, rx * 0.35, ry * 0.3, 0, 0, 7); ctx.fill();
+  if(n === S.nextN && !n.done){ const k = (now % 1400) / 1400; ctx.strokeStyle = `rgba(255,196,43,${0.9 * (1 - k)})`; ctx.lineWidth = Math.max(2, p.s * 0.08); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * (1.05 + k * 0.5), ry * (1.05 + k * 0.5), 0, 0, 7); ctx.stroke(); }
   if(n.cracked){ ol(p.s * 0.05); ctx.beginPath(); ctx.moveTo(p.x - rx * 0.5, cy - th); ctx.lineTo(p.x - rx * 0.1, cy - th * 0.4); ctx.lineTo(p.x - rx * 0.3, cy); ctx.moveTo(p.x + rx * 0.4, cy - th); ctx.lineTo(p.x + rx * 0.1, cy - th * 0.2); ctx.stroke(); }
   if(n.type === "golden" && !n.done){ const g = ctx.createRadialGradient(p.x, cy, 0, p.x, cy, rx * 1.8); g.addColorStop(0, `rgba(255,220,90,${0.45 + 0.2 * Math.sin(now / 250)})`); g.addColorStop(1, "rgba(255,220,90,0)"); ctx.fillStyle = g; circle(p.x, cy, rx * 1.8); ctx.fill(); }
   // badge
@@ -542,6 +551,11 @@ function drawNpc(n, now){
   if(t > 0){ shadow(p, 0.6); ctx.save(); ctx.beginPath(); ctx.rect(p.x - w, p.y - h * 2, w * 2, h * 2); ctx.clip();
     ctx.drawImage(img, p.x - w / 2, p.y - h * e - jump, w, h); ctx.restore(); }
   if(n.bush){ const b = { kind: "bush", r: 0.3 }; drawProp(b, P(n.x, 0, n.z - 0.3) || p, now); }
+  // music floats up from friends who are playing
+  if(t >= 1 && p.dz < 34) for(let k = 0; k < 2; k++){ const ph = ((now / 1600) + n.ph + k * 0.5) % 1, fs = Math.max(10, p.s * 0.45);
+    ctx.globalAlpha = fogA(p.dz) * (1 - ph) * 0.9; ctx.fillStyle = ["#ff6fa3", "#4aa8ff", "#ffc42b"][(k + Math.floor(n.ph)) % 3]; ctx.font = `900 ${fs}px Nunito, sans-serif`; ctx.textAlign = "center";
+    ctx.fillText(k ? "♫" : "♪", p.x + w * 0.35 + Math.sin(ph * 6 + k) * w * 0.15, p.y - h * (0.9 + ph * 0.9) - jump); }
+  ctx.globalAlpha = fogA(p.dz);
   // speech bubble when you walk past
   if(t >= 1 && p.dz < 16 && p.dz > 3){
     if(!n.said){ n.said = now; n.line = friendLine(n); if(audio.on) chirp(650 + Math.random() * 350); }
@@ -704,7 +718,8 @@ function frame(now){
   S.cam.x += (tx - S.cam.x) * Math.min(1, dt * 4); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * 5); S.cam.y = 3.0 + S.py * 0.3;
   const th = themeAt(C, S.pz + 4);
   lifeTick(dt, now); regionBanner();
-  drawSky(th, now); drawGround(now); drawCloudShadows(now, th);
+  S.nextN = (() => { if(S.moving) return null; const nx = nextStep(); return nx && !nx.fork ? stepNode(nx) : null; })();
+  drawSky(th, now); drawGround(now); drawCloudShadows(now, th); drawPrints(now);
   // everything that stands in the world, far to near
   const list = [], props = S.mode === "bonus" ? PROPS.bonus : PROPS.main, zMin = S.cam.z + 0.8, zMax = S.cam.z + FAR;
   for(const o of props) if(o.z > zMin && o.z < zMax) list.push({ z: o.z, d: () => { const p = P(o.x, 0, o.z); if(p){ ctx.globalAlpha = fogA(p.dz); drawProp(o, p, now); ctx.globalAlpha = 1; } } });
@@ -740,7 +755,7 @@ function travel(to, opts){
       const t = Math.min(1, (now - t0) / ms), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       S.px = x0 + (to.x - x0) * e; S.pz = z0 + (to.z - z0) * e;
       const hopT = Math.max(0, (t - 0.72) / 0.28); S.py = hopT > 0 ? Math.sin(Math.PI * hopT) * (0.55 + d * 0.02) : 0;
-      S.walking = t < 0.72; if(S.walking){ const before = Math.floor(S.walkPh / Math.PI); S.walkPh += 0.32; if(Math.floor(S.walkPh / Math.PI) !== before) stepSound(); }
+      S.walking = t < 0.72; if(S.walking){ const before = Math.floor(S.walkPh / Math.PI); S.walkPh += 0.32; if(Math.floor(S.walkPh / Math.PI) !== before){ stepSound(); if(!featureAt(S.pz)) PRINTS.push({ x: S.px + (Math.floor(S.walkPh / Math.PI) % 2 ? 0.22 : -0.22), z: S.pz, t: performance.now(), mode: S.mode }); if(PRINTS.length > 60) PRINTS.shift(); }  }
       if(t < 1) nextFrame(tick); else { S.py = 0; S.walking = false; puff(S.px, S.pz); res(); }
     };
     nextFrame(tick);
