@@ -489,6 +489,7 @@ function drawRopes(f, now){
 // footprints you leave on the path, fading away
 const PRINTS = [];
 function drawPrints(now){ for(const f of PRINTS){ if(f.mode !== S.mode) continue; const age = (now - f.t) / 7000; if(age > 1) continue; const p = P(f.x, 0, f.z); if(!p) continue;
+  if(f.star){ ctx.fillStyle = `rgba(255,240,170,${0.9 * (1 - age)})`; const r0 = p.s * 0.08 * (1 - age * 0.5); ctx.beginPath(); for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r0 * 0.45 : r0; ctx.lineTo(p.x + Math.cos(a) * rr, p.y - p.s * 0.1 * age - r0 + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); continue; }
   ctx.fillStyle = `rgba(90,60,30,${0.28 * (1 - age)})`; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.s * 0.09, p.s * 0.035, 0, 0, 7); ctx.fill(); } }
 // soft shadows of passing clouds sliding over the ground
 function drawCloudShadows(now, th){
@@ -974,7 +975,7 @@ function travel(to, opts){
       const t = Math.min(1, (now - t0) / ms), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       S.px = x0 + (to.x - x0) * e; S.pz = z0 + (to.z - z0) * e;
       const hopT = Math.max(0, (t - 0.72) / 0.28); S.py = hopT > 0 ? Math.sin(Math.PI * hopT) * (0.55 + d * 0.02) : 0;
-      S.walking = t < 0.72; if(S.walking){ const before = Math.floor(S.walkPh / Math.PI); S.walkPh += 0.32; if(Math.floor(S.walkPh / Math.PI) !== before){ stepSound(); if(!featureAt(S.pz)) PRINTS.push({ x: S.px + (Math.floor(S.walkPh / Math.PI) % 2 ? 0.22 : -0.22), z: S.pz, t: performance.now(), mode: S.mode }); if(PRINTS.length > 60) PRINTS.shift(); }  }
+      S.walking = t < 0.72; if(S.walking){ const before = Math.floor(S.walkPh / Math.PI); S.walkPh += 0.32; if(Math.floor(S.walkPh / Math.PI) !== before){ stepSound(); if(!featureAt(S.pz)) PRINTS.push({ x: S.px + (Math.floor(S.walkPh / Math.PI) % 2 ? 0.22 : -0.22), z: S.pz, t: performance.now(), mode: S.mode, star: S.mode === "bonus" }); if(PRINTS.length > 60) PRINTS.shift(); }  }
       if(t < 1) nextFrame(tick); else { S.py = 0; S.walking = false; puff(S.px, S.pz); res(); }
     };
     nextFrame(tick);
@@ -1112,7 +1113,7 @@ function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; el
 // each note you collect plays the next bit of Twinkle Twinkle (a traditional tune)
 const TWINKLE = [[261.6, 261.6, 392.0, 392.0], [440.0, 440.0, 392.0], [349.2, 349.2, 329.6, 329.6], [293.7, 293.7, 261.6]];
 function bonusTune(i){ if(!audio.on) return; const t = audio.ctx.currentTime, ph = TWINKLE[i % TWINKLE.length]; ph.forEach((f, k) => pluck(f, t + k * 0.28, 0.07)); }
-function collectBonus(n){ bonusTune(BONUSC.steps.filter(x => x.bonus && x.done).length);
+function collectBonus(n){ turnAround(["rock", "star", "cheer", "flex"][BONUSC.steps.filter(x => x.bonus && x.done).length % 4], 900); bonusTune(BONUSC.steps.filter(x => x.bonus && x.done).length);
   n.done = true; burst(n.x, 1.6, n.z, "#ffc42b", 40); toast("♪ Note collected!", n.end ? "Bonus stage complete!" : `${BONUSC.steps.filter(s => s.done).length} of ${BONUSC.steps.filter(x => x.bonus).length}`);
   if(n.end){ const l = randLoot(); setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
   else setTimeout(forward, 900);
