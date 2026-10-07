@@ -515,9 +515,13 @@
       [reach[0], reach[1], "rest", { C: [(SR[0] + reach[0]) / 2 + 10, (SR[1] + reach[1]) / 2 + 8], nohand: true, nosway: true }]];
     // the fingertips, in the instrument's own frame: three bumps rising from the neck's bottom edge (y = 5) up the fretboard
     const r = 5.2, x0 = fx - 3 * r, base = dy + 5, top = dy - 0.5, ol = (3.8 / k).toFixed(2);
-    const bumps = `M${x0} ${base} V${top} A${r} ${r} 0 0 1 ${x0 + 2 * r} ${top} A${r} ${r} 0 0 1 ${x0 + 4 * r} ${top} A${r} ${r} 0 0 1 ${x0 + 6 * r} ${top} V${base}`;
-    pose.fingers = (skin) => `<g transform="translate(${t.x.toFixed(1)} ${t.y.toFixed(1)}) rotate(${t.rot}) scale(${k.toFixed(3)})"><path d="${bumps}Z" fill="${skin}"/>`
-      + `<path d="${bumps}" fill="none" stroke="${INK}" stroke-width="${ol}" stroke-linejoin="round"/><path d="M${x0 + 2 * r} ${top} v2.6 M${x0 + 4 * r} ${top} v2.6" fill="none" stroke="${INK}" stroke-width="${(1.8 / k).toFixed(2)}" stroke-linecap="round"/></g>`;
+    // A little of the back of the hand shows under the neck: the wrist comes out from behind the bottom edge (open there, no
+    // outline), curves gently under, and runs up into the three fingers, which cross the fretboard. One shape, outlined outside only.
+    const xr = x0 + 6 * r, low = base + 11, wr = x0 - 7;
+    const hand = `M${wr} ${base} C${wr - 1.5} ${base + 7} ${x0 - 2} ${low} ${x0 + 6} ${low} C${xr - 1} ${low + 1} ${xr + 2.5} ${base + 6} ${xr} ${base - 1} V${top}`
+      + ` A${r} ${r} 0 0 0 ${x0 + 4 * r} ${top} A${r} ${r} 0 0 0 ${x0 + 2 * r} ${top} A${r} ${r} 0 0 0 ${x0} ${top} V${base}`;
+    pose.fingers = (skin) => `<g transform="translate(${t.x.toFixed(1)} ${t.y.toFixed(1)}) rotate(${t.rot}) scale(${k.toFixed(3)})"><path d="${hand}Z" fill="${skin}"/>`
+      + `<path d="${hand}" fill="none" stroke="${INK}" stroke-width="${ol}" stroke-linejoin="round" stroke-linecap="round"/><path d="M${x0 + 2 * r} ${top} v2.6 M${x0 + 4 * r} ${top} v2.6" fill="none" stroke="${INK}" stroke-width="${(1.8 / k).toFixed(2)}" stroke-linecap="round"/></g>`;
     return pose;
   }
   const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8, solo: 18 };      // how far apart the feet are
