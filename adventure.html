@@ -321,8 +321,12 @@ const clearedIn = ri => { let c = 0; MAIN.steps.forEach(st => (st.fork ? [...st.
 /* ============================== 3D projection ============================== */
 const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 let W = 0, H = 0, F = 0, HOR = 0, DPR = 1;
+// automatic quality: older tablets get fewer pixels, then fewer far-away props and lighter effects
+const QUALITY = { level: 2, acc: 0, n: 0, t: 0 };
+function checkQuality(dt){ if(document.hidden) return; QUALITY.acc += dt; QUALITY.n++; if(QUALITY.acc < 3) return; const fps = QUALITY.n / QUALITY.acc; QUALITY.acc = QUALITY.n = 0;
+  if(fps < 30 && QUALITY.level > 0){ QUALITY.level--; resize(); } }
 function resize(){
-  DPR = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
+  DPR = Math.min(QUALITY.level >= 2 ? 2 : QUALITY.level === 1 ? 1.25 : 1, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   F = Math.max(W * 0.92, H * 0.72); HOR = H * 0.4;
 }
@@ -687,6 +691,7 @@ function drawWeather(dt, now){
   if(tn === "river"){ const g = ctx.createLinearGradient(0, HOR - H * 0.04, 0, HOR + H * 0.16); g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.4, "rgba(240,248,255,.45)"); g.addColorStop(1, "rgba(240,248,255,0)"); ctx.fillStyle = g; ctx.fillRect(0, HOR - H * 0.04, W, H * 0.2);
     const v = ctx.createLinearGradient(0, 0, 0, H); v.addColorStop(0, "rgba(255,160,120,.12)"); v.addColorStop(1, "rgba(60,80,160,.10)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); }
   // a soft vignette pulls the eye to the middle
+  if(QUALITY.level === 0) return;
   const vg = ctx.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.35, W / 2, H * 0.55, Math.max(W, H) * 0.8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(20,15,30,.22)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 }
 
@@ -711,6 +716,21 @@ function chime(){ tone([523, 659, 784, 1046][Math.floor(Math.random() * 4)], aud
 function grumble(){ tone(70, audio.ctx.currentTime, 0.5, "sawtooth", 0.04, 50); }
 function stepSound(){ if(audio.on) tone(140 + Math.random() * 40, audio.ctx.currentTime, 0.06, "triangle", 0.045, 90); }
 function winSound(){ if(!audio.on) return; const t = audio.ctx.currentTime; [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.09, 0.3, "triangle", 0.06)); }
+const CHORD_NOTES = { Em: [164.8, 196.0, 246.9, 329.6], C: [130.8, 164.8, 196.0, 261.6], G: [98.0, 123.5, 146.8, 196.0], D: [146.8, 185.0, 220.0, 293.7],
+  A: [110.0, 138.6, 164.8, 220.0], "F#m": [185.0, 220.0, 277.2, 370.0], E: [82.4, 123.5, 164.8, 207.7], Am: [110.0, 130.8, 164.8, 220.0] };
+const REGION_SONG = { meadow: ["Em", "C", "G", "D"], canyon: ["G", "D", "Em", "C"], river: ["A", "F#m", "D", "E"], stars: ["C", "Am", "G", "Em"] };
+const MUSIC = { on: false, beat: 0, next: 0 };
+// a gentle picked pattern (bass, then up the chord), quietly, one chord per bar
+function musicTick(){
+  if(!audio.on || !MUSIC.on) return; const c = audio.ctx, tn = S.mode === "bonus" ? "stars" : themeName(S.pz), song = REGION_SONG[tn] || REGION_SONG.meadow, bpm = tn === "canyon" ? 92 : tn === "stars" ? 70 : 84, beat = 60 / bpm / 2;
+  if(MUSIC.next < c.currentTime) MUSIC.next = c.currentTime + 0.05;
+  while(MUSIC.next < c.currentTime + 0.3){ const b = MUSIC.beat++, ch = CHORD_NOTES[song[Math.floor(b / 8) % 4]], pat = [0, 2, 1, 3, 2, 1, 3, 2], f = ch[pat[b % 8]];
+    pluck(f, MUSIC.next, b % 8 === 0 ? 0.05 : 0.03); MUSIC.next += beat; }
+}
+function pluck(f, t, vol){ const c = audio.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(2400, t); lp.frequency.exponentialRampToValueAtTime(500, t + 0.6);
+  o.type = "triangle"; o2.type = "sine"; o.frequency.value = f; o2.frequency.value = f * 2.005; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+  o.connect(lp); o2.connect(lp); lp.connect(g).connect(c.destination); o.start(t); o2.start(t); o.stop(t + 1.5); o2.stop(t + 1.5); }
+setInterval(musicTick, 120);
 const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3];
 let scaleStep = 0;
 function stoneNote(){ if(!audio.on) return; const f = SCALE[scaleStep % SCALE.length]; scaleStep++; const t = audio.ctx.currentTime; tone(f, t, 0.5, "triangle", 0.06); tone(f * 2, t, 0.3, "sine", 0.02); }
@@ -733,7 +753,8 @@ function frame(now){
   drawSky(th, now); drawGround(now); drawCloudShadows(now, th); drawPrints(now);
   // everything that stands in the world, far to near
   const list = [], props = S.mode === "bonus" ? PROPS.bonus : PROPS.main, zMin = S.cam.z + 0.8, zMax = S.cam.z + FAR;
-  for(const o of props) if(o.z > zMin && o.z < zMax) list.push({ z: o.z, d: () => { const p = P(o.x, 0, o.z); if(p){ ctx.globalAlpha = fogA(p.dz); drawProp(o, p, now); ctx.globalAlpha = 1; } } });
+  const propFar = QUALITY.level === 0 ? zMin + 55 : zMax;
+  for(const o of props) if(o.z > zMin && o.z < propFar && (QUALITY.level > 0 || o.kind !== "flower")) list.push({ z: o.z, d: () => { const p = P(o.x, 0, o.z); if(p){ ctx.globalAlpha = fogA(p.dz); drawProp(o, p, now); ctx.globalAlpha = 1; } } });
   if(S.mode === "main") for(const n of NPCS) if(n.z > zMin && n.z < zMax) list.push({ z: n.z, d: () => drawNpc(n, now) });
   C.steps.forEach(st => {
     const all = st.fork ? [...st.L, ...st.R] : [st];
@@ -749,7 +770,7 @@ function frame(now){
   stepBuddy(dt); if(S.buddy) list.push({ z: S.buddy.z, d: () => drawBuddy(now) });
   list.push({ z: S.pz - 0.05, d: () => { drawDust(); drawMe(now); } });
   list.sort((a, b) => b.z - a.z).forEach(o => o.d());
-  drawConfetti(dt); drawWeather(dt, now);
+  drawConfetti(dt); drawWeather(dt, now); checkQuality(dt);
   if(document.hidden) setTimeout(() => frame(performance.now()), 120); else requestAnimationFrame(frame);
 }
 
@@ -1005,7 +1026,7 @@ function openMap(){
   $("mapNote").textContent = `${cleared} stones cleared · ${S.powers.length} powers · ${S.loot.length} things found`;
 }
 $("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start the adventure again from the beginning? Your stones and things you found on this device will be cleared.")) resetGame(); }; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
-$("snd").onclick = () => { if(audio.on){ audio.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); $("snd").textContent = "🔊"; } };
+$("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; } };
 
 /* ============================== HUD and controls ============================== */
 function drawHud(){
