@@ -91,7 +91,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <div class="card" style="margin-bottom:14px">
       <h2>Play the tab, note by note</h2>
       <p>Your device listens through its microphone. Play each note on the tab. It only moves on when you get it right.</p>
-      <p><b>Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
     </div>
     <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
     <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
@@ -118,7 +118,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <!-- messages -->
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=2"></script>
+<script src="fma-student.js?v=4"></script>
 <script src="lib/alphaTab.min.js"></script>
 <script src="player-art.js?v=2"></script>
 <script>
@@ -399,8 +399,8 @@ function finish(){
   showPop(html);
   const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
   PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
-  if (!sim && FMAStudent.active()) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3 }
-    : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1 });
+  if (!sim && FMAStudent.active()) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
+    : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1, improved: pct >= DIAMOND_PCT && !before.diamond });
   const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
   const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
 }

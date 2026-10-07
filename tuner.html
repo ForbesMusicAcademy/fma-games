@@ -89,7 +89,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section class="card" id="intro">
     <h2>Tune up before you play</h2>
     <p>Tune all six strings as fast as you can, starting with the thick low E. Each string locks in when it's right, then the next one lights up. The clock starts when you pluck your first string.</p>
-    <p><b>Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
+    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
     <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
     <p id="best"></p>
     <button class="big" id="start">Start (allow microphone)</button>
@@ -123,7 +123,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=2"></script>
+<script src="fma-student.js?v=4"></script>
 <script src="player-art.js?v=2"></script>
 <script>
 /* ============================================================
@@ -300,7 +300,7 @@ const race = {
     $("clock").textContent = fmt(total);
     const stars = starsFor(total), prevBest = P.best, isBest = prevBest === null || total < prevBest;
     const mom = stars === 3 ? "win" : isBest ? "best" : "done";
-    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3});
+    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3, improved:isBest});
     if(buddy) buddy.moment(mom, 0);
     if(isBest) P.best = total;
     const today = dayStr(new Date()); if(!P.days.includes(today)) P.days.push(today);

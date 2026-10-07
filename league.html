@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<meta name="robots" content="noindex">
+<title>Team League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* The weekly team league, made for the classroom screen (open it full screen at the start of a lesson).
+   Teams are group classes, ranked on effort points per member: rounds played, practice days and beating your own best.
+   Only team names and counts are shown, never a student's name or points. Refreshes itself every two minutes. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--sky:#4A9CC2;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);min-height:100dvh;display:flex;justify-content:center;padding:max(16px,3vh) 16px}
+#app{width:100%;max-width:1100px;display:flex;flex-direction:column;gap:2.4vh}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-family:var(--head);font-weight:900;font-size:clamp(28px,5vw,64px)}
+.sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.8vw,22px)}
+.last{background:var(--accent);border:3px solid var(--fg);border-radius:999px;padding:6px 18px;font-family:var(--head);font-weight:900;font-size:clamp(15px,2vw,24px)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:clamp(16px,3vw,36px);display:flex;flex-direction:column;gap:clamp(14px,2.6vh,28px)}
+.team .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--head);font-weight:900;font-size:clamp(18px,3vw,40px)}
+.team .top span:last-child{color:var(--muted);font-size:.7em;white-space:nowrap}
+.bar{height:clamp(16px,2.6vh,30px);background:var(--line);border-radius:999px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--sky);border-radius:999px;transition:width .8s}
+.team.first .bar i{background:var(--good)}
+.team .who{color:var(--muted);font-weight:600;font-size:clamp(13px,1.7vw,20px);margin-top:6px}
+.how{color:var(--muted);font-size:clamp(13px,1.6vw,19px);text-align:center;margin:0}
+.empty{text-align:center;font-family:var(--head);font-weight:800;font-size:clamp(20px,3vw,34px);color:var(--muted);padding:6vh 0}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><div><h1>This week's league</h1><div class="sub" id="sub">Resets every Monday</div></div><div class="last" id="last" hidden></div></header>
+  <section class="card" id="board"><div class="empty">Loading…</div></section>
+  <p class="how">Help your team by playing the practice games: +1 a round (up to 5 a day), +3 for each day you practise,
+    +3 for beating your own best. Teams are ranked on points per member, with a bonus when everyone has practised.</p>
+</div>
+<script src="fma-student.js?v=4"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function draw(){
+  const r = await FMAStudent.league();
+  if(!r){ $("board").innerHTML = `<div class="empty">The team league starts soon.</div>`; return; }
+  $("last").hidden = !r.lastWinner; $("last").textContent = "🏆 Last week: " + r.lastWinner;
+  if(!r.teams.length){ $("board").innerHTML = `<div class="empty">No teams yet.</div>`; return; }
+  const top = Math.max(1, ...r.teams.map(t => t.perMember));
+  $("board").innerHTML = r.teams.map((t, i) => `<div class="team ${i === 0 && t.perMember > 0 ? "first" : ""}">
+      <div class="top"><span>${i === 0 && t.perMember > 0 ? "🏆 " : ""}${esc(t.name)}</span><span>${t.perMember} pts each</span></div>
+      <div class="bar"><i style="width:${Math.max(2, 100 * t.perMember / top).toFixed(0)}%"></i></div>
+      <div class="who">${t.practised} of ${t.members} have practised${t.practised === t.members ? " · whole-team bonus!" : ""}</div></div>`).join("");
+}
+draw(); setInterval(draw, 120000);
+</script>
+</body>
+</html>

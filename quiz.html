@@ -116,7 +116,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <p>Each question has four answers. Every answer sits on a note. Work out the right answer, then <b>find its note on your guitar</b> and hold it to lock in. Faster = more points.</p>
     <div class="levels" id="modes"></div>
     <div class="levels" id="levels"></div>
-    <p><b>Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
+    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
     <p>Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
     <p id="playingAs" style="color:var(--fg)"></p>
     <button class="big" id="go">Start (allow microphone)</button>
@@ -150,7 +150,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <div class="sim" id="sim" hidden></div>
 </div>
 
-<script src="fma-student.js?v=2"></script>
+<script src="fma-student.js?v=4"></script>
 <script src="player-art.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -376,7 +376,7 @@ function endGame(){
   setTimeout(() => endP.moment(won ? "win" : isBest && G.score > 0 ? "best" : "done", 0), 300);
   $("savedMsg").textContent = "";
   if(!SIM && window.FMAStudent && FMAStudent.active()){
-    FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length})
+    FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0})
       .then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
   }
   $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
