@@ -336,7 +336,7 @@ function placeNpcs(){
 placeNpcs();
 // A handful of named friends you keep meeting along the way (the same faces every visit on this device), instead of strangers.
 const FRIENDS = (() => {
-  const names = ["Busker Bea", "Riff Rory", "Tempo Tia", "Captain Capo", "Melody Mae"];
+  const names = ["Busker Bea", "Riff Rory", "Tempo Tia", "Captain Capo", "Melody Mae", "Amp Annie", "Bongo Ben"];
   let saved = null; try { saved = JSON.parse(localStorage.getItem("fma-adv-friends-v1")); } catch(e){}
   const list = names.map((name, i) => ({ name, cfg: (saved && saved[i]) || Player.random(), met: 0 }));
   try { localStorage.setItem("fma-adv-friends-v1", JSON.stringify(list.map(f => f.cfg))); } catch(e){}
