@@ -314,7 +314,10 @@ const randLoot = () => { const pool = LOOT.filter(l => !l.secret); return pool[M
 // secrets: tap them to find something special
 const SECRETS = [{ kind: "fairyring", loot: { k: "acc", v: "flowers", n: "a flower crown", c: "#ff6fa3" }, z: MAIN.regions[0].z0 + 47, side: 1, d: 6.5 },
   { kind: "gem", loot: { k: "gear", v: "guitar", n: "a golden Strat", c: "#ffc42b" }, z: MAIN.regions[1].z0 + 58, side: -1, d: 5.5 },
-  { kind: "bottle", loot: { k: "acc", v: "pirate", n: "a pirate hat", c: "#2b2623" }, z: MAIN.regions[2].z0 + 33, side: 1, d: 5 }];
+  { kind: "bottle", loot: { k: "acc", v: "pirate", n: "a pirate hat", c: "#2b2623" }, z: MAIN.regions[2].z0 + 33, side: 1, d: 5 },
+  { kind: "fairyring", loot: { k: "acc", v: "bow", n: "a big bow", c: "#ff6fa3" }, z: MAIN.regions[0].z0 + 88, side: -1, d: 7.5 },
+  { kind: "gem", loot: { k: "acc", v: "visor", n: "a sun visor", c: "#ffc42b" }, z: MAIN.regions[1].z0 + 18, side: 1, d: 6.5 },
+  { kind: "bottle", loot: { k: "acc", v: "elf", n: "an elf hat", c: "#4fb86a" }, z: MAIN.regions[2].z0 + 12, side: -1, d: 5.5 }];
 SECRETS.forEach(sc => { sc.loot.secret = true; LOOT.push(sc.loot); PROPS.main.push({ kind: sc.kind, x: MAIN.xfn(sc.z) + sc.side * sc.d, z: sc.z, r: 0.5, secret: sc }); });
 PROPS.main.push({ kind: "balloon", x: MAIN.xfn(MAIN.regions[1].z0 + 40) + 14, z: MAIN.regions[1].z0 + 40, r: 0.5 });
 // bridge posts at both ends of each crossing
