@@ -86,8 +86,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 #done p{margin:8px 0 14px;color:var(--muted);font-size:15px}
 #done button{width:100%;min-height:54px;border-radius:16px;border:3px solid var(--fg);background:var(--accent);font-family:var(--head);font-weight:900;font-size:19px;box-shadow:0 4px 0 var(--fg)}
 #map{position:fixed;inset:0;background:rgba(20,18,30,.55);display:none;align-items:center;justify-content:center;z-index:25;padding:16px}
-#map.show{display:flex}
-#map .mapcard{position:relative;background:#fffdf6;border:3px solid var(--fg);border-radius:22px;padding:14px 16px 12px;width:min(520px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 6px 0 var(--fg)}
+#map.show,#ward.show{display:flex}
+#ward{position:fixed;inset:0;background:rgba(20,18,30,.55);display:none;align-items:center;justify-content:center;z-index:25;padding:16px}
+#ward h2{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:22px}
+#ward p{margin:8px 0 0;font-size:13px;color:var(--muted);text-align:center}
+#ward .x{position:absolute;right:10px;top:6px;border:0;background:none;font-size:26px;color:var(--muted)}
+.wardlist{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.wardlist button{border:2px solid var(--fg);border-radius:12px;background:#fff;padding:6px 10px;font-weight:800;font-size:14px}
+.wardlist button.on{background:var(--accent)}
+#map .mapcard,#ward .mapcard{position:relative;background:#fffdf6;border:3px solid var(--fg);border-radius:22px;padding:14px 16px 12px;width:min(520px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 6px 0 var(--fg)}
 #map h2{margin:0 0 8px;font-family:var(--head);font-weight:900;font-size:22px}
 #map canvas{position:static;inset:auto;display:block;width:100%;height:min(66vh,560px);border-radius:14px;border:2px solid var(--fg);background:#cfeefa}
 #map p{margin:8px 0 0;font-size:13px;color:var(--muted);text-align:center}
@@ -102,6 +109,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
     <a class="back" href="./">← Games</a>
     <button class="pill" id="snd" aria-label="Sound on or off">🔇</button>
     <button class="pill" id="mapBtn" aria-label="Map">🗺️</button>
+    <button class="pill" id="wardBtn" aria-label="Wardrobe">👕</button>
     <h1>Adventure</h1><span class="test">TEST</span>
     <div class="where" id="where"></div>
   </div>
@@ -114,6 +122,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 <div id="sheet" role="dialog" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
 <div id="done" role="dialog" aria-label="Region complete"><div class="donecard"><div id="donePic"></div><h2 id="doneT"></h2><p id="doneP"></p><button id="doneGo"></button></div></div>
+<div id="ward" role="dialog" aria-label="Wardrobe"><div class="mapcard"><button class="x" id="wardX" aria-label="Close">×</button><h2>Your wardrobe</h2><div id="wardPic" style="width:150px;height:150px;margin:0 auto"></div><div id="wardList" class="wardlist"></div><p>Things you find on the adventure go here. Pick what to wear.</p></div></div>
 <div id="map" role="dialog" aria-label="Map of your adventure"><div class="mapcard"><button class="x" id="mapX" aria-label="Close">×</button><h2>Your adventure</h2><canvas id="mapCv"></canvas><p id="mapNote"></p><p><button id="mapReset" style="border:0;background:none;color:var(--muted);text-decoration:underline;font:inherit;font-size:12px">Start the adventure again</button></p></div></div>
 <div class="flash" id="flash"></div>
 <div class="banner" id="banner"></div>
@@ -1099,6 +1108,19 @@ $("mapCv").addEventListener("click", e => { if(!TEACHER) return; const r = $("ma
   const hit = MAP_HITS.find(h => Math.hypot(h.x - x, h.y - y) < 12); if(!hit || hit.n.type === "surprise" || hit.n.type === "golden") return;
   hit.n.done = !hit.n.done; if(hit.n.done) hit.n.mentor = true; if(hit.n.type === "gate" && hit.n.done){ hit.n.koT = -1e9; S.region = Math.max(S.region, hit.n.region + 1); }
   drawHud(); openMap(); toast(hit.n.done ? "🎓 Warped: cleared" : "Un-cleared", hit.n.n); });
+// the wardrobe: wear any of the things you've found, or your usual look
+const BASE_LOOK = (() => { const b = Player.get(); return { acc: b.acc, accColor: b.accColor, extra: b.extra, extraColor: b.extraColor, gear: b.gear, gearColor: b.gearColor }; })();
+let wardPic = null;
+function openWard(){
+  const found = LOOT.filter(l => S.loot.includes(l.n)), wearing = l => ME[l.k] === l.v;
+  $("wardList").innerHTML = `<button data-w="base">My usual look</button>` + (found.length ? found.map((l, i) => `<button data-w="${LOOT.indexOf(l)}" class="${wearing(l) ? "on" : ""}">${l.n.replace(/^an? /, "")}</button>`).join("") : `<span style="color:var(--muted);font-size:14px">Nothing found yet: try the “?” stones!</span>`);
+  if(wardPic) wardPic.destroy(); wardPic = PlayerArt($("wardPic"), ME, { tap: true }); $("ward").classList.add("show");
+}
+$("wardList").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if(!b) return;
+  if(b.dataset.w === "base") Object.assign(ME, BASE_LOOK); else { const l = LOOT[+b.dataset.w]; if(ME[l.k] === l.v) ME[l.k] = BASE_LOOK[l.k]; else { ME[l.k] = l.v; ME[l.k === "extra" ? "extraColor" : l.k === "acc" ? "accColor" : "gearColor"] = l.c; } }
+  heroImages(); HERO.front = {}; saveGame(); openWard(); if(wardPic) setTimeout(() => wardPic && wardPic.moment("best", 1200), 100); });
+$("wardBtn").onclick = openWard; $("wardX").onclick = () => { $("ward").classList.remove("show"); if(wardPic){ wardPic.destroy(); wardPic = null; } };
+$("ward").addEventListener("click", e => { if(e.target.id === "ward") $("wardX").onclick(); });
 $("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start the adventure again from the beginning? Your stones and things you found on this device will be cleared.")) resetGame(); }; $("mapX").onclick = () => $("map").classList.remove("show"); $("map").addEventListener("click", e => { if(e.target.id === "map") $("map").classList.remove("show"); });
 $("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; } };
 
