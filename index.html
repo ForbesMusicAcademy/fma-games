@@ -140,7 +140,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 </main>
 
 <script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=3"></script>
+<script src="player-art.js?v=4"></script>
 <script>
 const $ = id => document.getElementById(id);
 let cfg = Player.get();
@@ -232,7 +232,7 @@ $("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").sli
 /* Showing off: every few seconds the character strikes a pose (a wave, a jump for joy, a flex...). In the editor it does it
    often, but never straight after you've changed something; on the menu card it just waves now and then. */
 let big = null, card = null, lastEdit = 0;
-const SHOW = ["wave", "cheer", "thumbs", "star", "rock", "flex", "peace", "point", "cheer", "wave"];
+const SHOW = ["wave", "cheer", "thumbs", "star", "rock", "flex", "peace", "cheer", "wave"];
 function showOff(now){
   const editing = !$("yeditor").hidden, c = editing ? big : card;
   if(!c || document.hidden) return;

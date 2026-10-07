@@ -33,9 +33,9 @@
   // Every list runs from sweet to wicked.
   const OPTIONS = {
     bodies: [["kid", "Kid"], ["teen", "Teen"], ["adult", "Adult"]],
-    poses: [["wave", "Wave"], ["cheer", "Cheer"], ["thumbs", "Thumbs up"], ["peace", "Peace"], ["star", "Star jump"], ["point", "Let's go"],
+    poses: [["wave", "Wave"], ["cheer", "Cheer"], ["thumbs", "Thumbs up"], ["peace", "Peace"], ["star", "Star jump"],
       ["hips", "Hands on hips"], ["flex", "Flex"], ["rock", "Rock on"], ["relax", "Relaxed"]],
-    hair: [["none", "None"], ["buzz", "Buzz cut"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["quiff", "Flick-up"], ["mop", "Mop"],
+    hair: [["none", "None"], ["buzz", "Buzz cut"], ["crop", "Short"], ["shortsides", "Short back and sides"], ["sweep", "Sweep"], ["quiff", "Flick-up"], ["mop", "Mop"], ["bowl", "Mop-top"],
       ["curly", "Curly"], ["afro", "Afro"], ["spiky", "Spiky"], ["mohawk", "Mohawk"], ["bun", "Bun"], ["spacebuns", "Space buns"], ["ponytail", "Ponytail"],
       ["pigtails", "Pigtails"], ["plait", "Plaits"], ["bob", "Bob"], ["long", "Long"], ["wavy", "Long and wavy"], ["grunge", "Grunge"]],
     beards: [["none", "None"], ["stubble", "Stubble"], ["moustache", "Moustache"], ["handlebar", "Handlebar"], ["goatee", "Goatee"],
@@ -46,14 +46,14 @@
     eyewear: [["none", "None"], ["glasses", "Specs"], ["round", "Round tints"], ["shades", "Shades"], ["mask", "Mask"], ["patch", "Eye patch"]],
     // tops and bottoms include music-scene staples: grunge flannel, hip-hop jersey and puffer, Britpop trackie, pop-star sequins
     tops: [["tee", "T-shirt"], ["hoodie", "Hoodie"], ["stripes", "Stripes"], ["overalls", "Dungarees"], ["jacket", "Jacket"], ["bolt", "Bolt tee"], ["tiedye", "Tie-dye"], ["fringe", "Fringe jacket"],
-      ["flannel", "Flannel"], ["jersey", "Jersey"], ["track", "Trackie top"], ["puffer", "Puffer"], ["sequin", "Sequins"], ["military", "Military jacket"], ["leather", "Spiky leather jacket"]],
+      ["flannel", "Flannel"], ["jersey", "Jersey"], ["track", "Trackie top"], ["puffer", "Puffer"], ["sequin", "Sequins"], ["military", "Military jacket"], ["pepper", "Band jacket"], ["collarless", "Collarless suit"], ["leather", "Spiky leather jacket"]],
     bottoms: [["pants", "Pants"], ["shorts", "Shorts"], ["skirt", "Skirt"], ["pleated", "Pleated skirt"], ["tutu", "Tutu"], ["maxi", "Long skirt"],
       ["leggings", "Leggings"], ["flares", "Flares"], ["stage", "Stripe pants"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
-    shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["platforms", "Platforms"]],
+    shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"]],
     neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"]],
     acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"]],
     // "guitar" is the Strat (older saves called it just "Guitar")
-    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"]],
+    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"]],
     extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"]],
     skins: SKINS, palette: PALETTE, hairColors: HAIR_COLORS
   };
@@ -193,6 +193,12 @@
         return { back: T(`<path d="M-1.12 -0.4 C-1.24 0.1 -1.22 0.42 -1.06 0.56 L1.06 0.56 C1.22 0.42 1.24 0.1 1.12 -0.4Z"/>`, under),
           front: T(shape("M-1.14 0.36 C-1.26 -0.74 -0.7 -1.3 0.02 -1.3 C0.72 -1.3 1.26 -0.74 1.14 0.36", [[1.14, 0.36], ...tips], [0.14, -0.14])
             + tex(toward([0, -1.2], tips.filter((_, i) => i % 2 && i > 2 && i < 14), 0.66, 0.06), "M-0.66 -1.04 Q-0.34 -1.2 0.0 -1.2 M0.3 -1.16 Q0.56 -1.1 0.72 -0.98")) };
+      }
+      case "bowl": {             // the 60s mop-top: a rounded helmet of hair, a heavy straight fringe to just above the eyes, over the ears
+        const tips = [[1.0, 0.3], [0.92, 0.38], [0.86, -0.08], [0.76, -0.3], [0.6, -0.26], [0.46, -0.34], [0.3, -0.27], [0.14, -0.35], [0, -0.27], [-0.14, -0.35], [-0.3, -0.27], [-0.46, -0.34], [-0.6, -0.26], [-0.76, -0.3], [-0.86, -0.08], [-0.92, 0.38], [-1.0, 0.3], [-1.16, 0.36]];
+        return { back: T(`<path d="M-1.14 -0.4 C-1.24 0.0 -1.22 0.3 -1.1 0.42 L1.1 0.42 C1.22 0.3 1.24 0.0 1.14 -0.4Z"/>`, under),
+          front: T(shape("M-1.16 0.36 C-1.3 -0.8 -0.72 -1.34 0.02 -1.34 C0.74 -1.34 1.3 -0.8 1.16 0.36", [[1.16, 0.36], ...tips], [0.12, -0.12])
+            + tex(toward([0, -1.26], tips.filter((_, i) => i > 3 && i < 14), 0.74, 0.04) + " M-0.98 -0.5 Q-1.04 -0.1 -0.96 0.26 M0.98 -0.5 Q1.04 -0.1 0.96 0.26", "M-0.62 -1.12 Q-0.3 -1.26 0.0 -1.26 M0.3 -1.22 Q0.58 -1.14 0.74 -1.0")) };
       }
       case "curly": {            // a mop of tight curls
         const cs = [[-1.0, -0.08, 0.24], [-0.98, -0.48, 0.26], [-0.8, -0.86, 0.27], [-0.5, -1.08, 0.28], [-0.14, -1.18, 0.28], [0.22, -1.16, 0.28], [0.56, -1.04, 0.27], [0.84, -0.8, 0.26], [1.0, -0.44, 0.25], [1.02, -0.06, 0.23],
@@ -376,7 +382,7 @@
     return out;
   }
   /* ---- the instruments, drawn lying flat: neck along +x, strings on y = -2, the body around 0,0 ---- */
-  const INSTR_SIZE = { acoustic: 1.04, bass: 1.06, ukulele: 0.68, doubleneck: 0.92 };
+  const INSTR_SIZE = { acoustic: 1.04, bass: 1.06, ukulele: 0.68, doubleneck: 0.92, violin: 1.0 };
   // a spike (or stud) on a jacket: base centred on x,y, pointing along angle a (radians)
   const spike = (x, y, a, len, w) => { const c = Math.cos(a), sn = Math.sin(a), f = n => n.toFixed(1);
     return `<path d="M${f(x - sn * w)} ${f(y + c * w)} L${f(x + c * len)} ${f(y + sn * len)} L${f(x + sn * w)} ${f(y - c * w)}Z" fill="#dfe3e8" ${sw(2.2)}/><path d="M${f(x - sn * w * 0.3)} ${f(y + c * w * 0.3)} L${f(x + c * len * 0.7)} ${f(y + sn * len * 0.7)}" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`; };
@@ -402,6 +408,13 @@
           <path d="M18 -12 L-6 -21 L-36 -3 L-6 17 L18 8Z" fill="${guard}" ${sw(3)}/>
           <rect x="-4" y="-11" width="10" height="18" rx="2" fill="${dark}"/><rect x="10" y="-11" width="10" height="18" rx="2" fill="${dark}"/><rect x="-16" y="-7" width="5" height="10" rx="1" fill="#c9ccd2" ${sw(1.6)}/>
           <path d="M-50 -38 L10 -14" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>${strings(-13, 3)}`; }
+      case "violin": {                        // a violin-shaped hollow-body bass: two round bouts with a waist, sunburst, two pickups, a small headstock
+        const VIOLIN = "M24 -2 C24 -18 14 -22 6 -20 C0 -19 -4 -14 -12 -14 C-20 -14 -24 -30 -44 -30 C-62 -30 -66 -14 -66 -2 C-66 10 -62 26 -44 26 C-24 26 -20 10 -12 10 C-4 10 0 15 6 16 C14 18 24 14 24 -2Z";
+        return neck(14) + `<path d="M${end - 2} -11 H${end + 24} Q${end + 30} -11 ${end + 30} -5 V1 Q${end + 30} 7 ${end + 24} 7 H${end - 2}Z" fill="${shade(c, 0.5)}" ${sw(5)}/>${pegs(2, end + 8, -7, 12)}${pegs(2, end + 8, 3, 12)}
+          <path d="${VIOLIN}" fill="${shade(c, 0.55)}" ${sw(5)}/><path d="${VIOLIN}" fill="${c}" transform="translate(-21 -2) scale(.82) translate(21 2)"/><ellipse cx="-36" cy="-2" rx="17" ry="12" fill="${tint(c, 0.45)}" opacity=".7"/>
+          <rect x="-2" y="-11" width="8" height="18" rx="2" fill="${dark}" stroke="#d9dde3" stroke-width="1.6"/><rect x="10" y="-11" width="8" height="18" rx="2" fill="${dark}" stroke="#d9dde3" stroke-width="1.6"/>
+          <rect x="-40" y="-9" width="5" height="14" rx="1.5" fill="#5b3a1e" ${sw(1.8)}/><path d="M-26 10 h14 v8 h-14Z" fill="#2a2a2e" ${sw(1.8)}/><circle cx="-22" cy="14" r="2" fill="#fff"/><circle cx="-16" cy="14" r="2" fill="#fff"/>
+          <path d="M-58 -18 C-64 -8 -64 6 -58 14" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>${strings(-38, 2)}`; }
       case "doubleneck": {                    // two necks (a 12-string above a 6-string) on one big twin-horned body
         const hs = `<path d="M${end - 2} -9 L${end + 24} -15 Q${end + 34} -16 ${end + 33} -8 L${end + 30} 2 Q${end + 24} 6 ${end + 14} 5 L${end - 2} 5Z" fill="${shade(c, 0.7)}" ${sw(5)}/>`;
         const NECKS = [[-14, true], [12, false]];
@@ -427,7 +440,7 @@
   function gearSvg(kind, g, c){
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH, s = g.tW / 90;
     switch(kind){
-      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": {
+      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": {
         const ga = guitarAt(g), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
         return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
         <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})">${instrumentSvg(kind, c)}</g>` }; }
@@ -460,7 +473,7 @@
   /* ---- arms and hands ---- */
   const shoulder = (g, right) => [right ? 200 + g.tW / 2 - 6 : 200 - g.tW / 2 + 6, g.tTop + 16];
   // the guitar on its strap (also where its attack notes come from)
-  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "doubleneck", "ukulele"];
+  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele"];
   const guitarAt = g => { const s = g.tW / 90; return { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
   const guitarPt = (g, lx, ly) => { const t = guitarAt(g), a = t.rot * Math.PI / 180;
     return [t.x + t.k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + t.k * (lx * Math.sin(a) + ly * Math.cos(a))]; };
@@ -477,13 +490,12 @@
     thumbs: g => [-1, 1].map(sg => { const x = 200 + sg * (g.tW / 2 + 38); return [x, g.tTop + 22, "thumbs", { ang: 6, C: [x - sg * 2, g.tTop + g.tH * 0.95], cls: "pumper" }]; }),
     peace: g => [restHand(g, -1), [...reach(g, 1, 66, 1.02), "peace", { cls: "pumper" }]],
     star: g => [-1, 1].map(sg => [...reach(g, sg, 78, 1.1), "open", { cls: "pumper" }]),
-    point: g => [hipHand(g, -1), [...reach(g, 1, 56, 1.1), "point", { cls: "pumper" }]],
     hips: g => [hipHand(g, -1), hipHand(g, 1)],
     flex: g => [-1, 1].map(sg => { const S = shoulder(g, sg > 0); return [S[0] + sg * 54, S[1] - 38, "fist", { C: [S[0] + sg * 62, S[1] + 12], cls: "pumper", flex: true }]; }),
     rock: g => [-1, 1].map(sg => [...reach(g, sg, 64, 1.06), "rock", { cls: "pumper" }]),
     relax: g => [restHand(g, -1), restHand(g, 1)]
   };
-  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, point: 6 };      // how far apart the feet are
+  const STANCE = { star: 24, rock: 10, hips: 10, flex: 12 };      // how far apart the feet are
   /* Hands are drawn as ONE silhouette, the same trick as the curly hair: every part's thick ink outline goes down first,
      then every part's skin fill on top, so fingers fuse into the palm and only the outer edge gets a line.
      Drawn in hand space: the hand's centre at 0,0, fingers pointing up (-y), thumb towards the body (-x), wrist at WRIST.
@@ -508,8 +520,6 @@
     rock: { wrist: [0, 13], parts: [["M0 1 L0 3", 23.5], ["M-5.4 -4 L-9.6 -27", 8.6], ["M6.4 -4 L10.6 -24.5", 8.4], ["M0.6 -9 L0.6 -9.4", 8.6], THUMB_IN], detail: () => "" },
     // peace sign: first two fingers up in a V, the third folded
     peace: { wrist: [0, 13], parts: [["M0 1 L0 3", 23.5], ["M-5.4 -4 L-9.8 -27", 8.6], ["M0.8 -5 L4.2 -28", 8.6], ["M6.8 -7.8 L6.8 -8.2", 8.4], THUMB_IN], detail: () => "" },
-    // pointing: first finger straight out, the other two folded
-    point: { wrist: [0, 13], parts: [["M0 1 L0 3", 23.5], ["M-5 -4 L-5.8 -31", 8.8], ["M1.2 -8.8 L1.2 -9.2", 8.6], ["M6.8 -7.4 L6.8 -7.8", 8.2], THUMB_IN], detail: () => "" },
     // a fist, three knuckles along the top and the thumb up the inner side: hips, flexing
     fist: { wrist: [0, 13], parts: [["M0 1 L0 1.5", 24], ["M-6.2 -8.4 L-6.2 -8.8", 8.6], ["M0 -9.8 L0 -10.2", 8.8], ["M6.2 -8.4 L6.2 -8.8", 8.4], THUMB_IN],
       detail: () => `<path d="M-3.1 -12.5 V-9 M3.1 -12.5 V-9" fill="none" ${sw(1.8)}/>` }
@@ -544,7 +554,11 @@
     const tAt = px => Math.max(0.3, Math.min(0.95, 1 - px / L));
     let arm = sleeve.only ? "" : tube(whole, AW, skin);
     const SW = AW + 1 + (sleeve.puffy ? 7 : 0);
-    if(sleeve.long){ const sl = qsplit(S, C, E, tAt(26)), cf = qsplit(S, C, E, tAt(15)); arm += tube(cf.head, SW, shade(col, 0.82)) + tube(sl.head, SW, col);
+    if(sleeve.long){ const sl = qsplit(S, C, E, tAt(26)), cf = qsplit(S, C, E, tAt(15)); arm += tube(cf.head, SW, sleeve.cuffC || shade(col, 0.82)) + tube(sl.head, SW, col);
+      if(sleeve.epaulette){    // a gold epaulette on the shoulder with a fringe hanging off it
+        const ec = sleeve.cuffC, ex = S[0] + sgn * 4, ey = S[1] - 6; let fr = "";
+        for(let i = -2; i <= 2; i++) fr += `M${(ex + i * 4.4).toFixed(1)} ${ey + 4} v8 `;
+        arm += `<path d="${fr}" stroke="${INK}" stroke-width="4.6" stroke-linecap="round"/><path d="${fr}" stroke="${ec}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="${ex}" cy="${ey}" rx="13" ry="6.5" fill="${ec}" ${sw(3.4)}/>`; }
       if(sleeve.spikes){      // a row of spikes along the top of the shoulder, pointing outwards
         const at = t => [(1 - t) * (1 - t) * S[0] + 2 * (1 - t) * t * C[0] + t * t * E[0], (1 - t) * (1 - t) * S[1] + 2 * (1 - t) * t * C[1] + t * t * E[1]];
         arm += [0.06, 0.2, 0.34].map(t => { const p = at(t), q = at(t + 0.02); let nx = -(q[1] - p[1]), ny = q[0] - p[0];
@@ -571,6 +585,8 @@
       body = `<path d="M-15 -8 L-14 -32 Q-3 -36 8 -32 L9 -10Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-20 5 C-20 12 24 13 26 5 L26 8 C24 14 -20 14 -20 8Z" fill="#f7f4ee" ${sw(3.4)}/><path d="M13 -10 C20 -8 25 -3 25.5 3 L16 3 Q14 -3 13 -10Z" fill="#f7f4ee" ${sw(3)}/><path d="M-9 -27 L3 -24 M-9 -21 L3 -18 M-8 -15 L4 -12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`;
     else if(style === "boots")       // chunky lace-up boots on a thick sole
       body = `<path d="M-16 -6 L-15 -34 Q-3 -38 9 -34 L10 -8Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 Q29 15 24 15 H-19 Q-23 15 -22 4Z" fill="#2a2a2e" ${sw(3.4)}/><path d="M-10 -28 L2 -25 M-10 -21 L2 -18 M-9 -14 L3 -11" fill="none" stroke="#ffc42b" stroke-width="2.6" stroke-linecap="round"/><path d="M-21 9 H27" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>`;
+    else if(style === "chelsea")     // 60s Chelsea boots: ankle height, a pointed toe, a stacked heel and an elastic panel at the side
+      body = `<path d="M-15 -6 L-14 -30 Q-3 -33 8 -30 L9 -8Z" fill="${c}" ${sw(5)}/><path d="M-20 4 C-22 -12 -8 -18 6 -16 C18 -14 28 -4 35 5 C30 10 -20 12 -20 4Z" fill="${c}" ${sw(5)}/><path d="M-20 5 L-19 14 H-7 L-7 8Z" fill="${shade(c, 0.55)}" ${sw(3.4)}/><path d="M-6 -29 Q-3 -19 -6 -11 L1 -11 Q-1 -19 2 -29Z" fill="${shade(c, 0.6)}" ${sw(2.4)}/>`;
     else if(style === "platforms")   // glam-rock platform boots: tall, on a huge two-tone sole
       body = `<path d="M-16 -8 L-15 -40 Q-3 -44 9 -40 L10 -10Z" fill="${c}" ${sw(5)}/><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-22 4 H28 V20 Q28 24 24 24 H-18 Q-22 24 -22 20Z" fill="${shade(c, 0.62)}" ${sw(4)}/><path d="M-21 13 H27" stroke="#fff" stroke-opacity=".45" stroke-width="3"/>`;
     else body = `<path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-19 8 H25" stroke="${INK}" stroke-opacity=".35" stroke-width="3" fill="none"/>`;
@@ -709,6 +725,20 @@
         return `<rect x="${(200 - w).toFixed(1)}" y="${(y - 3.5).toFixed(1)}" width="${(2 * w).toFixed(1)}" height="7" rx="2" fill="${dk}" ${sw(2.4)}/><rect x="${(200 + iw - 6).toFixed(1)}" y="${(y - 5.5).toFixed(1)}" width="10" height="11" rx="2" fill="none" stroke="#dfe3e8" stroke-width="2.6"/>`
           + [-1, 1].map(sg => `<circle cx="${(200 + sg * w).toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="#dfe3e8" ${sw(1.6)}/>`).join(""); }).join("");
       torso += [-1, 1].map(sg => `<path d="M${200 + sg * g.tW * 0.26} ${g.tTop - 4} L${200 + sg * g.tW * 0.22} ${g.tTop + 9} L${200 + sg * iw} ${g.tTop + 9} L${200 + sg * iw} ${g.tTop - 1}Z" fill="${dk}" ${sw(3.4)}/>`).join(""); }
+    if(cfg.top === "collarless"){    // a 60s collarless suit jacket: a round neckline with piping, buttoned down the front, a white shirt and skinny tie at the neck
+      nameOn = false; const nw = g.tW * 0.2, nb = g.tTop + g.tH * 0.26, pc = shade(col, 0.62);
+      torso += `<path d="M${200 - nw} ${g.tTop + 2} Q200 ${nb + 6} ${200 + nw} ${g.tTop + 2}Z" fill="#f7f4ee"/><path d="M${200 - nw * 0.5} ${g.tTop + 2} L200 ${g.tTop + 9} L${200 + nw * 0.5} ${g.tTop + 2}" fill="#f7f4ee" ${sw(2.4)}/>`
+        + `<path d="M197 ${g.tTop + 9} H203 L204.5 ${nb - 1} L200 ${nb + 3} L195.5 ${nb - 1}Z" fill="${INK}"/>`
+        + `<path d="M${200 - nw} ${g.tTop + 2} Q200 ${nb + 6} ${200 + nw} ${g.tTop + 2} M200 ${(nb + 3).toFixed(1)} V${tBot - 2}" fill="none" stroke="${pc}" stroke-width="3.2" stroke-linecap="round"/>`
+        + [0.46, 0.64, 0.82].map(k => `<circle cx="206" cy="${(g.tTop + g.tH * k).toFixed(1)}" r="2.8" fill="${pc}" ${sw(1.4)}/>`).join(""); }
+    if(cfg.top === "pepper"){        // a psychedelic marching-band jacket: bright satin, gold braid looped across the chest, gold collar and cuffs, epaulettes
+      nameOn = false; const gold = ["#ffc42b", "#ffd34d", "#ff8a1c"].includes(col) ? "#e8433f" : "#ffc42b";
+      torso += clip(`<path d="M${x0 + 12} ${g.tTop + 10} Q${x0 + 18} ${mid} ${x0 + 14} ${tBot - 12}" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="4" stroke-linecap="round"/>`);
+      torso += `<path d="M200 ${g.tTop + 10} V${tBot - 2}" fill="none" ${sw(2.6)}/>`;
+      torso += [0.3, 0.46, 0.62, 0.78].map(k => { const y = (g.tTop + g.tH * k).toFixed(1), w = g.tW * 0.27;
+        return `<path d="M${(200 - w).toFixed(1)} ${y} H${(200 + w).toFixed(1)}" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><path d="M${(200 - w).toFixed(1)} ${y} H${(200 + w).toFixed(1)}" stroke="${gold}" stroke-width="3" stroke-linecap="round"/>`
+          + [-1, 1].map(sg => `<circle cx="${(200 + sg * w).toFixed(1)}" cy="${y}" r="3.6" fill="none" stroke="${INK}" stroke-width="5"/><circle cx="${(200 + sg * w).toFixed(1)}" cy="${y}" r="3.6" fill="none" stroke="${gold}" stroke-width="2.4"/>`).join(""); }).join("");
+      torso += `<path d="${rrect(200 - g.tW * 0.24, g.tTop - 5, 200 + g.tW * 0.24, g.tTop + 9, 5)}" fill="${gold}" ${sw(3.4)}/>`; }
     if(cfg.top === "bolt"){          // a band tee with a big lightning bolt instead of the name
       nameOn = false; const k = g.tH / 64, bc = darkText(col) ? INK : "#ffc42b";
       torso += `<path transform="translate(200 ${mid}) scale(${k.toFixed(3)})" d="M4 -22 L-11 3 L-1 3 L-6 22 L11 -5 L1 -5 L8 -22Z" fill="${bc}" ${sw(4 / k)}/>`; }
@@ -739,7 +769,8 @@
       : cfg.neck === "bowtie" ? `<g transform="translate(200 ${ny + 4})"><path d="M0 0 L-15 -9 Q-18 0 -15 9Z M0 0 L15 -9 Q18 0 15 9Z" fill="${nc}" ${sw(3.6)}/><rect x="-4.5" y="-5" width="9" height="10" rx="3" fill="${shade(nc, 0.78)}" ${sw(3)}/></g>` : "";
 
     // arms. The live version also carries a second, arms-up set for celebrating (shown by the "joy" class).
-    const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin", "leather", "fringe", "military"].includes(cfg.top), spikes: cfg.top === "leather", none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer" };
+    const sleeve = { only: only === "top", band: extra.band, long: ["hoodie", "stripes", "jacket", "flannel", "track", "puffer", "sequin", "leather", "fringe", "military", "pepper", "collarless"].includes(cfg.top), spikes: cfg.top === "leather", none: cfg.top === "jersey", stripe: cfg.top === "track", puffy: cfg.top === "puffer",
+      epaulette: cfg.top === "pepper", cuffC: cfg.top === "pepper" ? (["#ffc42b", "#ffd34d", "#ff8a1c"].includes(col) ? "#e8433f" : "#ffc42b") : null };
     const pose = (POSES[cfg.pose] || POSES.wave)(g);
     const armSet = specs => specs.map((sp, i) => armSvg(sp, i === 1, g, skin, col, sleeve));
     const main = armSet(pose), behind = main.filter(a => !a.front).map(a => a.svg).join(""), front = main.filter(a => a.front).map(a => a.svg).join("");
@@ -768,7 +799,7 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
-    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${legs}${skirt}${feet}${torso}${name}${neck}${extra.mid || ""}${gear.mid || ""}${arms}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${flash}`;
+    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${legs}${skirt}${feet}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${flash}`;
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
@@ -913,7 +944,7 @@
     const base = ["look", "look", "hop", "tilt", "bob"];
     if(cfg.pose === "wave") return base.concat(["wavebig", "wavebig"]);
     if(cfg.pose === "rock") return base.concat(["bang", "bang", "pump"]);
-    if(["cheer", "thumbs", "peace", "star", "point", "flex"].includes(cfg.pose)) return base.concat(["pump", "pump"]);
+    if(["cheer", "thumbs", "peace", "star", "flex"].includes(cfg.pose)) return base.concat(["pump", "pump"]);
     return base;
   }
 
@@ -1043,7 +1074,7 @@
     const c = PlayerArt(d, window.Player.get(), { tap: false }); setTimeout(() => c.moment(moment, 0), 150); return c;
   };
   // which pose each game moment uses (all poses stay friendly: there is no sad or losing pose)
-  PlayerArt.MOMENTS = { hello: "wave", wait: "hips", start: "point", hit: "thumbs", streak: "flex", best: "star", win: "rock", cheer: "cheer", done: "peace" };
+  PlayerArt.MOMENTS = { hello: "wave", wait: "hips", start: "thumbs", hit: "thumbs", streak: "flex", best: "star", win: "rock", cheer: "cheer", done: "peace" };
   PlayerArt.presets = [];
   PlayerArt.norm = norm;
   window.PlayerArt = PlayerArt;
