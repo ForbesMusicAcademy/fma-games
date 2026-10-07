@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Tuning Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tuning Race: one column, phone first, same look as the chord game. Listens through the microphone, never records.
+   Layout: header, the six strings as chips, the big note, a cents needle, a status line, the clock. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+header small{color:var(--muted);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px;color:var(--fg)}
+.big:disabled{opacity:.5}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--fg)}
+[hidden]{display:none!important}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--muted);font-size:14px}
+#clock{font-family:var(--head);font-weight:900;font-size:30px;color:var(--fg);font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.chip{flex:1;max-width:64px;padding:8px 0;border-radius:14px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:26px;text-align:center;transition:background .2s,color .2s,transform .2s}
+.chip small{display:block;font-size:11px;font-weight:700;opacity:.8;margin-top:-2px}
+.chip.cur{background:var(--accent);color:var(--fg);transform:translateY(-3px)}
+.chip.done{background:var(--good);color:#fff}
+#note{font-family:var(--head);font-weight:900;font-size:clamp(100px,38vw,190px);line-height:1;text-align:center;margin:10px 0 0;letter-spacing:-.02em}
+#which{text-align:center;color:var(--muted);font-weight:600;min-height:1.4em}
+/* the needle: centre is in tune, the green band is the "locked" zone */
+#gauge{position:relative;height:64px;margin:14px 4px 0}
+#gauge .rail{position:absolute;left:0;right:0;top:28px;height:8px;border-radius:5px;background:var(--line)}
+#gauge .zone{position:absolute;left:calc(50% - 5%);width:10%;top:22px;height:20px;border-radius:7px;background:rgba(62,125,76,.28);transition:background .15s}
+#gauge.lock .zone{background:var(--good)}
+#gauge .tick{position:absolute;top:44px;transform:translateX(-50%);font-size:12px;color:var(--muted);font-weight:600}
+#gauge .pin{position:absolute;left:50%;top:10px;width:8px;height:44px;margin-left:-4px;border-radius:5px;background:var(--fg);transition:left .09s linear,background .15s;opacity:.25}
+#gauge.live .pin{opacity:1}
+#gauge.lock .pin{background:var(--good)}
+#status{text-align:center;font-family:var(--head);font-weight:900;font-size:24px;min-height:1.3em;margin-top:6px}
+#status.ok{color:var(--good)}
+#hold{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:12px}
+#hold i{display:block;height:100%;width:0;background:var(--good)}
+.meter{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+.sub{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-top:6px;gap:10px}
+.row{display:flex;gap:10px;margin-top:14px}
+.row .ghost{flex:1}
+.pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;animation:fade .25s}
+.pop #popBox{background:#fff;border-radius:26px;padding:22px 26px;text-align:center;max-width:340px;width:calc(100% - 40px);animation:rise .35s ease-out}
+.pop img{height:84px;width:auto;display:inline-block;margin:0 4px}
+.pop img.off{opacity:.55}
+.pop b{display:block;font-family:var(--head);font-weight:900;font-size:26px;margin-top:8px}
+.pop p{margin:6px 0 14px;color:var(--muted)}
+.splits{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:12px 0 4px}
+.splits span{background:var(--line);border-radius:10px;padding:6px 0;font-weight:700;font-size:13px;color:var(--muted)}
+.splits span b{display:block;font-size:17px;margin:0;color:var(--fg);font-family:var(--head)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.bump{animation:bump .35s}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
+summary{cursor:pointer;color:var(--muted);font-weight:700;min-height:28px;display:flex;align-items:center}
+label.set{display:flex;flex-direction:column;gap:4px;margin:10px 0;color:var(--muted);font-size:14px}
+label.set input[type=range]{width:100%}
+#dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
+.test{display:flex;flex-wrap:wrap;gap:8px}
+.test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
+.test button.on{background:var(--accent)}
+.stage{position:relative}
+.buddy{position:absolute;left:-8px;bottom:-4px;width:clamp(70px,21vw,108px);aspect-ratio:1/1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Tuning Race</h1><a href="./" class="menu">&larr; All games</a></header>
+
+  <section class="card" id="intro">
+    <h2>Tune up before you play</h2>
+    <p>Tune all six strings as fast as you can, starting with the thick low E. Each string locks in when it's right, then the next one lights up. The clock starts when you pluck your first string.</p>
+    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
+    <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
+    <p id="best"></p>
+    <button class="big" id="start">Start (allow microphone)</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+  </section>
+
+  <section id="game" hidden>
+    <div class="card">
+      <div class="top"><span id="streak"></span><span id="clock">0:00.0</span></div>
+      <div class="chips" id="chips"></div>
+      <div class="stage"><div class="buddy" id="buddy"></div><div id="note">E</div></div>
+      <div id="which"></div>
+      <div id="gauge"><div class="rail"></div><div class="zone"></div><div class="pin"></div>
+        <span class="tick" style="left:0%">♭ flat</span><span class="tick" style="left:50%">in tune</span><span class="tick" style="left:100%">sharp ♯</span></div>
+      <div id="status">Pluck the low E string</div>
+      <div id="hold"><i id="holdBar"></i></div>
+      <div class="meter"><i id="lvl"></i></div>
+      <div class="sub"><span id="hz"></span><span id="pb"></span></div>
+      <div class="row"><button class="ghost" id="restart">Start again</button></div>
+    </div>
+    <details style="margin-top:14px"><summary>Settings and help</summary>
+      <label class="set">How close counts as in tune: <b id="tolV">5</b> cents<input type="range" id="tol" min="3" max="12" step="1" value="5"></label>
+      <p style="color:var(--muted);font-size:14px;margin:6px 0">If your string sounds more than 2 semitones from the target, the page asks you to check you have the right string and peg. A string can drift while you tune its neighbours, so it's worth a final strum of all six.</p>
+      <div id="dbg" hidden></div>
+    </details>
+    <details id="testbox" style="margin-top:10px" hidden><summary>Self-test (no microphone)</summary>
+      <label class="set">Out of tune by (cents): <b id="detV">0</b><input type="range" id="det" min="-100" max="100" step="1" value="0"></label>
+      <div class="test" id="testBtns"></div>
+    </details>
+  </section>
+</div>
+<div class="pop" id="pop" hidden><div id="popBox"></div></div>
+
+<script src="fma-student.js?v=4"></script>
+<script src="player-art.js?v=2"></script>
+<script>
+/* ============================================================
+   Tuning Race (home). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
+   Progress (best time, practice streak) is kept on this device only.
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
+
+/* ---------- The strings, low to high (standard tuning) ---------- */
+const STRINGS = [
+  {note: "E", name: "low E",  desc: "the thickest string",       hz: 82.407},
+  {note: "A", name: "A",      desc: "the 2nd thickest string",   hz: 110.000},
+  {note: "D", name: "D",      desc: "the 3rd string",            hz: 146.832},
+  {note: "G", name: "G",      desc: "the 4th string",            hz: 195.998},
+  {note: "B", name: "B",      desc: "the 5th string",            hz: 246.942},
+  {note: "E", name: "high E", desc: "the thinnest string",       hz: 329.628}
+];
+const cents = (f, ref) => 1200 * Math.log2(f / ref);
+
+/* ---------- Pitch detection (YIN) ----------
+   Works on 4096 samples (about 85 ms). Searches 60-420 Hz, which covers every open string with room to be a long way out. */
+const BUF = 4096, W = 2048, FMIN = 60, FMAX = 420, YIN_T = 0.15;
+const pitch = {
+  ctx: null, an: null, td: new Float32Array(BUF), d: null, testGain: null, ready: false,
+  async start(){
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = BUF; this.an.smoothingTimeConstant = 0;
+    if(SELFTEST){
+      this.testGain = this.ctx.createGain(); this.testGain.connect(this.an);    // test tones go straight in, never to the speaker
+    }else{
+      // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
+      const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+      this.ctx.createMediaStreamSource(stream).connect(this.an);
+    }
+    if(this.ctx.state === "suspended") await this.ctx.resume();
+    this.ready = true;
+  },
+  level(){   // loudness in dB (0 = full scale)
+    this.an.getFloatTimeDomainData(this.td);
+    let s = 0; for(let i = 0; i < BUF; i++) s += this.td[i] * this.td[i];
+    return 20 * Math.log10(Math.sqrt(s / BUF) + 1e-9);
+  },
+  // Returns {f, clarity} for the latest block, or null when there isn't a clear pitch.
+  read(){
+    const x = this.td, sr = this.ctx.sampleRate;
+    const tMin = Math.floor(sr / FMAX), tMax = Math.min(Math.ceil(sr / FMIN), BUF - W - 1);
+    if(!this.d || this.d.length !== tMax + 2) this.d = new Float32Array(tMax + 2);
+    const d = this.d;
+    for(let t = 1; t <= tMax; t++){
+      let s = 0; for(let j = 0; j < W; j++){ const e = x[j] - x[j + t]; s += e * e; }
+      d[t] = s;
+    }
+    // cumulative mean normalised difference
+    let run = 0; d[0] = 1;
+    for(let t = 1; t <= tMax; t++){ run += d[t]; d[t] = d[t] * t / (run || 1); }
+    let t = tMin;
+    while(t < tMax){
+      if(d[t] < YIN_T){ while(t + 1 < tMax && d[t + 1] < d[t]) t++; break; }
+      t++;
+    }
+    if(t >= tMax) return null;
+    const a = d[t - 1], b = d[t], c = d[t + 1], den = a - 2 * b + c;
+    const tau = t + (den ? 0.5 * (a - c) / den : 0);
+    return {f: sr / tau, clarity: 1 - b};
+  }
+};
+
+/* ---------- Progress (this device only) ---------- */
+const KEY = fmaKey("fma-tuner-v1");          // each player on this device has their own best time
+let P = null;
+function load(){
+  try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
+  if(!P || typeof P !== "object") P = {};
+  P.best = P.best || null; P.days = Array.isArray(P.days) ? P.days : []; P.runs = P.runs || 0;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
+const dayStr = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function streak(){   // consecutive days (ending today or yesterday) with a finished race
+  const set = new Set(P.days); let n = 0; const d = new Date();
+  if(!set.has(dayStr(d))) d.setDate(d.getDate() - 1);
+  while(set.has(dayStr(d))){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+const fmt = ms => { const s = ms / 1000, m = Math.floor(s / 60); return m + ":" + (s - m * 60).toFixed(1).padStart(4, "0"); };
+function starsFor(ms){ return ms <= 75000 ? 3 : ms <= 150000 ? 2 : 1; }   // under 1:15 = 3 stars, under 2:30 = 2, finished = 1
+
+/* ---------- The race ---------- */
+const HOLD_MS = 700, SETTLE_MS = 250;
+let buddy = null;          // your character, beside the big note
+const race = {
+  cur: 0, t0: null, over: false, tol: 5, splits: [], strStart: 0, holdFrom: null, smooth: [], lastHeard: 0,
+  begin(){
+    this.cur = 0; this.t0 = null; this.over = false; this.splits = []; this.holdFrom = null; this.smooth = [];
+    $("clock").textContent = "0:00.0";
+    if(!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("start", 1600);
+    this.show();
+  },
+  show(){
+    const s = STRINGS[this.cur];
+    $("chips").innerHTML = STRINGS.map((x, i) => `<div class="chip ${i < this.cur ? "done" : i === this.cur ? "cur" : ""}">${i < this.cur ? "✓" : x.note}<small>${i + 1 === 1 ? "6th" : ["", "5th", "4th", "3rd", "2nd", "1st"][i]}</small></div>`).join("");
+    $("note").textContent = s.note; $("note").classList.remove("bump"); void $("note").offsetWidth; $("note").classList.add("bump");
+    $("which").textContent = "Pluck " + s.desc + " (" + s.name + ")";
+    $("status").textContent = this.t0 ? "Pluck the " + s.name + " string" : "Pluck the low E string to start the clock";
+    $("status").className = ""; this.setNeedle(null);
+    this.holdFrom = null; this.smooth = []; $("holdBar").style.width = "0"; this.strStart = performance.now(); this.settle = performance.now() + SETTLE_MS;
+  },
+  setNeedle(c, locked){
+    const g = $("gauge");
+    g.classList.toggle("live", c !== null); g.classList.toggle("lock", !!locked);
+    if(c !== null) $("gauge").querySelector(".pin").style.left = (50 + Math.max(-50, Math.min(50, c)) * 0.9) + "%";
+  },
+  // Called about 12 times a second.
+  step(){
+    if(this.over) return;
+    const now = performance.now();
+    if(this.t0) $("clock").textContent = fmt(now - this.t0);
+    const db = pitch.level();
+    $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
+    const s = STRINGS[this.cur];
+    if(now < this.settle) return;
+    const r = db > this.gate ? pitch.read() : null;
+    if(!r || r.clarity < 0.8){
+      // no clear note right now (string died away, or noise): the pin fades, and the lock timer resets only after a moment of silence
+      if(now - this.lastHeard > 350){ this.setNeedle(null); this.holdFrom = null; $("holdBar").style.width = "0"; $("hz").textContent = ""; if(DEBUG) this.dbg(db, null, null); }
+      return;
+    }
+    this.lastHeard = now;
+    // Fold octave slips: the detector sometimes reports a string's note an octave out. Take whichever reading sits nearest the target.
+    let f = r.f, c = cents(f, s.hz);
+    // Only when the raw reading is nowhere near, and only if the fold lands close, so a neighbouring string isn't mistaken for a very flat one.
+    if(Math.abs(c) > 200) for(const k of [2, 0.5]){ const c2 = cents(f * k, s.hz); if(Math.abs(c2) <= 60){ c = c2; f *= k; break; } }
+    $("hz").textContent = f.toFixed(1) + " Hz";
+    if(Math.abs(c) > 200){   // more than 2 semitones out: probably the wrong string or the wrong peg, so ask rather than coach
+      this.setNeedle(null); this.holdFrom = null; this.smooth = []; $("holdBar").style.width = "0";
+      $("status").textContent = "That's a long way " + (c < 0 ? "below" : "above") + " the " + s.name + ". Are you plucking " + s.desc + ", and turning the right peg?"; $("status").className = "";
+      if(DEBUG) this.dbg(db, r, c); return;
+    }
+    // median of the last few readings keeps the pin steady
+    this.smooth.push(c); if(this.smooth.length > 5) this.smooth.shift();
+    const cs = this.smooth.slice().sort((a, b) => a - b)[this.smooth.length >> 1];
+    if(!this.t0){ this.t0 = now; }
+    const inTune = Math.abs(cs) <= this.tol;
+    this.setNeedle(cs, inTune);
+    if(inTune){
+      if(this.holdFrom === null) this.holdFrom = now;
+      const held = now - this.holdFrom;
+      $("holdBar").style.width = Math.min(100, held / HOLD_MS * 100) + "%";
+      $("status").textContent = "Hold it…"; $("status").className = "ok";
+      if(held >= HOLD_MS){ this.lock(now); return; }
+    }else{
+      this.holdFrom = null; $("holdBar").style.width = "0"; $("status").className = "";
+      const a = Math.abs(cs);
+      $("status").textContent = cs < 0 ? (a > 25 ? "Too low: tighten the string ↑" : "A little flat: tighten ↑") : (a > 25 ? "Too high: loosen the string ↓" : "A little sharp: loosen ↓");
+    }
+    if(DEBUG) this.dbg(db, r, cs);
+  },
+  lock(now){
+    this.splits.push(now - this.strStart);
+    $("status").textContent = "✓ " + STRINGS[this.cur].name + " is in tune!"; $("status").className = "ok";
+    this.setNeedle(0, true);
+    if(buddy) buddy.moment("hit", 1100);
+    this.cur++;
+    if(this.cur >= STRINGS.length){ this.finish(now); return; }
+    // brief pause so the string can ring out and the student sees the tick, then the next string lights up
+    this.settle = now + 1e9;
+    setTimeout(() => { if(!this.over) this.show(); }, 900);
+  },
+  finish(now){
+    this.over = true;
+    const total = now - this.t0;
+    $("chips").innerHTML = STRINGS.map(x => `<div class="chip done">✓<small>${x.note}</small></div>`).join("");
+    $("clock").textContent = fmt(total);
+    const stars = starsFor(total), prevBest = P.best, isBest = prevBest === null || total < prevBest;
+    const mom = stars === 3 ? "win" : isBest ? "best" : "done";
+    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3, improved:isBest});
+    if(buddy) buddy.moment(mom, 0);
+    if(isBest) P.best = total;
+    const today = dayStr(new Date()); if(!P.days.includes(today)) P.days.push(today);
+    P.days = P.days.slice(-120); P.runs++; save();
+    $("streak").textContent = streak() + " day streak";
+    $("best").textContent = "";
+    const sp = this.splits.map((ms, i) => `<span>${STRINGS[i].note}<b>${(ms / 1000).toFixed(1)}</b></span>`).join("");
+    setTimeout(() => {
+      $("popBox").innerHTML = `<span>${[1,2,3].map(i => `<img class="${stars >= i ? "" : "off"}" src="${stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}</span>
+        <b>Tuned in ${fmt(total)}</b>
+        <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
+        <div class="splits">${sp}</div>
+        <p style="font-size:14px">Seconds per string. Give all six a final strum: tuning one string can nudge the others.</p>
+        <button class="big" id="again">Race again</button>`;
+      PlayerArt.popIn($("popBox"), mom);
+      $("pop").hidden = false;
+      $("again").onclick = () => { $("pop").hidden = true; race.begin(); };
+    }, 1000);
+  },
+  dbg(db, r, c){
+    $("dbg").hidden = false;
+    $("dbg").textContent = "level " + db.toFixed(1) + " dB  gate " + this.gate.toFixed(1) + "\n" + (r ? "f " + r.f.toFixed(2) + " Hz  clarity " + r.clarity.toFixed(2) + "  cents " + (c === null ? "-" : c.toFixed(1)) : "(no clear pitch)");
+  },
+  gate: -55
+};
+
+/* ---------- Setup ---------- */
+async function calibrate(){
+  // two seconds of the room: the gate sits a little above its own noise so hiss never counts as a note
+  const samples = [], t0 = performance.now();
+  await new Promise(res => { const tick = () => { samples.push(pitch.level()); if(performance.now() - t0 >= 1200) res(); else setTimeout(tick, 60); }; tick(); });
+  samples.sort((a, b) => a - b);
+  race.gate = Math.max(-70, Math.min(-42, samples[Math.floor(samples.length * 0.8)] + 9));
+}
+function showBest(){
+  $("best").textContent = P.best ? "Your best so far: " + fmt(P.best) + (streak() ? "  ·  " + streak() + " day streak" : "") : "";
+  $("pb").textContent = P.best ? "Best " + fmt(P.best) : "";
+  $("streak").textContent = streak() ? streak() + " day streak" : "Today's race";
+}
+$("start").onclick = async () => {
+  $("err").hidden = true; $("start").disabled = true;
+  try{
+    await pitch.start();
+    $("intro").hidden = true; $("game").hidden = false;
+    $("status").textContent = "Shh… listening to the room"; $("chips").innerHTML = "";
+    await calibrate();
+    showBest();
+    race.begin();
+    setInterval(() => race.step(), 80);
+    if(SELFTEST) setupSelfTest();
+  }catch(e){
+    $("start").disabled = false; $("intro").hidden = false; $("game").hidden = true; $("err").hidden = false;
+    $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start: " + (e && e.message || e);
+  }
+};
+$("restart").onclick = () => race.begin();
+$("tol").oninput = e => { race.tol = Number(e.target.value); $("tolV").textContent = e.target.value; };
+load(); showBest();
+if(SELFTEST) $("testbox").hidden = false;
+if(DEBUG) $("dbg").hidden = false;
+
+/* ---------- Self-test: hold a plucked-string-like tone and nudge it with the slider (no microphone needed) ---------- */
+let tone = null;
+function setupSelfTest(){
+  const set = () => { $("detV").textContent = $("det").value; if(tone) tone.setFreq(); };
+  $("det").oninput = set;
+  $("testBtns").innerHTML = STRINGS.map((s, i) => `<button data-i="${i}">${s.name}</button>`).join("") + `<button data-i="stop">stop</button>`;
+  $("testBtns").onclick = ev => {
+    const b = ev.target.closest("button[data-i]"); if(!b) return;
+    if(tone){ tone.stop(); tone = null; }
+    [...$("testBtns").children].forEach(x => x.classList.remove("on"));
+    if(b.dataset.i === "stop") return;
+    b.classList.add("on"); tone = makeTone(Number(b.dataset.i));
+  };
+}
+function makeTone(i){
+  const ctx = pitch.ctx, g = ctx.createGain(); g.gain.value = 0.2; g.connect(pitch.testGain);
+  const oscs = [1, 2, 3, 4].map(h => { const o = ctx.createOscillator(), og = ctx.createGain(); og.gain.value = 1 / h; o.connect(og); og.connect(g); o.start(); return {o, h}; });
+  const t = {
+    setFreq(){ const f = STRINGS[i].hz * Math.pow(2, Number($("det").value) / 1200); oscs.forEach(x => x.o.frequency.value = f * x.h); },
+    stop(){ oscs.forEach(x => x.o.stop()); g.disconnect(); }
+  };
+  t.setFreq(); return t;
+}
+window.__tuner = {race, pitch, STRINGS, get P(){ return P; }};
+</script>
+</body>
+</html>

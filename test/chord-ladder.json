@@ -1,0 +1,38 @@
+{
+  "_readme": "The chord ladder for Chord Hunt and Chord Change, easiest to hardest. YOURS TO EDIT. A chord is a root note plus a type (Em, Bb7, F#m7, Cmaj9...); the notes come from the type under 'qualities' (semitones above the root). A student unlocks chords in this order, one at a time. Both the Reaper rig and the home page read this one file. Lists notes only, no fingerings.",
+  "qualities": {
+    "": [0, 4, 7],
+    "m": [0, 3, 7],
+    "7": [0, 4, 7, 10],
+    "maj7": [0, 4, 7, 11],
+    "m7": [0, 3, 7, 10],
+    "sus2": [0, 2, 7],
+    "sus4": [0, 5, 7],
+    "add9": [0, 2, 4, 7],
+    "6": [0, 4, 7, 9],
+    "m6": [0, 3, 7, 9],
+    "dim": [0, 3, 6],
+    "aug": [0, 4, 8],
+    "dim7": [0, 3, 6, 9],
+    "m7b5": [0, 3, 6, 10],
+    "7sus4": [0, 5, 7, 10],
+    "9": [0, 4, 10, 2],
+    "m9": [0, 3, 10, 2],
+    "maj9": [0, 4, 11, 2],
+    "13": [0, 4, 10, 9],
+    "m11": [0, 3, 10, 5],
+    "7#9": [0, 4, 10, 3],
+    "7b9": [0, 4, 10, 1],
+    "maj7#11": [0, 4, 11, 6]
+  },
+  "tiers": [
+    { "name": "First chords", "chords": ["Em", "Am", "G", "C", "D"] },
+    { "name": "Open essentials", "chords": ["A", "E", "Dm", "E7", "A7", "D7"] },
+    { "name": "Open colours", "chords": ["Cmaj7", "Em7", "Am7", "Dm7", "G7", "Fmaj7", "Dsus2", "Dsus4", "Asus2", "Asus4", "Cadd9"] },
+    { "name": "First barre chords", "chords": ["F", "Bm", "F#m", "Bb"] },
+    { "name": "The barre family", "chords": ["B", "Gm", "Cm", "Fm", "C#m", "G#m", "Ab", "Eb"] },
+    { "name": "Barre sevenths", "chords": ["Bm7", "F#m7", "Gm7", "Cm7", "B7", "F7", "Bb7", "C6", "G6", "Am6"] },
+    { "name": "Extended chords", "chords": ["C9", "G9", "D9", "Am9", "Dm9", "Cmaj9", "Gmaj9"] },
+    { "name": "Advanced colours", "chords": ["Bdim", "Caug", "Bm7b5", "Cdim7", "E7#9", "B7b9", "A7sus4", "G13", "Dm11", "Fmaj7#11"] }
+  ]
+}

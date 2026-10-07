@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Forbes Music Academy: Practice Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--accent:#FFB805;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+main{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-height:1.1}
+.lead{margin:0;color:var(--muted)}
+[hidden]{display:none!important}
+
+/* logo + your character. Tapping Customise grows the character tile to the full width and tucks the logo away. */
+.top{display:flex;align-items:stretch;gap:12px}
+.logo{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center}
+.logo img{width:125%;max-width:none;margin:-8% -12.5%;height:auto;display:block}
+.you{flex:1 1 0;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.top.editing .logo{display:none}
+.top.editing .you{flex-basis:100%}
+.yview{padding:8px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.yview .tag{font-family:var(--head);font-weight:900;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.yview .yart{width:100%;max-width:170px;aspect-ratio:1}
+.yview .yname{font-family:var(--head);font-weight:900;font-size:17px;line-height:1.1;min-height:1.1em;text-align:center;overflow-wrap:anywhere}
+.yview button{margin-top:4px;min-height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--fg);background:var(--accent);font-weight:800}
+.yview button.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* the editor: a full-screen panel while open. The character and the part tabs stay put; only the options list scrolls,
+   so the character never scrolls out of sight (no reliance on position:sticky, which some phones handle badly). */
+.yeditor{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+  padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom))}
+.yeditor > *{width:100%;max-width:1120px}
+.ecols{flex:1;min-height:0;display:flex;gap:12px}
+/* the left column (character, name, buttons) never scrolls: swipes and the mouse wheel there do nothing */
+.eleft{width:40%;flex:none;display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;align-self:flex-start;touch-action:none;overscroll-behavior:none}
+.eside{display:flex;flex-direction:column;gap:8px}
+.eprev{width:100%;aspect-ratio:1/1;max-height:calc(100dvh - 250px);display:flex;align-items:flex-end}
+.eprev > div,.eprev svg{width:100%;height:100%}
+.eleft input{width:100%;font:inherit;font-size:19px;font-weight:700;padding:10px 12px;border:2px solid var(--fg);border-radius:12px;background:#fff;text-align:center}
+.eright{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.icons{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;flex:none}
+.icons button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 7px;border:2px solid var(--line);border-radius:16px;background:#fff;font-size:13px;font-weight:800;color:var(--muted)}
+.icons button svg{width:34px;height:34px;display:block}
+.icons button.on{border-color:var(--fg);background:var(--accent);color:var(--fg)}
+.epanel{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:2px 2px 48px}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.opt{border:2px solid var(--line);background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;align-items:center;min-width:0}
+.opt span{font-size:14px;font-weight:800;color:var(--muted);padding:0 0 4px}
+.opt.on span{color:var(--fg)}
+.opt svg{width:100%;height:auto;aspect-ratio:1;display:block}
+.opt.on{border-color:var(--fg);background:#FFF1C7}
+.sub{font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:4px 0 4px 2px}
+.sw{display:flex;flex-wrap:wrap;gap:9px}
+.sw button{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);padding:0}
+.sw button.on{box-shadow:0 0 0 3px var(--fg)}
+.efoot{display:flex;flex-direction:column;gap:8px}
+.efoot button{min-height:54px;font-size:19px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.efoot button.go{background:var(--accent)}
+.efoot svg{width:26px;height:26px}
+html.editing,html.editing body{overflow:hidden}
+@media (max-width:600px){
+  .ogrid{grid-template-columns:repeat(4,1fr);gap:6px}
+  .icons{gap:4px} .icons button{font-size:10px;padding:6px 0 4px} .icons button svg{width:24px;height:24px}
+  .sw{gap:6px} .sw button{width:30px;height:30px}
+  .efoot button{min-height:44px;font-size:16px} .eleft input{font-size:17px;padding:8px 10px}
+  .opt span{font-size:11px}
+}
+@media (max-width:360px){.ogrid{grid-template-columns:repeat(3,1fr)}}
+/* phones: the character across the top, tabs under it, options scrolling below */
+@media (max-width:600px){
+  .ecols{flex-direction:column;gap:10px}
+  .eleft{width:auto;align-self:stretch;flex-direction:row;align-items:center;justify-content:center;gap:12px}
+  .eprev{width:auto;height:min(26vh,190px);aspect-ratio:1/1.08}
+  .eside{width:140px;flex:none}
+}
+
+/* games */
+a.game{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;color:inherit;text-decoration:none;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+a.game:active{transform:scale(.99)}
+a.game img{width:64px;height:64px;object-fit:contain;flex:none}
+a.game b{display:block;font-family:var(--head);font-weight:900;font-size:22px;line-height:1.1}
+a.game span{color:var(--muted);font-size:15px}
+.tag2{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;color:var(--fg)}
+small.foot{color:var(--muted);text-align:center;margin-top:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top" id="top">
+    <div class="logo"><img src="logos/fma-logo-abrv.png" alt="Forbes Music Academy"></div>
+    <section class="you" id="you" aria-label="Your character">
+      <div class="yview" id="yview">
+        <div class="tag">Your character</div>
+        <div class="yart" id="yart"></div>
+        <div class="yname" id="yname"></div>
+        <button id="yedit">Customise</button>
+        <div id="playingAs" style="font-size:14px;color:var(--muted);margin-top:8px;text-align:center"></div>
+      </div>
+      <div class="yeditor" id="yeditor" hidden>
+        <div class="ecols">
+          <div class="eleft">
+            <div class="eprev" id="ebig"></div>
+            <div class="eside">
+            <input id="ename" maxlength="10" placeholder="Name" autocomplete="off" autocapitalize="words" aria-label="Character name">
+            <div class="efoot">
+              <button id="erand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/></svg>Mix it up</button>
+              <button id="eclear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Clear</button>
+              <button id="edone" class="go">Done</button>
+            </div>
+            </div>
+          </div>
+          <div class="eright">
+            <nav class="icons" id="eicons" aria-label="Parts"></nav>
+            <div class="epanel" id="epanel"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </header>
+
+  <h1>Practice games</h1>
+  <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
+  <a class="game" href="quiz.html"><img src="characters/plucky.png" alt=""><div><b>Note Quiz <span class="tag2">NEW</span></b><span>Answer questions by finding the right note on your guitar. Quicker = more points. Play solo or race the CPUs.</span></div></a>
+  <a class="game" href="boss.html"><img src="characters/boss.svg" alt=""><div><b>Boss Battle <span class="tag2">NEW</span></b><span>Play along to a drum beat. Hit the right chord every bar to beat the boss. Ten songs, three speeds.</span></div></a>
+  <a class="game" href="chords.html"><img src="star-on.png" alt=""><div><b>Chord Practice</b><span>Play the chord you see. Earn stars as you learn new ones.</span></div></a>
+  <a class="game" href="tuner.html"><img src="characters/fret.png" alt=""><div><b>Tuning Race</b><span>Tune all six strings as fast as you can.</span></div></a>
+  <a class="game" href="songs.html"><img src="diamond.png" alt=""><div><b>Song Practice</b><span>Play a tab note by note. The tab waits for you.</span></div></a>
+  <small class="foot">Forbes Music Academy</small>
+</main>
+
+<script src="fma-student.js?v=4"></script>
+<script src="player-art.js?v=2"></script>
+<script>
+const $ = id => document.getElementById(id);
+let cfg = Player.get();
+const O = PlayerArt.options;
+const TOUCHED = fmaKey("fma-player-touched");
+const touched = () => { try{ return !!localStorage.getItem(TOUCHED); }catch(e){ return true; } };
+const markTouched = () => { try{ localStorage.setItem(TOUCHED, "1"); }catch(e){} };
+
+function drawYou(hello){
+  const p = card = PlayerArt($("yart"), cfg);
+  if(hello) setTimeout(() => p.pose(PlayerArt.MOMENTS.hello, 2600), 400);
+  $("yname").textContent = cfg.name || "";
+  $("yedit").classList.toggle("pulse", !touched());
+  $("yedit").textContent = touched() ? "Customise" : "Make it yours!";
+}
+
+/* One tab per part. Each shows a grid of pictures (and colour dots where it makes sense). */
+const ICON = {
+  body: '<svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 30Q5 21 16 21Q27 21 27 30Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="12" r="1.3" fill="#26211f"/><circle cx="19" cy="12" r="1.3" fill="#26211f"/></svg>',
+  hair: '<svg viewBox="0 0 32 32"><circle cx="16" cy="20" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 18Q4 4 16 4Q28 4 27 18Q24 10 16 10Q8 10 5 18Z" fill="#c8761f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  face: '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><circle cx="11.5" cy="13" r="3.4" fill="#fff" stroke="#26211f" stroke-width="1.8"/><circle cx="20.5" cy="13" r="3.4" fill="#fff" stroke="#26211f" stroke-width="1.8"/><circle cx="11.5" cy="13.4" r="1.4" fill="#26211f"/><circle cx="20.5" cy="13.4" r="1.4" fill="#26211f"/><path d="M10.5 20Q16 25 21.5 20" fill="none" stroke="#26211f" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  outfit: '<svg viewBox="0 0 32 32"><path d="M11 4L4 8L7 14L10 12V28H22V12L25 14L28 8L21 4Q16 8 11 4Z" fill="#e8433f" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  head: '<svg viewBox="0 0 32 32"><path d="M5 22Q5 8 16 8Q27 8 27 22Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 22Q26 17 30 23Q26 26 14 25Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  gear: '<svg viewBox="0 0 32 32"><g transform="rotate(-38 16 16)"><rect x="15" y="2" width="4" height="16" rx="1.5" fill="#e0bf82" stroke="#26211f" stroke-width="1.8"/><ellipse cx="17" cy="22" rx="7" ry="7.5" fill="#4fd0c0" stroke="#26211f" stroke-width="2"/><circle cx="17" cy="22" r="2.2" fill="#26211f"/></g></svg>'
+};
+const TABS = [
+  { id: "body", label: "Body", sections: [["grid", "body", O.bodies, "fig", "", true], ["swatch", "Skin", "skin", O.skins]] },
+  { id: "hair", label: "Hair", sections: [["grid", "hair", O.hair, "head"], ["swatch", "Hair colour", "hairColor", O.hairColors], ["grid", "beard", O.beards, "head", "Beard"]] },
+  { id: "face", label: "Face", sections: [["grid", "eyes", O.eyes, "face", "Eyes"], ["grid", "mouth", O.mouths, "face", "Mouth"], ["grid", "mark", O.marks, "face", "Marks"]] },
+  { id: "outfit", label: "Outfit", sections: [["grid", "top", O.tops, "item:top", "Top"], ["swatch", "Top colour", "color", O.palette], ["grid", "bottom", O.bottoms, "item:bottom", "Bottoms"], ["swatch", "Bottoms colour", "pants", O.palette],
+    ["grid", "shoes", O.shoes, "item:shoes", "Shoes"], ["swatch", "Shoe colour", "accent", O.palette], ["grid", "neck", O.neck, "item:neck", "Neck"], ["swatch", "Neck colour", "neckColor", O.palette],
+    ["grid", "eyewear", O.eyewear, "face", "Eyewear"], ["grid", "extra", O.extras, "fig", "Accessories"], ["swatch", "Accessory colour", "extraColor", O.palette]] },
+  { id: "head", label: "Head", sections: [["grid", "acc", O.acc, "head"], ["swatch", "Colour", "accColor", O.palette]] },
+  { id: "gear", label: "Gear", sections: [["grid", "gear", O.gear, "fig"], ["swatch", "Colour", "gearColor", O.palette]] }
+];
+let tab = "body";
+function drawIcons(){
+  $("eicons").innerHTML = TABS.map(t => `<button data-t="${t.id}" class="${t.id === tab ? "on" : ""}" aria-label="${t.label}">${ICON[t.id]}${t.label}</button>`).join("");
+  $("eicons").querySelectorAll("button").forEach(b => b.onclick = () => { tab = b.dataset.t; drawIcons(); drawPanel(); $("epanel").scrollTop = 0; });
+}
+// the picture on an option button: the clothes on their own for outfit parts, otherwise the character wearing the option
+function thumb(key, v, view){
+  if(view.startsWith("item:")) return PlayerArt.item(Object.assign({}, cfg, { [key]: v }), view.slice(5));
+  return PlayerArt.svg(Object.assign({}, cfg, { name: "", acc: "none", eyewear: "none", mark: "none", extra: "none" }, key === "hair" ? { beard: "none" } : {},
+    key === "pose" ? {} : { gear: "none" }, ["head", "face"].includes(view) || key === "extra" ? { pose: "relax" } : {}, { [key]: v }), view);
+}
+function drawPanel(){
+  const t = TABS.find(x => x.id === tab);
+  const keep = $("epanel").scrollTop;          // picking an option redraws the list: stay where you were
+  $("epanel").innerHTML = t.sections.map(sec => {
+    if(sec[0] === "grid"){
+      const [, key, list, view, title, named] = sec;
+      return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + list.map(([v, label]) =>
+        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}</button>`).join("") + `</div>`;
+    }
+    const [, label, key, colours] = sec;
+    return `<div><div class="sub">${label}</div><div class="sw">` + colours.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${label} ${c}"></button>`).join("") + `</div></div>`;
+  }).join("");
+  $("epanel").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+    cfg[b.dataset.k] = b.dataset.v;
+    save(); drawPanel(); previews();
+  });
+  $("epanel").scrollTop = keep;
+}
+// the big preview bounces with a happy face whenever something changes
+function previews(){ big = PlayerArt($("ebig"), cfg); big.react(); lastEdit = performance.now(); drawYou(); }
+function save(){ Player.set(cfg); markTouched(); }
+function openEditor(){
+  $("top").classList.add("editing"); $("yview").hidden = true; $("yeditor").hidden = false;
+  $("ename").value = cfg.name || ""; drawIcons(); drawPanel(); big = PlayerArt($("ebig"), cfg);
+  setTimeout(() => big.pose(PlayerArt.MOMENTS.hello, 2400), 300);
+  document.documentElement.classList.add("editing");
+}
+function closeEditor(){
+  $("top").classList.remove("editing"); $("yeditor").hidden = true; $("yview").hidden = false; markTouched(); drawYou(true);
+  document.documentElement.classList.remove("editing");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$("yedit").onclick = openEditor;
+$("edone").onclick = closeEditor;
+// scrolling over the character column does nothing (the options list is the only thing that scrolls)
+document.querySelector(".eleft").addEventListener("wheel", e => e.preventDefault(), { passive: false });
+document.querySelector(".eleft").addEventListener("touchmove", e => { if(e.target.tagName !== "INPUT") e.preventDefault(); }, { passive: false });
+$("erand").onclick = () => { const keep = cfg.name; cfg = Player.random(); cfg.name = keep; save(); drawPanel(); previews(); showOff(true); };
+// back to a plain, bald character in a tee and pants (keeps the name and body type), so you build up from nothing
+$("eclear").onclick = () => { const keep = cfg.name; cfg = Player.plain(cfg.body); cfg.name = keep; save(); drawPanel(); previews(); };
+$("ename").oninput = e => { cfg.name = e.target.value.replace(/[<>&"]/g, "").slice(0, 10); save(); previews(); };
+/* Showing off: every few seconds the character strikes a pose (a wave, a jump for joy, a flex...). In the editor it does it
+   often, but never straight after you've changed something; on the menu card it just waves now and then. */
+let big = null, card = null, lastEdit = 0;
+const SHOW = ["wave", "cheer", "thumbs", "star", "rock", "flex", "peace", "point", "cheer", "wave"];
+function showOff(now){
+  const editing = !$("yeditor").hidden, c = editing ? big : card;
+  if(!c || document.hidden) return;
+  if(!now && editing && performance.now() - lastEdit < 3500) return;
+  if(!editing && Math.random() < 0.6) return;
+  const p = editing ? SHOW[Math.floor(Math.random() * SHOW.length)] : "wave";
+  c.pose(p, 2000);
+  if(p === "cheer" || p === "star") c.cheer();          // a jump for joy
+}
+setInterval(() => showOff(false), 5500);
+drawYou(true);
+FMAStudent.mount($("playingAs"));
+if(location.hash === "#character") openEditor();
+</script>
+</body>
+</html>

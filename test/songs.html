@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Song Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Home song practice: pick a song, play it note by note, earn stars. Phone first, same look as the chord page.
+   The page listens through the microphone and never records. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--warn:#E5A100;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+header small{color:var(--muted);font-weight:600}
+header a{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px;color:var(--fg)}
+.big:disabled{opacity:.5;cursor:default}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--fg)}
+[hidden]{display:none!important}
+/* song list */
+.song{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:0 14px 40px -30px rgba(35,35,31,.5);color:var(--fg)}
+.song b{font-family:var(--head);font-weight:900;font-size:21px;display:block}
+.song .lv{display:inline-block;margin-top:2px;font-size:13px;font-weight:700;color:var(--muted);background:var(--line);border-radius:999px;padding:1px 10px}
+.song .meta{flex:1}
+.rew{display:flex;align-items:center;gap:3px}
+.rew img{height:30px;width:auto}
+.rew img.off{opacity:.45}
+.rew img.dia{height:34px;margin-left:6px}
+/* player */
+#top{display:flex;align-items:center;gap:10px}
+#top h2{flex:1;margin:0;font-family:var(--head);font-weight:900;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:20px}
+#bars{font-weight:700;color:var(--muted);font-size:14px}
+#wrap{position:relative;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:12px;min-height:170px}
+#at{width:100%;max-height:60vh;overflow:auto;scrollbar-width:none;position:relative}
+#at::-webkit-scrollbar{display:none}
+#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);text-align:center;padding:16px;background:#fff}
+#count{position:absolute;right:16px;top:8px;font-family:var(--head);font-size:clamp(40px,12vw,90px);font-weight:900;color:var(--accent);opacity:0;pointer-events:none}
+.at-cursor-bar{background:rgba(255,184,5,.18)}
+.at-cursor-beat{background:var(--accent);width:3px}
+body.wait .at-cursor-bar,body.wait .at-cursor-beat{display:none}   /* learning mode: the tab waits for you, so no moving line */
+#res{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none}
+#res i{position:absolute;border-radius:50%;border:4px solid transparent;transform:translate(-50%,-50%);transition:background .2s,border-color .2s}
+#res i.now{border-color:var(--accent);background:rgba(255,184,5,.2)}
+#res i.hit{border-color:var(--good);background:rgba(62,125,76,.22)}
+#res i.near{border-color:var(--warn);background:rgba(229,161,0,.25)}
+#res i.miss{border-color:var(--bad);background:rgba(192,57,43,.2)}
+.row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+#heard{font-weight:700;min-width:8.5em}
+#lvl{flex:1;min-width:60px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+#lvl i{display:block;height:100%;width:0;background:var(--accent)}
+#last{margin-top:8px;min-height:1.4em;color:var(--muted);font-weight:600}
+#latBox{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:15px;font-weight:600}
+#latBox{justify-content:space-between}
+#latBox button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:800}
+#err{color:var(--bad);font-weight:700}
+/* end of run + messages */
+.pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fade .25s}
+.pop .box{background:#fff;border-radius:26px;padding:22px 24px;text-align:center;max-width:380px;width:100%;animation:rise .35s ease-out}
+.pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
+.pop .box p{color:var(--muted);margin:8px 0}
+.pop .big{margin-top:10px}
+.pop .pct{font-family:var(--head);font-weight:900;font-size:78px;line-height:1;color:var(--good)}
+.pop .stars img{height:76px;width:auto;margin:0 3px}
+.pop .stars img.off{opacity:.45}
+.pop .stars img.dia{height:92px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+</style>
+</head>
+<body class="wait">
+<div id="app">
+  <header><h1>Song Practice</h1><a href="./" class="menu">&larr; All games</a></header>
+
+  <!-- 1. the song list -->
+  <section id="menu">
+    <div class="card" style="margin-bottom:14px">
+      <h2>Play the tab, note by note</h2>
+      <p>Your device listens through its microphone. Play each note on the tab. It only moves on when you get it right.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
+    </div>
+    <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
+    <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
+  </section>
+
+  <!-- 2. one song -->
+  <section id="player" class="card" hidden>
+    <div id="top"><button class="ghost" id="back">← Songs</button><h2 id="title"></h2><span id="score"></span></div>
+    <div id="wrap"><div id="at"></div><div id="msg">Loading tab…</div><div id="count"></div></div>
+    <div class="row"><span id="heard">Hearing: –</span><span id="lvl"><i></i></span><span id="bars"></span></div>
+    <div id="last"></div>
+    <div class="row">
+      <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
+      <button class="big" id="go" style="flex:2">Start (allow microphone)</button>
+      <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
+    </div>
+    <p id="diaHint" style="margin:8px 0 0;font-size:14px;color:var(--muted)"></p>
+    <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span>  <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button> </div>
+    <p id="err" hidden></p>
+    <div id="dbg" hidden style="font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;margin-top:8px"></div>
+  </section>
+</div>
+
+<!-- messages -->
+<div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
+
+<script src="fma-student.js?v=4"></script>
+<script src="lib/alphaTab.min.js"></script>
+<script src="player-art.js?v=2"></script>
+<script>
+/* ============================================================
+   Song Practice (home). The song list is songs/songs.json (add a song with add-song.py). Progress is kept on this
+   device only (localStorage). Two ways to play a song:
+     LEARN   the tab waits for you: it moves on only when you play the current note right. Judged on pitch only.
+             1 star for finishing, 2 stars for 80% or more of the notes right first time, 3 stars for 100%.
+     DIAMOND the song runs on its own click at the written speed, and notes are judged on pitch AND timing.
+             Earn the diamond with 80% or more of the notes right and on time. Unlocked after 3 stars.
+   Add ?sim to the address to test without a microphone (a synthetic guitar plays, with a couple of mistakes).
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const sim = q.has("sim");
+const TWO_STAR_PCT = 80, DIAMOND_PCT = 80, DIAMOND_NEEDS_STARS = 3;
+const GOOD_MS = 120;               // on time = within this many ms of the beat
+const KEY = fmaKey("fma-home-songs-v1");          // each player on this device has their own stars
+
+/* ---------- progress, kept on this device ---------- */
+let P = { songs: {}, log: [] };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.songs) P = s; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
+const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, best: 0, diamond: false, runs: 0 });
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+
+/* ---------- song list ---------- */
+let SONGS = [], cur = null;
+const starImgs = (n, dia) => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("") + (dia ? `<img class="dia" src="diamond.png" alt="diamond">` : "");
+function drawList(){
+  $("list").innerHTML = SONGS.map((s, i) => { const r = rec(s.id);
+    return `<button class="song" data-i="${i}"><span class="meta"><b>${s.title}</b><span class="lv">${s.level || ""}</span></span><span class="rew">${starImgs(r.stars, r.diamond)}</span></button>`; }).join("");
+}
+$("list").onclick = e => { const b = e.target.closest(".song"); if (b) openSong(SONGS[Number(b.dataset.i)]); };
+fetch("songs/songs.json", { cache: "no-store" }).then(r => r.json()).then(j => { SONGS = j; drawList(); })
+  .catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the song list."; });
+
+/* ---------- the tab (alphaTab draws it; it is only a drawing library) ---------- */
+let api = null, trackNo = 0, expected = [], songEnd = 0, beatClicks = [], waitMode = true;
+const TPQ = 960;
+function makeApi(){
+  const settings = {
+    core: { fontDirectory: "lib/font/", tracks: [0], useWorkers: false, enableLazyLoading: false },
+    display: { layoutMode: alphaTab.LayoutMode.Horizontal, staveProfile: alphaTab.StaveProfile.Tab,
+      resources: { staffLineColor: "#B9B19C", barSeparatorColor: "#23231F", barNumberColor: "#6B6558", mainGlyphColor: "#23231F", secondaryGlyphColor: "#6B6558" },
+      scale: Math.min(2, Math.max(1.1, $("wrap").clientWidth / 520)) },
+    notation: { rhythmMode: alphaTab.TabRhythmMode.ShowWithBars, rhythmHeight: 38 },
+    player: { playerMode: alphaTab.PlayerMode.EnabledExternalMedia, scrollMode: alphaTab.ScrollMode.Off, enableCursor: true, enableAnimatedBeatCursor: true }
+  };
+  api = new alphaTab.AlphaTabApi($("at"), settings);
+  for (const el of ["ScoreTitle","ScoreSubTitle","ScoreArtist","ScoreAlbum","ScoreWords","ScoreMusic","ScoreWordsAndMusic","ScoreCopyright"])
+    api.settings.notation.elements.set(alphaTab.NotationElement[el], false);
+  api.updateSettings();
+  api.scoreLoaded.on(score => { buildExpected(score); $("msg").style.display = "none"; $("go").disabled = false; });
+  api.error.on(e => { $("msg").style.display = "flex"; $("msg").textContent = "Couldn't load this song."; });
+  api.playedBeatChanged.on(b => { if (!waitMode && b) $("bars").textContent = "Bar " + (b.voice.bar.index + 1) + " / " + api.score.masterBars.length; });
+  api.renderFinished.on(relayout); api.postRenderFinished.on(relayout);
+  api.playerReady.on(() => {
+    out = api.player.output;
+    out.handler = { backingTrackDuration: 0, playbackRate: 1, masterVolume: 0, seekTo(){}, play(){}, pause(){} };
+    ready = true;
+  });
+}
+/* the notes the player should play, with their time from the first bar */
+function buildExpected(score){
+  const segs = []; let bpm = score.tempo || 120;
+  for (const mb of score.masterBars) { if (mb.tempoAutomation) bpm = mb.tempoAutomation.value; segs.push({ tick: mb.start, bpm }); }
+  const toSec = tick => { let s = 0; for (let i = 0; i < segs.length; i++) {
+      const a = segs[i].tick, b = i + 1 < segs.length ? segs[i + 1].tick : Infinity;
+      if (tick <= a) break; s += (Math.min(tick, b) - a) / TPQ * 60 / segs[i].bpm; }
+    return s; };
+  expected = []; beatClicks = [];
+  const track = score.tracks[trackNo] || score.tracks[0];
+  for (const bar of track.staves[0].bars) for (const voice of bar.voices) for (const beat of voice.beats) {
+    const notes = beat.notes.filter(n => !n.isDead && !n.isTieDestination);
+    if (!notes.length) continue;
+    expected.push({ t: toSec(beat.absolutePlaybackStart), midi: notes.map(n => n.realValue), beat, res: null, tries: 0 });
+  }
+  expected.sort((a, b) => a.t - b.t);
+  for (const mb of score.masterBars) {
+    const per = 4 * TPQ / mb.timeSignatureDenominator;
+    for (let i = 0; i < mb.timeSignatureNumerator; i++) beatClicks.push({ t: toSec(mb.start + i * per), accent: i === 0 });
+    songEnd = toSec(mb.start + mb.timeSignatureNumerator * per);
+  }
+}
+
+/* ---------- result rings over the fret numbers ---------- */
+let resLayer = null, ringTimer = 0;
+const relayout = () => { clearTimeout(ringTimer); ringTimer = setTimeout(layoutRings, 150); };
+function layoutRings(){
+  if (!api || !expected.length) return;
+  if (!resLayer || !resLayer.isConnected) { resLayer = document.createElement("div"); resLayer.id = "res"; $("at").appendChild(resLayer); }
+  resLayer.innerHTML = "";
+  const sc = $("at"), origin = sc.getBoundingClientRect();
+  const digits = [...sc.querySelectorAll(".at-surface text")].filter(t => /^\d+$/.test(t.textContent)).map(t => {
+    const r = t.getBoundingClientRect();
+    return { x: r.left - origin.left + sc.scrollLeft + r.width / 2, y: r.top - origin.top + sc.scrollTop + r.height / 2, w: r.width, h: r.height };
+  }).sort((a, b) => a.x - b.x || a.y - b.y);
+  const need = expected.reduce((n, e) => n + e.midi.length, 0), lookup = api.renderer && api.renderer.boundsLookup;
+  let k = 0;
+  for (const e of expected) {
+    let x, y, w;
+    if (digits.length === need) {
+      const g = digits.slice(k, k + e.midi.length); k += e.midi.length;
+      const x0 = Math.min(...g.map(d => d.x)), x1 = Math.max(...g.map(d => d.x)), y0 = Math.min(...g.map(d => d.y - d.h / 2)), y1 = Math.max(...g.map(d => d.y + d.h / 2));
+      x = (x0 + x1) / 2; y = (y0 + y1) / 2; w = Math.max(y1 - y0, g[0].w) * 1.7;
+    } else {
+      const bb = lookup && lookup.findBeat(e.beat); if (!bb) { e.ring = null; continue; }
+      const r = bb.realBounds; x = r.x + r.w / 2; y = r.y + r.h / 2; w = r.h * .6;
+    }
+    e.cx = x;
+    const i = document.createElement("i");
+    i.style.left = x + "px"; i.style.top = y + "px"; i.style.width = w + "px"; i.style.height = w + "px";
+    if (e.res) i.classList.add(e.res.cls);
+    resLayer.appendChild(i); e.ring = i;
+  }
+  markNow(true);
+}
+let nowShown = -1;
+function markNow(force){
+  const n = running && waitMode && !finished ? idx : -1;
+  if (!force && n === nowShown) return; nowShown = n;
+  expected.forEach((e, i) => { if (e.ring) e.ring.classList.toggle("now", i === n); });
+}
+function paint(e, cls){ if (!e.ring) return; e.ring.classList.remove("hit", "near", "miss"); if (cls) e.ring.classList.add(cls); }
+
+/* ---------- clocks ---------- */
+let ctx = null, t0 = 0, countIn = 0, running = false, finished = false, finishing = false;
+let ready = false, out = null, fed = -1, apiPlaying = false;
+const songTime = () => ctx ? ctx.currentTime - t0 - countIn : -99;
+function feed(sec){ if (!ready) return; const ms = Math.max(0, sec * 1000); if (Math.abs(ms - fed) < 1) return; fed = ms; out.updatePosition(ms); }
+function setApiPlaying(on){ if (!ready || on === apiPlaying) return; apiPlaying = on; if (on) api.play(); else api.pause(); }
+
+/* ---------- listening: pitch (YIN) and note starts ---------- */
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+const toMidi = f => 69 + 12 * Math.log2(f / 440);
+function yin(buf, sr){
+  const half = buf.length >> 1, d = new Float32Array(half), minTau = Math.floor(sr / 1400);
+  for (let tau = 1; tau < half; tau++) { let s = 0; for (let i = 0; i < half; i++) { const x = buf[i] - buf[i + tau]; s += x * x; } d[tau] = s; }
+  let run = 0; d[0] = 1;
+  for (let tau = 1; tau < half; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
+  let tau = -1;
+  for (let t = minTau; t < half - 1; t++) { if (d[t] < 0.15) { while (t + 1 < half - 1 && d[t + 1] < d[t]) t++; tau = t; break; } }
+  if (tau < 0) return null;
+  const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c, tp = den ? tau + (a - c) / (2 * den) : tau;
+  return { freq: sr / tp, clarity: 1 - b };
+}
+const frames = [], pending = [], onsets = [];
+let lastOnsetT = -9, rmsMinWin = [], recentV = [], stableMidi = null, analyser = null, tbuf = null, lastHeardAt = 0, floorRms = 0.01;
+function listenFrame(){
+  if (!analyser) return;
+  analyser.getFloatTimeDomainData(tbuf);
+  const now = songTime(), sr = ctx.sampleRate;
+  let s = 0; for (let i = tbuf.length - 512; i < tbuf.length; i++) s += tbuf[i] * tbuf[i];
+  const rms = Math.sqrt(s / 512);
+  $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%";
+  rmsMinWin.push({ t: now, rms }); while (rmsMinWin.length && rmsMinWin[0].t < now - 2) rmsMinWin.shift();
+  floorRms = Math.min(0.02, Math.max(0.006, Math.min(...rmsMinWin.map(r => r.rms)) * 3));   // capped so a long run of playing can't raise it
+  let midi = null;
+  if (rms > floorRms) { const p = yin(tbuf, sr); if (p && p.clarity > 0.85) midi = toMidi(p.freq); }
+  frames.push({ t: now, rms, midi }); while (frames.length && frames[0].t < now - 3) frames.shift();
+  if (midi != null) { const c = Math.round((midi - Math.round(midi)) * 100); $("heard").textContent = "Hearing: " + noteName(midi) + " (" + (c >= 0 ? "+" : "") + c + "¢)"; lastHeardAt = performance.now(); }
+  else if (performance.now() - lastHeardAt > 600) $("heard").textContent = "Hearing: –";
+  /* a note start = the level jumps well above what it was a moment ago */
+  let prevMin = Infinity; for (const f of frames) if (f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
+  if (prevMin < Infinity && rms > floorRms && rms > prevMin * 1.5 + 0.004 && now - lastOnsetT > 0.11) { lastOnsetT = now; pending.push({ t: now, src: "energy", ratio: rms / (prevMin + 1e-4) }); }
+  /* or the pitch moves to a new, steady note (catches soft plucks) */
+  if (midi != null) {
+    recentV.push({ t: now, midi }); if (recentV.length > 4) recentV.shift();
+    const last3 = recentV.slice(-3), mid = last3[last3.length - 1].midi, steady = last3.length === 3 && last3.every(v => Math.abs(v.midi - mid) < 0.4);
+    if (steady && stableMidi != null && Math.abs(mid - stableMidi) > 0.7 && now - 0.065 - lastOnsetT > 0.11) { lastOnsetT = now - 0.065; pending.push({ t: lastOnsetT, src: "pitch" }); }
+    if (steady) stableMidi = mid;
+  } else if (now - (recentV.length ? recentV[recentV.length - 1].t : -9) > 0.3) { stableMidi = null; recentV.length = 0; }
+  /* read the pitch once the analysis window sits entirely after the pluck */
+  for (let k = pending.length - 1; k >= 0; k--) {
+    const o = pending[k]; if (now < o.t + 0.14) continue;
+    const ms = frames.filter(f => f.midi != null && f.t >= o.t + 0.05 && f.t <= o.t + 0.14).map(f => f.midi).sort((a, b) => a - b);
+    onsets.push({ t: o.t, midi: ms.length >= 2 ? ms[ms.length >> 1] : null, n: ms.length, src: o.src, ratio: o.ratio || 0, used: false });
+    pending.splice(k, 1);
+  }
+  if (running) waitMode ? waitJudge() : judge(now);
+}
+
+/* ---------- judging ---------- */
+const PLUCK_RATIO = 1.8, REFRACTORY = 0.25, WAIT_CENTS = 40;   // tuning knobs for learn mode
+let lastAcceptedT = -9;
+const DEBUG = q.has("debug"), dlog = [];
+function dbg(o, why){ if (!DEBUG) return; dlog.unshift((o.t).toFixed(2) + "s " + (o.midi == null ? "?" : noteName(o.midi) + "/" + o.midi.toFixed(1)) + " ratio " + o.ratio.toFixed(1) + " " + o.src + " → " + why); dlog.length = Math.min(dlog.length, 8); const d = document.getElementById("dbg"); if (d) { d.hidden = false; d.textContent = dlog.join("\n"); } }
+let idx = 0, dispT = 0, lat = Number(localStorage.getItem("tabListenLatency") || 0.06);
+const stats = { hit: 0, near: 0, miss: 0, done: 0 };
+const pctNow = () => Math.round(100 * stats.hit / Math.max(1, expected.length));
+function showBar(){ const e = expected[Math.min(idx, expected.length - 1)]; if (e && api.score) $("bars").textContent = "Bar " + (e.beat.voice.bar.index + 1) + " / " + api.score.masterBars.length; }
+/* LEARN: the tab waits. Only a clearly wrong note counts against you; stray starts, ring-out and overtones are ignored. */
+function waitJudge(){
+  for (const o of onsets) {
+    if (o.used || idx >= expected.length) continue;
+    o.used = true;
+    const e = expected[idx], m = o.midi, name = e.midi.map(noteName).join("+");
+    /* Only a real new pluck counts: a sharp attack, well after the last note was accepted. This stops one pluck ticking off two notes
+       (a second 'start' read off its ring) and the previous note's ring-out leaking into the next. */
+    if (o.src !== "energy" || o.ratio < PLUCK_RATIO) { dbg(o, "ignored: not a sharp pluck"); continue; }
+    if (o.t < lastAcceptedT + REFRACTORY) { dbg(o, "ignored: too soon after the last note"); continue; }
+    if (m == null) { dbg(o, "ignored: pitch unclear"); continue; }
+    const cents = e.midi.map(t => (m - t) * 100).reduce((a, b) => Math.abs(a) < Math.abs(b) ? a : b);
+    if (Math.abs(cents) <= WAIT_CENTS) {
+      lastAcceptedT = o.t; dbg(o, "ACCEPTED " + name);
+      paint(e, "hit"); $("last").textContent = name + " ✓";
+      e.res = { cls: e.tries ? "near" : "hit" };
+      stats[e.res.cls]++; stats.done++; idx++; markNow(); showBar();
+      $("score").textContent = "✔ " + stats.done + " / " + expected.length;
+      continue;
+    }
+    if (o.n < 3) { dbg(o, "ignored: not sure enough it was wrong"); continue; }
+    const d = Math.round(m) - e.midi.reduce((a, b) => Math.abs(m - a) < Math.abs(m - b) ? a : b);
+    if (d % 12 === 0 || d === 19 || d === 28) { paint(e, "near"); $("last").textContent = "Heard " + noteName(m) + " (an octave or overtone of " + name + "), try again"; continue; }
+    dbg(o, "WRONG " + noteName(m)); e.tries = (e.tries || 0) + 1; paint(e, "miss"); $("last").textContent = "Heard " + noteName(m) + ", wanted " + name;
+  }
+  if (!finished && !finishing && idx >= expected.length) { finishing = true; setTimeout(finish, 500); }
+}
+/* DIAMOND: judged against the beat as well. */
+let buddy = null, buddyRun = 0;          // your character beside the Start button, and notes right in a row
+function mark(e, cls, text){
+  e.res = { cls, text }; paint(e, cls); stats[cls]++; stats.done++;
+  buddyRun = cls === "hit" ? buddyRun + 1 : 0;
+  if (buddy && buddyRun && buddyRun % 8 === 0) buddy.moment("streak", 1200);
+  $("score").textContent = "✔ " + stats.hit + " / " + expected.length; $("last").textContent = text;
+}
+function judge(now){
+  for (let i = 0; i < expected.length; i++) {
+    const e = expected[i]; if (e.res) continue;
+    const gapPrev = i ? e.t - expected[i - 1].t : 9, gapNext = i + 1 < expected.length ? expected[i + 1].t - e.t : 9;
+    const win = Math.max(0.1, Math.min(0.25, 0.48 * Math.min(gapPrev, gapNext)));
+    if (now < e.t + win + 0.2) continue;
+    let best = null;
+    for (const o of onsets) { if (o.used) continue; const dt = o.t - lat - e.t; if (Math.abs(dt) <= win && (!best || Math.abs(dt) < Math.abs(best.dt))) best = { o, dt }; }
+    if (!best) { mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); continue; }
+    best.o.used = true;
+    const m = best.o.midi, ms = Math.round(best.dt * 1000), timing = Math.abs(ms) <= GOOD_MS ? "" : (ms < 0 ? "early " : "late ") + Math.abs(ms) + " ms";
+    if (m == null) { mark(e, "near", "Couldn't tell the pitch (" + noteName(e.midi[0]) + ")"); continue; }
+    const cents = e.midi.map(t => (m - t) * 100).reduce((a, b) => Math.abs(a) < Math.abs(b) ? a : b);
+    const octave = e.midi.some(t => Math.abs(Math.round(m) - t) % 12 === 0 && Math.round(m) !== t);
+    if (Math.abs(cents) <= 50) timing ? mark(e, "near", noteName(e.midi[0]) + " ok but " + timing) : mark(e, "hit", noteName(e.midi[0]) + " ✓");
+    else if (octave) mark(e, "near", "Right note, wrong octave");
+    else mark(e, "miss", "Heard " + noteName(m) + ", wanted " + e.midi.map(noteName).join("+"));
+  }
+  if (!finished && stats.done >= expected.length) finish();
+}
+
+/* ---------- end of a run: stars and the diamond ---------- */
+function finish(){
+  if (finished) return;
+  finished = true; running = false; setApiPlaying(false); markNow(true);
+  $("go").textContent = "Start"; $("latBox").hidden = true;
+  const total = expected.length, pct = pctNow(), r = rec(cur.id), before = { stars: r.stars, diamond: r.diamond };
+  let html;
+  if (waitMode) {
+    const stars = pct >= 100 ? 3 : pct >= TWO_STAR_PCT ? 2 : 1;      // finishing at all earns one
+    r.runs++; r.best = Math.max(r.best, pct); r.stars = Math.max(r.stars, stars);
+    P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "learn", pct, stars });
+    const msg = stars === 3 ? "Perfect! Every note first time." : stars === 2 ? "Nice playing! Get every note first time for the third star." : "Finished! Aim for " + TWO_STAR_PCT + "% or more of the notes first time for two stars.";
+    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(stars, false)}</div>
+      <h3>${stars > before.stars ? "New: " + stars + " star" + (stars > 1 ? "s" : "") + "!" : "Run finished"}</h3>
+      <p>${stats.hit} of ${total} notes first time · ${stats.near} took another go</p><p>${msg}</p>
+      <button class="big" id="again">Play again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+  } else {
+    const won = pct >= DIAMOND_PCT;
+    r.runs++; if (won) r.diamond = true;
+    P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "diamond", pct, diamond: won });
+    html = won
+      ? `<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>${before.diamond ? "Diamond again!" : "Diamond earned!"}</h3><div class="pct">${pct}%</div><p>${stats.hit} of ${total} notes right and on time.</p>
+         <button class="big" id="songs">All songs</button>`
+      : `<div class="pct" style="color:var(--warn)">${pct}%</div><h3>Not this time</h3><p>${stats.hit} of ${total} notes right and on time. You need ${DIAMOND_PCT}%.</p>
+         <p>Playing at home isn't always as accurate as in your lesson, so don't get discouraged. Try again, or nudge the timing delay if everything shows as late.</p>
+         <button class="big" id="again">Try again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+  }
+  save(); drawList(); refreshButtons();
+  showPop(html);
+  const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
+  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
+  if (!sim && FMAStudent.active()) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
+    : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1, improved: pct >= DIAMOND_PCT && !before.diamond });
+  const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
+  const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
+}
+function showPop(html){ $("popBox").innerHTML = html; $("pop").hidden = false; }
+function hidePop(){ $("pop").hidden = true; }
+
+/* ---------- audio set-up, click track and the test simulator ---------- */
+async function openInput(){
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === "suspended") await ctx.resume();
+  if (analyser) return;
+  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0; tbuf = new Float32Array(2048);
+  if (sim) return;
+  // echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  ctx.createMediaStreamSource(stream).connect(analyser);
+}
+function scheduleClicks(){
+  const beatLen = beatClicks.length > 1 ? beatClicks[1].t - beatClicks[0].t : 0.6, nPer = api.score.masterBars[0].timeSignatureNumerator || 4;
+  countIn = beatLen * nPer; t0 = ctx.currentTime + 0.4;
+  const click = (when, accent) => { const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.25, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
+    o.connect(g); g.connect(ctx.destination); o.start(when); o.stop(when + 0.06); };
+  for (let i = 0; i < nPer; i++) click(t0 + i * beatLen, i === 0);
+  for (const c of beatClicks) click(t0 + countIn + c.t, c.accent);
+}
+function pluck(freq, secs){
+  const sr = ctx.sampleRate, n = Math.floor(sr * secs), N = Math.max(2, Math.round(sr / freq)), b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0), line = new Float32Array(N);
+  for (let i = 0; i < N; i++) line[i] = Math.random() * 2 - 1;
+  for (let pass = 0; pass < 3; pass++) for (let i = 0; i < N; i++) line[i] = (line[i] + line[(i + 1) % N]) / 2;
+  let pk = 0; for (let i = 0; i < N; i++) pk = Math.max(pk, Math.abs(line[i])); for (let i = 0; i < N; i++) line[i] /= pk || 1;
+  let p = 0; for (let i = 0; i < n; i++) { const v = line[p], nx = line[(p + 1) % N]; d[i] = v * 0.5; line[p] = (v + nx) * 0.5 * 0.9985; p = (p + 1) % N; }
+  for (let i = 0, na = Math.floor(sr * 0.006); i < na; i++) d[i] += (Math.random() * 2 - 1) * 0.9 * (1 - i / na);   // the pick's attack
+  return b;
+}
+let simTimer = 0;
+function startSimWait(){          // plays what the tab waits for, but fumbles two notes first
+  const seq = []; expected.forEach((e, i) => { const m = e.midi[0]; if (i === 3) seq.push(m + 2); if (i === 5) seq.push(m + 12); seq.push(m); });
+  let k = 0, prev = null;
+  simTimer = setInterval(() => {
+    if (k >= seq.length) { clearInterval(simTimer); return; }
+    const now = ctx.currentTime, s = ctx.createBufferSource(), g = ctx.createGain();
+    s.buffer = pluck(440 * Math.pow(2, (seq[k++] - 69) / 12), 0.9);
+    if (prev) { prev.g.gain.setValueAtTime(1, now - 0.01); prev.g.gain.linearRampToValueAtTime(0, now); }
+    s.connect(g); g.connect(analyser); s.start(now); prev = { g };
+  }, 800);
+}
+function startSimTimed(){          // plays along in time, with one miss and one wrong note
+  const plan = expected.map((e, i) => i === 3 ? null : { m: e.midi[0] + (i === 5 ? 2 : 0), dt: (Math.random() - .5) * 0.06 });
+  const plucks = plan.map((p, i) => p && { start: t0 + countIn + expected[i].t + p.dt + lat, m: p.m }).filter(Boolean).sort((a, b) => a.start - b.start);
+  plucks.forEach((p, k) => { const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = pluck(440 * Math.pow(2, (p.m - 69) / 12), 0.9);
+    const stop = k + 1 < plucks.length ? plucks[k + 1].start : p.start + 0.9;
+    g.gain.setValueAtTime(1, Math.max(p.start, stop - 0.01)); g.gain.linearRampToValueAtTime(0, stop); s.connect(g); g.connect(analyser); s.start(p.start); });
+}
+
+/* ---------- start / stop / navigation ---------- */
+function resetRun(){
+  clearInterval(simTimer);
+  for (const e of expected) { e.res = null; e.tries = 0; paint(e, ""); }
+  idx = 0; dispT = 0; finishing = false; finished = false; running = false; lastAcceptedT = -9;
+  stats.hit = stats.near = stats.miss = stats.done = 0; onsets.length = 0; pending.length = 0;
+  $("score").textContent = ""; $("last").textContent = ""; $("go").textContent = "Start"; $("count").style.opacity = 0;
+  setApiPlaying(false); fed = -1; feed(0); showBar(); markNow(true);
+}
+async function startRun(learn){
+  $("err").hidden = true;
+  if (!ready || !expected.length) { $("last").textContent = "The song is still loading…"; return; }
+  try { await openInput(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone: " + (e && e.message || e); return; }
+  waitMode = learn; document.body.classList.toggle("wait", learn); $("latBox").hidden = learn;
+  resetRun(); running = true; $("go").textContent = "Stop"; markNow(true); buddyRun = 0;
+  if (buddy) buddy.moment("start", 1500);
+  if (learn) { setApiPlaying(true); if (sim) startSimWait(); }
+  else { scheduleClicks(); if (sim) startSimTimed(); }
+}
+function stopRun(){ resetRun(); $("latBox").hidden = true; }
+$("go").onclick = () => { if (running) stopRun(); else startRun(true); };
+$("dia").onclick = () => {
+  const r = rec(cur.id); if (r.stars < DIAMOND_NEEDS_STARS || running) return;
+  showPop(`<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>Go for the diamond</h3>
+    <p>You'll play the whole song to a click, at the proper speed, and notes need to be right <b>and on time</b>. You need ${DIAMOND_PCT}%.</p>
+    <p>Playing at home might not be as accurate as in your lesson, because phones and speakers add small delays. So don't get discouraged if it doesn't go your way first time.</p>
+    <p>Wear headphones if you can, so the click doesn't leak into the microphone.</p>
+    <button class="big" id="dgo">Start the click</button><button class="ghost" id="dno" style="margin-top:8px;width:100%">Not now</button>`);
+  $("dgo").onclick = () => { hidePop(); startRun(false); };
+  $("dno").onclick = hidePop;
+};
+function refreshButtons(){
+  if (!cur) return;
+  const r = rec(cur.id);
+  const open = r.stars >= DIAMOND_NEEDS_STARS;
+  $("dia").textContent = (open ? "💎 " : "🔒 ") + "Diamond";
+  $("diaHint").textContent = r.diamond ? "You've earned the diamond for this song. Play it again any time." : open ? "Ready? Play the whole song to a click for the diamond." : "Get " + DIAMOND_NEEDS_STARS + " stars to unlock the diamond challenge.";
+  $("dia").disabled = r.stars < DIAMOND_NEEDS_STARS;
+  $("dia").style.opacity = r.stars < DIAMOND_NEEDS_STARS ? .5 : 1;
+}
+$("lm").onclick = () => setLat(lat - 0.01); $("lp").onclick = () => setLat(lat + 0.01);
+function setLat(v){ lat = Math.max(0, Math.min(0.4, v)); $("lat").textContent = Math.round(lat * 1000) + " ms"; try { localStorage.setItem("tabListenLatency", lat); } catch (e) {} }
+setLat(lat);
+
+function goMenu(){ stopRun(); $("player").hidden = true; $("menu").hidden = false; drawList(); window.scrollTo(0, 0); }
+$("back").onclick = goMenu;
+function openSong(s){
+  cur = s; trackNo = s.track || 0; expected = []; ready = ready && !!api;
+  $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
+  if (!buddy) buddy = PlayerArt.buddy($("buddy"));
+  $("msg").style.display = "flex"; $("msg").textContent = "Loading tab…"; $("go").disabled = true;
+  waitMode = true; document.body.classList.add("wait"); $("latBox").hidden = true; stopRun(); refreshButtons();
+  const url = "songs/" + encodeURIComponent(s.file);
+  if (!api) { makeApi(); }
+  api.settings.display.scale = Math.min(2, Math.max(1.1, $("wrap").clientWidth / 520));
+  api.load(url, [trackNo]);
+}
+
+/* ---------- main loop ---------- */
+setInterval(listenFrame, 12);
+const scroller = $("at");
+function fixWidth(){
+  const surface = scroller.querySelector(".at-surface"), cursors = scroller.querySelector(".at-cursors");
+  if (!surface) return;
+  let w = 0; for (const c of surface.children) w = Math.max(w, (parseFloat(c.style.left) || 0) + (parseFloat(c.style.width) || 0));
+  if (w > 0 && Math.abs(parseFloat(surface.style.width) - w) > 1) { surface.style.width = w + "px"; if (cursors) cursors.style.width = w + "px"; }
+}
+function follow(){
+  fixWidth();
+  let x;
+  if (waitMode) { const e = expected[Math.min(idx, expected.length - 1)]; if (!e || e.cx == null) return; x = e.cx; }
+  else { const cur = scroller.querySelector(".at-cursor-beat"); if (!cur) return; x = cur.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft; }
+  const target = Math.max(0, x - scroller.clientWidth * 0.25), d = target - scroller.scrollLeft;
+  scroller.scrollLeft = Math.abs(d) > scroller.clientWidth ? target : Math.abs(d) < 2 ? target : scroller.scrollLeft + d * 0.15;
+}
+(function frame(){
+  const t = songTime();
+  if (running && waitMode) {
+    const target = idx < expected.length ? expected[idx].t : songEnd;
+    dispT += (target - dispT) * 0.25; feed(dispT); $("count").style.opacity = 0;
+  } else if (running) {
+    if (t >= -0.02 && !finished) setApiPlaying(true);
+    feed(t);
+    if (t < 0) { const left = Math.ceil(-t / (countIn / 4 || 1)); $("count").textContent = left > 0 && left <= 8 ? left : ""; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
+    if (!finished && t > songEnd + 1.2) { for (const e of expected) if (!e.res) mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); }
+  }
+  if (!$("player").hidden) follow();
+  requestAnimationFrame(frame);
+})();
+window.__songs = { get P(){ return P; }, get expected(){ return expected; }, stats };
+</script>
+</body>
+</html>

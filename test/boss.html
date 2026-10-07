@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Boss Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+/* Home Boss Battle: pick a song, a speed and a mode; a drum beat plays; play the chord of each bar to wear the boss down.
+   Listens through the microphone, never records. The beat is made on the device (no audio files). */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--pink:#D4668C;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px}
+.big:disabled{opacity:.5}
+[hidden]{display:none!important}
+h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.songs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.song{border:2px solid var(--line);background:#fff;border-radius:14px;padding:8px 10px;text-align:left;line-height:1.2}
+.song b{display:block;font-family:var(--head);font-weight:900;font-size:16px}
+.song small{display:block;color:var(--muted);font-weight:600;font-size:12px}
+.song span{display:block;font-family:var(--head);font-weight:800;font-size:14px;margin-top:2px}
+.song.on{border-color:var(--fg);background:#FFF1C7}
+.chips{display:flex;gap:8px}
+.chips button{flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;line-height:1.15;padding:4px}
+.chips button b{display:block;font-family:var(--head);font-weight:900;font-size:16px}
+.chips button small{color:var(--muted);font-weight:600}
+.chips button.on{border-color:var(--fg);background:var(--accent)}
+.chips button.on small{color:var(--fg)}
+.mine{display:flex;align-items:center;gap:14px;border:2px solid var(--line);border-radius:16px;padding:6px 12px 6px 6px;background:#fff}
+.mine .mart{width:84px;flex:none;aspect-ratio:1}
+.mine b{display:block;font-family:var(--head);font-weight:900;font-size:19px}
+.mine a{color:var(--muted);font-weight:700}
+.best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
+.tip{background:#FFF1C7;border-radius:12px;padding:8px 12px;font-weight:600;font-size:15px;margin:12px 0;color:var(--fg)!important}
+
+/* The fight */
+.stage{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.arena{display:flex;gap:6px;width:100%;align-items:flex-end}
+.fighter{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fart{width:100%;aspect-ratio:1;position:relative}
+.fhp{width:100%;height:24px;border-radius:12px;background:var(--line);border:3px solid var(--fg);overflow:hidden;position:relative}
+.fhp i{display:block;height:100%;width:100%;transition:width .35s,background .3s}
+.fhp.boss i{background:linear-gradient(#e0507a,#c0392b)}
+.fhp.you i{background:linear-gradient(#5fae6f,#3E7D4C)}
+.fhp.you.low i{background:linear-gradient(#f08a5d,#C0392B)}
+.fhp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:13px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+.fname{font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.endarena{max-width:420px;margin:0 auto 6px}
+.dnum{position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:var(--head);font-weight:900;font-size:34px;color:var(--bad);-webkit-text-stroke:2px #fff;paint-order:stroke fill;pointer-events:none;animation:dnum 1s ease-out forwards;z-index:3;white-space:nowrap}
+.dnum.big{font-size:44px;color:#e07b00}
+@keyframes dnum{from{transform:translate(-50%,0) scale(.7);opacity:1}25%{transform:translate(-50%,-8px) scale(1.15)}to{transform:translate(-50%,-70px) scale(1);opacity:0}}
+.combo{min-height:30px;font-family:var(--head);font-weight:900;font-size:18px;text-align:center;color:var(--muted)}
+.combo b{color:var(--fg)}
+.combo.x15 b{color:#d98200}.combo.x2 b{color:#d9490b}.combo.x3 b{color:#c0141c}
+.combo.pop{animation:cpop .3s ease-out}
+.call{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-size:14px;margin-top:6px}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(90px,34vw,170px);line-height:.95;letter-spacing:-.02em;text-align:center}
+#chord.pop{animation:cpop .25s ease-out}
+@keyframes cpop{from{transform:scale(.8);opacity:.4}to{transform:none;opacity:1}}
+.ctones{display:flex;gap:8px;justify-content:center;min-height:40px}
+.ctones span{min-width:44px;padding:4px 12px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:22px;text-align:center;transition:background .2s,color .2s}
+.ctones span.on{background:var(--good);color:#fff}
+.next{font-family:var(--head);font-weight:900;font-size:20px;color:var(--muted)}
+.next b{color:var(--fg)}
+.beats{display:flex;gap:10px;justify-content:center;margin-top:4px}
+.beats i{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.beats i.on{background:var(--fg)}
+.bars{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;width:100%}
+.bars i{height:10px;border-radius:4px;background:var(--line)}
+.bars i.hit{background:var(--good)}
+.bars i.miss{background:var(--pink)}
+.bars i.now{background:var(--fg)}
+.meter{height:10px;border-radius:6px;background:var(--line);overflow:hidden;width:100%}
+.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+#status{text-align:center;font-family:var(--head);font-weight:900;font-size:18px;min-height:1.3em}
+.end{text-align:center}
+.end .bimg{margin:0 auto}
+.end h2{font-size:34px}
+.end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700}
+.end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
+.end .btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.ghost{min-height:48px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700}
+#dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
+.sim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.sim button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:800;user-select:none;touch-action:none}
+.sim button.on{background:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Boss Battle</h1><a class="menu" href="./">&larr; All games</a></header>
+
+  <section class="card" id="start">
+    <h2>Beat the boss with your guitar</h2>
+    <p>A drum beat plays. Play the chord shown for each bar to hit the boss. Land enough hits before the song ends and you win.</p>
+    <h3>Pick a song</h3><div class="songs" id="songs"></div>
+    <h3>Speed</h3><div class="chips" id="speeds"></div>
+    <h3>What do you play?</h3><div class="chips" id="modes"></div>
+    <h3>Backing</h3><div class="chips" id="backs"></div>
+    <h3>Your player</h3><div class="mine"><div class="mart" id="mart"></div><div><b id="mname"></b><a href="./#character">Change my character</a></div></div>
+    <p class="tip">Use headphones so the game doesn't hear its own drums. Tune up first.</p>
+    <button class="big" id="go">Start (allow microphone)</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    <div class="best" id="bests"></div>
+    <p style="font-size:14px"><span data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are the main loop of each song, simplified.</p>
+  </section>
+
+  <section class="card" id="play" hidden>
+    <div class="stage">
+      <div class="arena">
+        <div class="fighter"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
+        <div class="fighter"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname">Boss</div></div>
+      </div>
+      <div class="combo" id="combo"></div>
+      <div class="call" id="call"></div>
+      <div id="chord">–</div>
+      <div class="ctones" id="tones"></div>
+      <div class="next" id="next"></div>
+      <div class="beats" id="beats"></div>
+      <div class="bars" id="bars"></div>
+      <div class="meter"><i id="lvl"></i></div>
+      <div id="status"></div>
+    </div>
+  </section>
+
+  <section class="card end" id="end" hidden>
+    <div class="arena endarena"><div class="fart" id="endPlayer"></div><div class="fart" id="endImg"></div></div>
+    <h2 id="endTitle"></h2>
+    <div class="rows"><div><b id="endHits">0</b>hits</div><div><b id="endAcc">0%</b>of bars</div><div><b id="endStreak">0</b>best streak</div></div>
+    <div id="endBest"></div>
+    <div class="btns"><button class="big" id="again">Fight again</button><button class="ghost" id="other">Pick another song or speed</button></div>
+  </section>
+
+  <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
+  <div class="sim" id="sim" hidden></div>
+</div>
+
+<script src="fma-student.js?v=4"></script>
+<script src="boss-anim.js"></script>
+<script src="player-art.js?v=2"></script>
+<script>
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const PCS = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
+const QUAL = {"":[0,4,7], m:[0,3,7], "7":[0,4,7,10], m7:[0,3,7,10], maj7:[0,4,7,11], sus4:[0,5,7], sus2:[0,2,7]};
+function chordInfo(name){
+  const m = /^([A-G][#b]?)(.*)$/.exec(name), iv = m && QUAL[m[2]]; if(!iv) return null;
+  const r = PCS[m[1]], pcs = iv.map(i => (r + i) % 12);
+  return { name, root:r, pcs, mask:pcs.reduce((a, p) => a | (1 << p), 0), tones:pcs.map(p => NOTE_NAMES[p]) };
+}
+/* Ten songs, each as its main chord loop (one chord per bar), and which boss guards it (BossArt kinds: amp, cables). Chord loops are simplified and can differ between versions. */
+const SONGS = [
+  {b:"amp", t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
+  {b:"cables", t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
+  {b:"amp", t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]},
+  {b:"cables", t:"Stand By Me", a:"Ben E. King", c:["A","F#m","D","E"]},
+  {b:"amp", t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
+  {b:"cables", t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
+  {b:"amp", t:"Someone Like You", a:"Adele", c:["A","E","F#m","D"]},
+  {b:"cables", t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
+  {b:"amp", t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
+  {b:"cables", t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]}
+];
+const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
+const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
+const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
+const BARS = 16, WIN = 0.6;       // each song plays 16 bars (whole loops); you win with 60% of them landed
+const KEY = fmaKey("fma-boss-v1");          // each player on this device has their own bests
+const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
+const S = Object.assign({ song:1, speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
+
+const FFT = 16384, TONAL_MIN = 0.30;
+const det = {
+  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false,
+  async start(){
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
+    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
+    // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
+    const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
+    this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
+    if(this.ctx.state === "suspended") await this.ctx.resume();
+    this.ready = true;
+  },
+  level(){
+    this.an.getFloatTimeDomainData(this.td);
+    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
+    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
+  },
+  chroma(){
+    this.an.getFloatFrequencyData(this.buf);
+    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
+    const mag = new Float32Array(n); let mx = 0;
+    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
+    // Is this sound tonal at all? Notes are sharp spectral peaks; a cough, a rustle or room hiss is energy spread over everything.
+    { let tot = 0, pk = 0; const W = 15;
+      for(let i = 0; i < n; i++){
+        const e = mag[i] * mag[i]; tot += e;
+        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
+          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
+          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
+        }
+      }
+      this.tonal = pk / (tot + 1e-30);
+    }
+    if(this.tonal < TONAL_MIN) return null;
+    // tuning: where do the strong peaks sit relative to the nearest semitone? (so a slightly flat guitar still reads right)
+    let sx = 0, sy = 0;
+    for(let i = 1; i < n - 1; i++){
+      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
+        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
+        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
+        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
+      }
+    }
+    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
+    const ch = new Float32Array(12);
+    for(let i = 0; i < n; i++){
+      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
+      ch[pc] += Math.sqrt(mag[i]);
+    }
+    return ch;
+  }
+};
+
+
+/* ---------- Reading the guitar ---------- */
+let simNote = -1, simChord = false, dbgText = "";
+function readScores(){
+  if(!det.ready) return null;
+  const db = det.level();
+  $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
+  if(db <= det.gateDb){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate"; return null; }
+  const ch = det.chroma();
+  if(!ch){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ": not musical"; return null; }
+  const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
+  const raw = Array.from(ch, v => Math.max(v - floor, 0) / span);
+  // a note's overtones land on other notes: take a small share off where they land
+  const sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
+  if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ", tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
+  return sc;
+}
+// Root mode: the chord's root must be the clearly strongest note (it has to beat both neighbouring semitones by 25%).
+function strongest(sc){
+  if(!sc) return -1;
+  let b = 0; sc.forEach((v, i) => { if(v > sc[b]) b = i; });
+  const nb = Math.max(sc[(b + 1) % 12], sc[(b + 11) % 12]);
+  return sc[b] - nb >= 0.25 ? b : -1;
+}
+
+/* ---------- The beat: drums made on the device ---------- */
+const snd = { ctx:null, out:null, noise:null, next:0, beat:0, timer:null, t0:0, bpm:80, mode:"drums", bars:0 };
+function sndInit(ctx){
+  snd.ctx = ctx; snd.out = ctx.createGain(); snd.out.gain.value = 0.9; snd.out.connect(ctx.destination);
+  const len = ctx.sampleRate, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  snd.noise = buf;
+}
+function env(g, t, peak, dur){ g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); }
+function nz(t, type, freq, q, peak, dur){
+  const s = snd.ctx.createBufferSource(), f = snd.ctx.createBiquadFilter(), g = snd.ctx.createGain();
+  s.buffer = snd.noise; f.type = type; f.frequency.value = freq; f.Q.value = q; env(g, t, peak, dur);
+  s.connect(f); f.connect(g); g.connect(snd.out); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
+}
+function tn(t, f0, f1, peak, dur, type){
+  const o = snd.ctx.createOscillator(), g = snd.ctx.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.5);
+  env(g, t, peak, dur); o.connect(g); g.connect(snd.out); o.start(t); o.stop(t + dur + 0.05);
+}
+const v = () => 0.88 + Math.random() * 0.24;     // a little volume variation so it doesn't sound like a machine
+const kick  = (t, a) => { tn(t, 140, 48, 1.0 * a * v(), 0.32); nz(t, "lowpass", 900, 0.7, 0.18 * a, 0.03); };
+const snare = (t, a) => { nz(t, "bandpass", 1900, 0.8, 0.55 * a * v(), 0.2); tn(t, 210, 150, 0.35 * a * v(), 0.11, "triangle"); };
+const hat   = (t, a, open) => nz(t, "highpass", 7500, 0.7, 0.2 * a * v(), open ? 0.28 : 0.045);
+const crash = t => nz(t, "highpass", 5000, 0.5, 0.35, 1.6);
+const click = (t, acc) => { const o = snd.ctx.createOscillator(), g = snd.ctx.createGain(); o.frequency.value = acc ? 1600 : 1000; env(g, t, acc ? 0.5 : 0.32, 0.05); o.connect(g); g.connect(snd.out); o.start(t); o.stop(t + 0.08); };
+// One eighth-note step of a rock beat. step 0-7 within the bar; bar counts from the first fight bar (-1 = count-in).
+function drumStep(t, bar, step){
+  const j = (Math.random() - 0.5) * 0.008;      // up to 4 ms of human looseness
+  t += j;
+  if(bar < 0){ if(step % 2 === 0) click(t, step === 0); return; }          // count-in: four clicks
+  if(snd.mode === "click"){ if(step % 2 === 0) click(t, step === 0); return; }
+  const fill = (bar % 4 === 3) && step >= 6;
+  if(step === 0){ if(bar % 4 === 0 && bar > 0) crash(t); kick(t, 1); }
+  if(step === 4 || (step === 5 && bar % 2 === 1)) kick(t, step === 4 ? 0.95 : 0.8);
+  if(step === 2 || step === 6){ if(!fill) snare(t, 1); }
+  hat(t, step % 2 === 0 ? 1 : 0.7, false);
+  if(fill){ snare(t, 0.7); }           // snare roll into the next bar
+}
+function sndStart(bpm, mode){
+  snd.bpm = bpm; snd.mode = mode; snd.beat = 0;
+  const ctx = snd.ctx; snd.t0 = ctx.currentTime + 0.25; snd.next = snd.t0;   // t0 = start of the count-in bar
+  const eighth = 60 / bpm / 2;
+  clearInterval(snd.timer);
+  snd.timer = setInterval(() => {
+    while(snd.next < ctx.currentTime + 0.2){
+      const n = snd.beat, bar = Math.floor(n / 8) - 1, step = n % 8;
+      if(bar >= G.bars) break;
+      drumStep(snd.next, bar, step);
+      snd.next += eighth; snd.beat++;
+    }
+  }, 25);
+}
+function sndStop(){ clearInterval(snd.timer); }
+const barDur = () => 4 * 60 / snd.bpm;
+const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 during the count-in
+
+/* ---------- The fight ---------- */
+const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false, bossHp:100, streak:0, bestStreak:0 };
+let song, info, art, pArt, me;
+function buildFight(){
+  song = SONGS[S.song - 1];
+  const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
+  G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
+  G.bars = n; G.need = Math.max(1, Math.round(n * WIN));
+  G.dmgPer = 100 / Math.max(1, G.bars - G.need + 1);       // knocked out on the miss that makes winning impossible
+}
+function setHp(){
+  $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = Math.round(G.hp); $("phpw").classList.toggle("low", G.hp <= 35);
+  $("hpbar").style.width = G.bossHp + "%"; $("hptxt").textContent = G.bossHp > 0 ? Math.ceil(G.bossHp) : "DEFEATED!";
+}
+// Hit streaks pay more: 3 in a row = x1.5, 5 = x2, 8 = x3 damage. A miss resets the streak.
+const multOf = n => n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1.5 : 1;
+function floatNum(host, text, big){ const d = document.createElement("div"); d.className = "dnum" + (big ? " big" : ""); d.textContent = text; host.appendChild(d); setTimeout(() => d.remove(), 1000); }
+function comboUI(m){
+  const el = $("combo");
+  el.className = "combo " + (m >= 3 ? "x3" : m >= 2 ? "x2" : m > 1 ? "x15" : "");
+  el.innerHTML = G.streak >= 2 ? `STREAK <b>${G.streak}</b>${m > 1 ? " · DAMAGE <b>x" + m + "</b>" : ""}` : "";
+  void el.offsetWidth; el.classList.add("pop");
+}
+function startFight(){
+  buildFight();
+  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
+  G.latched.fill(false); G.onFor.fill(0);
+  art = BossArt($("bimg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 });
+  me = Player.get();
+  pArt = PlayerArt($("pimg"), me);
+  setTimeout(() => pArt.pose(PlayerArt.MOMENTS.start, 1800), 300);
+  $("pname").textContent = me.name || "You";
+  $("combo").className = "combo"; $("combo").textContent = "";
+  setHp();
+  $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
+  $("beats").innerHTML = "<i></i><i></i><i></i><i></i>";
+  $("status").textContent = "";
+  const sp = SPEEDS.find(x => x.k === S.speed);
+  sndStart(sp.bpm, S.back);
+  show("play");
+}
+function setChord(i){
+  const c = G.chords[i], root = S.mode === "root";
+  $("chord").textContent = root ? NOTE_NAMES[c.root] : c.name;
+  $("chord").classList.remove("pop"); void $("chord").offsetWidth; $("chord").classList.add("pop");
+  $("tones").innerHTML = root ? "" : c.tones.map(t => `<span>${t}</span>`).join("");
+  const nx = G.chords[i + 1];
+  $("next").innerHTML = nx ? "Next: <b>" + (root ? NOTE_NAMES[nx.root] : nx.name) + "</b>" : "Last bar!";
+  $("call").textContent = root ? "Play the note" : "Play the chord";
+}
+function frame(){
+  if(!G.on){ return; }
+  requestAnimationFrame(frame);
+  const bp = barPos(), beat = Math.floor(((bp + 1) % 1 + 1) % 1 * 4);
+  [...$("beats").children].forEach((el, i) => el.className = i === beat ? "on" : "");
+  if(bp < 0){ $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 4 - Math.floor((bp + 1) * 4))); return; }
+  const idx = Math.floor(bp);
+  if(idx >= G.bars){ return finish(); }
+  if(idx !== G.idx){
+    if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
+    G.idx = idx; G.hit = false; G.run = 0; G.rootRun = 0; G.latched.fill(false); G.onFor.fill(0); G.settle = performance.now() + 250;
+    setChord(idx);
+    [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
+    if(idx > 0 && !G.outcomes[idx - 1]) $("status").textContent = "";
+  }
+}
+function miss(){
+  if(G.done) return;
+  const lost = G.streak; G.streak = 0;
+  G.hp = Math.max(0, G.hp - G.dmgPer);
+  setHp(); pArt.hurt(); pArt.setDamage(1 - G.hp / 100); art.taunt();
+  floatNum($("pimg"), "-" + Math.round(G.dmgPer));
+  $("combo").className = "combo"; $("combo").textContent = lost >= 3 ? "Streak lost!" : "";
+  $("status").textContent = "Ouch!"; $("status").style.color = "var(--bad)";
+  if(G.hp <= 0.5){ G.done = true; G.ko = true; pArt.ko(); setTimeout(() => finish(), 1200); }
+}
+function tick(){
+  if(!G.on || G.done || G.idx < 0 || !(det.ready || SIM)) return;
+  const c = G.chords[G.idx], now = performance.now();
+  let sc = SIM ? null : readScores(), hit = false;
+  if(DEBUG){ $("dbgBox").hidden = false; $("dbg").textContent = dbgText; }
+  if(now < G.settle) return;
+  if(S.mode === "root"){
+    const top = SIM ? simNote : strongest(sc);
+    G.rootRun = top === c.root ? G.rootRun + 1 : 0;
+    hit = G.rootRun >= 3;                                  // about a quarter of a second, held
+  }else if(SIM){ hit = simChord; }
+  else if(!sc){ G.run = 0; G.latched.fill(false); G.onFor.fill(0); }
+  else{
+    let missing = 0, strays = 0;
+    for(let i = 0; i < 12; i++){
+      const x = sc[i], inC = (c.mask >> i) & 1;
+      G.latched[i] = x >= 0.40 || (G.latched[i] && x >= 0.30);
+      G.onFor[i] = G.latched[i] ? G.onFor[i] + 1 : 0;
+      if(inC && !G.latched[i]) missing++;
+      if(!inC && G.latched[i]) strays++;
+    }
+    G.run = (missing === 0 && strays === 0) ? G.run + 1 : 0;
+    hit = G.run >= 3;
+    [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!G.latched[c.pcs[i]]));
+  }
+  if(hit && !G.hit){
+    G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
+    const m = multOf(G.streak), dmg = Math.round(100 / G.need * m);
+    G.bossHp = Math.max(0, G.bossHp - dmg);
+    setHp(); pArt.pose([3, 5, 8].includes(G.streak) ? PlayerArt.MOMENTS.streak : PlayerArt.MOMENTS.hit, 1100); pArt.attack(1); art.setDamage(1 - G.bossHp / 100); art.hit(m > 1 ? 2 : 1);
+    floatNum($("bimg"), "-" + dmg, m > 1);
+    comboUI(m);
+    $("status").textContent = m > 1 ? "Hit! x" + m : "Hit!"; $("status").style.color = "var(--good)";
+    if(G.bossHp <= 0){ G.done = true; art.die(); setTimeout(() => { pArt.pose(PlayerArt.MOMENTS.win, 0); pArt.cheer(); }, 700); setTimeout(() => finish(), 1600); }
+  }
+}
+function finish(){
+  if(!G.on) return;
+  G.on = false; sndStop();
+  if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
+  const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
+  if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
+  const endArt = BossArt($("endImg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
+  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.hits > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
+  if(!SIM && FMAStudent.active()) FMAStudent.send("boss-battle", {detail:SONGS[S.song - 1].t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.hits > 0});
+  $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
+  $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
+  $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
+  show("end");
+}
+
+/* ---------- Menus ---------- */
+const show = id => ["start","play","end"].forEach(s => { $(s).hidden = s !== id; });
+function chips(el, list, key, sub){
+  $(el).innerHTML = list.map(o => `<button data-k="${o.k}" class="${S[key] === o.k ? "on" : ""}"><b>${o.n}</b><small>${sub(o)}</small></button>`).join("");
+  $(el).querySelectorAll("button").forEach(b => b.onclick = () => { S[key] = b.dataset.k; saveSel(); draw(); });
+}
+function saveSel(){ const st = store.get(); st.sel = S; store.set(st); }
+function draw(){
+  $("songs").innerHTML = SONGS.map((s, i) => `<button class="song ${S.song === i + 1 ? "on" : ""}" data-i="${i + 1}"><b>${esc(s.t)}</b><small>${esc(s.a)}</small><span>${s.c.join(" ")}</span></button>`).join("");
+  $("songs").querySelectorAll("button").forEach(b => b.onclick = () => { S.song = Number(b.dataset.i); saveSel(); draw(); });
+  chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
+  chips("modes", MODES, "mode", o => o.s);
+  chips("backs", BACKS, "back", o => o.s);
+  { const m = Player.get(); const mp = PlayerArt($("mart"), m); setTimeout(() => mp.pose(PlayerArt.MOMENTS.hello, 2600), 400); $("mname").textContent = m.name || "Your character"; }
+  const best = store.get().best || {}, k = S.song + "-" + S.speed + "-" + S.mode;
+  $("bests").textContent = best[k] ? "Your best for this song, speed and mode: " + best[k] + " hits" : "";
+}
+async function begin(){
+  $("go").disabled = true; $("err").hidden = true;
+  try{
+    if(!snd.ctx){
+      if(SIM){ sndInit(new (window.AudioContext || window.webkitAudioContext)()); }
+      else{ await det.start(); sndInit(det.ctx); }
+    }
+    if(snd.ctx.state === "suspended") await snd.ctx.resume();
+    startFight(); requestAnimationFrame(frame);
+  }catch(e){
+    $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone is blocked. Allow it for this page (the address-bar icon) and try again."
+      : e && e.name === "NotFoundError" ? "No microphone was found." : String(e && e.message || e);
+    $("err").hidden = false;
+  }
+  $("go").disabled = false;
+}
+$("go").onclick = begin;
+$("again").onclick = () => begin();
+$("other").onclick = () => { draw(); show("start"); };
+draw();
+setInterval(tick, 90);
+
+/* ---------- No-microphone test mode: ?sim (note buttons / keys C D E F G A B, hold Space for "I'm playing the whole chord") ---------- */
+if(SIM){
+  $("sim").hidden = false; $("go").textContent = "Start (test mode, no microphone)";
+  $("sim").innerHTML = NOTE_NAMES.map((n, i) => `<button data-pc="${i}">${n}</button>`).join("") + `<button data-chord="1" style="min-width:120px">Whole chord</button>`;
+  $("sim").querySelectorAll("button").forEach(b => {
+    const on = () => { if(b.dataset.chord) simChord = true; else simNote = Number(b.dataset.pc); b.classList.add("on"); };
+    const off = () => { if(b.dataset.chord) simChord = false; else if(simNote === Number(b.dataset.pc)) simNote = -1; b.classList.remove("on"); };
+    b.onpointerdown = e => { e.preventDefault(); on(); };
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, off));
+  });
+  document.addEventListener("keydown", e => {
+    if(e.key === " "){ simChord = true; return; }
+    const base = {c:0, d:2, e:4, f:5, g:7, a:9, b:11}[e.key.toLowerCase()];
+    if(base !== undefined) simNote = base + (e.shiftKey && ![4, 11].includes(base) ? 1 : 0);
+  });
+  document.addEventListener("keyup", e => { simNote = -1; if(e.key === " ") simChord = false; });
+}
+</script>
+</body>
+</html>

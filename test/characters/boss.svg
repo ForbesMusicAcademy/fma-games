@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!-- Placeholder boss: a grumpy amp monster. Replace with your own art by saving characters/boss.png (the page uses the PNG if it exists). -->
+  <ellipse cx="200" cy="378" rx="130" ry="14" fill="#23231F" opacity=".18"/>
+  <path d="M120 52 L150 18 L168 56 M280 52 L250 18 L232 56" fill="#D4668C" stroke="#23231F" stroke-width="8" stroke-linejoin="round"/>
+  <rect x="50" y="48" width="300" height="316" rx="34" fill="#3a3a38" stroke="#23231F" stroke-width="10"/>
+  <rect x="70" y="68" width="260" height="46" rx="14" fill="#23231F"/>
+  <circle cx="100" cy="91" r="12" fill="#FFB805"/><circle cx="140" cy="91" r="12" fill="#FFB805"/><circle cx="180" cy="91" r="12" fill="#FFB805"/>
+  <rect x="226" y="82" width="84" height="18" rx="9" fill="#D4668C"/>
+  <rect x="70" y="130" width="260" height="214" rx="22" fill="#6b6558" stroke="#23231F" stroke-width="6"/>
+  <g fill="#fff" stroke="#23231F" stroke-width="6"><circle cx="140" cy="206" r="36"/><circle cx="260" cy="206" r="36"/></g>
+  <g fill="#23231F"><circle cx="150" cy="212" r="14"/><circle cx="250" cy="212" r="14"/></g>
+  <path d="M96 164 L172 188 M304 164 L228 188" stroke="#23231F" stroke-width="14" stroke-linecap="round"/>
+  <path d="M110 288 Q200 250 290 288 L276 328 L246 300 L222 330 L200 302 L178 330 L154 300 L124 328 Z" fill="#fff" stroke="#23231F" stroke-width="6" stroke-linejoin="round"/>
+</svg>
