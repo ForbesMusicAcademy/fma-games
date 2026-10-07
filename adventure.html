@@ -734,6 +734,10 @@ function drawWeather(dt, now){
     // fireflies: drifting, blinking
     b.x += Math.sin(b.t * 0.7 + b.r) * 14 * dt; b.y += Math.cos(b.t * 0.9 + b.r) * 10 * dt; const a = Math.max(0, Math.sin(b.t * 2 + b.r * 3));
     const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 9); g.addColorStop(0, `rgba(234,255,154,${a})`); g.addColorStop(1, "rgba(234,255,154,0)"); ctx.fillStyle = g; ctx.fillRect(b.x - 9, b.y - 9, 18, 18); return true; });
+  // fireworks for finishing the map
+  if(FINALE.t && now - FINALE.t < 25000){ if(now > FINALE.next){ FINALE.next = now + 350 + Math.random() * 500; const x = W * (0.15 + Math.random() * 0.7), y = HOR * (0.2 + Math.random() * 0.5), c = ["#ff6fa3", "#ffc42b", "#4aa8ff", "#9be04a", "#e8433f", "#a070e8"][Math.floor(Math.random() * 6)];
+      for(let i = 0; i < 36; i++){ const a = i / 36 * Math.PI * 2, v = 60 + Math.random() * 70; FINALE.sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, c }); } if(audio.on) tone(80 + Math.random() * 40, audio.ctx.currentTime, 0.4, "sawtooth", 0.04, 40); }
+    FINALE.sparks = FINALE.sparks.filter(p => (p.t += dt) < 1.4); FINALE.sparks.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; ctx.fillStyle = p.c; ctx.globalAlpha = 1 - p.t / 1.4; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }); ctx.globalAlpha = 1; }
   // now and then a passing shower in the meadow or by the river, then a rainbow
   const wet = tn === "meadow" || tn === "river";
   if(!RAIN.on && wet && now > RAIN.next){ RAIN.on = true; RAIN.t0 = now; RAIN.len = 14000 + Math.random() * 8000; rainSound(true); }
@@ -804,7 +808,7 @@ function rainSound(on){ if(!audio.ctx) return; if(!audio.rain){ const c = audio.
 function baa(){ const t = audio.ctx.currentTime; tone(420, t, 0.45, "sawtooth", 0.02, 380); tone(424, t + 0.05, 0.4, "sawtooth", 0.015, 384); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
-const IDLE = { t: performance.now() }, RAINBOW = { t: 0 }, RAIN = { on: false, next: performance.now() + 45000 + Math.random() * 40000 };
+const FINALE = { t: 0, sparks: [], next: 0 }, IDLE = { t: performance.now() }, RAINBOW = { t: 0 }, RAIN = { on: false, next: performance.now() + 45000 + Math.random() * 40000 };
 /* ============================== the frame ============================== */
 let last = performance.now();
 function frame(now){
@@ -929,7 +933,7 @@ let donePic = null;
 function regionComplete(ri){
   const r = REGIONS[ri], ns = allNodes().filter(n => n.region === ri && n.type !== "start"), cleared = ns.filter(n => n.done).length, next = REGIONS[ri + 1];
   $("doneT").textContent = `${r.name} complete!`;
-  $("doneP").innerHTML = `${cleared} stones cleared · ${S.powers.length} power${S.powers.length === 1 ? "" : "s"} · ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found${next ? `<br>Next up: <b>${next.name}</b>` : "<br>That's the end of the test map. More regions coming!"}`;
+  $("doneP").innerHTML = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} power${S.powers.length === 1 ? "" : "s"} · ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found${next ? `<br>Next up: <b>${next.name}</b>` : "<br>That's the end of the test map. More regions coming!"}`;
   $("doneGo").textContent = next ? `On to ${next.name} ▶` : "Keep exploring";
   if(donePic) donePic.destroy(); donePic = PlayerArt($("donePic"), ME, { tap: true }); setTimeout(() => donePic && donePic.moment("win", 0), 200);
   $("done").classList.add("show"); winSound(); setTimeout(winSound, 500);
@@ -1064,7 +1068,7 @@ function pass(){
   if(n.power && !S.powers.includes(n.power)){ S.powers.push(n.power); msg = ["New power!", POWERS[n.power]]; }
   if(S.peb >= 0 && base.pebbles.every(p => p.done)){ base.done = true; msg = ["The whole stone counts!", base.n]; }
   if(n.type === "gate"){ n.fight = performance.now(); n.koT = n.fight + 2100; [500, 1100, 1700].forEach((ms, i) => setTimeout(() => hitSound(i), ms)); S.region = Math.max(S.region, n.region + 1); burst(n.x, 2, n.z + 1.5, "#e8433f", 60);
-    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 1500); RAINBOW.t = performance.now(); }
+    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 3400); setTimeout(() => { RAINBOW.t = performance.now(); turnAround("star", 1800); if(!REGIONS[n.region + 1]) FINALE.t = performance.now(); }, 2300); }
   toast(msg[0], msg[1]); bump(n.s); drawHud(); renderControls(); winSound();
 }
 function fail(){
@@ -1081,7 +1085,7 @@ const faceImg = svgImage(PlayerArt.svg(ME, "face"));
 function openMap(){
   $("map").classList.add("show"); const cv2 = $("mapCv"), r = cv2.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
   cv2.width = r.width * dpr; cv2.height = r.height * dpr; const g = cv2.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); const w = r.width, h = r.height;
-  const zMax = MAIN.len - 20, pad = 26, Y = z => h - pad - (z / zMax) * (h - pad * 2), X = x => w / 2 + x * (w / 44);
+  const zMax = MAIN.len - 20, pad = 70, Y = z => h - pad - (z / zMax) * (h - pad * 2), X = x => w / 2 + x * (w / 44);
   const cols = { meadow: "#bfe8a0", canyon: "#f5cf9e", river: "#bcdcf5" };
   MAIN.regions.forEach((rg, i) => { g.fillStyle = cols[rg.theme]; g.fillRect(0, Y(rg.z1), w, Y(rg.z0) - Y(rg.z1));
     g.fillStyle = "rgba(38,33,31,.55)"; g.font = "900 13px Nunito, sans-serif"; g.textAlign = "left"; g.fillText(REGIONS[i].name, 8, Y(rg.z1) + 16); });
@@ -1095,13 +1099,15 @@ function openMap(){
   MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(n.type === "start") return; const x = X(n.x), y = Y(n.z), sk = SKILLS[n.s] || SKILLS.repertoire; MAP_HITS.push({ n, x, y });
     g.fillStyle = n.done ? "#ffc42b" : n.type === "surprise" ? "#b9a0ff" : n.type === "golden" ? "#ffd34d" : "#fff"; g.strokeStyle = n.type === "gate" ? "#e8433f" : sk.c; g.lineWidth = 3;
     g.beginPath(); g.arc(x, y, n.type === "gate" ? 9 : 6, 0, 7); g.fill(); g.stroke(); if(n.done){ g.fillStyle = "#26211f"; g.font = "10px sans-serif"; g.textAlign = "center"; g.fillText("★", x, y + 3.5); } }));
+  // coming soon: the rest of the journey, still in the clouds
+  const teaseH = 18; ["The Summit", "Colour Volcano", "Barre Badlands"].forEach((nm, i) => { const y = 4 + i * (teaseH + 2); g.fillStyle = "rgba(200,196,210,.85)"; g.fillRect(0, y, w, teaseH); g.fillStyle = "#6b6558"; g.font = "800 11px 'Work Sans', sans-serif"; g.textAlign = "center"; g.fillText(`☁️ ${nm} · coming soon`, w / 2, y + teaseH / 2 + 4); });
   // fog over regions you haven't opened yet
   MAIN.regions.forEach((rg, i) => { if(i > S.region){ g.fillStyle = "rgba(240,236,226,.82)"; g.fillRect(0, Y(rg.z1), w, Y(rg.z0) - Y(rg.z1)); g.fillStyle = "#6b6558"; g.font = "800 13px 'Work Sans', sans-serif"; g.textAlign = "center"; g.fillText("🔒 Beat the gate to see this", w / 2, (Y(rg.z0) + Y(rg.z1)) / 2); } });
   // you are here
   const yx = X(S.mode === "main" ? S.px : MAIN.xfn(0)), yy = Y(S.mode === "main" ? S.pz : 0);
   g.fillStyle = "#fff"; g.strokeStyle = "#26211f"; g.lineWidth = 3; g.beginPath(); g.arc(yx, yy, 16, 0, 7); g.fill(); g.stroke(); if(faceImg.complete && faceImg.naturalWidth){ g.save(); g.beginPath(); g.arc(yx, yy, 14, 0, 7); g.clip(); g.drawImage(faceImg, yx - 14, yy - 14 * (1 / faceImg.ar), 28, 28 / faceImg.ar); g.restore(); }
   const cleared = MAIN.steps.reduce((a, st) => a + (st.fork ? [...st.L, ...st.R] : [st]).filter(n => n.done && n.type !== "start").length, 0);
-  $("mapNote").textContent = `${cleared} stones cleared · ${S.powers.length} powers · ${S.loot.length} things found` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
+  $("mapNote").textContent = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} powers · ${S.loot.length} things found` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
 }
 const MAP_HITS = [];
 $("mapCv").addEventListener("click", e => { if(!TEACHER) return; const r = $("mapCv").getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
