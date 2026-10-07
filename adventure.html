@@ -109,6 +109,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
   <div class="powers" id="powers"></div>
 </div>
 <div class="hint" id="hint">Tap ▶ (or Space / ↑) to walk · ↓ to go back · J to jump</div>
+<script>if(matchMedia("(pointer: coarse)").matches) document.getElementById("hint").textContent = "Tap ▶ to walk · drag to look around · tap to jump";</script>
 <div class="controls" id="controls"></div>
 <div id="sheet" role="dialog" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
@@ -703,6 +704,18 @@ function drawWeather(dt, now){
     // fireflies: drifting, blinking
     b.x += Math.sin(b.t * 0.7 + b.r) * 14 * dt; b.y += Math.cos(b.t * 0.9 + b.r) * 10 * dt; const a = Math.max(0, Math.sin(b.t * 2 + b.r * 3));
     const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 9); g.addColorStop(0, `rgba(234,255,154,${a})`); g.addColorStop(1, "rgba(234,255,154,0)"); ctx.fillStyle = g; ctx.fillRect(b.x - 9, b.y - 9, 18, 18); return true; });
+  // now and then a passing shower in the meadow or by the river, then a rainbow
+  const wet = tn === "meadow" || tn === "river";
+  if(!RAIN.on && wet && now > RAIN.next){ RAIN.on = true; RAIN.t0 = now; RAIN.len = 14000 + Math.random() * 8000; rainSound(true); }
+  if(RAIN.on && (now - RAIN.t0 > RAIN.len || !wet)){ RAIN.on = false; RAIN.next = now + 70000 + Math.random() * 60000; rainSound(false); if(wet) RAINBOW.t = now; }
+  if(RAIN.on){ const k = Math.min(1, (now - RAIN.t0) / 2500, (RAIN.t0 + RAIN.len - now) / 2500);
+    ctx.fillStyle = `rgba(60,70,100,${0.16 * k})`; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = `rgba(220,235,255,${0.55 * k})`; ctx.lineWidth = 1.4; ctx.beginPath();
+    for(let i = 0; i < 90; i++){ const x = (i * 97.3 + now * 0.35 * (1 + (i % 3) * 0.2)) % (W + 40) - 20, y = (i * 53.1 + now * 0.9 * (1 + (i % 4) * 0.15)) % (H + 40) - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
+    ctx.stroke();
+    // splashes on the path just ahead
+    for(let i = 0; i < 6; i++){ const ph = ((now / 400) + i * 0.37) % 1, z = S.pz + 1 + (i * 1.7) % 8, p = P(C.xfn(z) + ((i * 0.7) % 2.4) - 1.2, 0, z); if(!p) continue;
+      ctx.strokeStyle = `rgba(230,240,255,${0.7 * (1 - ph) * k})`; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.s * 0.25 * ph, p.s * 0.08 * ph, 0, 0, 7); ctx.stroke(); } }
   // the light of each region
   if(tn === "meadow"){ const sx = W * 0.8 - S.cam.x * 1.5, sy = HOR * 0.28, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(W, H) * 0.8);
     g.addColorStop(0, "rgba(255,248,210,.28)"); g.addColorStop(1, "rgba(255,248,210,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
@@ -754,9 +767,13 @@ const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 65
 let scaleStep = 0;
 function stoneNote(){ if(!audio.on) return; const f = SCALE[scaleStep % SCALE.length]; scaleStep++; const t = audio.ctx.currentTime; tone(f, t, 0.5, "triangle", 0.06); tone(f * 2, t, 0.3, "sine", 0.02); }
 function hitSound(i){ if(!audio.on) return; const t = audio.ctx.currentTime; tone([392, 494, 587][i], t, 0.18, "square", 0.04, [196, 247, 294][i]); tone(90, t, 0.2, "sawtooth", 0.05, 50); }
+// rain: a soft hiss that fades in and out
+function rainSound(on){ if(!audio.ctx) return; if(!audio.rain){ const c = audio.ctx, len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0); for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf; src.loop = true; const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1800; audio.rain = c.createGain(); audio.rain.gain.value = 0; src.connect(hp).connect(audio.rain).connect(c.destination); src.start(); }
+  audio.rain.gain.setTargetAtTime(on && audio.on ? 0.035 : 0, audio.ctx.currentTime, 1.5); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
-const IDLE = { t: performance.now() }, RAINBOW = { t: 0 };
+const IDLE = { t: performance.now() }, RAINBOW = { t: 0 }, RAIN = { on: false, next: performance.now() + 45000 + Math.random() * 40000 };
 /* ============================== the frame ============================== */
 let last = performance.now();
 function frame(now){
