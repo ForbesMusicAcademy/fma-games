@@ -98,7 +98,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 <div class="banner" id="banner"></div>
 
 <script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=24"></script>
+<script src="player-art.js?v=25"></script>
 <script>
 /* ============================== the content (would come from path.json) ============================== */
 const SKILLS = {
@@ -246,7 +246,7 @@ const PROPS = { main: scatter(MAIN), bonus: scatter(BONUSC) };
 
 // other characters: random looks, popping up beside the road as you come near
 function svgImage(svg){ const vb = svg.match(/viewBox="([^"]+)"/)[1].split(" ").map(Number); const img = new Image();
-  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace("<svg ", `<svg width="${vb[2]}" height="${vb[3]}" `)); img.ar = vb[2] / vb[3]; return img; }
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(/<svg[^>]*\swidth=/.test(svg) ? svg : svg.replace("<svg ", `<svg width="${vb[2]}" height="${vb[3]}" `)); img.ar = vb[2] / vb[3]; return img; }
 const NPCS = [];
 function placeNpcs(){
   seed = 99;
@@ -457,119 +457,40 @@ function drawNpc(n, now){
   ctx.globalAlpha = 1;
 }
 
-/* ============================== your character, seen from behind ============================== */
-const AGE = { kid: { hr: 0.44, tw: 0.5, th: 0.44, lh: 0.34 }, teen: { hr: 0.41, tw: 0.56, th: 0.54, lh: 0.46 }, adult: { hr: 0.39, tw: 0.6, th: 0.6, lh: 0.56 } };
+/* ============================== your character (drawn by player-art.js, so it's always in the house style) ============================== */
+// Walking away from the camera we see the back view; at big moments the character turns round to face you and strikes a pose.
 const shade = (h, f) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
+const HERO = { back: null, hipY: 268, top: 74, front: {}, turn: null };
+function heroImages(){ const b = PlayerArt.back(ME); HERO.back = svgImage(b.svg); HERO.hipY = b.hipY; HERO.top = b.headTop; HERO.front = {}; }
+const frontImg = pose => HERO.front[pose] || (HERO.front[pose] = svgImage(PlayerArt.svg(ME, "full", pose).replace("<svg ", '<svg width="400" height="400" ')));
+// turn round: squash to nothing, swap to the front view in a pose, hold, then turn back
+function turnAround(pose, hold){ frontImg(pose); HERO.turn = { pose, t0: performance.now(), hold: hold || 1500 }; }
 function drawMe(now){
-  const p = P(S.px, S.py, S.pz); if(!p) return; const g0 = P(S.px, 0, S.pz);
-  const c = ME, a = AGE[c.body] || AGE.kid, u = p.s, x = p.x, gy = p.y, lw = Math.max(1.5, u * 0.04);
-  // shadow stays on the ground while you're in the air
+  const p = P(S.px, S.py, S.pz), g0 = P(S.px, 0, S.pz); if(!p || !g0) return;
+  const img = HERO.back; if(!img || !img.complete || !img.naturalWidth) return;
+  const u = p.s, H = 1.85 * u * 400 / (384 - HERO.top), W = H, x = p.x - W / 2, y = p.y - H * 384 / 400;
   ctx.fillStyle = `rgba(0,0,0,${0.22 - Math.min(0.12, S.py * 0.06)})`; ctx.beginPath(); ctx.ellipse(g0.x, g0.y, u * 0.42 * (1 - S.py * 0.15), u * 0.11, 0, 0, 7); ctx.fill();
-  const ph = S.walkPh, sw = S.walking ? Math.sin(ph) : 0, air = S.py > 0.05;
-  const legTop = gy - a.lh * u, torsoTop = legTop - a.th * u, hy = torsoTop - a.hr * u * 0.78, tw = a.tw * u, bob = S.walking ? Math.abs(Math.cos(ph)) * u * 0.03 : 0;
-  ctx.save(); ctx.translate(0, -bob);
-  if(S.face) { ctx.translate(x, 0); ctx.scale(1, 1); ctx.translate(-x, 0); }
-  ol(lw);
-  // wings and cape hang behind the arms but over the back
-  const flap = Math.sin(now / 180) * 0.15;
-  if(c.extra === "wings"){ ctx.fillStyle = c.extraColor; for(const d of [-1, 1]){ ctx.save(); ctx.translate(x + d * tw * 0.2, torsoTop + a.th * u * 0.25); ctx.rotate(d * (0.3 + flap));
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(d * u * 0.9, -u * 0.5, d * u * 0.75, u * 0.25); ctx.quadraticCurveTo(d * u * 0.4, u * 0.2, 0, u * 0.12); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); } }
-  // legs (they swap as you walk; tucked up when you jump)
-  const pants = c.pants, leg = (d, lift) => { const lx = x + d * tw * 0.2, ly = legTop, lh2 = a.lh * u - lift;
-    ctx.fillStyle = c.bottom === "shorts" ? c.skin : pants; ctx.beginPath(); ctx.rect(lx - tw * 0.13, ly, tw * 0.26, lh2); ctx.fill(); ctx.stroke();
-    if(c.bottom === "shorts"){ ctx.fillStyle = pants; ctx.beginPath(); ctx.rect(lx - tw * 0.15, ly, tw * 0.3, lh2 * 0.4); ctx.fill(); ctx.stroke(); }
-    ctx.fillStyle = c.accent; const boot = ["boots", "chelsea", "platforms", "hightops"].includes(c.shoes);
-    ctx.beginPath(); ctx.ellipse(lx, ly + lh2 - (boot ? u * 0.02 : 0), tw * 0.17, u * (boot ? 0.11 : 0.07), 0, 0, 7); ctx.fill(); ctx.stroke(); };
-  const tuck = air ? u * 0.1 : 0; leg(-1, Math.max(0, sw) * u * 0.1 + tuck); leg(1, Math.max(0, -sw) * u * 0.1 + tuck);
-  // skirts sit over the legs
-  if(["skirt", "pleated", "tutu", "maxi"].includes(c.bottom)){ const len = c.bottom === "maxi" ? a.lh * u * 0.95 : a.lh * u * 0.45; ctx.fillStyle = pants;
-    ctx.beginPath(); ctx.moveTo(x - tw * 0.48, legTop - u * 0.02); ctx.lineTo(x + tw * 0.48, legTop - u * 0.02); ctx.lineTo(x + tw * (c.bottom === "tutu" ? 0.95 : 0.65), legTop + len); ctx.lineTo(x - tw * (c.bottom === "tutu" ? 0.95 : 0.65), legTop + len); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-  // arms swing opposite the legs
-  const arm = d => { ctx.save(); ctx.translate(x + d * tw * 0.52, torsoTop + u * 0.06); ctx.rotate((air ? -d * 0.9 : d * 0.08) + (S.walking ? -sw * d * 0.45 * d : 0));
-    ctx.fillStyle = ["tee", "bolt", "tiedye", "jersey", "overalls"].includes(c.top) ? c.skin : c.color; ctx.beginPath(); roundRect(-u * 0.08, 0, u * 0.16, a.th * u * 0.9, u * 0.08); ctx.fill(); ctx.stroke();
-    if(["tee", "bolt", "tiedye", "jersey"].includes(c.top)){ ctx.fillStyle = c.color; ctx.beginPath(); roundRect(-u * 0.09, -u * 0.02, u * 0.18, a.th * u * 0.35, u * 0.06); ctx.fill(); ctx.stroke(); }
-    ctx.fillStyle = c.skin; circle(0, a.th * u * 0.92, u * 0.09); ctx.fill(); ctx.stroke(); ctx.restore(); };
-  arm(-1); arm(1);
-  // the torso (your back) in your top's colour
-  ctx.fillStyle = c.top === "overalls" ? c.color : c.color; ctx.beginPath(); roundRect(x - tw / 2, torsoTop, tw, a.th * u + u * 0.04, u * 0.12); ctx.fill(); ctx.stroke();
-  const tTop = torsoTop, tH = a.th * u;
-  ctx.save(); ctx.beginPath(); roundRect(x - tw / 2, tTop, tw, tH + u * 0.04, u * 0.12); ctx.clip();
-  if(c.top === "stripes"){ ctx.fillStyle = "rgba(255,255,255,.55)"; for(let i = 0; i < 5; i++) ctx.fillRect(x - tw, tTop + tH * (0.1 + i * 0.2), tw * 2, tH * 0.09); }
-  if(c.top === "flannel"){ ctx.strokeStyle = "rgba(0,0,0,.22)"; ctx.lineWidth = u * 0.03; for(let i = -3; i <= 3; i++){ ctx.beginPath(); ctx.moveTo(x + i * tw * 0.16, tTop); ctx.lineTo(x + i * tw * 0.16, tTop + tH); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - tw, tTop + (i + 3) * tH * 0.16); ctx.lineTo(x + tw, tTop + (i + 3) * tH * 0.16); ctx.stroke(); } }
-  if(c.top === "tiedye"){ ["#ff6fa3", "#ffc42b", "#4fd0c0", "#a070e8"].forEach((col, i) => { ctx.fillStyle = col + "aa"; circle(x + Math.cos(i * 1.7) * tw * 0.25, tTop + tH * 0.5 + Math.sin(i * 1.7) * tH * 0.25, tw * 0.22); ctx.fill(); }); }
-  if(c.top === "overalls"){ ctx.fillStyle = pants; ctx.fillRect(x - tw / 2, tTop + tH * 0.55, tw, tH); ctx.fillRect(x - tw * 0.32, tTop, tw * 0.12, tH * 0.6); ctx.fillRect(x + tw * 0.2, tTop, tw * 0.12, tH * 0.6); }
-  if(c.top === "jersey" || c.top === "sequin" || c.top === "bolt"){ ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.font = `900 ${tH * 0.5}px Nunito, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(c.top === "bolt" ? "⚡" : String(((c.name || "").length % 9) + 1), x, tTop + tH * 0.5); ctx.textBaseline = "alphabetic"; }
-  if(c.top === "hoodie"){ ctx.fillStyle = shade(c.color, 0.85); ctx.beginPath(); ctx.ellipse(x, tTop + u * 0.05, tw * 0.36, tH * 0.32, 0, 0, Math.PI); ctx.fill(); ctx.stroke(); }
-  if(c.extra === "belt"){ ctx.fillStyle = "#3a3a3d"; ctx.fillRect(x - tw, tTop + tH * 0.86, tw * 2, tH * 0.12); ctx.fillStyle = "#ddd"; for(let i = -2; i <= 2; i++){ circle(x + i * tw * 0.2, tTop + tH * 0.92, u * 0.025); ctx.fill(); } }
-  ctx.restore(); ol(lw);
-  // cape
-  if(c.extra === "cape"){ const swing = Math.sin(now / 260) * u * 0.05 + (S.walking ? u * 0.08 : 0); ctx.fillStyle = c.extraColor; ctx.beginPath();
-    ctx.moveTo(x - tw * 0.42, tTop + u * 0.02); ctx.lineTo(x + tw * 0.42, tTop + u * 0.02); ctx.quadraticCurveTo(x + tw * 0.7 + swing, legTop + a.lh * u * 0.4, x + tw * 0.62 + swing, gy - u * 0.12);
-    ctx.quadraticCurveTo(x + swing * 0.5, gy - u * 0.05, x - tw * 0.62 + swing, gy - u * 0.12); ctx.quadraticCurveTo(x - tw * 0.7 + swing, legTop + a.lh * u * 0.4, x - tw * 0.42, tTop + u * 0.02); ctx.fill(); ctx.stroke(); }
-  // guitar slung on your back
-  if(["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele"].includes(c.gear)){
-    const gc = c.gear === "acoustic" ? "#c98a4b" : c.gearColor, scale = c.gear === "ukulele" ? 0.6 : 1;
-    ctx.save(); ctx.translate(x - tw * 0.05, tTop + tH * 0.75); ctx.rotate(-0.7);
-    ctx.fillStyle = "#6b4523"; ctx.beginPath(); ctx.rect(-u * 0.05, -u * 1.05 * scale, u * 0.1, u * 1.0 * scale); ctx.fill(); ctx.stroke();
-    if(c.gear === "doubleneck"){ ctx.beginPath(); ctx.rect(u * 0.1, -u * 1.0, u * 0.1, u * 0.95); ctx.fill(); ctx.stroke(); }
-    ctx.fillStyle = "#3a3a3d"; ctx.beginPath(); ctx.rect(-u * 0.09, -u * 1.2 * scale, u * 0.18, u * 0.2 * scale); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = gc;
-    if(c.gear === "flyingv"){ ctx.beginPath(); ctx.moveTo(0, -u * 0.1); ctx.lineTo(-u * 0.36, u * 0.5); ctx.lineTo(-u * 0.12, u * 0.5); ctx.lineTo(0, u * 0.2); ctx.lineTo(u * 0.12, u * 0.5); ctx.lineTo(u * 0.36, u * 0.5); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-    else { ctx.beginPath(); ctx.ellipse(0, u * 0.12 * scale, u * 0.26 * scale, u * 0.2 * scale, 0, 0, 7); ctx.ellipse(0, u * 0.36 * scale, u * 0.32 * scale, u * 0.24 * scale, 0, 0, 7); ctx.fill(); ctx.stroke(); }
-    ctx.restore();
-    ctx.strokeStyle = "#8a5a2b"; ctx.lineWidth = u * 0.06; ctx.beginPath(); ctx.moveTo(x + tw * 0.4, tTop + u * 0.04); ctx.lineTo(x - tw * 0.42, tTop + tH * 0.92); ctx.stroke(); ol(lw);
+  // turning round?
+  let sx = 1, show = img, front = false;
+  if(HERO.turn){ const e = now - HERO.turn.t0, T = 160, total = T * 2 + HERO.turn.hold + T * 2;
+    if(e > total) HERO.turn = null;
+    else { const fi = frontImg(HERO.turn.pose);
+      if(e < T){ sx = 1 - e / T; } else if(e < T * 2){ sx = (e - T) / T; show = fi; front = true; } else if(e < T * 2 + HERO.turn.hold){ show = fi; front = true; } else if(e < T * 3 + HERO.turn.hold){ sx = 1 - (e - T * 2 - HERO.turn.hold) / T; show = fi; front = true; } else sx = (e - T * 3 - HERO.turn.hold) / T;
+      if(front && !(fi.complete && fi.naturalWidth)) { show = img; front = false; } } }
+  const bob = S.walking ? Math.abs(Math.cos(S.walkPh)) * u * 0.05 : Math.sin(now / 500) * u * 0.012;
+  ctx.save(); ctx.translate(p.x, 0); ctx.scale(Math.max(0.02, sx), 1); ctx.translate(-p.x, -bob);
+  if(front || !S.walking){
+    // a little hop for joy when facing you
+    const joy = front ? Math.abs(Math.sin((now - (HERO.turn ? HERO.turn.t0 : 0)) / 160)) * u * 0.08 : 0;
+    ctx.drawImage(show, x, y - joy, W, H);
+  } else {
+    // walking: the legs step one at a time (the image is cut at the hips and each leg lifts in turn)
+    const k = H / 400, hip = y + HERO.hipY * k, sw = Math.sin(S.walkPh), liftL = Math.max(0, sw) * u * 0.1, liftR = Math.max(0, -sw) * u * 0.1, sway = Math.sin(S.walkPh) * 0.035;
+    ctx.save(); ctx.beginPath(); ctx.rect(x - W, y - H, W * 3, hip - y + H); ctx.clip();
+    ctx.translate(p.x, hip); ctx.rotate(sway); ctx.translate(-p.x, -hip); ctx.drawImage(show, x, y, W, H); ctx.restore();
+    for(const [side, lift] of [[-1, liftL], [1, liftR]]){ ctx.save(); ctx.beginPath(); ctx.rect(side < 0 ? x - W : p.x, hip - 2, W * 2, H); ctx.clip(); ctx.drawImage(show, x, y - lift, W, H); ctx.restore(); }
   }
-  if(c.extra === "backpack"){ ctx.fillStyle = c.extraColor; ctx.beginPath(); roundRect(x - tw * 0.36, tTop + tH * 0.12, tw * 0.72, tH * 0.78, u * 0.1); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = shade(c.extraColor, 0.8); ctx.beginPath(); roundRect(x - tw * 0.26, tTop + tH * 0.5, tw * 0.52, tH * 0.32, u * 0.06); ctx.fill(); ctx.stroke(); }
-  if(c.extra === "bumbag"){ ctx.fillStyle = c.extraColor; ctx.beginPath(); roundRect(x - tw * 0.25, tTop + tH * 0.8, tw * 0.5, tH * 0.22, u * 0.06); ctx.fill(); ctx.stroke(); }
-  // neck and head
-  ctx.fillStyle = c.skin; ctx.fillRect(x - u * 0.09, tTop - u * 0.1, u * 0.18, u * 0.14);
-  drawHeadBack(x, hy, a.hr * u, c, now, lw);
   ctx.restore();
-}
-function drawHeadBack(x, y, r, c, now, lw){
-  ol(lw); const hc = c.hairColor, hair = c.hair;
-  // ears
-  ctx.fillStyle = c.skin; for(const d of [-1, 1]){ circle(x + d * r * 0.98, y + r * 0.1, r * 0.2); ctx.fill(); ctx.stroke(); }
-  // big hair that sits behind the head
-  ctx.fillStyle = hc;
-  if(hair === "afro" || hair === "curly"){ const R = hair === "afro" ? r * 1.4 : r * 1.18; ctx.beginPath(); for(let i = 0; i < 12; i++){ const a = i * Math.PI / 6; ctx.moveTo(x + Math.cos(a) * R * 0.8 + R * 0.28, y - r * 0.1 + Math.sin(a) * R * 0.8); ctx.arc(x + Math.cos(a) * R * 0.8, y - r * 0.1 + Math.sin(a) * R * 0.8, R * 0.28, 0, 7); } ctx.fill(); ctx.stroke(); }
-  if(["long", "wavy", "grunge"].includes(hair)){ ctx.beginPath(); ctx.moveTo(x - r * 1.05, y); ctx.lineTo(x - r * 1.0, y + r * 1.9); ctx.quadraticCurveTo(x, y + r * 2.15, x + r * 1.0, y + r * 1.9); ctx.lineTo(x + r * 1.05, y); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-  // the head itself
-  ctx.fillStyle = c.skin; circle(x, y, r); ctx.fill(); ctx.stroke();
-  // the back of the head is mostly hair
-  ctx.save(); circle(x, y, r); ctx.clip(); ctx.fillStyle = hc;
-  if(hair === "buzz") { ctx.globalAlpha = 0.55; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
-  else if(hair === "balding") { ctx.fillRect(x - r, y + r * 0.15, r * 2, r); }
-  else if(hair === "mohawk") { ctx.globalAlpha = 0.35; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; ctx.fillRect(x - r * 0.18, y - r, r * 0.36, r * 2); }
-  else if(hair !== "none") { ctx.beginPath(); ctx.rect(x - r, y - r, r * 2, r * (["crop", "shortsides", "spiky", "quiff", "sweep"].includes(hair) ? 1.62 : 1.85)); ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,.18)"; ctx.lineWidth = lw * 0.8; for(let i = -2; i <= 2; i++){ ctx.beginPath(); ctx.moveTo(x + i * r * 0.3, y - r * 0.9); ctx.quadraticCurveTo(x + i * r * 0.38, y, x + i * r * 0.32, y + r * 0.6); ctx.stroke(); } }
-  ctx.restore(); ol(lw); circle(x, y, r); ctx.stroke();
-  ctx.fillStyle = hc;
-  if(hair === "spiky" || hair === "mohawk"){ for(let i = -2; i <= 2; i++){ if(hair === "mohawk" && i) continue; const bx = x + i * r * 0.36, by = y - r * 0.82 + Math.abs(i) * r * 0.12; ctx.beginPath(); ctx.moveTo(bx - r * 0.18, by + r * 0.1); ctx.lineTo(bx, by - r * 0.45); ctx.lineTo(bx + r * 0.18, by + r * 0.1); ctx.closePath(); ctx.fill(); ctx.stroke(); } }
-  if(hair === "bun"){ circle(x, y - r * 0.95, r * 0.36); ctx.fill(); ctx.stroke(); }
-  if(hair === "spacebuns"){ for(const d of [-1, 1]){ circle(x + d * r * 0.62, y - r * 0.78, r * 0.3); ctx.fill(); ctx.stroke(); } }
-  if(hair === "ponytail"){ const sw = Math.sin(now / 200) * r * 0.12; ctx.beginPath(); ctx.ellipse(x + sw, y + r * 1.25, r * 0.22, r * 0.55, 0, 0, 7); ctx.fill(); ctx.stroke(); }
-  if(hair === "pigtails"){ for(const d of [-1, 1]){ ctx.beginPath(); ctx.ellipse(x + d * r * 1.05, y + r * 0.6, r * 0.2, r * 0.5, d * 0.3, 0, 7); ctx.fill(); ctx.stroke(); } }
-  if(hair === "plait"){ for(let i = 0; i < 4; i++){ circle(x, y + r * (0.95 + i * 0.32), r * 0.17); ctx.fill(); ctx.stroke(); } }
-  // headwear
-  const ac = c.accColor;
-  switch(c.acc){
-    case "beanie": ctx.fillStyle = ac; ctx.beginPath(); ctx.arc(x, y - r * 0.12, r * 1.03, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = shade(ac, 0.85); ctx.beginPath(); roundRect(x - r * 1.06, y - r * 0.3, r * 2.12, r * 0.32, r * 0.1); ctx.fill(); ctx.stroke(); circle(x, y - r * 1.15, r * 0.2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.stroke(); break;
-    case "cap": case "sidecap": case "visor": ctx.fillStyle = ac; ctx.beginPath(); ctx.arc(x, y - r * 0.2, r * 1.02, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.beginPath(); roundRect(x - r * 0.25, y - r * 0.32, r * 0.5, r * 0.14, r * 0.05); ctx.fill(); ctx.stroke(); break;
-    case "crown": ctx.fillStyle = "#ffc42b"; ctx.beginPath(); ctx.moveTo(x - r * 0.65, y - r * 0.7); ctx.lineTo(x - r * 0.65, y - r * 1.25); ctx.lineTo(x - r * 0.33, y - r * 1.0); ctx.lineTo(x, y - r * 1.35); ctx.lineTo(x + r * 0.33, y - r * 1.0); ctx.lineTo(x + r * 0.65, y - r * 1.25); ctx.lineTo(x + r * 0.65, y - r * 0.7); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
-    case "party": case "santa": case "elf": ctx.fillStyle = c.acc === "santa" ? "#e8433f" : c.acc === "elf" ? "#4fb86a" : ac; ctx.beginPath(); ctx.moveTo(x - r * 0.6, y - r * 0.75); ctx.lineTo(x + r * 0.15, y - r * 2.0); ctx.lineTo(x + r * 0.6, y - r * 0.75); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; circle(x + r * 0.15, y - r * 2.0, r * 0.16); ctx.fill(); ctx.stroke(); break;
-    case "halo": ctx.strokeStyle = "#ffd34d"; ctx.lineWidth = r * 0.12; ctx.beginPath(); ctx.ellipse(x, y - r * 1.35 + Math.sin(now / 400) * r * 0.06, r * 0.6, r * 0.16, 0, 0, 7); ctx.stroke(); ol(lw); break;
-    case "bunny": ctx.fillStyle = "#fff"; for(const d of [-1, 1]){ ctx.beginPath(); ctx.ellipse(x + d * r * 0.4, y - r * 1.4, r * 0.18, r * 0.6, d * 0.15, 0, 7); ctx.fill(); ctx.stroke(); } break;
-    case "cat": ctx.fillStyle = ac; for(const d of [-1, 1]){ ctx.beginPath(); ctx.moveTo(x + d * r * 0.25, y - r * 0.9); ctx.lineTo(x + d * r * 0.75, y - r * 1.45); ctx.lineTo(x + d * r * 0.85, y - r * 0.6); ctx.closePath(); ctx.fill(); ctx.stroke(); } break;
-    case "horns": ctx.fillStyle = "#e8433f"; for(const d of [-1, 1]){ ctx.beginPath(); ctx.moveTo(x + d * r * 0.3, y - r * 0.85); ctx.quadraticCurveTo(x + d * r * 0.7, y - r * 1.3, x + d * r * 0.55, y - r * 1.5); ctx.lineTo(x + d * r * 0.6, y - r * 0.75); ctx.closePath(); ctx.fill(); ctx.stroke(); } break;
-    case "phones": ctx.strokeStyle = ac; ctx.lineWidth = r * 0.16; ctx.beginPath(); ctx.arc(x, y, r * 1.05, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); ol(lw); ctx.fillStyle = ac; for(const d of [-1, 1]){ ctx.beginPath(); ctx.ellipse(x + d * r * 1.02, y + r * 0.05, r * 0.2, r * 0.32, 0, 0, 7); ctx.fill(); ctx.stroke(); } break;
-    case "bucket": case "pirate": ctx.fillStyle = c.acc === "pirate" ? "#2b2623" : ac; ctx.beginPath(); ctx.ellipse(x, y - r * 0.55, r * 1.3, r * 0.3, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y - r * 0.6, r * 0.85, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
-    case "band": case "hippy": ctx.fillStyle = ac; ctx.beginPath(); ctx.rect(x - r, y - r * 0.55, r * 2, r * 0.2); ctx.fill(); ctx.stroke(); break;
-    case "bow": ctx.fillStyle = ac; for(const d of [-1, 1]){ ctx.beginPath(); ctx.moveTo(x, y - r * 0.85); ctx.lineTo(x + d * r * 0.45, y - r * 1.1); ctx.lineTo(x + d * r * 0.45, y - r * 0.6); ctx.closePath(); ctx.fill(); ctx.stroke(); } circle(x, y - r * 0.85, r * 0.12); ctx.fill(); ctx.stroke(); break;
-    case "flower": case "flowers": for(let i = -2; i <= 2; i++){ if(c.acc === "flower" && i !== 1) continue; ctx.fillStyle = ["#ff6fa3", "#ffc42b", "#fff", "#a070e8", "#e8433f"][i + 2]; circle(x + i * r * 0.38, y - r * 0.82 + Math.abs(i) * r * 0.12, r * 0.15); ctx.fill(); ctx.stroke(); } break;
-  }
 }
 
 /* ============================== life: critters, dust, runners ============================== */
@@ -650,10 +571,11 @@ function frame(now){
   list.push({ z: S.pz - 0.05, d: () => { drawDust(); drawMe(now); } });
   list.sort((a, b) => b.z - a.z).forEach(o => o.d());
   drawConfetti(dt);
-  requestAnimationFrame(frame);
+  if(document.hidden) setTimeout(() => frame(performance.now()), 120); else requestAnimationFrame(frame);
 }
 
 /* ============================== moving ============================== */
+const nextFrame = cb => document.hidden ? setTimeout(() => cb(performance.now()), 16) : requestAnimationFrame(cb);
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function setAt(n){ S.px = n.x; S.pz = n.z; S.py = 0; }
 // walk most of the way, then a little hop onto the stone
@@ -666,13 +588,13 @@ function travel(to, opts){
       S.px = x0 + (to.x - x0) * e; S.pz = z0 + (to.z - z0) * e;
       const hopT = Math.max(0, (t - 0.72) / 0.28); S.py = hopT > 0 ? Math.sin(Math.PI * hopT) * (0.55 + d * 0.02) : 0;
       S.walking = t < 0.72; if(S.walking) S.walkPh += 0.32;
-      if(t < 1) requestAnimationFrame(tick); else { S.py = 0; S.walking = false; puff(S.px, S.pz); res(); }
+      if(t < 1) nextFrame(tick); else { S.py = 0; S.walking = false; puff(S.px, S.pz); res(); }
     };
-    requestAnimationFrame(tick);
+    nextFrame(tick);
   });
 }
 function jump(){ if(S.moving) return; S.moving = true; const t0 = performance.now();
-  const tick = now => { const t = Math.min(1, (now - t0) / 520); S.py = Math.sin(Math.PI * t) * 1.1; if(t < 1) requestAnimationFrame(tick); else { S.py = 0; S.moving = false; } }; requestAnimationFrame(tick); }
+  const tick = now => { const t = Math.min(1, (now - t0) / 520); S.py = Math.sin(Math.PI * t) * 1.1; if(t < 1) nextFrame(tick); else { S.py = 0; S.moving = false; } }; nextFrame(tick); }
 function nextStep(){
   const st = C.steps[S.i];
   if(st.fork) return S.k < st[S.b].length - 1 ? { i: S.i, b: S.b, k: S.k + 1 } : (S.i + 1 < C.steps.length ? { i: S.i + 1, b: null, k: 0 } : null);
@@ -716,6 +638,7 @@ async function toPebble(k){ await go(async () => { const pb = baseNode().pebbles
 async function go(fn){ S.moving = true; hideSheet(); renderControls(); hint(false); await fn(); S.moving = false; renderControls(); }
 function arrive(){
   const n = node(); drawHud(); if(n.type === "start") return;
+  if(!n.done && n.type !== "surprise") turnAround("wave", 700);
   if(n.type === "surprise" && !n.done) return surprise(n);
   if(n.bonus){ collectBonus(n); return; }
   showSheet();
@@ -731,7 +654,7 @@ function surprise(n){
   } else n.event = { kind: "chest", loot: LOOT[Math.floor(Math.random() * LOOT.length)] };
   showSheet();
 }
-function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; S.loot.push(l.n); }
+function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
 function collectBonus(n){
   n.done = true; burst(n.x, 1.6, n.z, "#ffc42b", 40); toast("♪ Note collected!", n.end ? "Bonus stage complete!" : `${BONUSC.steps.filter(s => s.done).length} of ${BONUSC.steps.length}`);
   if(n.end){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
@@ -799,7 +722,7 @@ $("sheet").addEventListener("click", e => {
   }
 });
 function pass(){
-  const n = node(), base = baseNode(); n.done = true; hideSheet(); burst(n.x, 1.2, n.z, (SKILLS[n.s] || SKILLS.repertoire).c);
+  const n = node(), base = baseNode(); n.done = true; hideSheet(); turnAround(n.type === "gate" ? "star" : ["rock", "cheer", "flex", "thumbs"][Math.floor(Math.random() * 4)], 1500); burst(n.x, 1.2, n.z, (SKILLS[n.s] || SKILLS.repertoire).c);
   let msg = ["Stone cleared!", n.n];
   if(n.power && !S.powers.includes(n.power)){ S.powers.push(n.power); msg = ["New power!", POWERS[n.power]]; }
   if(S.peb >= 0 && base.pebbles.every(p => p.done)){ base.done = true; msg = ["The whole stone counts!", base.n]; }
@@ -850,7 +773,7 @@ function hint(on){ $("hint").style.opacity = on ? 1 : 0; }
 /* ============================== start ============================== */
 addEventListener("resize", resize);
 resize();
-setAt(C.steps[0]); S.cam.x = S.px; S.cam.z = -7;
+heroImages(); setAt(C.steps[0]); S.cam.x = S.px; S.cam.z = -7;
 drawHud(); renderControls();
 requestAnimationFrame(frame);
 setTimeout(() => toast(`Off you go${ME.name ? ", " + ME.name : ""}!`, "Walk on to the first stone."), 2800);

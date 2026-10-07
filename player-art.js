@@ -851,6 +851,31 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
+    // seen from behind (Adventure): no face, the back of the head is hair, and capes, wings, backpacks and a slung guitar sit over the back
+    if(cfg._back){
+      const hc = cfg.hairColor, hx = g.hrx, hy = g.hy, hr = g.hry, dkH = shade(hc, 0.72);
+      const strands = [-0.5, -0.17, 0.17, 0.5].map(k => `M${(200 + k * hx).toFixed(1)} ${(hy - hr * 0.9).toFixed(1)} Q${(200 + k * hx * 1.15).toFixed(1)} ${hy.toFixed(1)} ${(200 + k * hx * 0.9).toFixed(1)} ${(hy + hr * 0.75).toFixed(1)}`).join(" ");
+      const cover = cfg.hair === "none" ? ""
+        : cfg.hair === "buzz" ? `<ellipse cx="200" cy="${hy}" rx="${hx}" ry="${hr}" fill="${hc}" opacity=".55"/>`
+        : cfg.hair === "balding" ? `<path d="M${200 - hx * 0.98} ${hy + hr * 0.05} Q200 ${hy - hr * 0.2} ${200 + hx * 0.98} ${hy + hr * 0.05} Q${200 + hx * 0.8} ${hy + hr * 0.8} 200 ${hy + hr} Q${200 - hx * 0.8} ${hy + hr * 0.8} ${200 - hx * 0.98} ${hy + hr * 0.05}Z" fill="${hc}"/>`
+        : cfg.hair === "mohawk" ? `<path d="${rrect(200 - hx * 0.16, hy - hr * 1.02, 200 + hx * 0.16, hy + hr * 0.9, hx * 0.14)}" fill="${hc}"/>`
+        : `<ellipse cx="200" cy="${hy}" rx="${hx}" ry="${hr}" fill="${hc}"/><path d="${strands}" fill="none" stroke="${dkH}" stroke-width="3.4" stroke-linecap="round"/><path d="M${200 - hx * 0.3} ${hy - hr * 0.7} Q200 ${hy - hr * 0.86} ${200 + hx * 0.2} ${hy - hr * 0.74}" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="5" stroke-linecap="round"/>`;
+      const nape = cfg.hair === "none" || cfg.hair === "balding" ? "" : `<ellipse cx="200" cy="${hy}" rx="${hx}" ry="${hr}" fill="none" ${sw(6)}/>`;
+      // a guitar slung across the back: strap over the right shoulder, body at the left hip, neck up past the shoulder
+      let slung = "";
+      if(cfg._gear){
+        const wood = cfg._gear === "acoustic" ? "#c98a4b" : cfg._gearColor, s = cfg._gear === "ukulele" ? 0.62 : cfg._gear === "bass" ? 1.08 : 1;
+        const bx = 200 - g.tW * 0.22, by = tBot - 4, ang = -38;
+        const bodyG = cfg._gear === "flyingv" ? `<path d="M0 -14 L-34 52 L-14 52 L0 18 L14 52 L34 52Z" fill="${wood}" ${sw(5)}/>`
+          : `<circle cx="0" cy="22" r="${(34 * s).toFixed(1)}" fill="${wood}" ${sw(5)}/><circle cx="0" cy="${(-12 * s).toFixed(1)}" r="${(26 * s).toFixed(1)}" fill="${wood}" ${sw(5)}/><rect x="-14" y="16" width="28" height="7" rx="3" fill="${shade(wood, 0.6)}"/>`;
+        const neckG = `<rect x="-6" y="${(-150 * s).toFixed(1)}" width="12" height="${(130 * s).toFixed(1)}" rx="3" fill="#7a4e26" ${sw(4.5)}/><rect x="-10" y="${(-176 * s).toFixed(1)}" width="20" height="30" rx="5" fill="#2b2623" ${sw(4)}/>` + (cfg._gear === "doubleneck" ? `<rect x="10" y="-140" width="12" height="120" rx="3" fill="#7a4e26" ${sw(4.5)}/>` : "");
+        slung = `<path d="M${200 + g.tW * 0.42} ${g.tTop + 4} L${200 - g.tW * 0.46} ${tBot - 8}" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M${200 + g.tW * 0.42} ${g.tTop + 4} L${200 - g.tW * 0.46} ${tBot - 8}" stroke="#a8723c" stroke-width="6" stroke-linecap="round"/>`
+          + `<g transform="translate(${bx.toFixed(1)} ${by}) rotate(${-ang})">${neckG}${bodyG}</g>`;
+      }
+      const headB = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}<ellipse cx="200" cy="${hy}" rx="${hx}" ry="${hr}" fill="${skin}" ${sw(6)}/>${cover}${nape}${hair.front}${headAcc}</g>`;
+      const backSvg = `${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${cfg.neck === "scarf" ? neck : ""}${extra.mid || ""}<g class="pa-main">${behind}</g>${front}${hair.back || ""}${extra.back || ""}${slung}${headB}`;
+      return { svg: backSvg, fx: { kind: "notes", pts: null, hands: [] }, look: 0 };
+    }
     const svg = `${extra.back || ""}${gear.back || ""}${hair.back ? `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${hair.back}</g>` : ""}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${fingers}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
 
     // where attack effects come from
@@ -1112,7 +1137,7 @@
     if(!ticker) ticker = setInterval(tickAll, 120);
     return ctl;
   }
-  PlayerArt.svg = (cfg, view) => { cfg = norm(cfg); if(INSTRUMENTS.includes(cfg.gear)) cfg.pose = "hold"; return `<svg viewBox="${viewBox(cfg, view)}" xmlns="${NS}"><g>${build(cfg, false).svg}</g></svg>`; };
+  PlayerArt.svg = (cfg, view, pose) => { cfg = norm(cfg); if(INSTRUMENTS.includes(cfg.gear)) cfg.pose = pose && SOLO_POSES.includes(pose) ? "solo" : "hold"; else if(pose && POSES[pose]) cfg.pose = pose; return `<svg viewBox="${viewBox(cfg, view)}" xmlns="${NS}"><g>${build(cfg, false).svg}</g></svg>`; };
   // one item of clothing on its own (part = "top" | "bottom" | "shoes" | "neck"), framed to fit, for the outfit menu
   PlayerArt.item = (cfg, part) => {
     cfg = norm(Object.assign({}, cfg, { pose: "relax", gear: "none", name: "" }));
@@ -1125,6 +1150,11 @@
       || `<g fill="none" stroke="#c9c2b2" stroke-width="${(vs * 0.05).toFixed(1)}" stroke-linecap="round"><circle cx="${vx + vs / 2}" cy="${vy + vs / 2}" r="${vs * 0.22}"/><path d="M${vx + vs * 0.345} ${vy + vs * 0.655} L${vx + vs * 0.655} ${vy + vs * 0.345}"/></g>`;   // "none"
     return `<svg viewBox="${vb}" xmlns="${NS}"><g>${body}</g></svg>`;
   };
+  // the character seen from behind (Adventure walks away from the camera). Instruments are slung on the back.
+  // hipY tells a game where the legs start, so it can step them one at a time.
+  PlayerArt.back = cfg => { cfg = norm(cfg); const g = AGES[cfg.body] || AGES.kid, hold = INSTRUMENTS.includes(cfg.gear);
+    const c = Object.assign({}, cfg, { _back: true, _gear: hold ? cfg.gear : null, _gearColor: cfg.gearColor, gear: "none", pose: "relax" });
+    return { svg: `<svg viewBox="0 0 400 400" width="400" height="400" xmlns="${NS}"><g>${build(c, false).svg}</g></svg>`, hipY: g.tTop + g.tH - 10, headTop: g.hy - g.hry }; };
   PlayerArt.options = OPTIONS;
   // the student's own character beside a game (waves hello), and one inside a celebration popup holding a moment's pose
   PlayerArt.buddy = (el, opts) => { if(!el) return null; const c = PlayerArt(el, window.Player.get(), opts); setTimeout(() => c.moment("hello", 2000), 400); return c; };
