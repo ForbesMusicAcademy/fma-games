@@ -77,6 +77,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:15;transition:opacity .35s}
 .flash.on{opacity:1}
 .top .pill{border:2px solid var(--fg);border-radius:999px;background:#fff;font-size:15px;padding:3px 9px;line-height:1.2}
+#done{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,rgba(255,220,120,.55),rgba(30,20,40,.6));display:none;align-items:center;justify-content:center;z-index:26;padding:16px}
+#done.show{display:flex;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+#done .donecard{background:#fffdf6;border:3px solid var(--fg);border-radius:24px;padding:10px 18px 18px;width:min(380px,100%);text-align:center;box-shadow:0 6px 0 var(--fg)}
+#donePic{width:190px;height:190px;margin:0 auto -6px}
+#done h2{margin:0;font-family:var(--head);font-weight:900;font-size:26px;line-height:1.1}
+#done p{margin:8px 0 14px;color:var(--muted);font-size:15px}
+#done button{width:100%;min-height:54px;border-radius:16px;border:3px solid var(--fg);background:var(--accent);font-family:var(--head);font-weight:900;font-size:19px;box-shadow:0 4px 0 var(--fg)}
 #map{position:fixed;inset:0;background:rgba(20,18,30,.55);display:none;align-items:center;justify-content:center;z-index:25;padding:16px}
 #map.show{display:flex}
 #map .mapcard{position:relative;background:#fffdf6;border:3px solid var(--fg);border-radius:22px;padding:14px 16px 12px;width:min(520px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 6px 0 var(--fg)}
@@ -104,6 +112,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 <div class="controls" id="controls"></div>
 <div id="sheet" role="dialog" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
+<div id="done" role="dialog" aria-label="Region complete"><div class="donecard"><div id="donePic"></div><h2 id="doneT"></h2><p id="doneP"></p><button id="doneGo"></button></div></div>
 <div id="map" role="dialog" aria-label="Map of your adventure"><div class="mapcard"><button class="x" id="mapX" aria-label="Close">×</button><h2>Your adventure</h2><canvas id="mapCv"></canvas><p id="mapNote"></p><p><button id="mapReset" style="border:0;background:none;color:var(--muted);text-decoration:underline;font:inherit;font-size:12px">Start the adventure again</button></p></div></div>
 <div class="flash" id="flash"></div>
 <div class="banner" id="banner"></div>
@@ -387,6 +396,20 @@ function drawFeatureBand(f, za, zb, A, B, now){
   // planks
   ctx.fillStyle = f.kind === "chasm" ? "#b98a5a" : "#c99a64"; quad(P(xa - 1.3, 0, za), P(xa + 1.3, 0, za), P(xb + 1.3, 0, zb), P(xb - 1.3, 0, zb)); ctx.fill();
   ctx.strokeStyle = "rgba(38,33,31,.55)"; ctx.lineWidth = Math.max(1, A.s * 0.03); ctx.beginPath(); ctx.moveTo(P(xa - 1.3, 0, za).x, A.y); ctx.lineTo(P(xa + 1.3, 0, za).x, A.y); ctx.stroke();
+}
+// a wooden welcome arch over the road at the start of each region, with its name on a sign
+function drawArch(ri, z, now){
+  const x = C.xfn(z), L = P(x - 2.3, 0, z), Rr = P(x + 2.3, 0, z); if(!L || !Rr) return; const s = L.s, h = 3.3 * s; ctx.globalAlpha = fogA(L.dz); ol(s * 0.05);
+  const wood = ["#a8723c", "#b5653a", "#7a6a50"][ri % 3];
+  for(const p of [L, Rr]){ ctx.fillStyle = wood; ctx.beginPath(); ctx.rect(p.x - s * 0.14, p.y - h, s * 0.28, h); ctx.fill(); ctx.stroke(); }
+  ctx.fillStyle = wood; ctx.beginPath(); ctx.rect(L.x - s * 0.3, L.y - h - s * 0.1, Rr.x - L.x + s * 0.6, s * 0.22); ctx.fill(); ctx.stroke();
+  const sw = (Rr.x - L.x) * 0.8, sh = s * 0.62, sx = (L.x + Rr.x) / 2 - sw / 2, sy = L.y - h + s * 0.25 + Math.sin(now / 700) * s * 0.03;
+  ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1, s * 0.03); ctx.beginPath(); ctx.moveTo(sx + sw * 0.2, L.y - h + s * 0.1); ctx.lineTo(sx + sw * 0.2, sy); ctx.moveTo(sx + sw * 0.8, L.y - h + s * 0.1); ctx.lineTo(sx + sw * 0.8, sy); ctx.stroke();
+  ctx.fillStyle = "#f3d9a4"; ol(s * 0.04); roundRect(sx, sy, sw, sh, s * 0.12); ctx.fill(); ctx.stroke();
+  if(s > 10){ ctx.fillStyle = INK; ctx.font = `900 ${Math.min(30, sh * 0.5)}px Nunito, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(REGIONS[ri].name, sx + sw / 2, sy + sh / 2 + 1, sw * 0.92); ctx.textBaseline = "alphabetic"; }
+  // a few flowers or pebbles at the feet of the posts
+  for(const p of [L, Rr]){ ctx.fillStyle = ["#ff6fa3", "#ffc42b", "#4aa8ff"][ri % 3]; circle(p.x - s * 0.3, p.y - s * 0.1, s * 0.1); ctx.fill(); circle(p.x + s * 0.3, p.y - s * 0.08, s * 0.09); ctx.fill(); }
+  ctx.globalAlpha = 1;
 }
 // rope rails along the canyon bridge, sagging in the middle
 function drawRopes(f, now){
@@ -695,6 +718,7 @@ function frame(now){
       if(n.type === "gate"){ list.push({ z: n.z - 1.8, d: () => drawGateArch(n, now) }); list.push({ z: n.z + 1.9, d: () => drawBoss(n, now) }); } });
   });
   for(const c of S.critters) list.push({ z: c.z, d: () => drawCritter(c, now) });
+  if(S.mode === "main") MAIN.regions.forEach((rg, ri) => { const z = rg.z0 + 1.2; if(z > zMin && z < zMax) list.push({ z, d: () => drawArch(ri, z, now) }); });
   if(S.mode === "main") FEATURES.forEach(f => { if(f.kind === "chasm" && f.z0 > zMin - 3 && f.z0 < zMax) list.push({ z: f.z1 + 0.1, d: () => drawRopes(f, now) }); });
   stepBuddy(dt); if(S.buddy) list.push({ z: S.buddy.z, d: () => drawBuddy(now) });
   list.push({ z: S.pz - 0.05, d: () => { drawDust(); drawMe(now); } });
@@ -781,6 +805,18 @@ function bossAhead(){
   if(g.type !== "gate" || g.done || g.warned) return; g.warned = true;
   setTimeout(() => { const b = $("banner"); b.innerHTML = `⚠️ Boss ahead!<small>${g.n} is waiting at the gate</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2600); if(audio.on){ grumble(); setTimeout(grumble, 350); } }, 900);
 }
+
+/* ============================== region complete! ============================== */
+let donePic = null;
+function regionComplete(ri){
+  const r = REGIONS[ri], ns = allNodes().filter(n => n.region === ri && n.type !== "start"), cleared = ns.filter(n => n.done).length, next = REGIONS[ri + 1];
+  $("doneT").textContent = `${r.name} complete!`;
+  $("doneP").innerHTML = `${cleared} stones cleared · ${S.powers.length} power${S.powers.length === 1 ? "" : "s"} · ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found${next ? `<br>Next up: <b>${next.name}</b>` : "<br>That's the end of the test map. More regions coming!"}`;
+  $("doneGo").textContent = next ? `On to ${next.name} ▶` : "Keep exploring";
+  if(donePic) donePic.destroy(); donePic = PlayerArt($("donePic"), ME, { tap: true }); setTimeout(() => donePic && donePic.moment("win", 0), 200);
+  $("done").classList.add("show"); winSound(); setTimeout(winSound, 500);
+}
+document.getElementById("doneGo").onclick = () => { document.getElementById("done").classList.remove("show"); if(donePic){ donePic.destroy(); donePic = null; } };
 
 /* ============================== a friend who walks with you for a while ============================== */
 function startBuddy(f){ if(!f) return; const b = PlayerArt.back(f.cfg); S.buddy = { f, left: 2, img: svgImage(b.svg), top: b.headTop, x: S.px - 1.5, z: S.pz - 0.8, bye: 0 };
@@ -903,7 +939,7 @@ function pass(){
   if(n.power && !S.powers.includes(n.power)){ S.powers.push(n.power); msg = ["New power!", POWERS[n.power]]; }
   if(S.peb >= 0 && base.pebbles.every(p => p.done)){ base.done = true; msg = ["The whole stone counts!", base.n]; }
   if(n.type === "gate"){ n.koT = performance.now(); S.region = Math.max(S.region, n.region + 1); burst(n.x, 2, n.z + 1.5, "#e8433f", 60);
-    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; }
+    msg = ["Gate boss beaten!", REGIONS[n.region + 1] ? `On to ${REGIONS[n.region + 1].name}!` : "That's the end of the test map."]; setTimeout(() => regionComplete(n.region), 1500); }
   toast(msg[0], msg[1]); bump(n.s); drawHud(); renderControls(); winSound();
 }
 function fail(){
