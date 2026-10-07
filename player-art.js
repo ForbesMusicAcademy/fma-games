@@ -520,8 +520,10 @@
     const xr = x0 + 6 * r, low = base + 11, wr = x0 - 7;
     const hand = `M${wr} ${base} C${wr - 1.5} ${base + 7} ${x0 - 2} ${low} ${x0 + 6} ${low} C${xr - 1} ${low + 1} ${xr + 2.5} ${base + 6} ${xr} ${base - 1} V${top}`
       + ` A${r} ${r} 0 0 0 ${x0 + 4 * r} ${top} A${r} ${r} 0 0 0 ${x0 + 2 * r} ${top} A${r} ${r} 0 0 0 ${x0} ${top} V${base}`;
-    pose.fingers = (skin) => `<g transform="translate(${t.x.toFixed(1)} ${t.y.toFixed(1)}) rotate(${t.rot}) scale(${k.toFixed(3)})"><path d="${hand}Z" fill="${skin}"/>`
-      + `<path d="${hand}" fill="none" stroke="${INK}" stroke-width="${ol}" stroke-linejoin="round" stroke-linecap="round"/><path d="M${x0 + 2 * r} ${top} v2.6 M${x0 + 4 * r} ${top} v2.6" fill="none" stroke="${INK}" stroke-width="${(1.8 / k).toFixed(2)}" stroke-linecap="round"/></g>`;
+    // drawn at the normal guitar size whatever the instrument's size (so it isn't tiny on a ukulele), anchored on the neck's bottom edge
+    const sz = INSTR_SIZE[kind] || 1, kk = k / sz, keep = `translate(${fx} ${base}) scale(${(1 / sz).toFixed(3)}) translate(${-fx} ${-base})`;
+    pose.fingers = (skin) => `<g transform="translate(${t.x.toFixed(1)} ${t.y.toFixed(1)}) rotate(${t.rot}) scale(${k.toFixed(3)}) ${keep}"><path d="${hand}Z" fill="${skin}"/>`
+      + `<path d="${hand}" fill="none" stroke="${INK}" stroke-width="${(3.8 / kk).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"/><path d="M${x0 + 2 * r} ${top} v2.6 M${x0 + 4 * r} ${top} v2.6" fill="none" stroke="${INK}" stroke-width="${(1.8 / kk).toFixed(2)}" stroke-linecap="round"/></g>`;
     return pose;
   }
   const STANCE = { star: 24, rock: 10, hips: 10, flex: 12, hold: 8, solo: 18 };      // how far apart the feet are
@@ -837,7 +839,7 @@
     // the eyewear sits over the expression overlays, so shades stay on when you get hit
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
-    const svg = `${extra.back || ""}${gear.back || ""}${hair.back}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${fingers}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
+    const svg = `${extra.back || ""}${gear.back || ""}${hair.back ? `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${hair.back}</g>` : ""}${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${name}${neck}${extra.mid || ""}${arms}${gear.mid || ""}${fingers}${headG}${front ? `<g class="pa-main">${front}</g>` : ""}${altFront ? `<g class="pa-alt">${altFront}</g>` : ""}${flash}`;
 
     // where attack effects come from
     const fx = cfg.gear === "mic" ? { kind: "waves", pts: [[200 + g.hrx * 0.4, my + 8]] }
