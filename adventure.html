@@ -295,6 +295,8 @@ const PROPS = { main: scatter(MAIN).filter(o => !FEATURES.some(f => o.z > f.z0 -
 seed = 41;
 for(let z = MAIN.regions[0].z0 + 8; z < MAIN.regions[0].z1 - 6; z += 14 + rnd() * 10){ const side = rnd() < .5 ? -1 : 1, x = MAIN.xfn(z) + side * (6 + rnd() * 8); if(!onRoad(MAIN, x, z, 4)) for(let k = 0; k < 2 + Math.floor(rnd() * 2); k++) PROPS.main.push({ kind: "sheep", x: x + (rnd() - .5) * 3, z: z + (rnd() - .5) * 3, r: rnd() }); }
 for(let z = MAIN.regions[2].z0 + 6; z < MAIN.regions[2].z1 - 4; z += 22){ const side = rnd() < .5 ? -1 : 1; for(let k = 0; k < 4; k++) PROPS.main.push({ kind: "duck", x: MAIN.xfn(z) + side * (5 + k * 0.7), z: z + k * 0.5, r: k ? 0.3 : 0.9, lead: k === 0 }); }
+for(let z = MAIN.regions[2].z0 + 3; z < MAIN.regions[2].z1; z += 6) for(const d of [-1.9, 1.9]) PROPS.main.push({ kind: "lantern", x: MAIN.xfn(z) + d, z, r: 0.5 });
+PROPS.main.push({ kind: "picnic", x: MAIN.xfn(MAIN.regions[0].z0 + SP * 5.5) - 9, z: MAIN.regions[0].z0 + SP * 5.5, r: 0.5 });
 PROPS.main.push({ kind: "balloon", x: MAIN.xfn(MAIN.regions[1].z0 + 40) + 14, z: MAIN.regions[1].z0 + 40, r: 0.5 });
 // bridge posts at both ends of each crossing
 FEATURES.forEach(f => { if(f.kind === "ford") return; for(const z of [f.z0, f.z1]) for(const d of [-1.7, 1.7]) PROPS.main.push({ kind: f.kind === "chasm" ? "ropepost" : "post", x: MAIN.xfn(z) + d, z, r: 0.5 }); });
@@ -536,6 +538,13 @@ function drawProp(o, p, now){
       ctx.beginPath(); ctx.ellipse(fx, fy, R0, R0 * 1.15, 0, 0, 7); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(fx - R0 * 0.5, fy + R0 * 1.0); ctx.lineTo(fx - R0 * 0.2, fy + R0 * 1.55); ctx.moveTo(fx + R0 * 0.5, fy + R0 * 1.0); ctx.lineTo(fx + R0 * 0.2, fy + R0 * 1.55); ctx.stroke();
       ctx.fillStyle = "#a8723c"; ctx.beginPath(); ctx.rect(fx - R0 * 0.25, fy + R0 * 1.55, R0 * 0.5, R0 * 0.35); ctx.fill(); ctx.stroke(); break; }
+    case "lantern": { const lit = Math.max(0, Math.min(1, 1 - (o.z - S.pz - 4) / 14)); ol(s * 0.04); ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.rect(x - s * 0.05, y - s * 1.4, s * 0.1, s * 1.4); ctx.fill(); ctx.stroke();
+      if(lit > 0){ const g = ctx.createRadialGradient(x, y - s * 1.5, 0, x, y - s * 1.5, s * 1.3); g.addColorStop(0, `rgba(255,214,120,${0.55 * lit})`); g.addColorStop(1, "rgba(255,214,120,0)"); ctx.fillStyle = g; circle(x, y - s * 1.5, s * 1.3); ctx.fill(); }
+      ctx.fillStyle = lit > 0.1 ? `rgb(255,${200 + 30 * lit},${110 + 60 * lit})` : "#c9b58a"; ol(s * 0.04); ctx.beginPath(); roundRect(x - s * 0.17, y - s * 1.75, s * 0.34, s * 0.4, s * 0.06); ctx.fill(); ctx.stroke(); break; }
+    case "picnic": { ol(s * 0.04); const bw = s * 2, bh = s * 0.7; ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.ellipse(x, y, bw / 2, bh / 2, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.beginPath(); ctx.ellipse(x, y, bw / 2, bh / 2, 0, 0, 7); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = s * 0.08; for(let i = -3; i <= 3; i++){ ctx.beginPath(); ctx.moveTo(x + i * bw * 0.14, y - bh); ctx.lineTo(x + i * bw * 0.14, y + bh); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - bw, y + i * bh * 0.2); ctx.lineTo(x + bw, y + i * bh * 0.2); ctx.stroke(); } ctx.restore();
+      ol(s * 0.04); ctx.fillStyle = "#3a3a3d"; ctx.beginPath(); ctx.ellipse(x + s * 0.35, y - s * 0.05, s * 0.55, s * 0.2, -0.2, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#c98a4b"; ctx.beginPath(); ctx.ellipse(x + s * 0.3, y - s * 0.1, s * 0.3, s * 0.12, -0.2, 0, 7); ctx.fill();
+      ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.arc(x - s * 0.45, y - s * 0.12, s * 0.13, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#4fb86a"; ctx.fillRect(x - s * 0.47, y - s * 0.3, s * 0.04, s * 0.08); break; }
     case "windmill": { const h = 6 * s, w = 1.4 * s; shadow(p, 1.6); ol(s * 0.05);
       ctx.fillStyle = "#f3ead8"; ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x - w * 0.6, y - h); ctx.lineTo(x + w * 0.6, y - h); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.moveTo(x - w * 0.8, y - h); ctx.lineTo(x, y - h - w * 1.1); ctx.lineTo(x + w * 0.8, y - h); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -626,6 +635,9 @@ function drawBoss(n, now){
   if(n.poke && now - n.poke < 600) hit = Math.max(hit, 0.5 * (1 - (now - n.poke) / 600));
   if(hit && !RM) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
   if(!n.done) HITS.push({ x0: p.x - size / 2, y0: p.y - size, x1: p.x + size / 2, y1: p.y, o: n, kind: "boss" });
+  if(!n.done && !n.fight && n.z - S.pz < 13 && n.z - S.pz > 0){ const line = ["You'll never play Zombie!", "Wagon Wheel? Ha! Too hard!", "Stand By Me? You? Hmph!"][n.region] || "Grrr!", fs = Math.max(11, Math.min(16, p.s * 0.22));
+    ctx.font = `800 ${fs}px "Work Sans", sans-serif`; ctx.textAlign = "center"; const tw = ctx.measureText(line).width, bx = p.x, by = p.y - size - fs * 0.6;
+    ctx.fillStyle = "#fff"; ol(2.5); roundRect(bx - tw / 2 - 10, by - fs, tw + 20, fs * 1.8, 10); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#e8433f"; ctx.fillText(line, bx, by + fs * 0.35); }
   ctx.filter = ({ 0: "", 1: "hue-rotate(160deg) ", 2: "hue-rotate(250deg) saturate(1.4) " }[n.region] || "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
   ctx.drawImage(BOSS_IMG, -size / 2, -size / 2, size, size); ctx.restore(); ctx.filter = "none"; ctx.globalAlpha = 1;
   if(n.fight && now < n.koT){ const e = now - n.fight, from = P(S.px, 1.3, S.pz), to = P(n.x + 1.7, 1.3, n.z + 3.6);
