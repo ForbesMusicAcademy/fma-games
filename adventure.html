@@ -696,6 +696,7 @@ function frame(now){
   });
   for(const c of S.critters) list.push({ z: c.z, d: () => drawCritter(c, now) });
   if(S.mode === "main") FEATURES.forEach(f => { if(f.kind === "chasm" && f.z0 > zMin - 3 && f.z0 < zMax) list.push({ z: f.z1 + 0.1, d: () => drawRopes(f, now) }); });
+  stepBuddy(dt); if(S.buddy) list.push({ z: S.buddy.z, d: () => drawBuddy(now) });
   list.push({ z: S.pz - 0.05, d: () => { drawDust(); drawMe(now); } });
   list.sort((a, b) => b.z - a.z).forEach(o => o.d());
   drawConfetti(dt); drawWeather(dt, now);
@@ -766,6 +767,7 @@ async function toPebble(k){ await go(async () => { const pb = baseNode().pebbles
 async function go(fn){ S.moving = true; hideSheet(); renderControls(); hint(false); await fn(); S.moving = false; renderControls(); }
 function arrive(){
   const n = node(); drawHud(); if(n.type === "start") return;
+  buddyArrive();
   bossAhead();
   if(!n.done && n.type !== "surprise") turnAround("wave", 700);
   if(n.type === "surprise" && !n.done) return surprise(n);
@@ -779,6 +781,18 @@ function bossAhead(){
   if(g.type !== "gate" || g.done || g.warned) return; g.warned = true;
   setTimeout(() => { const b = $("banner"); b.innerHTML = `⚠️ Boss ahead!<small>${g.n} is waiting at the gate</small>`; b.classList.add("show"); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 2600); if(audio.on){ grumble(); setTimeout(grumble, 350); } }, 900);
 }
+
+/* ============================== a friend who walks with you for a while ============================== */
+function startBuddy(f){ if(!f) return; const b = PlayerArt.back(f.cfg); S.buddy = { f, left: 2, img: svgImage(b.svg), top: b.headTop, x: S.px - 1.5, z: S.pz - 0.8, bye: 0 };
+  toast(`${f.name.split(" ")[1] || f.name} joins you!`, "Walking together for a bit."); }
+function stepBuddy(dt){ const b = S.buddy; if(!b) return; const tx = S.px - 1.45, tz = S.pz - 0.7 - (b.bye ? Math.max(0, performance.now() - b.bye) / 300 : 0);
+  b.walking = Math.hypot(tx - b.x, tz - b.z) > 0.15; b.x += (tx - b.x) * Math.min(1, dt * 3); b.z += (tz - b.z) * Math.min(1, dt * 3); if(b.walking) b.ph = (b.ph || 0) + dt * 9;
+  if(b.bye && performance.now() - b.bye > 2200) S.buddy = null; }
+function drawBuddy(now){ const b = S.buddy; if(!b || !b.img.complete || !b.img.naturalWidth) return; const p = P(b.x, 0, b.z); if(!p) return;
+  const H = 1.7 * p.s * 400 / (384 - b.top), bob = b.walking ? Math.abs(Math.cos(b.ph)) * p.s * 0.05 : 0;
+  ctx.globalAlpha = b.bye ? Math.min(1, Math.max(0, 1 - (now - b.bye) / 2200)) : 1; ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.s * 0.38, p.s * 0.1, 0, 0, 7); ctx.fill();
+  ctx.drawImage(b.img, p.x - H / 2, p.y - H * 384 / 400 - bob, H, H); ctx.globalAlpha = 1; }
+function buddyArrive(){ const b = S.buddy; if(!b || b.bye) return; b.left--; if(b.left <= 0){ b.bye = performance.now() + 600; setTimeout(() => toast(`${b.f.name.split(" ")[1] || b.f.name}: “See you up the road!”`, "Your friend heads off."), 500); } }
 
 /* ============================== saving (this device only, one save per player) ============================== */
 const SAVE_KEY = () => window.fmaKey ? window.fmaKey("fma-adventure-v1") : "fma-adventure-v1";
@@ -812,7 +826,7 @@ function surprise(n){
   if(pick < 0.6){
     const q = QUIZ[Math.floor(Math.random() * QUIZ.length)], fr = FRIENDS[Math.floor(Math.random() * FRIENDS.length)], who = fr.name, cfg = fr.cfg;
     const opts = q.a.map((t, i) => ({ t, ok: i === 0 })).sort(() => Math.random() - .5);
-    n.event = { kind: "quiz", who, q, opts, cfg };
+    n.event = { kind: "quiz", who, q, opts, cfg, fr };
   } else n.event = { kind: "chest", loot: LOOT[Math.floor(Math.random() * LOOT.length)] };
   showSheet();
 }
@@ -880,7 +894,7 @@ $("sheet").addEventListener("click", e => {
       setTimeout(() => { hideSheet();
         if(o.ok){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; giveLoot(l); burst(S.px, 1.4, S.pz, "#9be04a", 40); toast("Correct! " + n.event.who + " gives you " + l.n, "You're wearing it now."); }
         else { toast("Good try!", `It was “${n.event.opts.find(x => x.ok).t}”. +1 effort point.`); }
-        drawHud(); }, 700); break; }
+        drawHud(); setTimeout(() => startBuddy(n.event.fr), 900); }, 700); break; }
   }
 });
 function pass(){
