@@ -708,6 +708,7 @@ function drawNpc(n, now){
 /* ============================== your character (drawn by player-art.js, so it's always in the house style) ============================== */
 // Walking away from the camera we see the back view; at big moments the character turns round to face you and strikes a pose.
 const shade = (h, f) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
+const NAMETAG = { a: 0 };
 const HERO = { back: null, hipY: 268, top: 74, front: {}, turn: null };
 function heroImages(){ const b = PlayerArt.back(ME); HERO.back = svgImage(b.svg); HERO.hipY = b.hipY; HERO.top = b.headTop; HERO.front = {}; }
 const frontImg = pose => HERO.front[pose] || (HERO.front[pose] = svgImage(PlayerArt.svg(ME, "full", pose).replace("<svg ", '<svg width="400" height="400" ')));
@@ -718,6 +719,10 @@ function drawMe(now){
   const img = HERO.back; if(!img || !img.complete || !img.naturalWidth) return;
   const u = p.s, H = 1.85 * u * 400 / (384 - HERO.top), W = H, x = p.x - W / 2, y = p.y - H * 384 / 400;
   HITS.push({ x0: p.x - W * 0.25, y0: y + H * 0.15, x1: p.x + W * 0.25, y1: p.y, o: HERO, kind: "me" });
+  // your name under you while you stand still
+  NAMETAG.a += ((S.walking || S.moving ? 0 : 1) - NAMETAG.a) * 0.08;
+  if(ME.name && NAMETAG.a > 0.05){ const fs = Math.max(11, Math.min(16, u * 0.22)); ctx.font = `900 ${fs}px Nunito, sans-serif`; ctx.textAlign = "center"; const tw = ctx.measureText(ME.name).width;
+    ctx.globalAlpha = NAMETAG.a; ctx.fillStyle = "rgba(255,255,255,.92)"; ol(2); roundRect(g0.x - tw / 2 - 8, g0.y + u * 0.18, tw + 16, fs * 1.5, fs * 0.6); ctx.fill(); ctx.stroke(); ctx.fillStyle = INK; ctx.fillText(ME.name, g0.x, g0.y + u * 0.18 + fs * 1.08); ctx.globalAlpha = 1; }
   ctx.fillStyle = `rgba(0,0,0,${0.22 - Math.min(0.12, S.py * 0.06)})`; ctx.beginPath(); ctx.ellipse(g0.x, g0.y, u * 0.42 * (1 - S.py * 0.15), u * 0.11, 0, 0, 7); ctx.fill();
   // turning round?
   let sx = 1, show = img, front = false;
