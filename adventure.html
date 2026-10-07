@@ -1050,7 +1050,7 @@ const allNodes = () => { const out = []; MAIN.steps.forEach(st => (st.fork ? [..
 let loading = false;
 function saveGame(){
   if(loading || S.mode !== "main") return;
-  const data = { v: 1, pos: { i: S.i, b: S.b, k: S.k, lastBranch: S.lastBranch }, region: S.region, powers: S.powers, loot: S.loot,
+  const data = { v: 1, friends: FRIENDS.map(f => f.met), pos: { i: S.i, b: S.b, k: S.k, lastBranch: S.lastBranch }, region: S.region, powers: S.powers, loot: S.loot,
     look: { acc: ME.acc, accColor: ME.accColor, extra: ME.extra, extraColor: ME.extraColor, gear: ME.gear, gearColor: ME.gearColor },
     nodes: allNodes().map(n => [n.done ? 1 : 0, n.fails, n.cracked ? 1 : 0, n.pebbles ? n.pebbles.map(p => p.done ? 1 : 0) : 0, n.warned ? 1 : 0, n.mentor ? 1 : 0, n.withPower || 0]) };
   try { localStorage.setItem(SAVE_KEY(), JSON.stringify(data)); } catch(e){}
@@ -1066,6 +1066,7 @@ function loadGame(){
     if(n.type === "gate" && n.done) n.koT = -1e9; });
   Object.assign(S, d.pos || {}); S.region = d.region || 0; S.powers = d.powers || []; S.loot = [...new Set(d.loot || [])];
   if(d.look) Object.assign(ME, d.look);
+  if(d.friends) FRIENDS.forEach((f, i) => f.met = d.friends[i] || 0);
   loading = false; return true;
 }
 function resetGame(){ try { localStorage.removeItem(SAVE_KEY()); } catch(e){} location.reload(); }
@@ -1203,7 +1204,7 @@ function openMap(){
   const yx = X(S.mode === "main" ? S.px : MAIN.xfn(0)), yy = Y(S.mode === "main" ? S.pz : 0);
   g.fillStyle = "#fff"; g.strokeStyle = "#26211f"; g.lineWidth = 3; g.beginPath(); g.arc(yx, yy, 16, 0, 7); g.fill(); g.stroke(); if(faceImg.complete && faceImg.naturalWidth){ g.save(); g.beginPath(); g.arc(yx, yy, 14, 0, 7); g.clip(); g.drawImage(faceImg, yx - 14, yy - 14 * (1 / faceImg.ar), 28, 28 / faceImg.ar); g.restore(); }
   const cleared = MAIN.steps.reduce((a, st) => a + (st.fork ? [...st.L, ...st.R] : [st]).filter(n => n.done && n.type !== "start").length, 0);
-  $("mapNote").textContent = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} powers · ${S.loot.length} things found` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
+  $("mapNote").textContent = `${cleared} stone${cleared === 1 ? "" : "s"} cleared · ${S.powers.length} powers · ${S.loot.length} things found · ✨ ${SECRETS.filter(sc => S.loot.includes(sc.loot.n)).length}/${SECRETS.length} secrets · 👋 ${FRIENDS.filter(f => f.met).length}/${FRIENDS.length} friends met` + (TEACHER ? " · 🎓 Teacher mode: tap a stone to clear it" : "");
 }
 const MAP_HITS = [];
 $("mapCv").addEventListener("click", e => { if(!TEACHER) return; const r = $("mapCv").getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
@@ -1215,7 +1216,8 @@ const BASE_LOOK = (() => { const b = Player.get(); return { acc: b.acc, accColor
 let wardPic = null;
 function openWard(){
   const found = LOOT.filter(l => S.loot.includes(l.n)), wearing = l => ME[l.k] === l.v;
-  $("wardList").innerHTML = `<button data-w="base">My usual look</button>` + (found.length ? found.map((l, i) => `<button data-w="${LOOT.indexOf(l)}" class="${wearing(l) ? "on" : ""}">${l.n.replace(/^an? /, "")}</button>`).join("") : `<span style="color:var(--muted);font-size:14px">Nothing found yet: try the “?” stones!</span>`);
+  const hints = SECRETS.filter(sc => !S.loot.includes(sc.loot.n)).map(sc => `<span title="A secret" style="border:2px dashed #b9b0a0;border-radius:12px;padding:6px 10px;font-size:13px;color:var(--muted)">❓ a secret in ${regionName(sc.z)}</span>`).join("");
+  $("wardList").innerHTML = hints + `<button data-w="base">My usual look</button>` + (found.length ? found.map((l, i) => `<button data-w="${LOOT.indexOf(l)}" class="${wearing(l) ? "on" : ""}">${l.n.replace(/^an? /, "")}</button>`).join("") : `<span style="color:var(--muted);font-size:14px">Nothing found yet: try the “?” stones!</span>`);
   if(wardPic) wardPic.destroy(); wardPic = PlayerArt($("wardPic"), ME, { tap: true }); $("ward").classList.add("show");
 }
 $("wardList").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if(!b) return;
