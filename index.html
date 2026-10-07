@@ -140,7 +140,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 </main>
 
 <script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=2"></script>
+<script src="player-art.js?v=3"></script>
 <script>
 const $ = id => document.getElementById(id);
 let cfg = Player.get();
@@ -202,6 +202,7 @@ function drawPanel(){
   $("epanel").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
     cfg[b.dataset.k] = b.dataset.v;
     save(); drawPanel(); previews();
+    if(b.dataset.k === "gear" && b.dataset.v === "flyingv") setTimeout(() => big && big.fire(), 500);      // show off the flames straight away
   });
   $("epanel").scrollTop = keep;
 }
