@@ -546,6 +546,9 @@ function drawStone(n, now, isPebble){
   if(n.s && n.type !== "surprise" && n.type !== "golden"){ ctx.strokeStyle = (SKILLS[n.s] || SKILLS.repertoire).c; ctx.lineWidth = Math.max(1.5, p.s * 0.07); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * 0.82, ry * 0.82, 0, 0, 7); ctx.stroke(); }
   ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(p.x - rx * 0.25, cy - th * 0.5 - ry * 0.2, rx * 0.35, ry * 0.3, 0, 0, 7); ctx.fill();
   if(n === S.nextN || (S.choosing && n.fork === S.choosing.fork && n === S.choosing.fork[n.branch][0])) HITS.push({ x0: p.x - rx * 1.2, y0: cy - th - ry * 3, x1: p.x + rx * 1.2, y1: cy + ry * 1.5, o: n, kind: "stone" });
+  if(n.done && p.dz < 45){ for(let i = 0; i < 3; i++){ const ph = ((now / 1300) + i * 0.33 + n.z * 0.13) % 1, a = Math.sin(ph * Math.PI); if(a < 0.2) continue;
+      const sx = p.x + Math.cos(i * 2.1 + n.z) * rx * 0.7, sy = cy - th - ry * 0.4 - ph * p.s * 0.5, r0 = Math.max(1.5, p.s * 0.06) * a; ctx.fillStyle = `rgba(255,236,150,${a})`; ctx.beginPath();
+      ctx.moveTo(sx, sy - r0 * 2); ctx.lineTo(sx + r0 * 0.5, sy - r0 * 0.5); ctx.lineTo(sx + r0 * 2, sy); ctx.lineTo(sx + r0 * 0.5, sy + r0 * 0.5); ctx.lineTo(sx, sy + r0 * 2); ctx.lineTo(sx - r0 * 0.5, sy + r0 * 0.5); ctx.lineTo(sx - r0 * 2, sy); ctx.lineTo(sx - r0 * 0.5, sy - r0 * 0.5); ctx.closePath(); ctx.fill(); } }
   if(n === S.nextN && !n.done){ const k = (now % 1400) / 1400; ctx.strokeStyle = `rgba(255,196,43,${0.9 * (1 - k)})`; ctx.lineWidth = Math.max(2, p.s * 0.08); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * (1.05 + k * 0.5), ry * (1.05 + k * 0.5), 0, 0, 7); ctx.stroke(); }
   if(n.cracked){ ol(p.s * 0.05); ctx.beginPath(); ctx.moveTo(p.x - rx * 0.5, cy - th); ctx.lineTo(p.x - rx * 0.1, cy - th * 0.4); ctx.lineTo(p.x - rx * 0.3, cy); ctx.moveTo(p.x + rx * 0.4, cy - th); ctx.lineTo(p.x + rx * 0.1, cy - th * 0.2); ctx.stroke(); }
   if(n.type === "golden" && !n.done){ const g = ctx.createRadialGradient(p.x, cy, 0, p.x, cy, rx * 1.8); g.addColorStop(0, `rgba(255,220,90,${0.45 + 0.2 * Math.sin(now / 250)})`); g.addColorStop(1, "rgba(255,220,90,0)"); ctx.fillStyle = g; circle(p.x, cy, rx * 1.8); ctx.fill(); }
@@ -894,7 +897,7 @@ function travel(to, opts){
     nextFrame(tick);
   });
 }
-function jump(){ if(S.moving) return; S.moving = true; const t0 = performance.now();
+function jump(){ if(S.moving) return; S.moving = true; if(audio.on){ const t = audio.ctx.currentTime, echo = S.mode === "main" && themeName(S.pz) === "canyon"; tone(300, t, 0.15, "triangle", 0.04, 520); if(echo) [0.35, 0.7, 1.05].forEach((d, i) => tone(300, t + d, 0.15, "triangle", 0.03 / (i + 1.5), 520)); } const t0 = performance.now();
   const tick = now => { const t = Math.min(1, (now - t0) / 520); S.py = Math.sin(Math.PI * t) * 1.1; if(t < 1) nextFrame(tick); else { S.py = 0; S.moving = false; } }; nextFrame(tick); }
 function nextStep(){
   const st = C.steps[S.i];
