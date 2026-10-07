@@ -1340,7 +1340,7 @@ function poke(h){ const now = performance.now(), o = h.o;
   if(h.kind === "crowd" && audio.on) winSound();
   if(h.kind === "me" && !HERO.turn) turnAround(["wave", "peace", "thumbs", "rock", "flex"][Math.floor(Math.random() * 5)], 1100);
   if(h.kind === "boss" && audio.on) grumble();
-  if(h.kind === "secret" && !S.loot.includes(o.secret.loot.n)){ giveLoot(o.secret.loot); toast("✨ Secret found!", `You found ${o.secret.loot.n}! It's in your wardrobe.`); burst(o.x, 0.8, o.z, "#ffc42b", 40); drawHud(); }
+  if(h.kind === "secret" && !S.loot.includes(o.secret.loot.n)){ giveLoot(o.secret.loot); toast(`✨ Secret found! (${SECRETS.filter(sc => S.loot.includes(sc.loot.n)).length} of ${SECRETS.length})`, `You found ${o.secret.loot.n}! It's in your wardrobe.`); burst(o.x, 0.8, o.z, "#ffc42b", 40); drawHud(); }
   if(h.kind === "stone"){ if(S.choosing) choose(o.branch); else forward(); } }
 let toastT; function toast(a, b){ const t = $("toast"); t.innerHTML = a + (b ? `<small>${b}</small>` : ""); t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 1900); }
 function hint(on){ $("hint").style.opacity = on ? 1 : 0; }
