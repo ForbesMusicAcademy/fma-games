@@ -338,6 +338,10 @@ function friendLine(n){
   const you = ME.name ? ME.name.split(" ")[0] : "";
   if(f.met === 1) return you ? `Hi ${you}! I'm ${first}!` : `Hi! I'm ${first}!`;
   if(you && Math.random() < 0.35) return [`Go ${you}, go!`, `Nice one, ${you}!`, `${you}! Wait up!`][Math.floor(Math.random() * 3)];
+  const LORE = [["The Grumpy Amp hates a steady Em!", "Psst… there's something sparkly near the mushrooms.", "Plucky says pick whichever path feels fun!"],
+    ["Tangled Cables can't stand clean chord changes!", "I heard a gem glints in the canyon rocks…", "Hold Walk on to zoom past stones you've done!"],
+    ["The Feedback Beast goes quiet when you keep time!", "Something's floating out on the water…", "Nearly at the end. You've got this!"]][Math.max(0, MAIN.regions.findIndex(r => n.z < r.z1))] || [];
+  if(f.met > 1 && LORE.length && Math.random() < 0.45) return LORE[Math.floor(Math.random() * LORE.length)];
   const where = regionName(n.z), lines = [`${first} again! Fancy seeing you in ${where}!`, `You made it to ${where}!`, `Told you we'd meet again!`, `Keep going, you're doing great!`, `I practised too! ${CHEERS[Math.floor(Math.random() * CHEERS.length)]}`];
   return f.met === 2 ? lines[0] : lines[1 + Math.floor(Math.random() * (lines.length - 1))];
 }
