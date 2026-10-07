@@ -617,7 +617,7 @@ function drawNpc(n, now){
   ctx.globalAlpha = fogA(p.dz);
   // speech bubble when you walk past
   if(t >= 1 && p.dz < 16 && p.dz > 3){
-    if(!n.said){ n.said = now; n.line = friendLine(n); if(audio.on) chirp(650 + Math.random() * 350); }
+    if(!n.said){ n.said = now; n.line = friendLine(n); lick(); }
     if(now - n.said < 2600){ const fs = Math.max(11, Math.min(16, p.s * 0.22)); ctx.font = `800 ${fs}px "Work Sans", sans-serif`; ctx.textAlign = "center";
       const text = n.line.replace("{me}", ME.name || "friend"), tw = ctx.measureText(text).width, bx = p.x, by = p.y - h - fs * 1.4 - jump;
       ctx.fillStyle = "#fff"; ol(2); roundRect(bx - tw / 2 - 9, by - fs, tw + 18, fs * 1.7, 9); ctx.fill(); ctx.stroke();
@@ -717,6 +717,15 @@ function drawConfetti(dt){
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(f.r + f.t * 8); ctx.fillStyle = f.c; ctx.globalAlpha = 1 - f.t / 1.6; ctx.fillRect(-p.s * 0.06, -p.s * 0.1, p.s * 0.12, p.s * 0.2); ctx.restore(); });
 }
 
+/* ============================== foreground: grass right in front of the camera, swaying ============================== */
+const FG = Array.from({ length: 70 }, (_, i) => ({ x: (i * 37.7) % 1, h: 0.05 + ((i * 53) % 10) / 120, lean: ((i * 29) % 10) / 10 - 0.5, shade: i % 3 }));
+function drawForeground(now){
+  const tn = S.mode === "bonus" ? "stars" : themeName(S.pz); if(tn === "stars" || QUALITY.level === 0) return;
+  const cols = tn === "canyon" ? ["#c9a25a", "#b58c48", "#d9b870"] : ["#4f9e3f", "#3f8a35", "#62b04c"], wind = Math.sin(now / 900) * 0.5 + Math.sin(now / 370) * 0.2;
+  for(const b of FG){ const x = b.x * W, bh = b.h * H * (tn === "canyon" ? 0.6 : 1), sway = (wind + b.lean) * bh * 0.35 - LOOK.x * 6;
+    ctx.fillStyle = cols[b.shade]; ctx.beginPath(); ctx.moveTo(x - 5, H + 2); ctx.quadraticCurveTo(x + sway * 0.3, H - bh * 0.5, x + sway, H - bh); ctx.quadraticCurveTo(x + sway * 0.3 + 3, H - bh * 0.5, x + 5, H + 2); ctx.closePath(); ctx.fill(); }
+}
+
 /* ============================== light and weather ============================== */
 const WX = { bits: [] };
 function themeName(z){ const th = themeAt(C, z); return Object.keys(THEMES).find(k => THEMES[k] === th); }
@@ -806,6 +815,9 @@ function rainSound(on){ if(!audio.ctx) return; if(!audio.rain){ const c = audio.
     const src = c.createBufferSource(); src.buffer = buf; src.loop = true; const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1800; audio.rain = c.createGain(); audio.rain.gain.value = 0; src.connect(hp).connect(audio.rain).connect(c.destination); src.start(); }
   audio.rain.gain.setTargetAtTime(on && audio.on ? 0.035 : 0, audio.ctx.currentTime, 1.5); }
 function baa(){ const t = audio.ctx.currentTime; tone(420, t, 0.45, "sawtooth", 0.02, 380); tone(424, t + 0.05, 0.4, "sawtooth", 0.015, 384); }
+// a friend's little guitar lick: four plucked notes from a pentatonic scale
+function lick(){ if(!audio.on || !MUSIC) return; const pent = [329.6, 392.0, 440.0, 493.9, 587.3, 659.3], t = audio.ctx.currentTime, start = Math.floor(Math.random() * 3);
+  for(let i = 0; i < 4; i++) pluck(pent[(start + [0, 1, 2, 4][i]) % pent.length] , t + i * 0.13, 0.05); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
 const FINALE = { t: 0, sparks: [], next: 0 }, IDLE = { t: performance.now() }, RAINBOW = { t: 0 }, RAIN = { on: false, next: performance.now() + 45000 + Math.random() * 40000 };
@@ -842,7 +854,7 @@ function frame(now){
   stepBuddy(dt); if(S.buddy) list.push({ z: S.buddy.z, d: () => drawBuddy(now) });
   list.push({ z: S.pz - 0.05, d: () => { drawDust(); drawMe(now); } });
   list.sort((a, b) => b.z - a.z).forEach(o => o.d());
-  drawConfetti(dt); drawWeather(dt, now); checkQuality(dt);
+  drawConfetti(dt); drawForeground(now); drawWeather(dt, now); checkQuality(dt);
   if(document.hidden) setTimeout(() => frame(performance.now()), 120); else requestAnimationFrame(frame);
 }
 
@@ -972,7 +984,7 @@ function loadGame(){
     if(cracked && n.cracks){ n.cracked = true; n.pebbles = n.cracks.map((c, k, a) => makeNode({ n: c, s: n.s, d: `A smaller piece of “${n.n}”.`, game: n.game }, { pebble: true, region: n.region, z: n.z + 0.4, x: n.x + (k - (a.length - 1) / 2) * 1.9 }));
       if(pebs) n.pebbles.forEach((p, k) => p.done = !!pebs[k]); }
     if(n.type === "gate" && n.done) n.koT = -1e9; });
-  Object.assign(S, d.pos || {}); S.region = d.region || 0; S.powers = d.powers || []; S.loot = d.loot || [];
+  Object.assign(S, d.pos || {}); S.region = d.region || 0; S.powers = d.powers || []; S.loot = [...new Set(d.loot || [])];
   if(d.look) Object.assign(ME, d.look);
   loading = false; return true;
 }
@@ -988,7 +1000,7 @@ function surprise(n){
   } else n.event = { kind: "chest", loot: LOOT[Math.floor(Math.random() * LOOT.length)] };
   showSheet();
 }
-function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
+function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; if(!S.loot.includes(l.n)) S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
 function collectBonus(n){
   n.done = true; burst(n.x, 1.6, n.z, "#ffc42b", 40); toast("♪ Note collected!", n.end ? "Bonus stage complete!" : `${BONUSC.steps.filter(s => s.done).length} of ${BONUSC.steps.filter(x => x.bonus).length}`);
   if(n.end){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
@@ -1136,7 +1148,7 @@ function drawHud(){
   const tally = {}, total = {};
   MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(!n.s) return; total[n.s] = (total[n.s] || 0) + 1; if(n.done) tally[n.s] = (tally[n.s] || 0) + 1; }));
   $("skills").innerHTML = Object.entries(SKILLS).map(([k, s]) => `<div class="sk" data-s="${k}" style="--c:${s.c}"><i style="background:${s.c}22">${s.i}</i>${s.n}<span class="pips">${Array.from({ length: total[k] || 0 }, (_, j) => `<b class="${j < (tally[k] || 0) ? "on" : ""}"></b>`).join("")}</span></div>`).join("");
-  $("powers").innerHTML = (S.powers.length ? "Powers: " + S.powers.map(p => `<span>${POWERS[p]}</span>`).join("") : "") + (S.loot.length ? ` Found: ${S.loot.map(l => `<span>${l}</span>`).join("")}` : "");
+  $("powers").innerHTML = (S.powers.length ? "Powers: " + S.powers.map(p => `<span>${POWERS[p]}</span>`).join("") : "") + (S.loot.length ? ` <span>👕 ${S.loot.length} thing${S.loot.length === 1 ? "" : "s"} found</span>` : "");
   if(S.mode === "bonus"){ $("where").innerHTML = `🌟 Starlight Stage<small>Bonus level</small>`; return; }
   const ri = (baseNode() || {}).region || 0, r = REGIONS[ri];
   const cl = clearedIn(ri); $("where").innerHTML = `${r.name}<small>${cl >= r.need ? "✓ Gate boss ready!" : `${cl} of ${r.need} stones for the gate`}</small>`;
