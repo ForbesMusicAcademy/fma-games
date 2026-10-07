@@ -297,6 +297,8 @@ for(let z = MAIN.regions[0].z0 + 8; z < MAIN.regions[0].z1 - 6; z += 14 + rnd() 
 for(let z = MAIN.regions[2].z0 + 6; z < MAIN.regions[2].z1 - 4; z += 22){ const side = rnd() < .5 ? -1 : 1; for(let k = 0; k < 4; k++) PROPS.main.push({ kind: "duck", x: MAIN.xfn(z) + side * (5 + k * 0.7), z: z + k * 0.5, r: k ? 0.3 : 0.9, lead: k === 0 }); }
 for(let z = MAIN.regions[2].z0 + 3; z < MAIN.regions[2].z1; z += 6) for(const d of [-1.9, 1.9]) PROPS.main.push({ kind: "lantern", x: MAIN.xfn(z) + d, z, r: 0.5 });
 PROPS.main.push({ kind: "picnic", x: MAIN.xfn(MAIN.regions[0].z0 + SP * 5.5) - 9, z: MAIN.regions[0].z0 + SP * 5.5, r: 0.5 });
+PROPS.main.push({ kind: "eagle", x: MAIN.xfn(MAIN.regions[1].z0 + 25), z: MAIN.regions[1].z0 + 25, r: 0.5 }, { kind: "eagle", x: MAIN.xfn(MAIN.regions[1].z0 + 75), z: MAIN.regions[1].z0 + 75, r: 0.2 });
+PROPS.main.push({ kind: "kite", x: MAIN.xfn(MAIN.regions[0].z0 + 30) + 7, z: MAIN.regions[0].z0 + 30, r: 0.5 });
 PROPS.main.push({ kind: "balloon", x: MAIN.xfn(MAIN.regions[1].z0 + 40) + 14, z: MAIN.regions[1].z0 + 40, r: 0.5 });
 // bridge posts at both ends of each crossing
 FEATURES.forEach(f => { if(f.kind === "ford") return; for(const z of [f.z0, f.z1]) for(const d of [-1.7, 1.7]) PROPS.main.push({ kind: f.kind === "chasm" ? "ropepost" : "post", x: MAIN.xfn(z) + d, z, r: 0.5 }); });
@@ -545,6 +547,15 @@ function drawProp(o, p, now){
       ctx.save(); ctx.beginPath(); ctx.ellipse(x, y, bw / 2, bh / 2, 0, 0, 7); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = s * 0.08; for(let i = -3; i <= 3; i++){ ctx.beginPath(); ctx.moveTo(x + i * bw * 0.14, y - bh); ctx.lineTo(x + i * bw * 0.14, y + bh); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - bw, y + i * bh * 0.2); ctx.lineTo(x + bw, y + i * bh * 0.2); ctx.stroke(); } ctx.restore();
       ol(s * 0.04); ctx.fillStyle = "#3a3a3d"; ctx.beginPath(); ctx.ellipse(x + s * 0.35, y - s * 0.05, s * 0.55, s * 0.2, -0.2, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#c98a4b"; ctx.beginPath(); ctx.ellipse(x + s * 0.3, y - s * 0.1, s * 0.3, s * 0.12, -0.2, 0, 7); ctx.fill();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.arc(x - s * 0.45, y - s * 0.12, s * 0.13, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#4fb86a"; ctx.fillRect(x - s * 0.47, y - s * 0.3, s * 0.04, s * 0.08); break; }
+    case "eagle": { const a = now / 3000 + k * 6, ex = x + Math.cos(a) * s * 5, ey = y - s * 9 + Math.sin(a * 2) * s * 0.5, fl = Math.sin(now / 200) * s * 0.25;
+      ctx.fillStyle = "rgba(40,20,10,.12)"; ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * s * 5, y, s * 0.8, s * 0.2, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#5a3520"; ctx.lineWidth = Math.max(2, s * 0.12); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(ex - s * 0.9, ey - fl); ctx.quadraticCurveTo(ex - s * 0.4, ey - s * 0.3, ex, ey); ctx.quadraticCurveTo(ex + s * 0.4, ey - s * 0.3, ex + s * 0.9, ey - fl); ctx.stroke();
+      ctx.fillStyle = "#fffdf6"; circle(ex, ey - s * 0.05, s * 0.12); ctx.fill(); break; }
+    case "kite": { const kx = x + Math.sin(now / 1300) * s * 1.2, ky = y - s * 7 + Math.cos(now / 900) * s * 0.6, ks = s * 0.9;
+      ctx.strokeStyle = "rgba(38,33,31,.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - s * 1.5, y - s * 0.9); ctx.quadraticCurveTo(x, y - s * 3, kx, ky + ks); ctx.stroke();
+      ol(s * 0.04); ctx.fillStyle = "#ff6fa3"; ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky + ks); ctx.lineTo(kx - ks * 0.7, ky); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ffc42b"; ctx.beginPath(); ctx.moveTo(kx, ky - ks); ctx.lineTo(kx + ks * 0.7, ky); ctx.lineTo(kx, ky); ctx.closePath(); ctx.fill();
+      for(let i = 0; i < 4; i++){ const tx = kx + Math.sin(now / 300 + i) * s * 0.2, ty = ky + ks + i * s * 0.35; ctx.fillStyle = ["#4aa8ff", "#9be04a", "#ffc42b", "#ff6fa3"][i]; ctx.beginPath(); ctx.ellipse(tx, ty, s * 0.12, s * 0.06, 0.5, 0, 7); ctx.fill(); } break; }
     case "windmill": { const h = 6 * s, w = 1.4 * s; shadow(p, 1.6); ol(s * 0.05);
       ctx.fillStyle = "#f3ead8"; ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x - w * 0.6, y - h); ctx.lineTo(x + w * 0.6, y - h); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.moveTo(x - w * 0.8, y - h); ctx.lineTo(x, y - h - w * 1.1); ctx.lineTo(x + w * 0.8, y - h); ctx.closePath(); ctx.fill(); ctx.stroke();
