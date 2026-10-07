@@ -372,6 +372,10 @@ function drawSky(th, now){
     for(let i = 0; i < 90; i++){ const x = (i * 137.5 + -S.cam.x * 3) % W, y = (i * 61.3) % HOR, tw = 0.5 + 0.5 * Math.sin(now / 400 + i);
       ctx.fillStyle = `rgba(255,255,255,${0.3 + tw * 0.6})`; ctx.fillRect((x + W) % W, y, 2, 2); }
     ctx.fillStyle = "#fff6c8"; circle(W * 0.78 - S.cam.x * 2, HOR * 0.3, Math.min(W, H) * 0.06); ctx.fill();
+    // a guitar-shaped constellation
+    const gx = W * 0.25 - S.cam.x * 1.5, gy = HOR * 0.45, u = Math.min(W, H) * 0.045, stars = [[0, 0], [1.2, -0.4], [1.5, 0.9], [0.4, 1.7], [-0.9, 1.3], [-1.1, 0.2], [0.2, -1.3], [0.9, -3.4], [1.2, -4.4]];
+    ctx.strokeStyle = "rgba(200,210,255,.35)"; ctx.lineWidth = 1.2; ctx.beginPath(); [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [1, 6], [6, 7], [7, 8]].forEach(([a, b]) => { ctx.moveTo(gx + stars[a][0] * u, gy + stars[a][1] * u); ctx.lineTo(gx + stars[b][0] * u, gy + stars[b][1] * u); }); ctx.stroke();
+    stars.forEach(([x, y], i) => { const tw = 0.6 + 0.4 * Math.sin(now / 500 + i * 1.7); ctx.fillStyle = `rgba(255,255,240,${tw})`; circle(gx + x * u, gy + y * u, 2.2); ctx.fill(); });
   } else {
     ctx.fillStyle = "rgba(255,244,200,.9)"; circle(W * 0.8 - S.cam.x * 1.5, HOR * 0.28, Math.min(W, H) * 0.07); ctx.fill();
     for(let i = 0; i < 6; i++){ const x = ((i * 233 + now / 90 - S.cam.x * 4) % (W + 300) + W + 300) % (W + 300) - 150, y = HOR * (0.15 + (i % 3) * 0.17);
@@ -1029,7 +1033,10 @@ function surprise(n){
   showSheet();
 }
 function giveLoot(l){ ME[l.k] = l.v; if(l.k === "extra") ME.extraColor = l.c; else if(l.k === "acc") ME.accColor = l.c; else ME.gearColor = l.c; if(!S.loot.includes(l.n)) S.loot.push(l.n); heroImages(); setTimeout(() => turnAround("star", 1800), 200); }
-function collectBonus(n){
+// each note you collect plays the next bit of Twinkle Twinkle (a traditional tune)
+const TWINKLE = [[261.6, 261.6, 392.0, 392.0], [440.0, 440.0, 392.0], [349.2, 349.2, 329.6, 329.6], [293.7, 293.7, 261.6]];
+function bonusTune(i){ if(!audio.on) return; const t = audio.ctx.currentTime, ph = TWINKLE[i % TWINKLE.length]; ph.forEach((f, k) => pluck(f, t + k * 0.28, 0.07)); }
+function collectBonus(n){ bonusTune(BONUSC.steps.filter(x => x.bonus && x.done).length);
   n.done = true; burst(n.x, 1.6, n.z, "#ffc42b", 40); toast("♪ Note collected!", n.end ? "Bonus stage complete!" : `${BONUSC.steps.filter(s => s.done).length} of ${BONUSC.steps.filter(x => x.bonus).length}`);
   if(n.end){ const l = LOOT[Math.floor(Math.random() * LOOT.length)]; setTimeout(() => { giveLoot(l); toast("Bonus prize!", `You won ${l.n}. Look at your character!`); }, 1300); setTimeout(leaveBonus, 3200); }
   else setTimeout(forward, 900);
