@@ -273,6 +273,11 @@ const featureAt = z => S.mode === "main" ? FEATURES.find(f => z >= f.z0 && z <= 
 const PROPS = { main: scatter(MAIN).filter(o => !FEATURES.some(f => o.z > f.z0 - 0.6 && o.z < f.z1 + 0.6 && Math.abs(o.x - MAIN.xfn(o.z)) < 9)), bonus: scatter(BONUSC) };
 // windmills in the meadow, turning in the breeze
 [MAIN.regions[0].z0 + SP * 2.6, MAIN.regions[0].z0 + SP * 7.4].forEach((z, i) => PROPS.main.push({ kind: "windmill", x: MAIN.xfn(z) + (i ? -1 : 1) * 11, z, r: 0.5 }));
+// animals: sheep grazing in the meadow, a duck family on the river, a hot-air balloon over the canyon
+seed = 41;
+for(let z = MAIN.regions[0].z0 + 8; z < MAIN.regions[0].z1 - 6; z += 14 + rnd() * 10){ const side = rnd() < .5 ? -1 : 1, x = MAIN.xfn(z) + side * (6 + rnd() * 8); if(!onRoad(MAIN, x, z, 4)) for(let k = 0; k < 2 + Math.floor(rnd() * 2); k++) PROPS.main.push({ kind: "sheep", x: x + (rnd() - .5) * 3, z: z + (rnd() - .5) * 3, r: rnd() }); }
+for(let z = MAIN.regions[2].z0 + 6; z < MAIN.regions[2].z1 - 4; z += 22){ const side = rnd() < .5 ? -1 : 1; for(let k = 0; k < 4; k++) PROPS.main.push({ kind: "duck", x: MAIN.xfn(z) + side * (5 + k * 0.7), z: z + k * 0.5, r: k ? 0.3 : 0.9, lead: k === 0 }); }
+PROPS.main.push({ kind: "balloon", x: MAIN.xfn(MAIN.regions[1].z0 + 40) + 14, z: MAIN.regions[1].z0 + 40, r: 0.5 });
 // bridge posts at both ends of each crossing
 FEATURES.forEach(f => { if(f.kind === "ford") return; for(const z of [f.z0, f.z1]) for(const d of [-1.7, 1.7]) PROPS.main.push({ kind: f.kind === "chasm" ? "ropepost" : "post", x: MAIN.xfn(z) + d, z, r: 0.5 }); });
 
@@ -478,6 +483,22 @@ function drawProp(o, p, now){
       const g = ctx.createRadialGradient(x, y - s * 2.6, 0, x, y - s * 2.6, s * 1.4); g.addColorStop(0, "rgba(255,240,180,.8)"); g.addColorStop(1, "rgba(255,240,180,0)"); ctx.fillStyle = g; circle(x, y - s * 2.6, s * 1.4); ctx.fill();
       ctx.fillStyle = "#fff6c8"; circle(x, y - s * 2.6, s * 0.18); ctx.fill(); break; }
     case "note": { const b = Math.sin(now / 500 + k * 10) * s * 0.25; ctx.fillStyle = ["#ffc42b", "#ff6fa3", "#4fd0c0"][Math.floor(k * 3)]; ctx.font = `900 ${s * 1.2}px Nunito, sans-serif`; ctx.textAlign = "center"; ctx.fillText("♪", x, y - s * 1.5 + b); break; }
+    case "sheep": { const bob = Math.abs(Math.sin(now / 700 + k * 9)) * s * 0.04, head = Math.sin(now / 1500 + k * 5) > 0.3 ? s * 0.12 : 0, dir = k < 0.5 ? -1 : 1; shadow(p, 0.55); ol(s * 0.04);
+      ctx.fillStyle = "#26211f"; for(const lx of [-0.25, 0.22]) ctx.fillRect(x + lx * s - s * 0.04, y - s * 0.32, s * 0.08, s * 0.32);
+      ctx.fillStyle = "#fffdf6"; ctx.beginPath(); for(const [cx, cy, r] of [[0, -0.5, 0.3], [-0.25, -0.45, 0.24], [0.25, -0.46, 0.24], [0, -0.66, 0.22]]) ctx.arc(x + cx * s, y + cy * s - bob, r * s, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#3a3a3d"; ctx.beginPath(); ctx.ellipse(x + dir * s * 0.42, y - s * 0.52 + head - bob, s * 0.13, s * 0.17, dir * 0.4, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#fff"; circle(x + dir * s * 0.46, y - s * 0.56 + head - bob, s * 0.03); ctx.fill();
+      if(audio.on && p.dz < 14 && Math.random() < 0.0015) baa(); break; }
+    case "duck": { const sw = Math.sin(now / 900 + o.z) * s * 0.4, by = y + Math.sin(now / 300 + k * 7) * s * 0.03, sc = o.lead ? 1 : 0.62; ol(s * 0.035);
+      ctx.fillStyle = o.lead ? "#8a6a3a" : "#ffd34d"; ctx.beginPath(); ctx.ellipse(x + sw, by - s * 0.14 * sc, s * 0.3 * sc, s * 0.16 * sc, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x + sw + s * 0.22 * sc, by - s * 0.34 * sc, s * 0.12 * sc, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ff8a1c"; ctx.beginPath(); ctx.moveTo(x + sw + s * 0.32 * sc, by - s * 0.35 * sc); ctx.lineTo(x + sw + s * 0.44 * sc, by - s * 0.31 * sc); ctx.lineTo(x + sw + s * 0.32 * sc, by - s * 0.29 * sc); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x + sw, by, s * 0.4 * sc, s * 0.06 * sc, 0, 0, 7); ctx.stroke(); break; }
+    case "balloon": { const fy = y - s * (12 + Math.sin(now / 2500) * 1.2), fx = x + Math.sin(now / 4000) * s * 2, R0 = s * 2.2; ol(s * 0.06);
+      const cols = ["#e8433f", "#ffc42b", "#4aa8ff", "#ffc42b", "#e8433f"]; for(let i = 0; i < 5; i++){ ctx.fillStyle = cols[i]; ctx.beginPath(); ctx.ellipse(fx, fy, R0 * (1 - i * 0.2), R0 * 1.15, 0, 0, 7); ctx.fill(); }
+      ctx.beginPath(); ctx.ellipse(fx, fy, R0, R0 * 1.15, 0, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx - R0 * 0.5, fy + R0 * 1.0); ctx.lineTo(fx - R0 * 0.2, fy + R0 * 1.55); ctx.moveTo(fx + R0 * 0.5, fy + R0 * 1.0); ctx.lineTo(fx + R0 * 0.2, fy + R0 * 1.55); ctx.stroke();
+      ctx.fillStyle = "#a8723c"; ctx.beginPath(); ctx.rect(fx - R0 * 0.25, fy + R0 * 1.55, R0 * 0.5, R0 * 0.35); ctx.fill(); ctx.stroke(); break; }
     case "windmill": { const h = 6 * s, w = 1.4 * s; shadow(p, 1.6); ol(s * 0.05);
       ctx.fillStyle = "#f3ead8"; ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x - w * 0.6, y - h); ctx.lineTo(x + w * 0.6, y - h); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.moveTo(x - w * 0.8, y - h); ctx.lineTo(x, y - h - w * 1.1); ctx.lineTo(x + w * 0.8, y - h); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -561,7 +582,7 @@ function drawBoss(n, now){
   // the fight: three volleys of notes, each one makes the boss flash and reel
   let hit = 0; if(n.fight && now < n.koT){ const e = now - n.fight; for(const h of [500, 1100, 1700]) if(e > h && e < h + 220) hit = 1 - (e - h) / 220; }
   if(hit) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
-  ctx.filter = (n.boss === "cables" ? "hue-rotate(160deg) " : "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
+  ctx.filter = ({ 0: "", 1: "hue-rotate(160deg) ", 2: "hue-rotate(250deg) saturate(1.4) " }[n.region] || "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
   ctx.drawImage(BOSS_IMG, -size / 2, -size / 2, size, size); ctx.restore(); ctx.filter = "none"; ctx.globalAlpha = 1;
   if(n.fight && now < n.koT){ const e = now - n.fight, from = P(S.px, 1.3, S.pz), to = P(n.x + 1.7, 1.3, n.z + 3.6);
     if(from && to) for(const h of [0, 600, 1200]) for(let k = 0; k < 3; k++){ const q = (e - h - k * 90) / 500; if(q < 0 || q > 1) continue;
@@ -771,6 +792,7 @@ function hitSound(i){ if(!audio.on) return; const t = audio.ctx.currentTime; ton
 function rainSound(on){ if(!audio.ctx) return; if(!audio.rain){ const c = audio.ctx, len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0); for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     const src = c.createBufferSource(); src.buffer = buf; src.loop = true; const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1800; audio.rain = c.createGain(); audio.rain.gain.value = 0; src.connect(hp).connect(audio.rain).connect(c.destination); src.start(); }
   audio.rain.gain.setTargetAtTime(on && audio.on ? 0.035 : 0, audio.ctx.currentTime, 1.5); }
+function baa(){ const t = audio.ctx.currentTime; tone(420, t, 0.45, "sawtooth", 0.02, 380); tone(424, t + 0.05, 0.4, "sawtooth", 0.015, 384); }
 function bonkSound(){ if(audio.on) tone(330, audio.ctx.currentTime, 0.25, "triangle", 0.05, 200); }
 
 const IDLE = { t: performance.now() }, RAINBOW = { t: 0 }, RAIN = { on: false, next: performance.now() + 45000 + Math.random() * 40000 };
