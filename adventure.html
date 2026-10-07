@@ -545,6 +545,7 @@ function drawStone(n, now, isPebble){
   ctx.fillStyle = top; ol(Math.max(1, p.s * 0.04)); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx, ry, 0, 0, 7); ctx.fill(); ctx.stroke();
   if(n.s && n.type !== "surprise" && n.type !== "golden"){ ctx.strokeStyle = (SKILLS[n.s] || SKILLS.repertoire).c; ctx.lineWidth = Math.max(1.5, p.s * 0.07); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * 0.82, ry * 0.82, 0, 0, 7); ctx.stroke(); }
   ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(p.x - rx * 0.25, cy - th * 0.5 - ry * 0.2, rx * 0.35, ry * 0.3, 0, 0, 7); ctx.fill();
+  if(n === S.nextN || (S.choosing && n.fork === S.choosing.fork && n === S.choosing.fork[n.branch][0])) HITS.push({ x0: p.x - rx * 1.2, y0: cy - th - ry * 3, x1: p.x + rx * 1.2, y1: cy + ry * 1.5, o: n, kind: "stone" });
   if(n === S.nextN && !n.done){ const k = (now % 1400) / 1400; ctx.strokeStyle = `rgba(255,196,43,${0.9 * (1 - k)})`; ctx.lineWidth = Math.max(2, p.s * 0.08); ctx.beginPath(); ctx.ellipse(p.x, cy - th * 0.5, rx * (1.05 + k * 0.5), ry * (1.05 + k * 0.5), 0, 0, 7); ctx.stroke(); }
   if(n.cracked){ ol(p.s * 0.05); ctx.beginPath(); ctx.moveTo(p.x - rx * 0.5, cy - th); ctx.lineTo(p.x - rx * 0.1, cy - th * 0.4); ctx.lineTo(p.x - rx * 0.3, cy); ctx.moveTo(p.x + rx * 0.4, cy - th); ctx.lineTo(p.x + rx * 0.1, cy - th * 0.2); ctx.stroke(); }
   if(n.type === "golden" && !n.done){ const g = ctx.createRadialGradient(p.x, cy, 0, p.x, cy, rx * 1.8); g.addColorStop(0, `rgba(255,220,90,${0.45 + 0.2 * Math.sin(now / 250)})`); g.addColorStop(1, "rgba(255,220,90,0)"); ctx.fillStyle = g; circle(p.x, cy, rx * 1.8); ctx.fill(); }
@@ -601,7 +602,9 @@ function drawBoss(n, now){
   ctx.save(); ctx.translate(p.x + t * size, p.y - size * 0.5 + bob - t * size * 0.8); ctx.rotate(t * 3 + Math.sin(now / 500) * 0.04);
   // the fight: three volleys of notes, each one makes the boss flash and reel
   let hit = 0; if(n.fight && now < n.koT){ const e = now - n.fight; for(const h of [500, 1100, 1700]) if(e > h && e < h + 220) hit = 1 - (e - h) / 220; }
+  if(n.poke && now - n.poke < 600) hit = Math.max(hit, 0.5 * (1 - (now - n.poke) / 600));
   if(hit) ctx.translate(Math.sin(now / 15) * size * 0.08 * hit, 0);
+  if(!n.done) HITS.push({ x0: p.x - size / 2, y0: p.y - size, x1: p.x + size / 2, y1: p.y, o: n, kind: "boss" });
   ctx.filter = ({ 0: "", 1: "hue-rotate(160deg) ", 2: "hue-rotate(250deg) saturate(1.4) " }[n.region] || "") + (hit ? `brightness(${1 + hit}) saturate(${1 + hit * 2})` : "");
   ctx.drawImage(BOSS_IMG, -size / 2, -size / 2, size, size); ctx.restore(); ctx.filter = "none"; ctx.globalAlpha = 1;
   if(n.fight && now < n.koT){ const e = now - n.fight, from = P(S.px, 1.3, S.pz), to = P(n.x + 1.7, 1.3, n.z + 3.6);
@@ -652,6 +655,7 @@ function drawMe(now){
   const p = P(S.px, S.py, S.pz), g0 = P(S.px, 0, S.pz); if(!p || !g0) return;
   const img = HERO.back; if(!img || !img.complete || !img.naturalWidth) return;
   const u = p.s, H = 1.85 * u * 400 / (384 - HERO.top), W = H, x = p.x - W / 2, y = p.y - H * 384 / 400;
+  HITS.push({ x0: p.x - W * 0.25, y0: y + H * 0.15, x1: p.x + W * 0.25, y1: p.y, o: HERO, kind: "me" });
   ctx.fillStyle = `rgba(0,0,0,${0.22 - Math.min(0.12, S.py * 0.06)})`; ctx.beginPath(); ctx.ellipse(g0.x, g0.y, u * 0.42 * (1 - S.py * 0.15), u * 0.11, 0, 0, 7); ctx.fill();
   // turning round?
   let sx = 1, show = img, front = false;
@@ -1209,7 +1213,10 @@ function poke(h){ const now = performance.now(), o = h.o;
   if(h.kind === "sheep" && audio.on) baa();
   if(h.kind === "duck" && audio.on){ const t = audio.ctx.currentTime; tone(520, t, 0.12, "square", 0.03, 380); tone(520, t + 0.16, 0.12, "square", 0.03, 380); }
   if(h.kind === "friend"){ o.line = ["Hey! That tickles!", "Woo! High five!", "Let's jam later!", "You found me!", CHEERS[Math.floor(Math.random() * CHEERS.length)]][Math.floor(Math.random() * 5)]; o.said = now; lick(); }
-  if(h.kind === "crowd" && audio.on) winSound(); }
+  if(h.kind === "crowd" && audio.on) winSound();
+  if(h.kind === "me" && !HERO.turn) turnAround(["wave", "peace", "thumbs", "rock", "flex"][Math.floor(Math.random() * 5)], 1100);
+  if(h.kind === "boss" && audio.on) grumble();
+  if(h.kind === "stone"){ if(S.choosing) choose(o.branch); else forward(); } }
 let toastT; function toast(a, b){ const t = $("toast"); t.innerHTML = a + (b ? `<small>${b}</small>` : ""); t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 1900); }
 function hint(on){ $("hint").style.opacity = on ? 1 : 0; }
 
