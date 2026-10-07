@@ -506,7 +506,7 @@ function drawProp(o, p, now){
     case "pine": { const h = (3 + k * 2) * s; shadow(p, 0.9); ctx.fillStyle = "#7a4e26"; ctx.fillRect(x - s * 0.12, y - h * 0.25, s * 0.24, h * 0.25); ol(s * 0.05);
       ctx.fillStyle = "#2f8f5b"; for(let t = 0; t < 3; t++){ const yy = y - h * (0.2 + t * 0.25), w = s * (1.1 - t * 0.28); ctx.beginPath(); ctx.moveTo(x - w, yy); ctx.lineTo(x, yy - h * 0.4); ctx.lineTo(x + w, yy); ctx.closePath(); ctx.fill(); ctx.stroke(); } break; }
     case "bush": { shadow(p, 0.8); ctx.fillStyle = k < 0.5 ? "#5cc46f" : "#4aa860"; ol(s * 0.05); ctx.beginPath(); ctx.arc(x - s * 0.35, y - s * 0.3, s * 0.42, 0, 7); ctx.arc(x + s * 0.35, y - s * 0.32, s * 0.45, 0, 7); ctx.arc(x, y - s * 0.55, s * 0.5, 0, 7); ctx.fill(); ctx.stroke(); break; }
-    case "flower": { const c = ["#ff6fa3", "#ffc42b", "#fff", "#a070e8", "#e8433f"][Math.floor(k * 5)]; ol(s * 0.03); ctx.strokeStyle = "#3d8a3d"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - s * 0.5); ctx.stroke();
+    case "flower": { if(S.mode === "main" && k > BLOOM[regionAt(MAIN, o.z)]) break; const c = ["#ff6fa3", "#ffc42b", "#fff", "#a070e8", "#e8433f"][Math.floor(k * 5)]; ol(s * 0.03); ctx.strokeStyle = "#3d8a3d"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - s * 0.5); ctx.stroke();
       ctx.fillStyle = c; for(let a = 0; a < 5; a++){ circle(x + Math.cos(a * 1.26) * s * 0.12, y - s * 0.55 + Math.sin(a * 1.26) * s * 0.12, s * 0.1); ctx.fill(); } ctx.fillStyle = "#ffc42b"; circle(x, y - s * 0.55, s * 0.07); ctx.fill(); break; }
     case "mushroom": { shadow(p, 0.5); ol(s * 0.04); ctx.fillStyle = "#fff4e0"; ctx.beginPath(); ctx.rect(x - s * 0.13, y - s * 0.45, s * 0.26, s * 0.45); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#e8433f"; ctx.beginPath(); ctx.ellipse(x, y - s * 0.45, s * 0.42, s * 0.3, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1238,8 +1238,11 @@ $("mapBtn").onclick = openMap; $("mapReset").onclick = () => { if(confirm("Start
 $("snd").onclick = () => { if(audio.on){ audio.on = false; MUSIC.on = false; if(audio.wind) audio.wind.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.2); $("snd").textContent = "🔇"; } else { startAudio(); MUSIC.on = true; MUSIC.next = 0; $("snd").textContent = "🔊"; } };
 
 /* ============================== HUD and controls ============================== */
+const BLOOM = [0.35, 0.35, 0.35];
+function regionAt(c, z){ const i = c.regions.findIndex(r => z < r.z1); return i < 0 ? c.regions.length - 1 : i; }
+function updateBloom(){ MAIN.regions.forEach((r, i) => { const ns = allNodes().filter(n => n.region === i && n.type === "stone" && !n.optional), c = ns.filter(n => n.done).length; BLOOM[i] = 0.35 + 0.65 * (ns.length ? c / ns.length : 0); }); }
 function drawHud(){
-  saveGame();
+  saveGame(); updateBloom();
   const tally = {}, total = {};
   MAIN.steps.forEach(st => (st.fork ? [...st.L, ...st.R] : [st]).forEach(n => { if(!n.s) return; total[n.s] = (total[n.s] || 0) + 1; if(n.done) tally[n.s] = (tally[n.s] || 0) + 1; }));
   $("skills").innerHTML = Object.entries(SKILLS).map(([k, s]) => `<div class="sk" data-s="${k}" style="--c:${s.c}"><i style="background:${s.c}22">${s.i}</i>${s.n}<span class="pips">${Array.from({ length: total[k] || 0 }, (_, j) => `<b class="${j < (tally[k] || 0) ? "on" : ""}"></b>`).join("")}</span></div>`).join("");
