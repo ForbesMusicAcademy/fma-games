@@ -870,7 +870,10 @@ function startAudio(){
     src.connect(audio.windF).connect(audio.wind).connect(audio.ctx.destination); src.start();
     setInterval(() => { if(!audio.on) return; const tn = S.mode === "bonus" ? "stars" : themeName(S.pz), now = audio.ctx.currentTime;
       audio.wind.gain.setTargetAtTime(tn === "canyon" ? 0.2 : tn === "river" ? 0.15 : tn === "stars" ? 0.04 : 0.09, now, 1); audio.windF.frequency.setTargetAtTime(tn === "river" ? 950 : 480, now, 1);
-      if(tn === "meadow" && Math.random() < 0.4) bird(); if(tn === "river" && Math.random() < 0.25) tone(220 + Math.random() * 80, now, 0.12, "sine", 0.03, 120); if(tn === "stars" && Math.random() < 0.35) chime(); }, 1100); }
+      if(tn === "meadow" && Math.random() < 0.4) bird();
+      if(tn === "meadow" && Math.random() < 0.05) baa();
+      if(tn === "canyon" && Math.random() < 0.08){ const t = audio.ctx.currentTime; tone(1800, t, 0.9, "sine", 0.02, 1100); tone(1700, t + 0.05, 0.8, "triangle", 0.01, 1000); }
+      if(tn === "river" && Math.random() < 0.2){ const t = audio.ctx.currentTime; for(let i = 0; i < 2; i++) tone(110 + Math.random() * 20, t + i * 0.18, 0.12, "square", 0.015, 80); } if(tn === "river" && Math.random() < 0.25) tone(220 + Math.random() * 80, now, 0.12, "sine", 0.03, 120); if(tn === "stars" && Math.random() < 0.35) chime(); }, 1100); }
   audio.ctx.resume(); audio.on = true;
 }
 function tone(freq, t0, dur, type, vol, slide){ const c = audio.ctx, o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0); if(slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
