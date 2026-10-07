@@ -1257,7 +1257,7 @@ const MAP_HITS = [];
 $("mapCv").addEventListener("click", e => { const r = $("mapCv").getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   const hit = MAP_HITS.find(h => Math.hypot(h.x - x, h.y - y) < 14); if(!hit) return;
   if(!TEACHER || hit.n.type === "surprise" || hit.n.type === "golden"){ const n = hit.n, sk = SKILLS[n.s];
-    toast(n.type === "surprise" ? "❓ A surprise" : n.type === "golden" ? "🌟 The Golden Stone" : `${sk ? sk.i + " " : ""}${n.n}`, n.done ? "⭐ Cleared" : n.region > S.region ? "🔒 In a region you haven't opened yet" : n.type === "gate" ? "Gate boss: a real song" : "Not cleared yet"); return; }
+    toast(n.type === "surprise" ? "❓ A surprise" : n.type === "golden" ? "🌟 The Golden Stone" : `${sk ? sk.i + " " : ""}${n.n}`, n.done ? "⭐ Cleared" + (n.mentor ? " · 🎓 Mentor Pass" : n.withPower ? " · ✨ with a power" : "") : n.region > S.region ? "🔒 In a region you haven't opened yet" : n.type === "gate" ? "Gate boss: a real song" : "Not cleared yet"); return; }
   hit.n.done = !hit.n.done; if(hit.n.done) hit.n.mentor = true; if(hit.n.type === "gate" && hit.n.done){ hit.n.koT = -1e9; S.region = Math.max(S.region, hit.n.region + 1); }
   drawHud(); openMap(); toast(hit.n.done ? "🎓 Warped: cleared" : "Un-cleared", hit.n.n); });
 // the wardrobe: wear any of the things you've found, or your usual look
