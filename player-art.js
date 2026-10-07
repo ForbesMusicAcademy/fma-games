@@ -509,7 +509,7 @@
     // The fretting arm and palm sit BEHIND the neck (the elbow dropped by the side); only three fingertips show, wrapped round
     // from the bottom edge of the neck and across the fretboard.
     const SL = shoulder(g, false), SR = shoulder(g, true), strum = at(-28, dy + 6), fx = kind === "bass" ? 118 : 96, fret = at(fx, dy - 2);
-    const below = [-Math.sin(a), Math.cos(a)], palm = [fret[0] + below[0] * 7, fret[1] + below[1] * 7];
+    const below = [-Math.sin(a), Math.cos(a)], palm = [fret[0] + below[0] * 17, fret[1] + below[1] * 17];
     const pose = [[strum[0], strum[1], "rest", { C: [SL[0] - 4, g.tTop + g.tH * 0.6], front: true, nosway: true }],
       [palm[0], palm[1], "fist", { C: [SR[0] + 22, SR[1] + g.tH * 0.62], ang: t.rot, nosway: true }]];
     pose.fingers = [-9, 0, 9].map(o => [at(fx + o + 1.5, dy + 8), at(fx + o - 1, dy - 6)]);
@@ -804,8 +804,14 @@
     // (a player holding an instrument keeps hold of it when celebrating)
     const altSet = anim ? armSet(cfg.pose === "hold" ? pose : POSES.cheer(g)) : [];
     // fretting fingertips over the neck (the rest of that hand is behind it)
-    const fingers = (pose.fingers || []).map(([p, q]) => { const d = `M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
-      return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="10.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${skin}" stroke-width="6.5" stroke-linecap="round"/>`; }).join("");
+    // drawn as one shape (all the outline first, then all the skin), like the cartoon hands: from the front you see the back of
+    // the fingers, so only short creases between them near the tips
+    const fp = pose.fingers || [], fd = ([p, q]) => `M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
+    const crease = (a, b) => { const m = t => [(a[0][0] + b[0][0]) / 2 * (1 - t) + (a[1][0] + b[1][0]) / 2 * t, (a[0][1] + b[0][1]) / 2 * (1 - t) + (a[1][1] + b[1][1]) / 2 * t];
+      const u = m(0.62), v = m(1.02); return `M${u[0].toFixed(1)} ${u[1].toFixed(1)} L${v[0].toFixed(1)} ${v[1].toFixed(1)}`; };
+    const fingers = fp.length ? fp.map(f => `<path d="${fd(f)}" fill="none" stroke="${INK}" stroke-width="13.5" stroke-linecap="round"/>`).join("")
+      + fp.map(f => `<path d="${fd(f)}" fill="none" stroke="${skin}" stroke-width="8.5" stroke-linecap="round"/>`).join("")
+      + `<path d="${crease(fp[0], fp[1])} ${crease(fp[1], fp[2])}" fill="none" ${sw(1.8)}/>` : "";
     const alt = altSet.filter(a => !a.front).map(a => a.svg).join(""), altFront = altSet.filter(a => a.front).map(a => a.svg).join("");
 
     // head and face (no cheeks, no eyebrows)
