@@ -852,7 +852,7 @@
     const headG = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}${head}${face}${expr}${eyewearSvg(cfg.eyewear, g)}${hair.front}${headAcc}${gear.head || ""}${dmg}</g>`;
     const arms = `<g class="pa-main">${behind}</g>` + (anim ? `<g class="pa-alt">${alt}</g>` : "");
     // seen from behind (Adventure): no face, the back of the head is hair, and capes, wings, backpacks and a slung guitar sit over the back
-    if(cfg._back){
+    if(cfg._back || cfg._puppet){
       const hc = cfg.hairColor, hx = g.hrx, hy = g.hy, hr = g.hry, dkH = shade(hc, 0.72);
       const strands = [-0.5, -0.17, 0.17, 0.5].map(k => `M${(200 + k * hx).toFixed(1)} ${(hy - hr * 0.9).toFixed(1)} Q${(200 + k * hx * 1.15).toFixed(1)} ${hy.toFixed(1)} ${(200 + k * hx * 0.9).toFixed(1)} ${(hy + hr * 0.75).toFixed(1)}`).join(" ");
       const cover = cfg.hair === "none" ? ""
@@ -873,6 +873,28 @@
           + `<g transform="translate(${bx.toFixed(1)} ${by}) rotate(${-ang})">${neckG}${bodyG}</g>`;
       }
       const headB = `<g class="pa-body" style="transform-origin:200px ${g.tTop + 6}px">${ears}<ellipse cx="200" cy="${hy}" rx="${hx}" ry="${hr}" fill="${skin}" ${sw(6)}/>${cover}${nape}${hair.front}${headAcc}</g>`;
+      if(cfg._puppet){
+        /* The parts of this exact character, for a jointed puppet (the side-scrolling levels). Everything is in the usual
+           400-unit page space; the puppet places each part on its own joint. The side view is a three-quarter turn to the
+           right: the face slides towards the way you're facing and only the back ear shows, but the hair, hats, face and
+           outfit are the very same art as the front, so the character never changes when it turns. */
+        const ear1 = `<circle cx="${200 - g.hrx * 0.94}" cy="${oy + g.hrx * 0.12}" r="${g.hrx * 0.17}" fill="${skin}" ${sw(5)}/>`;
+        const turn = `translate(${(200 + g.hrx * 0.3).toFixed(1)} 0) scale(0.86 1) translate(-200 0)`;
+        const hipY = tBot - 10;
+        return { puppet: {
+          g, hipY, FEET, skin, col, pants, shoeC, bottom: cfg.bottom, legW: bw, sleeve, band: extra.band,
+          hairBack: hair.back || "",
+          headSide: `${ear1}${head}<g transform="${turn}">${face}${eyewearSvg(cfg.eyewear, g)}</g>${hair.front}${headAcc}${gear.head || ""}`,
+          headBack: headB,
+          torso: `${skirt}${torso}${neck}`, torsoBack: `${skirt}${torso}${cfg.neck === "scarf" ? neck : ""}`,
+          extraMid: extra.mid || "", extraBack: extra.back || "", slung,
+          // a shoe with its ankle (where the leg comes in) at 0,0, toe pointing +x
+          shoe: flip => `<g transform="translate(${flip ? 6 : -6} -12)">${shoe(shoeC, 0, 0, flip, cfg.shoes)}</g>`,
+          // a hand in hand space (fingers up -y, wrist at +y), at the age's hand size
+          hand: (kind, c) => `<g transform="scale(${g.hand})">${handSvg(kind, c || skin, (12 / g.hand).toFixed(2))}</g>`,
+          tube
+        } };
+      }
       const backSvg = `${OVER_SHOES.includes(cfg.bottom) ? feet + legs : legs + feet}${skirt}${torso}${cfg.neck === "scarf" ? neck : ""}${extra.mid || ""}<g class="pa-main">${behind}</g>${front}${hair.back || ""}${extra.back || ""}${slung}${headB}`;
       return { svg: backSvg, fx: { kind: "notes", pts: null, hands: [] }, look: 0 };
     }
@@ -1155,6 +1177,9 @@
   PlayerArt.back = cfg => { cfg = norm(cfg); const g = AGES[cfg.body] || AGES.kid, hold = INSTRUMENTS.includes(cfg.gear);
     const c = Object.assign({}, cfg, { _back: true, _gear: hold ? cfg.gear : null, _gearColor: cfg.gearColor, gear: "none", pose: "relax" });
     return { svg: `<svg viewBox="0 0 400 400" width="400" height="400" xmlns="${NS}"><g>${build(c, false).svg}</g></svg>`, hipY: g.tTop + g.tH - 10, headTop: g.hy - g.hry }; };
+  // the character as a set of parts for a jointed puppet (see the _puppet branch in build). Instruments are slung on the back.
+  PlayerArt.puppet = cfg => { cfg = norm(cfg); const hold = INSTRUMENTS.includes(cfg.gear);
+    return build(Object.assign({}, cfg, { _puppet: true, _gear: hold ? cfg.gear : null, _gearColor: cfg.gearColor, gear: hold ? "none" : cfg.gear, pose: "relax" }), false).puppet; };
   PlayerArt.options = OPTIONS;
   // the student's own character beside a game (waves hello), and one inside a celebration popup holding a moment's pose
   PlayerArt.buddy = (el, opts) => { if(!el) return null; const c = PlayerArt(el, window.Player.get(), opts); setTimeout(() => c.moment("hello", 2000), 400); return c; };
