@@ -261,7 +261,11 @@ function drawPanel(){
 const PADLOCK = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7.5 10.5V8a4.5 4.5 0 0 1 9 0v2.5" fill="none" stroke="#d6d0c4" stroke-width="2.6" stroke-linecap="round"/><rect x="4.5" y="10" width="15" height="11" rx="2.5" fill="#d6d0c4"/><circle cx="12" cy="15.5" r="1.8" fill="#26211f"/></svg>`;
 // a locked item: unlock it with picks, or see how many more you need; Adventure gear says where to find it
 function askUnlock(k, v, label){
-  const lk = FMAPicks.lock(k, v), p = lk.price || 0, have = FMAPicks.balance(), try_ = Object.assign({}, cfg, { [k]: v });
+  // the preview takes off everything else that could get in the way (a gas mask hiding the eye make-up, a hat hiding the hair...),
+  // keeping only the item being shown (and, for a colour, the thing it colours)
+  const COLOURS = { accColor: "acc", neckColor: "neck", extraColor: "extra", gearColor: "gear" }, keepPart = COLOURS[k] || k;
+  const bare = {}; ["acc", "eyewear", "mark", "neck", "extra", "gear", "beard"].forEach(p => { if(p !== keepPart) bare[p] = "none"; });
+  const lk = FMAPicks.lock(k, v), p = lk.price || 0, have = FMAPicks.balance(), try_ = Object.assign({}, cfg, bare, { [k]: v });
   const pic = `<div class="pic">${k === "gear" ? PlayerArt.gear(v, cfg.gearColor) : k === "extra" ? PlayerArt.item(try_, "extra") : PlayerArt.svg(try_, ["hair", "hairColor", "acc", "mark", "eyewear"].includes(k) ? "head" : "fig")}</div>`;
   $("easkIn").innerHTML = lk.quest
     ? `${pic}<b>${label}</b><p>🏭 Found in <b style="font-size:inherit">Adventure: ${lk.quest.level}</b>. Clear the quest “${lk.quest.quest}” to find it.</p><p>Adventure gear can't be bought with picks. You have to earn it!</p><div class="row"><button id="eNo">OK</button><button class="go" id="eGo">Go to Adventure</button></div>`
