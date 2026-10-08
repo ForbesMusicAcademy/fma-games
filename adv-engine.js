@@ -548,11 +548,13 @@ function ollie(x0, g0, x1, g1, o){
   return kf(fr, .72 + Math.abs(x1 - x0) / 900 + (spin ? .15 : 0), [{ u: .22, k: "tap" }, { u: .86, k: "dust" }], { veh: kind });
 }
 // grinding along a rail or ledge from (x0, y0) to (x1, y1), sparks flying
+// (board: "none" slides along on your shoes instead of a board)
 function grind(x0, y0, x1, y1, o){
-  o = o || {}; const kind = o.board || "board", ang = Math.atan2(y1 - y0, x1 - x0) / R;
+  o = o || {}; const kind = o.board || "board", ang = Math.atan2(y1 - y0, x1 - x0) / R, feet = kind === "none";
   return { dur: Math.hypot(x1 - x0, y1 - y0) / (RIDEV * .9), fx: [], at(u){
     const p = P(RGRIND, { brot: ang, t: 14 + ang * .3, spark: 1, sF: 76 + Math.sin(u * 12) * 8 });
-    return { m: "side", cx: lerp(x0, x1, u), cy: plantCY(p, lerp(y0, y1, u) - 4), p, veh: kind };
+    const st = { m: "side", cx: lerp(x0, x1, u), cy: plantCY(p, lerp(y0, y1, u) - (feet ? 0 : 4)), p };
+    if(!feet) st.veh = kind; return st;
   } };
 }
 // a manual: rolling on the back wheels, nose in the air, arms out for balance
@@ -666,3 +668,19 @@ function zip(x0, y0, x1, y1){
     const c = centreFor(p, joints(p).aF[2], hx, hy); return { m: "side", cx: c[0], cy: c[1], p, veh: "zip" };
   } };
 }
+
+/* =====================================================================
+   SOUND: a few soft notes for musical scenery (piano keys, pedals). Silent
+   until the player has tapped something (browsers insist), and only ever
+   short, quiet notes.
+   ===================================================================== */
+const Sound = { ctx: null,
+  wake(){ if(this.ctx) return; try { const A = window.AudioContext || window.webkitAudioContext; if(A) this.ctx = new A(); } catch(e){} },
+  note(freq, dur, type){
+    const c = this.ctx; if(!c) return;
+    try { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = type || "triangle"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.4));
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + (dur || 0.4) + 0.05); } catch(e){}
+  } };
+// C major scale from middle C, for keys and the like
+const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 698.5, 784.0];

@@ -135,12 +135,13 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 </div>
 
 <script src="fma-student.js?v=5"></script>
-<script src="player-art.js?v=30"></script>
-<script src="fma-picks.js?v=5"></script>
-<script src="adv-engine.js?v=3"></script>
+<script src="player-art.js?v=31"></script>
+<script src="fma-picks.js?v=6"></script>
+<script src="adv-engine.js?v=4"></script>
 <script src="adv-rustrow.js?v=1"></script>
 <script src="adv-skate.js?v=1"></script>
 <script src="adv-backstage.js?v=1"></script>
+<script src="adv-amp.js?v=1"></script>
 <script>
 /* =====================================================================
    ADVENTURE: the page. Loads a level from LEVELS (adv-*.js), draws its
@@ -289,6 +290,7 @@ function clearQuest(id){
 /* ---- travel ---- */
 function arriveAt(id){ const n = nodeOf(id); return { m: "front", cx: n.x, fy: n.g, pose: "wave", prop: n.prop || Lv.prop }; }
 function nodeClick(id){
+  Sound.wake();
   if(busy) return;
   if(view.target) setOverview(false);
   if(id[0] === "x"){ toast((Lv.extras[+id.slice(1)] || {}).msg || "Coming soon"); return; }
@@ -464,6 +466,7 @@ function loop(now){
   worldSvg.setAttribute("viewBox", `0 0 ${f1(vbW)} ${VH}`);
   layerEls.forEach(([el, f]) => el.setAttribute("transform", `translate(${f1(-cam * f)} 0)`));
   hero.render(dt, cfg, wear);
+  if(Lv.onFrame) Lv.onFrame(hero.state, dt);      // scenery that reacts to the character (piano keys, pedals, drums)
   if(DEV) lib.frame(dt);
   requestAnimationFrame(loop);
 }
