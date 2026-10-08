@@ -288,7 +288,7 @@ function jump(x0, g0, x1, g1, o){
     { u: .78, p: P(REACH, { rot: rotEnd }), x: xb, y: yb },
     { u: .89, p: P(LANDC, { rot: rotEnd }), x: x1, g: g1 },
     { u: 1, p: o.stand ? P(STAND, { rot: rotEnd }) : P(RUNAT(x1 + 14), { rot: rotEnd }), x: x1 + 14, g: g1 }];
-  return kf(frames, .62 + Math.hypot(x1 - x0, g1 - g0) / 700 + Math.abs(fl) * .14, [{ u: .2, k: "dust" }, { u: .8, k: "dust" }]);
+  return kf(frames, .62 + Math.hypot(x1 - x0, g1 - g0) / 700 + Math.abs(fl) * .06, [{ u: .2, k: "dust" }, { u: .8, k: "dust" }]);
 }
 function backflip(x, g){
   const ya = plantCY(REACHUP, g) - 14, frames = [
@@ -296,7 +296,7 @@ function backflip(x, g){
     { u: .42, p: P(TUCK, { rot: -110 }), x: x - 12, y: ya - 70 }, { u: .54, p: P(TUCK, { rot: -220 }), x: x - 18, y: ya - 64 },
     { u: .66, p: P(TUCK, { rot: -320 }), x: x - 22, y: ya - 24 }, { u: .74, p: P(REACH, { rot: -360 }), x: x - 24, y: plantCY(REACH, g) },
     { u: .84, p: P(LANDC, { rot: -360 }), x: x - 24, g }, { u: 1, p: P(STAND, { rot: -360, sB: 150, sF: 158, eB: 10, eF: 10, ar: 1.5, hd: -14 }), x: x - 24, g }];
-  return kf(frames, 1.5, [{ u: .26, k: "dust" }, { u: .76, k: "dust" }]);
+  return kf(frames, 1.05, [{ u: .26, k: "dust" }, { u: .76, k: "dust" }]);
 }
 // kong vault: dive, both hands on the obstacle, knees tucked through
 function kong(x0, g, ox, oy, ow){
@@ -341,7 +341,7 @@ function barSwing(x0, g0, bx, by, x1, g1){
     { u: .88, p: P(TUCK, { rot: -315 }), x: lerp(rel.x, xb, .8), y: lerp(rel.y, yb, .7) - 20 },
     { u: .93, p: P(REACH, { rot: -360 }), x: xb, y: yb },
     { u: .97, p: P(LANDC, { rot: -360 }), x: x1, g: g1 },
-    { u: 1, p: P(STAND, { rot: -360 }), x: x1 + 8, g: g1 }], 2.3, [{ u: .25, k: "clang" }, { u: .76, k: "whoosh" }, { u: .93, k: "dust" }]);
+    { u: 1, p: P(STAND, { rot: -360 }), x: x1 + 8, g: g1 }], 1.9, [{ u: .25, k: "clang" }, { u: .76, k: "whoosh" }, { u: .93, k: "dust" }]);
 }
 // jump at a wall, catch the ledge, hang, pull up, knee over, stand
 function ledge(x0, g0, wx, ly){
@@ -354,7 +354,7 @@ function ledge(x0, g0, wx, ly){
     { u: 0, p: RUNAT(x0), x: x0, g: g0 }, { u: .1, p: CROUCH, x: x0 + 10, g: g0 },
     { u: .22, p: REACHUP, x: lerp(x0, h1.x, .7), y: h1.y + 8 },
     h1, at(.46, HANGW, wx + 1, 4), at(.62, PULL, wx + 3), at(.76, MANT, wx + 12),
-    { u: .88, p: CROUCH, x: wx + 26, g: ly }, { u: 1, p: STAND, x: wx + 36, g: ly }], 1.65, [{ u: .34, k: "grab" }, { u: .88, k: "dust" }]);
+    { u: .88, p: CROUCH, x: wx + 26, g: ly }, { u: 1, p: STAND, x: wx + 36, g: ly }], 1.35, [{ u: .34, k: "grab" }, { u: .88, k: "dust" }]);
 }
 // run off an edge, front flip, land and roll it out
 function dropRoll(x0, g0, x1, g1){
@@ -366,7 +366,7 @@ function dropRoll(x0, g0, x1, g1){
     { u: .5, p: P(REACH, { rot: 360 }), x: xb, y: yb }, { u: .56, p: P(LANDC, { rot: 360 }), x: x1 + 6, g: g1 },
     { u: .65, p: T(470), x: x1 + 36, roll: g1 }, { u: .73, p: T(580), x: x1 + 62, roll: g1 }, { u: .81, p: T(690), x: x1 + 88, roll: g1 },
     { u: .9, p: P(CROUCH, { rot: 720 }), x: x1 + 106, g: g1 }, { u: 1, p: P(RUNAT(x1 + 124), { rot: 720 }), x: x1 + 124, g: g1 }],
-    1.55, [{ u: .5, k: "dust" }, { u: .6, k: "dust" }, { u: .9, k: "dust" }]);
+    1.3, [{ u: .5, k: "dust" }, { u: .6, k: "dust" }, { u: .9, k: "dust" }]);
 }
 // climbing a ladder, seen from behind
 function ladder(x, gB, gT){
@@ -431,13 +431,8 @@ class Actor{
     const feet = this.feet(st), gy = this.ground ? this.ground(st.cx, feet) : feet;
     const k = clamp(1 - (gy - feet) / 260, .35, 1);
     let s = `<ellipse cx="${f1(st.cx)}" cy="${f1(gy + 1)}" rx="${f1(30 * k)}" ry="${f1(6.5 * k)}" fill="#000" opacity="${f1(.32 * k * 100) / 100}"/>`;
-    // a motion trail while flipping fast
-    if(st.m === "side"){
-      const last = this.trail[this.trail.length - 1];
-      if(last && Math.abs(st.p.rot - last.p.rot) > 4 * this.speed && !RM) this.trail.push(st); else if(this.trail.length) this.trail.shift();
-      if(!last) this.trail.push(st);
-      while(this.trail.length > 4) this.trail.shift();
-      this.trail.slice(0, -1).forEach((g, i) => { s += this.body(g, cfg, wear, this.id + "t" + i, 1, .12 + i * .07); });
+    // (no motion trail: its echo read as slow motion, and it drew the character four times on every flip frame)
+    if(false){
     } else this.trail = [];
     s += this.body(st, cfg, wear, this.id, tsx, 1);
     this.layer.innerHTML = s;

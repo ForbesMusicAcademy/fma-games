@@ -174,7 +174,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 <script src="fma-student.js?v=5"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
-<script src="adv-engine.js?v=6"></script>
+<script src="adv-engine.js?v=7"></script>
 <script src="adv-rustrow.js?v=6"></script>
 <script src="adv-skate.js?v=4"></script>
 <script src="adv-backstage.js?v=6"></script>
@@ -546,7 +546,7 @@ if(DEV) lib.start(DEMOS[0]);
 /* ---- the main loop ---- */
 let last = performance.now();
 function loop(now){
-  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const dt = Math.min(.12, (now - last) / 1000); last = now;      // a slow phone catches up rather than running in slow motion
   // time eases into and out of slow motion (a snap reads as a glitch)
   if(speedTarget !== null){ hero.speed += (speedTarget - hero.speed) * Math.min(1, dt * 5); if(Math.abs(hero.speed - speedTarget) < .01){ hero.speed = speedTarget; if(speedTarget >= .35) speedTarget = null; } }
   hero.tick(dt);
