@@ -581,3 +581,88 @@ function rideStop(x0, g, o){
 }
 // hop onto the board from standing (the start of a ride)
 const mount = (x, g, o) => kf([{ u: 0, p: STAND, x, g }, { u: .4, p: P(RCROUCH, { hB: 10 }), x: x + 4, g: g - BU }, { u: 1, p: RIDE, x: x + 10, g: g - BU }], .35, [], { veh: (o && o.board) || "board" });
+
+/* =====================================================================
+   DRIVING: a golf cart. The character sits in it (SIT pose); the cart is
+   drawn round the hip, so it tilts and bounces with the rider.
+   CART_DROP = hip to the bottom of the wheels.
+   ===================================================================== */
+const SIT = P({ t: 2, hd: -6, sB: 52, eB: 40, sF: 62, eF: 38, hB: 86, kB: -86, hF: 90, kF: -92 });
+const CART_DROP = 42, CARTV = 300;
+VEH.cart = (p, J) => {
+  const k = "#f7f4ee", st = "#e8433f", w = (x) => `<circle cx="${x}" cy="31" r="11" fill="#2a2a2e" stroke="${INK}" stroke-width="3"/><circle cx="${x}" cy="31" r="4.5" fill="#9aa3ad"/>`;
+  const under = `<path d="M-30 -112 V6 M38 -112 V4" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="M-30 -112 V6 M38 -112 V4" stroke="#9aa3ad" stroke-width="3" stroke-linecap="round"/>`
+    + `<rect x="-42" y="-122" width="92" height="12" rx="5" fill="${st}" stroke="${INK}" stroke-width="3"/>`
+    + `<rect x="-34" y="-30" width="14" height="40" rx="5" fill="#3a3a3d" stroke="${INK}" stroke-width="3"/><rect x="-36" y="4" width="54" height="10" rx="4" fill="#3a3a3d" stroke="${INK}" stroke-width="3"/>`
+    + w(-20) + `<path d="M-44 14 H50 V26 H-44Z" fill="${k}" stroke="${INK}" stroke-width="3"/><path d="M-44 20 H50" stroke="${st}" stroke-width="4"/>`;
+  const over = `<path d="M22 14 L36 -6 Q46 -8 50 2 L50 26 H22Z" fill="${k}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M36 -6 L28 -20" stroke="${INK}" stroke-width="4"/><ellipse cx="27" cy="-21" rx="3" ry="9" fill="#3a3a3d" stroke="${INK}" stroke-width="2" transform="rotate(-30 27 -21)"/>`
+    + w(36) + `<text x="34" y="10" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="8" fill="${st}">CREW</text>`;
+  return { under, over };
+};
+// the cart parked behind someone standing beside it
+PROPS.cart = st => `<g transform="translate(${f1(st.cx - 30)} ${f1(st.fy - CART_DROP)}) scale(.92)">${VEH.cart(SIT).under}${VEH.cart(SIT).over}</g>`;
+const cartCY = g => g - CART_DROP - CO;
+// hop into the cart (it's waiting where you stand)
+const cartIn = (x, g) => kf([{ u: 0, p: STAND, x, g, }, { u: .5, p: P(CROUCH, { hB: 70, hF: 70 }), x: x - 4, y: cartCY(g) - 16 }, { u: 1, p: SIT, x: x - 6, y: cartCY(g) }], .45, [], { veh: "cart" });
+// driving along the floor; bumps: x positions of cables or ramps to bounce over
+function drive(x0, x1, g, o){
+  o = o || {}; const bumps = o.bumps || [];
+  return { dur: Math.abs(x1 - x0) / CARTV + (o.start ? .3 : 0), fx: [], at(u){
+    const e = o.start ? u * u * (3 - 2 * u) * .5 + u * .5 : u, x = lerp(x0, x1, e);
+    let up = 0, tilt = 0; bumps.forEach(b => { const d = (x - b) / 40; if(Math.abs(d) < 1){ up = Math.max(up, 16 * (1 - d * d)); tilt = -d * 8; } });
+    const p = P(SIT, { rot: tilt, sF: 62 + Math.sin(x / 30) * 6, sB: 52 - Math.sin(x / 30) * 6, hd: -6 + Math.sin(x / 50) * 4 });
+    return { m: "side", cx: x, cy: cartCY(g) - up - Math.abs(Math.sin(x / 9)) * 1.2, p, veh: "cart" };
+  } };
+}
+// driving along a slope or ramp: pts on the floor; the cart tilts with it
+function driveCurve(pts){
+  const segs = []; let tot = 0; for(let i = 1; i < pts.length; i++){ const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(d); tot += d; }
+  return { dur: tot / CARTV, fx: [], at(u){
+    let d = u * tot, i = 0; while(i < segs.length - 1 && d > segs[i]){ d -= segs[i]; i++; }
+    const a = pts[i], b = pts[i + 1], t = segs[i] ? d / segs[i] : 0, ang = Math.atan2(b[1] - a[1], b[0] - a[0]) / R;
+    const c = add([lerp(a[0], b[0], t), lerp(a[1], b[1], t)], rotV([0, -CART_DROP - CO], ang));
+    return { m: "side", cx: c[0], cy: c[1], p: P(SIT, { rot: ang }), veh: "cart" };
+  } };
+}
+// a skidding stop, then hop out and stand beside the cart
+const cartStop = (x0, g) => kf([{ u: 0, p: SIT, x: x0, y: cartCY(g) }, { u: .55, p: P(SIT, { rot: -5, t: -10, sF: 80, spark: 1 }), x: x0 + 26, y: cartCY(g) }, { u: 1, p: P(SIT, { spark: 0 }), x: x0 + 30, y: cartCY(g) }], .55, [{ u: .2, k: "skid" }], { veh: "cart" });
+
+/* =====================================================================
+   THE CROWD: a stage dive, crowd-surfing on everyone's hands, and being
+   put down at the barrier. A zip-line for getting down from up high.
+   ===================================================================== */
+const SURF = P({ t: 0, hd: -30, sB: 168, eB: 6, sF: 176, eF: 4, ar: 1.25, hB: -8, kB: -24, hF: 4, kF: -14, rot: 84 });
+const HAND_SKINS = ["#ffe2c9", "#f6c9a2", "#e5ab7f", "#c98c5e", "#9b6a45", "#6d4730"];
+VEH.crowd = (p, J, st) => {
+  // hands from below, always pointing straight up (so they're drawn turned back against the body's spin)
+  const ph = st.ph || 0;
+  let s = `<g transform="rotate(${f1(-p.rot)})">`;
+  [-46, -22, 2, 26, 50].forEach((x, i) => { const y = 34 + Math.sin(ph * 2 + i * 1.7) * 6, c = HAND_SKINS[(i * 2 + 1) % 6];
+    s += `<path d="M${x} ${y + 60} L${x + 2} ${y}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M${x} ${y + 60} L${x + 2} ${y}" stroke="${c}" stroke-width="8" stroke-linecap="round"/><circle cx="${x + 2}" cy="${y - 3}" r="7" fill="${c}" stroke="${INK}" stroke-width="2.5"/>`; });
+  return { over: s + `</g>` };
+};
+// crowd-surfing from x0 to x1, carried along at centre height y
+function crowdSurf(x0, x1, y){
+  return { dur: Math.abs(x1 - x0) / 170, fx: [], at(u){
+    const x = lerp(x0, x1, u), ph = x / 22;
+    return { m: "side", cx: x, cy: y + Math.sin(ph) * 5, p: P(SURF, { rot: 84 + Math.sin(ph * .7) * 6, sF: 176 + Math.sin(ph) * 10 }), veh: "crowd", ph };
+  } };
+}
+// run off the stage edge, a front flip, and land flat on the crowd's hands
+function stageDive(x0, g0, x1, y1){
+  const ya = plantCY(LAUNCH, g0) - 10;
+  return kf([{ u: 0, p: RUNAT(x0), x: x0, g: g0 }, { u: .14, p: CROUCH, x: x0 + 12, g: g0 }, { u: .26, p: P(LAUNCH, { sB: 170, sF: 178 }), x: x0 + 34, y: ya },
+    { u: .45, p: P(TUCK, { rot: 120 }), x: lerp(x0, x1, .45), y: ya - 70 }, { u: .62, p: P(TUCK, { rot: 250 }), x: lerp(x0, x1, .7), y: ya - 40 },
+    { u: .82, p: P(SURF, { rot: 360 + 84 }), x: x1 - 10, y: y1 - 8 }, { u: 1, p: P(SURF, { rot: 360 + 84 }), x: x1, y: y1 }], 1.3, [{ u: .16, k: "dust" }]);
+}
+// set down at the barrier: tipped upright onto your feet
+const crowdDrop = (x0, y0, x1, g) => kf([{ u: 0, p: SURF, x: x0, y: y0 }, { u: .4, p: P(LEAP, { rot: 30 }), x: lerp(x0, x1, .5), y: y0 - 30 }, { u: .75, p: REACH, x: x1 - 8, y: plantCY(REACH, g) }, { u: .87, p: LANDC, x: x1, g }, { u: 1, p: RUNAT(x1 + 14), x: x1 + 14, g }], .9, [{ u: .76, k: "dust" }]);
+// a zip-line: hanging from a little pulley, from (x0, y0) down to (x1, y1) (the hands follow the cable)
+VEH.zip = (p, J) => { const h = J.aF[2]; return { over: `<circle cx="${f1(h[0])}" cy="${f1(h[1] - 8)}" r="7" fill="#9aa3ad" stroke="${INK}" stroke-width="3"/><path d="M${f1(h[0])} ${f1(h[1] - 1)} V${f1(h[1] - 8)}" stroke="${INK}" stroke-width="3"/>` }; };
+function zip(x0, y0, x1, y1){
+  const HANGZ = P({ t: 0, hd: -40, ar: 1.9, sB: 164, eB: 0, sF: 168, eF: 0, hB: 30, kB: -40, hF: 44, kF: -30 });
+  return { dur: Math.hypot(x1 - x0, y1 - y0) / 360, fx: [], at(u){
+    const e = u * u, hx = lerp(x0, x1, e), hy = lerp(y0, y1, e) + 9, p = P(HANGZ, { rot: -12 - 10 * e, hF: 44 + 20 * e });
+    const c = centreFor(p, joints(p).aF[2], hx, hy); return { m: "side", cx: c[0], cy: c[1], p, veh: "zip" };
+  } };
+}

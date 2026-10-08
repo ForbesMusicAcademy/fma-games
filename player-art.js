@@ -44,18 +44,18 @@
     eyes: [["calm", "Calm"], ["happy", "Happy"], ["wide", "Wide"], ["sleepy", "Sleepy"], ["tired", "Tired"], ["sad", "Sad"], ["wink", "Wink"], ["sly", "Sly"], ["grumpy", "Grumpy"]],
     mouths: [["smile", "Smile"], ["kitty", "Kitty"], ["open", "Open"], ["tongue", "Tongue"], ["wow", "Wow"], ["grin", "Teeth"], ["smirk", "Smirk"], ["fangs", "Fangs"], ["snarl", "Snarl"]],
     marks: [["none", "None"], ["freckles", "Freckles"], ["plaster", "Plaster"], ["glam", "Glam shadow"], ["bolt", "Lightning bolt"], ["warpaint", "Paint"], ["starpaint", "Star paint"], ["batpaint", "Bat paint"], ["scar", "Scar"]],
-    eyewear: [["none", "None"], ["glasses", "Specs"], ["round", "Round tints"], ["shades", "Shades"], ["mask", "Mask"], ["patch", "Eye patch"], ["goggles", "Welding goggles"], ["gasmask", "Gas mask"], ["shutter", "Shutter shades"]],
+    eyewear: [["none", "None"], ["glasses", "Specs"], ["round", "Round tints"], ["shades", "Shades"], ["mask", "Mask"], ["patch", "Eye patch"], ["goggles", "Welding goggles"], ["gasmask", "Gas mask"], ["shutter", "Shutter shades"], ["starshades", "Star shades"]],
     // tops and bottoms include music-scene staples: grunge flannel, hip-hop jersey and puffer, Britpop trackie, pop-star sequins
     tops: [["tee", "T-shirt"], ["hoodie", "Hoodie"], ["stripes", "Stripes"], ["overalls", "Dungarees"], ["jacket", "Jacket"], ["bolt", "Bolt tee"], ["tiedye", "Tie-dye"], ["fringe", "Fringe jacket"],
       ["flannel", "Flannel"], ["jersey", "Jersey"], ["track", "Trackie top"], ["puffer", "Puffer"], ["sequin", "Sequins"], ["military", "Military jacket"], ["pepper", "Band jacket"], ["collarless", "Collarless suit"], ["leather", "Spiky leather jacket"], ["hivis", "Hi-vis vest"], ["graffiti", "Graffiti hoodie"]],
     bottoms: [["pants", "Pants"], ["shorts", "Shorts"], ["skirt", "Skirt"], ["pleated", "Pleated skirt"], ["tutu", "Tutu"], ["maxi", "Long skirt"],
       ["leggings", "Leggings"], ["flares", "Flares"], ["stage", "Stripe pants"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
-    shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"], ["skate", "Skate shoes"]],
-    neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"], ["bandana", "Bandana"]],
-    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"]],
+    shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"], ["skate", "Skate shoes"], ["lightup", "Light-up sneakers"]],
+    neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"], ["bandana", "Bandana"], ["laminate", "AAA laminate"], ["glowchain", "Glow necklace"]],
+    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"]],
     // "guitar" is the Strat (older saves called it just "Guitar")
-    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"]],
-    extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"]],
+    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"], ["glitter", "Glitter"]],
+    extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"], ["towel", "Roadie towel"]],
     skins: SKINS, palette: PALETTE, hairColors: HAIR_COLORS
   };
   const shade = (h, f) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
@@ -336,6 +336,9 @@
       // Skate City (Adventure): a round skate helmet in your colour, with vents, stickers and a chin strap
       case "skatehelmet": return U(`<path d="M-1.02 -0.06 Q-1.0 0.3 -0.86 0.5" fill="none" stroke-width="${W(6)}"/><path d="M-1.16 -0.22 C-1.22 -1.76 1.22 -1.76 1.16 -0.22 Q0 -0.06 -1.16 -0.22Z" fill="${c}"/><path d="M-0.5 -1.18 Q-0.2 -1.28 0.12 -1.28" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="${W(7)}"/>`
         + `<path d="M-0.36 -1.26 V-1.04 M0 -1.3 V-1.08 M0.36 -1.26 V-1.04" fill="none" stroke-width="${W(8)}"/><path d="${star(0.62, -0.7, 0.16, 0.07, 3)}" fill="#ffc42b" stroke-width="${W(3)}"/><circle cx="-0.62" cy="-0.66" r="0.13" fill="#4fd0c0" stroke-width="${W(3)}"/>`);
+      // Backstage Pass (Adventure): a crew headset, one earcup and a mic on a boom
+      case "headset": return U(`<path d="M-1.02 -0.06 C-1.1 -1.42 1.1 -1.42 1.02 -0.06" fill="none" stroke="${INK}" stroke-width="${W(11)}"/><path d="M-1.02 -0.06 C-1.1 -1.42 1.1 -1.42 1.02 -0.06" fill="none" stroke="#3a3a3d" stroke-width="${W(5)}"/>`
+        + `<rect x="-1.22" y="-0.3" width="0.34" height="0.6" rx="0.15" fill="#3a3a3d"/><path d="M-1.04 0.24 Q-0.9 0.7 -0.32 0.62" fill="none" stroke="${INK}" stroke-width="${W(8)}"/><path d="M-1.04 0.24 Q-0.9 0.7 -0.32 0.62" fill="none" stroke="#3a3a3d" stroke-width="${W(3.4)}"/><circle cx="-0.28" cy="0.62" r="0.09" fill="#e8433f"/>`);
       case "horns": return U(`<path d="M-0.5 -0.95 C-0.72 -1.3 -0.56 -1.62 -0.26 -1.8 C-0.32 -1.5 -0.18 -1.25 -0.12 -1.0Z" fill="#d7262f"/><path d="M0.5 -0.95 C0.72 -1.3 0.56 -1.62 0.26 -1.8 C0.32 -1.5 0.18 -1.25 0.12 -1.0Z" fill="#d7262f"/>`);
     }
     return "";
@@ -417,6 +420,9 @@
       // Skate City (Adventure): neon shutter shades
       case "shutter": out += U([-ex, ex].map(x => `<rect x="${x - er - 0.08}" y="${-er}" width="${2 * er + 0.16}" height="${2 * er - 0.04}" rx="0.08" fill="none" stroke="#ff6fa3" stroke-width="${W(7)}"/><path d="M${x - er - 0.06} ${-er * 0.4} H${x + er + 0.06} M${x - er - 0.06} ${er * 0.2} H${x + er + 0.06} M${x - er - 0.06} ${er * 0.75} H${x + er + 0.06}" stroke="#ff6fa3" stroke-width="${W(5)}"/>`).join("")
           + `<path d="M${-ex + er + 0.08} -0.06 H${ex - er - 0.08} M${-ex - er - 0.08} -0.08 L-1.0 -0.14 M${ex + er + 0.08} -0.08 L1.0 -0.14" fill="none" stroke="#ff6fa3" stroke-width="${W(6)}"/>`); break;
+      // Backstage Pass (Adventure): rock-star shades, shaped like stars
+      case "starshades": out += U([-ex, ex].map(x => `<path d="${star(x, 0, er + 0.14, (er + 0.14) * 0.5, 3)}" fill="#ff6fa3" fill-opacity=".85" stroke-width="${W(5)}"/><circle cx="${x - 0.08}" cy="-0.08" r="0.05" fill="#fff" stroke="none"/>`).join("")
+          + `<path d="M${-ex + er} -0.04 Q0 -0.14 ${ex - er} -0.04 M${-ex - er - 0.1} -0.06 L-1.0 -0.12 M${ex + er + 0.1} -0.06 L1.0 -0.12" fill="none" stroke-width="${W(5)}"/>`); break;
       case "patch": out += U(`<path d="M${-1.0} -0.46 L${ex - er - 0.1} -0.1 M${ex + er + 0.05} -0.1 L1.0 -0.5" fill="none" stroke-width="${W(5)}"/><circle cx="${ex}" cy="0" r="${er + 0.08}" fill="#2a2a2e"/>`); break;
     }
     return out;
@@ -428,6 +434,8 @@
     return `<path d="M${f(x - sn * w)} ${f(y + c * w)} L${f(x + c * len)} ${f(y + sn * len)} L${f(x + sn * w)} ${f(y - c * w)}Z" fill="#dfe3e8" ${sw(2.2)}/><path d="M${f(x - sn * w * 0.3)} ${f(y + c * w * 0.3)} L${f(x + c * len * 0.7)} ${f(y + sn * len * 0.7)}" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`; };
   function instrumentSvg(kind, c){
     // Rust Row's Rust Bucket: a beaten-up Strat, rust orange with spots of rust
+    // Backstage Pass's Glitter guitar: a sparkly purple Strat
+    if(kind === "glitter") return instrumentSvg("guitar", "#a070e8") + `<g fill="#fff">${[[-44, -12], [-30, 10], [-52, 6], [-20, -20], [4, 16], [-38, -24]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4"/>`).join("")}</g><path d="${star(-34, -4, 8, 3.4)}" fill="#ffd34d" stroke="${INK}" stroke-width="2"/>`;
     // Skate City's Sticker Bomb: a white Strat covered in stickers
     if(kind === "stickerbomb") return instrumentSvg("guitar", "#f7f4ee") + `<g stroke="${INK}" stroke-width="2"><circle cx="-44" cy="-14" r="7" fill="#e8433f"/><path d="${star(-30, 14, 9, 4)}" fill="#ffc42b"/><rect x="-56" y="2" width="14" height="10" rx="2" fill="#4aa8ff" transform="rotate(-14 -49 7)"/><circle cx="6" cy="18" r="5" fill="#9be04a"/><path d="M-22 -26 l8 0 l-4 8z" fill="#ff6fa3"/></g>`;
     if(kind === "rustbucket") return instrumentSvg("guitar", "#b5562c") + `<g fill="#7a3a1c"><circle cx="-40" cy="10" r="5"/><circle cx="-26" cy="-22" r="3.5"/><circle cx="-50" cy="-8" r="3"/><circle cx="8" cy="18" r="3.5"/></g>`;
@@ -484,7 +492,7 @@
   function gearSvg(kind, g, c, solo){
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH, s = g.tW / 90;
     switch(kind){
-      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": case "rustbucket": case "stickerbomb": {
+      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": case "rustbucket": case "stickerbomb": case "glitter": {
         const ga = guitarAt(g, solo), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
         return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
         <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})">${instrumentSvg(kind, c)}</g>` }; }
@@ -512,6 +520,8 @@
       case "sweatbands": return { band: c };
       // Rust Row (Adventure) gear: work gloves (dark hands with a yellow cuff), and a biohazard guitar strap across the body
       case "gloves": return { glove: "#4a4a4f" };
+      // Backstage Pass (Adventure): a roadie's towel over one shoulder
+      case "towel": return { mid: `<path d="M${x0 + 4} ${g.tTop - 6} Q${x0 + 22} ${g.tTop - 12} ${x0 + 34} ${g.tTop} L${x0 + 30} ${g.tTop + g.tH * 0.7} L${x0 + 8} ${g.tTop + g.tH * 0.74}Z" fill="#f7f4ee" ${sw(4)}/><path d="M${x0 + 10} ${g.tTop + g.tH * 0.5} L${x0 + 31} ${g.tTop + g.tH * 0.46} M${x0 + 10} ${g.tTop + g.tH * 0.6} L${x0 + 31} ${g.tTop + g.tH * 0.56}" stroke="${c}" stroke-width="4"/>` };
       // Skate City (Adventure): knee pads (drawn on the knees)
       case "kneepads": return { knees: c };
       case "biostrap": { const d = `M${x1 - 8} ${g.tTop + 2} L${x0 + 6} ${tBot - 6}`;
@@ -523,7 +533,7 @@
   /* ---- arms and hands ---- */
   const shoulder = (g, right) => [right ? 200 + g.tW / 2 - 6 : 200 - g.tW / 2 + 6, g.tTop + 16];
   // the guitar on its strap (also where its attack notes come from)
-  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele", "rustbucket", "stickerbomb"];
+  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele", "rustbucket", "stickerbomb", "glitter"];
   // solo = lifted high for a guitar solo, the neck pointing up at the sky
   const guitarAt = (g, solo) => { const s = g.tW / 90; return solo ? { x: 200 + 34 * s, y: g.tTop + g.tH * 0.56, rot: -46, k: s * 0.92 } : { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
   const guitarPt = (g, lx, ly, solo) => { const t = guitarAt(g, solo), a = t.rot * Math.PI / 180;
@@ -667,7 +677,9 @@
   function shoe(c, x, y, flip, style){
     const shine = `<path d="M-12 -9 Q-6 -13 0 -12.5" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>`;
     let body;
-    if(style === "skate")            // Skate City (Adventure): puffy skate shoes with a thick gum sole and a side stripe
+    if(style === "lightup")          // Backstage Pass (Adventure): sneakers with glowing lights round the sole
+      body = `<path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-20 5 C-20 12 24 13 26 5 L26 8 C24 14 -20 14 -20 8Z" fill="#f7f4ee" ${sw(3.4)}/>` + [-14, -6, 2, 10, 18].map((x, i) => `<circle cx="${x}" cy="9.5" r="2.6" fill="${["#4fd0c0", "#ff6fa3", "#ffd34d", "#9be04a", "#4aa8ff"][i]}"/>`).join("");
+    else if(style === "skate")            // Skate City (Adventure): puffy skate shoes with a thick gum sole and a side stripe
       body = `<path d="M-21 2 C-24 -14 -8 -20 6 -18 C21 -16 30 -5 28 5 C26 12 -21 13 -21 2Z" fill="${c}" ${sw(5)}/><path d="M-22 4 H29 Q30 13 25 14 H-18 Q-23 14 -22 4Z" fill="#f2d39a" ${sw(3.6)}/><path d="M-12 -5 Q2 -2 16 -9" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M2 -16 L8 -10 M7 -17 L12 -11" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>`;
     else if(style === "hightops")         // basketball high-tops: a padded ankle, white sole and toe cap, laces
       body = `<g transform="translate(${SHAFT} 0)"><path d="M-15 -8 L-14 -32 Q-3 -36 8 -32 L9 -10Z" fill="${c}" ${sw(5)}/></g><path d="${FOOT}" fill="${c}" ${sw(5)}/><path d="M-20 5 C-20 12 24 13 26 5 L26 8 C24 14 -20 14 -20 8Z" fill="#f7f4ee" ${sw(3.4)}/><path d="M13 -10 C20 -8 25 -3 25.5 3 L16 3 Q14 -3 13 -10Z" fill="#f7f4ee" ${sw(3)}/><path transform="translate(${SHAFT} 0)" d="M-9 -27 L3 -24 M-9 -21 L3 -18 M-8 -15 L4 -12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`;
@@ -863,6 +875,10 @@
             <g transform="translate(200 ${py.toFixed(1)})"><circle r="9" fill="none" stroke="${INK}" stroke-width="7"/><path d="${sign}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><circle r="9" fill="none" stroke="${nc}" stroke-width="3.4"/><path d="${sign}" fill="none" stroke="${nc}" stroke-width="2.6" stroke-linecap="round"/></g>`; })()
       : cfg.neck === "scarf" ? `<path d="${rrect(200 - g.tW * 0.3, g.tTop - 6, 200 + g.tW * 0.3, g.tTop + 10, 8)}" fill="${nc}" ${sw(4)}/><path d="M${200 + g.tW * 0.08} ${g.tTop + 4} L${200 + g.tW * 0.06} ${g.tTop + g.tH * 0.6} L${200 + g.tW * 0.24} ${g.tTop + g.tH * 0.58} L${200 + g.tW * 0.24} ${g.tTop + 6}Z" fill="${nc}" ${sw(4)}/><path d="M${200 + g.tW * 0.09} ${g.tTop + g.tH * 0.6 + 2} v5 M${200 + g.tW * 0.15} ${g.tTop + g.tH * 0.6 + 1} v5 M${200 + g.tW * 0.21} ${g.tTop + g.tH * 0.59 + 1} v5" fill="none" ${sw(2.4)}/><path d="M${200 + g.tW * 0.07} ${g.tTop + g.tH * 0.35} H${200 + g.tW * 0.24}" stroke="${shade(nc, 0.7)}" stroke-width="3"/>`
       // Skate City (Adventure): a bandana tied round the neck, with a little pattern
+      // Backstage Pass (Adventure): an Access All Areas laminate on a lanyard, and a glow-stick necklace
+      : cfg.neck === "laminate" ? `<path d="M${200 - g.tW * 0.24} ${ny - 2} L200 ${g.tTop + g.tH * 0.4} L${200 + g.tW * 0.24} ${ny - 2}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/><path d="M${200 - g.tW * 0.24} ${ny - 2} L200 ${g.tTop + g.tH * 0.4} L${200 + g.tW * 0.24} ${ny - 2}" fill="none" stroke="#e8433f" stroke-width="3.4" stroke-linejoin="round"/>`
+          + `<rect x="${200 - 13}" y="${g.tTop + g.tH * 0.38}" width="26" height="30" rx="3" fill="#f7f4ee" ${sw(3)}/><rect x="${200 - 13}" y="${g.tTop + g.tH * 0.38}" width="26" height="9" rx="3" fill="#e8433f"/><text x="200" y="${g.tTop + g.tH * 0.38 + 24}" text-anchor="middle" font-size="9" font-weight="900" font-family="Nunito,sans-serif" fill="${INK}">AAA</text>`
+      : cfg.neck === "glowchain" ? `<path d="M${200 - g.tW * 0.27} ${ny - 2} Q200 ${g.tTop + g.tH * 0.62} ${200 + g.tW * 0.27} ${ny - 2}" fill="none" stroke="#9be04a" stroke-width="13" stroke-linecap="round" opacity=".35"/><path d="M${200 - g.tW * 0.27} ${ny - 2} Q200 ${g.tTop + g.tH * 0.62} ${200 + g.tW * 0.27} ${ny - 2}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="M${200 - g.tW * 0.27} ${ny - 2} Q200 ${g.tTop + g.tH * 0.62} ${200 + g.tW * 0.27} ${ny - 2}" fill="none" stroke="#c6ff7a" stroke-width="3.6" stroke-linecap="round"/>`
       : cfg.neck === "bandana" ? `<path d="M${200 - g.tW * 0.32} ${g.tTop - 2} Q200 ${g.tTop + 8} ${200 + g.tW * 0.32} ${g.tTop - 2} L200 ${g.tTop + g.tH * 0.48}Z" fill="${nc}" ${sw(4)}/>` + [[-8, 8], [8, 8], [0, 20], [-14, 0], [14, 0]].map(([dx, dy]) => `<circle cx="${200 + dx}" cy="${g.tTop + dy}" r="2.4" fill="#fff" opacity=".85"/>`).join("")
       : cfg.neck === "bowtie" ? `<g transform="translate(200 ${ny + 4})"><path d="M0 0 L-15 -9 Q-18 0 -15 9Z M0 0 L15 -9 Q18 0 15 9Z" fill="${nc}" ${sw(3.6)}/><rect x="-4.5" y="-5" width="9" height="10" rx="3" fill="${shade(nc, 0.78)}" ${sw(3)}/></g>` : "";
 
@@ -912,7 +928,7 @@
       // a guitar slung across the back: strap over the right shoulder, body at the left hip, neck up past the shoulder
       let slung = "";
       if(cfg._gear){
-        const wood = cfg._gear === "acoustic" ? "#c98a4b" : cfg._gear === "rustbucket" ? "#b5562c" : cfg._gear === "stickerbomb" ? "#f7f4ee" : cfg._gearColor, s = cfg._gear === "ukulele" ? 0.62 : cfg._gear === "bass" ? 1.08 : 1;
+        const wood = cfg._gear === "acoustic" ? "#c98a4b" : cfg._gear === "rustbucket" ? "#b5562c" : cfg._gear === "stickerbomb" ? "#f7f4ee" : cfg._gear === "glitter" ? "#a070e8" : cfg._gearColor, s = cfg._gear === "ukulele" ? 0.62 : cfg._gear === "bass" ? 1.08 : 1;
         const bx = 200 - g.tW * 0.22, by = tBot - 4, ang = -38;
         const bodyG = cfg._gear === "flyingv" ? `<path d="M0 -14 L-34 52 L-14 52 L0 18 L14 52 L34 52Z" fill="${wood}" ${sw(5)}/>`
           : `<circle cx="0" cy="22" r="${(34 * s).toFixed(1)}" fill="${wood}" ${sw(5)}/><circle cx="0" cy="${(-12 * s).toFixed(1)}" r="${(26 * s).toFixed(1)}" fill="${wood}" ${sw(5)}/><rect x="-14" y="16" width="28" height="7" rx="3" fill="${shade(wood, 0.6)}"/>`;
