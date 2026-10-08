@@ -128,8 +128,8 @@ LEVELS.push((() => {
   { id: "q1", x: 250, g: 540, hx: 250, hy: 292, icon: "🎛️", name: "Tune Up!", url: "tuner.html", lane: "Notes", game: "Tuning Race", spot: "Loading Dock 3", loot: ["hat"] },
   { id: "q2", x: 1060, g: 420, hx: 1070, hy: 160, icon: "🎯", name: "Six Strings, Six Names", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 5 questions", spot: "the container yard", loot: ["vest"] },
   { id: "q3", x: 1600, g: 360, hx: 1600, hy: 122, icon: "📜", name: "First Riff", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a Beginner riff", spot: "the high catwalk", loot: ["goggles"] },
-  { id: "q4", x: 2300, g: 620, hx: 2300, hy: 340, icon: "🎸", name: "Two-Chord Friends", url: "chords.html", lane: "Chords", game: "Chords · Em + Am", spot: "the stinky sewer grate", loot: ["mask", "strap"] },
-  { id: "q5", x: 2640, g: 300, hx: 2640, hy: 72, icon: "⚡", name: "Open String Speed Round", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 10 questions", spot: "the factory rooftop", loot: ["gloves"] },
+  { id: "q4", x: 2300, g: 620, hx: 2300, hy: 340, icon: "🎸", name: "Two-Chord Friends", url: "chords.html", lane: "Chords", game: "Chords · Em + Am", spot: "the stinky sewer grate", loot: ["mask", "strap"], choice: "r" },
+  { id: "q5", x: 2640, g: 300, hx: 2640, hy: 72, icon: "⚡", name: "Open String Speed Round", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 10 questions", spot: "the factory rooftop", loot: ["gloves"], choice: "r" },
   { id: "q6", x: 3030, g: 620, hx: 3180, hy: 290, icon: "🔊", name: "The Grumpy Amp", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Zombie (Em C G D) · slow · root notes", spot: "the factory gate", loot: ["rust"], boss: true }
 ],
     extras: [{ hx: 1905, hy: 248, icon: "❓", name: "Crane Hook", msg: "❓ Crane Hook: a side quest, coming soon" }],
@@ -138,7 +138,9 @@ LEVELS.push((() => {
     ledge(785, 620, 860, 520), run(896, 915, 520), jump(915, 520, 1010, 420, { flips: 1, apex: 64 }), run(1024, 1036, 420), stop(1036, 420)] },
     { from: "q2", to: "q3", route: () => [run(1060, 1130, 420, { start: 1 }), barSwing(1130, 420, 1290, 300, 1490, 360), run(1498, 1576, 360, { start: 1 }), stop(1576, 360)] },
     { from: "q3", to: "q4", route: () => [run(1600, 1790, 360, { start: 1 }), dropRoll(1790, 360, 1900, 620), run(2024, 2034, 620), slide(2034, 620, 2238), run(2238, 2276, 620), stop(2276, 620)] },
-    { from: "q4", to: "q5", route: () => [run(2300, 2466, 620, { start: 1 }), stop(2466, 620), ladder(2490, 620, 300), jump(2490, 300, 2550, 300, { apex: 22, fromStand: 1 }), run(2564, 2616, 300), stop(2616, 300)] },
+    // a choice: the sewer grate or the rooftop, and either one leads on to the boss
+    { from: "q3", to: "q5", route: () => [run(1600, 1790, 360, { start: 1 }), dropRoll(1790, 360, 1900, 620), run(2024, 2034, 620), slide(2034, 620, 2238), run(2238, 2466, 620), stop(2466, 620), ladder(2490, 620, 300), jump(2490, 300, 2550, 300, { apex: 22, fromStand: 1 }), run(2564, 2616, 300), stop(2616, 300)] },
+    { from: "q4", to: "q6", route: () => [run(2300, 3006, 620, { start: 1 }), stop(3006, 620)] },
     { from: "q5", to: "q6", route: () => [run(2640, 2750, 300, { start: 1 }), dropRoll(2750, 300, 2850, 620), run(2974, 3006, 620), stop(3006, 620)] }
     ]
   };
