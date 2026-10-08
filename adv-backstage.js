@@ -44,7 +44,7 @@ LEVELS.push((() => {
     s += box(720, 340, 170, 46, "#e8433f") + `<text x="805" y="370" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="20" fill="#fff">CREW ONLY</text>`;
     [[120, 560, 90, 60], [220, 580, 60, 40], [380, 570, 70, 50]].forEach(([x, y, w, h]) => { s += box(x, y, w, h, "#26211f") + `<path d="M${x} ${y} h10 M${x + w - 10} ${y} h10 M${x} ${y + h} h10 M${x + w - 10} ${y + h} h10" stroke="#9aa3ad" stroke-width="5"/><rect x="${x + w / 2 - 14}" y="${y + h / 2 - 6}" width="28" height="12" fill="#f7f4ee"/>`; });
     // roadies backstage
-    s += npc(61, 330, G, { pose: "wave", phone: false, bob: false, cfg: { acc: "headset", neck: "laminate", top: "tee", color: "#26211f", extra: "towel" } }) + npc(63, 520, G, { pose: "thumbs", phone: false, bob: false, cfg: { acc: "cap", neck: "laminate", top: "hoodie", color: "#3a3a3d" } });
+    s += npc(61, 330, G, { pose: "cheer", bob: false, cfg: { acc: "headset", neck: "laminate", top: "tee", color: "#26211f", extra: "towel" } }) + npc(63, 520, G, { pose: "cheer", bob: false, cfg: { acc: "cap", neck: "laminate", top: "hoodie", color: "#3a3a3d" } });
     // the road case stack (climb it)
     s += box(940, 580, 120, 40, "#26211f") + box(940, 540, 120, 40, "#26211f");
     [[940, 540], [940, 580]].forEach(([x, y]) => { s += `<path d="M${x} ${y} h14 M${x + 106} ${y} h14 M${x} ${y + 40} h14 M${x + 106} ${y + 40} h14" stroke="#9aa3ad" stroke-width="6"/><text x="${x + 60}" y="${y + 26}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="13" fill="#ffc42b">FMA · AMP</text>`; });
@@ -113,9 +113,9 @@ LEVELS.push((() => {
     driveCurve([[2230, G], [2240, 613], [2430, 477], [2446, ST]]), cartStop(2440, ST)];
   const surfToBoss = (x0, y) => [crowdSurf(x0, 3200, y), crowdDrop(3200, y, 3290, G), run(3304, 3456, G), stop(3456, G)];
   const edges = [
-    { from: "c1", to: "k1", route: () => [cartIn(200, G), drive(194, 670, G, { start: 1, bumps: [430] }), cartStop(670, G)] },
+    { from: "c1", to: "k1", route: () => [cartIn(200, G), drive(194, 670, G, { start: 1, bumps: [430], fx: [{ u: .4, k: "moment", name: "bump" }] }), cartStop(670, G)] },
     { from: "c1", to: "k2", route: () => [run(200, 400, G, { start: 1 }), jump(400, G, 460, G, { apex: 20 }), run(474, 865, G), ledge(865, G, 940, 540)] },
-    { from: "c1", to: "k3", route: () => [cartIn(200, G), drive(194, 1200, G, { start: 1, bumps: [430, 1120] }), cartStop(1200, G)] },
+    { from: "c1", to: "k3", route: () => [cartIn(200, G), drive(194, 1200, G, { start: 1, bumps: [430, 1120], fx: [{ u: .19, k: "moment", name: "bump" }] }), cartStop(1200, G)] },
     { from: "k1", to: "c2", route: () => [cartIn(700, G), drive(694, 760, G, { start: 1 }), ...frontOfStage(760)] },
     { from: "k2", to: "c2", route: () => [run(976, 1050, 540, { start: 1 }), jump(1050, 540, 1140, G, { apex: 20 }), run(1154, 2240, G),
       jump(2240, G, 2320, RAMP(2320), { apex: 22 }), jump(2334, RAMP(2334), 2410, RAMP(2410), { apex: 22 }), jump(2424, RAMP(2424), 2440, ST, { apex: 16 }), stop(2446, ST)] },
@@ -136,6 +136,8 @@ LEVELS.push((() => {
     platforms: [{ a: -100, b: W + 100, y: G }, { a: 940, b: 1060, y: 540 }, { a: 1520, b: 2500, y: ST }, { a: 1960, b: 2140, y: 420 }, { a: 2180, b: 2620, y: TRUSS }],
     nodes, edges,
     moments: {
+      // the crew cart jumping the first cable ramp, the roadies filming
+      bump(M){ M.slow(.25, 1700); M.phones(true); M.polaroidsAt([432], ["SEND IT! 🛺"]); M.after(2400, () => M.phones(false)); M.after(3300, () => M.clearPolaroids()); },
       // the crowd films you going past the front of the stage: time slows, three Polaroids
       photos(M){ M.phones(true); M.slow(.2, 3400); M.polaroidsAt([1925, 1990, 2058], ["FRONT ROW!! 🤘", "omg hiii 👋", "LEGEND 🔥"]); M.after(4400, () => M.phones(false)); M.after(5200, () => M.clearPolaroids()); }
     },

@@ -119,7 +119,7 @@ LEVELS.push((() => {
     { id: "boss", x: 3360, g: G, hx: 3560, hy: 280, icon: "🗑️", name: "The Garbage Gobbler", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Wagon Wheel (G D Em C) · slow · whole chords", spot: "the end of the street", loot: ["stickerbomb"], boss: true }
   ];
   /* ---- the routes (on the board the whole way) ---- */
-  const toBench = () => [mount(220, G), push(230, 400, G, { start: 1 }), ollie(400, G, 520, G), push(534, 585, G), ollie(585, G, 650, 586, { apex: 22 }), grind(664, 586, 758, 586), ollie(758, 586, 800, G, { apex: 14 })];
+  const toBench = () => [mount(220, G), push(230, 400, G, { start: 1 }), ollie(400, G, 520, G), push(534, 585, G), ollie(585, G, 650, 586, { apex: 22 }), Object.assign(grind(664, 586, 758, 586), { fx: [{ u: .05, k: "moment", name: "grind" }] }), ollie(758, 586, 800, G, { apex: 14 })];
   const toPlaza = from => [push(from, 905, G), ollie(905, G, 1070, 520, { apex: 34 })];
   const downRail = from => [push(from, 1440, 520), ollie(1440, 520, 1510, RAIL(1524), { apex: 16 }), grind(1524, RAIL(1524), 1716, RAIL(1716)), ollie(1716, RAIL(1716), 1780, G, { apex: 10 })];
   const toTruck = from => [push(from, 2000, G), manual(2000, 2100, G), push(2100, 2124, G), rideStop(2124, G)];
@@ -145,6 +145,8 @@ LEVELS.push((() => {
     platforms: [{ a: -100, b: W + 100, y: G }, { a: 640, b: 770, y: 586 }, { a: 1010, b: 1520, y: 520 }, { a: 2790, b: 2950, y: 470 }],
     nodes, edges,
     moments: {
+      // the first grind, along the bench by the bus stop
+      grind(M){ M.slow(.22, 1800); M.phones(true); M.polaroidsAt([700], ["GRIND TIME 🔥"]); M.after(2500, () => M.phones(false)); M.after(3400, () => M.clearPolaroids()); },
       // a 360 off the kicker: time slows, the judges hold up their scores, and someone gets the shot
       judges(M){ M.slow(.22, 2600); M.phones(true); M.after(500, () => M.cls("scores", true)); M.polaroidsAt([2700], ["SICK 360!! 🛹"]); M.after(3800, () => { M.cls("scores", false); M.phones(false); }); M.after(4400, () => M.clearPolaroids()); }
     },

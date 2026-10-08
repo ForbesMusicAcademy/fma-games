@@ -110,7 +110,7 @@ LEVELS.push((() => {
     return s;
   }
   function people(){
-    return npc(301, 140, 540, { pose: "wave", phone: false, bob: false, cfg: { acc: "hardhat", top: "hivis" } }) + npc(302, 1480, 360, { pose: "cheer", bob: 6, cfg: { acc: "hardhat", top: "hivis" } })
+    return npc(301, 140, 540, { pose: "wave", phone: false, bob: false, cfg: { acc: "hardhat", top: "hivis" } }) + npc(302, 1720, 620, { pose: "cheer", bob: 6, cfg: { acc: "hardhat", top: "hivis" } })
       + npc(303, 2440, 620, { pose: "thumbs", phone: false, bob: false, cfg: { eyewear: "gasmask", top: "hivis" } }) + npc(304, 1370, 620, { pose: "cheer", bob: 7, cfg: { acc: "cap" } });
   }
   function foreLayer(){
@@ -137,6 +137,8 @@ LEVELS.push((() => {
   { id: "q6", x: 3030, g: 620, hx: 3180, hy: 290, icon: "🔊", name: "The Grumpy Amp", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Zombie (Em C G D) · slow · root notes", spot: "the factory gate", loot: ["rust"], boss: true }
 ],
     moments: {
+      // the front flip up onto the containers: everyone's first big moment
+      flip(M){ M.slow(.25, 1800); M.phones(true); M.polaroidsAt([968], ["NAILED IT!! 🤸"]); M.after(2500, () => M.phones(false)); M.after(3400, () => M.clearPolaroids()); },
       // letting go of the bar: time slows for the flyaway, the workers whip out their phones
       flyaway(M){ M.slow(.25, 1900); M.phones(true); M.polaroidsAt([1360], ["BIG AIR!! 🏗️"]); M.after(2600, () => M.phones(false)); M.after(3600, () => M.clearPolaroids()); }
     },
@@ -144,7 +146,7 @@ LEVELS.push((() => {
     extras: [{ hx: 1905, hy: 248, icon: "❓", name: "Crane Hook", msg: "❓ Crane Hook: a side quest, coming soon" }],
     edges: [
     { from: "q1", to: "q2", route: () => [run(250, 400, 540, { start: 1 }), jump(400, 540, 500, 620, { apex: 26 }), run(514, 565, 620), kong(565, 620, 640, 570, 44), run(746, 785, 620),
-    ledge(785, 620, 860, 520), run(896, 915, 520), jump(915, 520, 1010, 420, { flips: 1, apex: 64 }), run(1024, 1036, 420), stop(1036, 420)] },
+    ledge(785, 620, 860, 520), run(896, 915, 520), Object.assign(jump(915, 520, 1010, 420, { flips: 1, apex: 64 }), { fx: [{ u: .2, k: "dust" }, { u: .3, k: "moment", name: "flip" }, { u: .8, k: "dust" }] }), run(1024, 1036, 420), stop(1036, 420)] },
     { from: "q2", to: "q3", route: () => [run(1060, 1130, 420, { start: 1 }), Object.assign(barSwing(1130, 420, 1290, 300, 1490, 360), { fx: [{ u: .25, k: "clang" }, { u: .7, k: "moment", name: "flyaway" }, { u: .93, k: "dust" }] }), run(1498, 1576, 360, { start: 1 }), stop(1576, 360)] },
     { from: "q3", to: "q4", route: () => [run(1600, 1790, 360, { start: 1 }), dropRoll(1790, 360, 1900, 620), run(2024, 2034, 620), slide(2034, 620, 2238), run(2238, 2276, 620), stop(2276, 620)] },
     // a choice: the sewer grate or the rooftop, and either one leads on to the boss

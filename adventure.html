@@ -42,6 +42,15 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 .pol.out{opacity:0;transform:translateY(40px) rotate(var(--r)) scale(.9)}
 .pol svg{display:block;width:100%;height:auto;aspect-ratio:1;border:1px solid #26211f;background:#1d1430}
 .pol b{display:block;text-align:center;font-family:var(--head);font-weight:900;font-size:clamp(10px,1.6vw,17px);color:#26211f;margin-top:4%}
+/* cinema bars for moments */
+.game::before,.game::after{content:"";position:absolute;left:0;right:0;height:0;background:#000;z-index:4;transition:height .45s ease;pointer-events:none}
+.game::before{top:0}.game::after{bottom:0}
+.game.cinema::before,.game.cinema::after{height:9%}
+/* quests that are off screen: a bubble on the edge, pointing at them (tap it to go there) */
+.edge{position:absolute;z-index:3;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#4fd0c0;border:3px solid #000;display:grid;place-items:center;font-size:22px;box-shadow:0 3px 0 #000;cursor:pointer;padding:0;animation:edgeP 1.4s ease-in-out infinite}
+.edge.done{background:#ffd34d;animation:none}
+.edge i{position:absolute;width:0;height:0;border:8px solid transparent;border-left:12px solid #000;left:50%;top:50%;transform-origin:0 50%;margin-top:-8px}
+@keyframes edgeP{50%{transform:scale(1.1)}}
 .slowmo{position:absolute;right:12px;top:12px;font-family:var(--head);font-weight:900;color:#fff;font-size:clamp(12px,2vw,20px);text-shadow:0 2px 0 #000;opacity:0;transition:.3s;z-index:6}
 .slowmo.on{opacity:1}
 .game.over{aspect-ratio:3300/720}
@@ -104,7 +113,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 .notes h4{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:16px;color:var(--gold)}
 .notes ul{margin:0;padding-left:18px}
 /* phones: a taller picture, so the characters are bigger (the sides are trimmed, not the sky or the quests) */
-@media (max-width:700px){.game{aspect-ratio:4/3;max-height:none}.game.over{aspect-ratio:3300/720}.wrap{padding:0 8px 16px}header{padding:10px 8px 6px}}
+@media (max-width:700px){.game{aspect-ratio:1/1;max-height:72vh}.game.over{aspect-ratio:3300/720}.wrap{padding:0 8px 16px}header{padding:10px 8px 6px}}
 @media (max-width:820px){.lib{grid-template-columns:1fr}.hint{display:none}.chip{font-size:13px}.b{font-size:12px;padding:4px 9px}.item{width:38px;height:38px}.item svg{width:30px;height:30px}}
 </style>
 </head>
@@ -125,7 +134,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
       </div>
     </div>
   <div class="game" id="game">
-    <svg id="world" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <svg id="world" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <defs id="defs"></defs>
       <g id="L-sky"></g><g id="L-sun"></g><g id="L-far"></g><g id="L-mid"></g><g id="L-main"></g><g id="L-links"></g><g id="L-nodes"></g><g id="L-actor"></g><g id="L-fx"></g><g id="L-crowd"></g><g id="L-fore"></g>
     </svg>
@@ -133,6 +142,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
     <div class="flash" id="flash"></div>
     <div class="polaroids" id="pols"></div>
     <div class="slowmo" id="slowmo">⏱ SLOW-MO</div>
+    <div id="edges"></div>
     <div class="card" id="card"><div class="in" id="cardIn"></div></div>
     <div class="card" id="map"><div class="in wide" id="mapIn"></div></div>
   </div>
@@ -165,10 +175,10 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script src="adv-engine.js?v=6"></script>
-<script src="adv-rustrow.js?v=4"></script>
-<script src="adv-skate.js?v=2"></script>
-<script src="adv-backstage.js?v=4"></script>
-<script src="adv-amp.js?v=2"></script>
+<script src="adv-rustrow.js?v=5"></script>
+<script src="adv-skate.js?v=3"></script>
+<script src="adv-backstage.js?v=5"></script>
+<script src="adv-amp.js?v=3"></script>
 <script>
 /* =====================================================================
    ADVENTURE: the page. Loads a level from LEVELS (adv-*.js), draws its
@@ -229,12 +239,21 @@ function pathTo(from, to){
 const groundAt = (x, feet) => { let best = 9999; Lv.platforms.forEach(p => { if(x >= p.a && x <= p.b && p.y >= feet - 8 && p.y < best) best = p.y; }); return best === 9999 ? Lv.ground : best; };
 
 /* ---- quest hexagons in the world ---- */
+// step numbers: how many quests in from the start; quests sharing a choice share a number (3A, 3B, 3C)
+function stepLabels(){
+  const depth = {}, lab = {}; Lv.nodes.forEach(n => { depth[n.id] = 1; });
+  for(let pass = 0; pass < Lv.nodes.length; pass++) Lv.edges.forEach(e => { depth[e.to] = Math.max(depth[e.to], depth[e.from] + 1); });
+  const seen = {}; Lv.nodes.forEach(n => { if(n.choice){ seen[n.choice] = (seen[n.choice] || 0) + 1; lab[n.id] = depth[n.id] + "ABCD"[seen[n.choice] - 1]; } else lab[n.id] = n.boss ? "★" : String(depth[n.id]); });
+  return lab;
+}
 function drawNodes(){
-  let L = Lv.edges.map(e => { const A = nodeOf(e.from), B = nodeOf(e.to), d = done.has(e.from) && done.has(e.to), c = d ? "#ffd34d" : "#f4eee6";
-    return `<path d="M${A.hx} ${A.hy} L${B.hx} ${B.hy}" stroke="${c}" stroke-width="10" opacity=".18" stroke-linecap="round"/><path d="M${A.hx} ${A.hy} L${B.hx} ${B.hy}" stroke="${c}" stroke-width="3" stroke-dasharray="${d ? "0" : "8 8"}" opacity="${d ? .9 : .55}" stroke-linecap="round"/>`; }).join("");
+  // the trail: cleared stretches gold, the way on to quests you can play now glows and moves, the rest is faint
+  let L = Lv.edges.map(e => { const A = nodeOf(e.from), B = nodeOf(e.to), d = done.has(e.from) && done.has(e.to), next = !done.has(e.to) && stateOf(e.to) === "open" && (done.has(e.from) || e.from === Lv.nodes[0].id);
+    const c = d ? "#ffd34d" : next ? "#4fd0c0" : "#f4eee6";
+    return `<path d="M${A.hx} ${A.hy} L${B.hx} ${B.hy}" stroke="${c}" stroke-width="${next ? 16 : 10}" opacity="${next ? .3 : .14}" stroke-linecap="round"/><path d="M${A.hx} ${A.hy} L${B.hx} ${B.hy}" stroke="${c}" stroke-width="${next ? 5 : 3}" stroke-dasharray="${d ? "0" : next ? "14 10" : "6 10"}" opacity="${d ? .9 : next ? 1 : .32}" stroke-linecap="round">${next ? `<animate attributeName="stroke-dashoffset" values="48;0" dur="1s" repeatCount="indefinite"/>` : ""}</path>`; }).join("");
   (Lv.extras || []).forEach(x => { const A = nodeOf(x.from || Lv.nodes[0].id); if(x.from) L += `<path d="M${A.hx} ${A.hy} L${x.hx} ${x.hy}" stroke="#ffc42b" stroke-width="3" stroke-dasharray="3 9" opacity=".6" stroke-linecap="round"/>`; });
   document.getElementById("L-links").innerHTML = L;
-  let s = "";
+  let s = ""; const LABELS = stepLabels();
   // choice checkpoints: a "Pick one!" banner over each group
   const groups = {}; Lv.nodes.forEach(n => { if(n.choice) (groups[n.choice] = groups[n.choice] || []).push(n); });
   Object.values(groups).forEach(g => { const x = g.reduce((a, n) => a + n.hx, 0) / g.length, y = Math.max(34, Math.min(...g.map(n => n.hy)) - 74), any = g.some(n => done.has(n.id));
@@ -249,7 +268,8 @@ function drawNodes(){
     s += `<polygon points="${hexPts(n.hx, n.hy + 4, r)}" fill="#000" opacity=".35"/><polygon points="${hexPts(n.hx, n.hy, r)}" fill="url(#${fill})" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>`;
     s += `<polygon points="${hexPts(n.hx, n.hy, r - 7)}" fill="none" stroke="#fff" stroke-width="2" opacity=".45"/>`;
     s += `<text x="${n.hx}" y="${n.hy + (n.boss ? 13 : 11)}" text-anchor="middle" font-size="${n.boss ? 38 : 30}" opacity="${st === "locked" && !n.boss ? .5 : 1}">${n.icon}</text>`;
-    const badge = st === "done" ? ["#4fb86a", "✓"] : st === "open" ? ["#4aa8ff", "▶"] : ["#5d6670", "🔒"];
+    const badge = st === "done" ? ["#4fb86a", "✓"] : st === "open" ? ["#4aa8ff", "▶"] : ["#5d6670", "🔒"], step = LABELS[n.id];
+    s += `<circle cx="${n.hx - r * .8}" cy="${n.hy - r * .55}" r="14" fill="${INK}" stroke="#fff" stroke-width="2.5"/><text x="${n.hx - r * .8}" y="${n.hy - r * .55 + 5}" text-anchor="middle" font-size="${step.length > 1 ? 12 : 15}" font-weight="900" fill="#fff" font-family="Nunito">${step}</text>`;
     s += `<circle cx="${n.hx + r * .78}" cy="${n.hy - r * .55}" r="12" fill="${badge[0]}" stroke="${INK}" stroke-width="3"/><text x="${n.hx + r * .78}" y="${n.hy - r * .55 + 5}" text-anchor="middle" font-size="${st === "locked" ? 11 : 14}" font-weight="900" fill="#fff" font-family="Nunito">${badge[1]}</text>`;
     const lw = n.name.length * 7.6 + 24;
     s += `<rect x="${n.hx - lw / 2}" y="${n.hy + r + 8}" width="${lw}" height="24" rx="12" fill="${INK}" stroke="#000" stroke-width="2"/><text x="${n.hx}" y="${n.hy + r + 25}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="14" fill="${st === "open" ? "#4fd0c0" : st === "done" ? "#ffd34d" : "#c9c2cf"}">${n.name}</text>`;
@@ -341,16 +361,18 @@ const flashEl = document.getElementById("flash"), polsEl = document.getElementBy
 let captures = [], momentTimers = [];
 const MOMENT = {
   // slow time down to f (of normal) for ms of real time
-  slow(f, ms){ hero.speed = f; slowEl.classList.add("on"); momentTimers.push(setTimeout(() => { hero.speed = slow ? .35 : 1; slowEl.classList.remove("on"); }, ms)); },
+  // slow time down to f (of normal) for ms of real time: the camera pushes in and cinema bars slide in
+  slow(f, ms){ hero.speed = f; slowEl.classList.add("on"); gameEl.classList.add("cinema"); if(!RM) momentZoom = 1.55;
+    momentTimers.push(setTimeout(() => { hero.speed = slow ? .35 : 1; slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }, ms)); },
   phones(on){ worldSvg.classList.toggle("phones", on); },
   cls(name, on){ worldSvg.classList.toggle(name, on); },
-  flash(){ flashEl.classList.remove("go"); void flashEl.offsetWidth; flashEl.classList.add("go"); },
+  flash(){ if(RM) return; flashEl.classList.remove("go"); void flashEl.offsetWidth; flashEl.classList.add("go"); },
   // snap a Polaroid each time the character passes one of these x positions
   polaroidsAt(xs, captions){ polsEl.innerHTML = ""; captures = xs.map((x, i) => ({ x, cap: captions[i] || "", done: false })); },
   after(ms, fn){ momentTimers.push(setTimeout(fn, ms)); },
   clearPolaroids(){ polsEl.querySelectorAll(".pol").forEach(p => p.classList.add("out")); momentTimers.push(setTimeout(() => { polsEl.innerHTML = ""; }, 500)); captures = []; }
 };
-window.advMoment = (name, st) => { const m = Lv.moments && Lv.moments[name]; if(m && !RM) m(MOMENT, st); };
+window.advMoment = (name, st) => { const m = Lv.moments && Lv.moments[name]; if(m) m(MOMENT, st); };
 function snapPolaroid(c, i){
   const st = hero.state; if(!st) return;
   const cx = st.cx, cy = st.m === "side" ? st.cy : st.fy - 80, el = document.createElement("div");
@@ -358,7 +380,24 @@ function snapPolaroid(c, i){
   el.innerHTML = `<svg viewBox="${f1(cx - 92)} ${f1(cy - 112)} 184 184">${Lv.polaroidBack ? Lv.polaroidBack(cx, cy) : ""}${hero.body(st, cfg, wear, "pol" + i, 1, 1)}</svg><b>${c.cap}</b>`;
   polsEl.appendChild(el); requestAnimationFrame(() => el.classList.add("in")); MOMENT.flash(); Sound.note(1600, .05, "square");
 }
-function endMoments(){ momentTimers.forEach(clearTimeout); momentTimers = []; captures = []; polsEl.innerHTML = ""; worldSvg.classList.remove("phones", "scores"); slowEl.classList.remove("on"); }
+function endMoments(){ momentTimers.forEach(clearTimeout); momentTimers = []; captures = []; polsEl.innerHTML = ""; worldSvg.classList.remove("phones", "scores"); slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }
+
+/* ---- off-screen quests you can go to now: a bubble on the edge of the picture, pointing at them ---- */
+const edgesEl = document.getElementById("edges"), edgeEls = {};
+function edgeMarkers(){
+  if(!Lv || view.z > .05){ edgesEl.style.display = "none"; return; }
+  edgesEl.style.display = "";
+  const C = CAM, sx = x => (x - C.x) / C.w * C.elW, sy = y => (y - C.y) / C.h * C.elH, pad = 30, top = gameEl.classList.contains("cinema") ? C.elH * .09 + pad : pad;
+  Lv.nodes.forEach(n => {
+    const st = stateOf(n.id), want = st === "open" && n.id !== at && !busy;
+    let el = edgeEls[n.id];
+    const x = sx(n.hx), y = sy(n.hy), off = x < 0 || x > C.elW || y < 0 || y > C.elH;
+    if(!want || !off){ if(el) el.style.display = "none"; return; }
+    if(!el){ el = edgeEls[n.id] = document.createElement("button"); el.className = "edge"; el.innerHTML = `<span>${n.icon}</span><i></i>`; el.title = "Go to " + n.name; el.onclick = () => nodeClick(n.id); edgesEl.appendChild(el); }
+    const cx = clamp(x, pad, C.elW - pad), cy = clamp(y, top, C.elH - top), ang = Math.atan2(y - cy, x - cx) * 180 / Math.PI;
+    el.style.display = ""; el.style.left = cx + "px"; el.style.top = cy + "px"; el.querySelector("i").style.transform = `rotate(${f1(ang)}deg) translateX(26px)`;
+  });
+}
 
 /* ---- the levels map ---- */
 const mapEl = document.getElementById("map"), mapIn = document.getElementById("mapIn");
@@ -383,7 +422,7 @@ const hero = new Actor(document.getElementById("L-actor"), document.getElementBy
 
 /* ---- buttons ---- */
 const view = { z: 0, target: 0 };
-let slow = false, camX = 0;
+let slow = false, camX = 0, camY = 0, zoom = 1, momentZoom = 1, CAM = { x: 0, y: 0, w: 1280, h: 720, elW: 1280, elH: 720 };
 const gameEl = document.getElementById("game"), bOver = document.getElementById("bOverview");
 function setOverview(on){ view.target = on ? 1 : 0; bOver.classList.toggle("on", on); gameEl.classList.toggle("over", on); gameEl.style.aspectRatio = on ? `${W}/720` : ""; }
 bOver.onclick = () => setOverview(!view.target);
@@ -407,6 +446,7 @@ function enterLevel(lv){
   hero.state = arriveAt(at); hero.seq = null; hero.parts = [];
   camX = clamp(nodeOf(at).x - VW * .42, 0, W - VW);
   awaitingSecondTap = resumed;
+  Object.values(edgeEls).forEach(e => e.remove()); for(const k in edgeEls) delete edgeEls[k];
   setOverview(false); drawNodes(); drawTray(); saveLevel();
   return resumed;
 }
@@ -509,13 +549,22 @@ function loop(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   hero.tick(dt);
   captures.forEach((c, i) => { if(!c.done && hero.state && hero.state.m === "side" && hero.state.cx >= c.x){ c.done = true; snapPolaroid(c, i); } });
-  // camera: follow the character; the whole-level view zooms out
+  // camera: the picture's shape decides how much of the level shows; phones are zoomed in, moments zoom in further,
+  // and the camera follows the character up and down as well as along. The whole-level view zooms right out.
   view.z += (view.target - view.z) * Math.min(1, dt * 5);
-  const tx = clamp(hero.state.cx - VW * .42, 0, W - VW);
-  camX += (tx - camX) * Math.min(1, dt * 4);
-  const cam = camX * (1 - view.z), vbW = lerp(VW, W, view.z);
-  worldSvg.setAttribute("viewBox", `0 0 ${f1(vbW)} ${VH}`);
+  const elW = gameEl.clientWidth || 1280, elH = gameEl.clientHeight || 720, narrow = elW < 700;
+  zoom += ((narrow ? 1.6 : 1) * (narrow ? 1 + (momentZoom - 1) * .45 : momentZoom) - zoom) * Math.min(1, dt * 3);
+  let vh = VH / zoom, vw = vh * elW / elH;
+  if(vw > W){ vw = W; vh = W * elH / elW; }
+  vw = lerp(vw, W, view.z); vh = lerp(vh, W * elH / elW, view.z);
+  const st = hero.state, hy = st.m === "side" ? st.cy : (st.fy || 600) - 70;
+  const tx = clamp(st.cx - vw * (momentZoom > 1 ? .5 : .42), 0, Math.max(0, W - vw)), ty = clamp(hy - vh * (momentZoom > 1 ? .5 : .56), Math.min(0, VH - vh), Math.max(0, VH - vh));
+  camX += (tx - camX) * Math.min(1, dt * 4); camY += (ty - camY) * Math.min(1, dt * 4);
+  const cam = camX * (1 - view.z), camV = camY * (1 - view.z) + (VH - vh) * view.z;
+  CAM = { x: cam, y: camV, w: vw, h: vh, elW, elH };
+  worldSvg.setAttribute("viewBox", `0 ${f1(camV)} ${f1(vw)} ${f1(vh)}`);
   layerEls.forEach(([el, f]) => el.setAttribute("transform", `translate(${f1(-cam * f)} 0)`));
+  edgeMarkers();
   hero.render(dt, cfg, wear);
   if(Lv.onFrame) Lv.onFrame(hero.state, dt);      // scenery that reacts to the character (piano keys, pedals, drums)
   if(DEV) lib.frame(dt);
