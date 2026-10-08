@@ -81,6 +81,8 @@ LEVELS.push((() => {
     for(let i = 1; i < 6; i++) s += `<path d="M2790 ${470 + i * 25} H2950" stroke="#b07f4a" stroke-width="2"/>`;
     s += `<path d="M2790 470 H2954" stroke="#9aa3ad" stroke-width="7" stroke-linecap="round"/><path d="M2810 470 V440 H2830 M2930 470 V440 H2910" stroke="${INK}" stroke-width="4" fill="none"/>`;
     s += `<text x="2870" y="560" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="26" fill="#fff" stroke="${INK}" stroke-width="3" paint-order="stroke">SK8</text>`;
+    // locals: waiting for the bus, getting tacos
+    s += npc(201, 950, G, { pose: "wave", phone: false, bob: false, cfg: { acc: "cap" } }) + npc(202, 2296, G, { pose: "thumbs", phone: false, bob: false });
     // a fun box before the boss
     s += box(3250, 598, 56, 22, "#5470f0");
     // the boss: a garbage truck with a grumpy grille
@@ -90,6 +92,13 @@ LEVELS.push((() => {
     s += `<text x="3600" y="500" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="28" fill="#fff" stroke="${INK}" stroke-width="3" paint-order="stroke">GOBBLER</text>`;
     [3450, 3560, 3700].forEach(x => { s += `<circle cx="${x}" cy="604" r="22" fill="#3a3a3d" stroke="${INK}" stroke-width="3"/><circle cx="${x}" cy="604" r="8" fill="#9aa3ad"/>`; });
     s += `<g opacity=".7">${smoke(3770, 380, "#9aa3ad", 3, 100, 4)}</g>`;
+    return s;
+  }
+  // the crowd at the skate park, close to camera: three of them are judges with scorecards
+  function crowd(){
+    let s = "";
+    [[2420, 210, "cheer"], [2520, 211, "rock"], [2640, 212, "cheer", "9.5"], [2760, 213, "cheer", "10"], [2880, 214, "cheer", "10!"], [3000, 215, "star"], [3110, 216, "rock"], [3230, 217, "cheer"]]
+      .forEach(([x, n, pose, card], i) => { s += npc(n, x, 790 + (i % 2) * 14, { scale: 1.1, pose, card, phone: !card, bob: 8, beat: .5, flip: i % 3 === 1 }); });
     return s;
   }
   function fore(){
@@ -124,7 +133,7 @@ LEVELS.push((() => {
     { from: "a2", to: "s2", route: () => [mount(1250, 520), ...downRail(1260), ...toTruck(1794)] },
     { from: "a3", to: "s2", route: () => [mount(1850, G), push(1860, 1990, G, { start: 1 }), ...toTruck(1990)] },
     { from: "s2", to: "b1", route: () => [...overCones(), push(2454, 2494, G), rideStop(2494, G)] },
-    { from: "s2", to: "b2", route: () => [...overCones(), push(2454, 2610, G), ollie(2610, G, 2790, 470, { apex: 46, spin: 1 }), push(2804, 2854, 470, { cruise: 1 }), rideStop(2854, 470)] },
+    { from: "s2", to: "b2", route: () => [...overCones(), push(2454, 2610, G), Object.assign(ollie(2610, G, 2790, 470, { apex: 46, spin: 1 }), { fx: [{ u: .2, k: "moment", name: "judges" }, { u: .86, k: "dust" }] }), push(2804, 2854, 470, { cruise: 1 }), rideStop(2854, 470)] },
     { from: "b1", to: "boss", route: () => [mount(2520, G), push(2530, 2610, G, { start: 1 }), ollie(2610, G, 2790, 470, { apex: 50, flip: true }), manual(2804, 2930, 470), ...dropIn(2930)] },
     { from: "b2", to: "boss", route: () => [mount(2880, 470), push(2890, 2930, 470, { start: 1 }), ...dropIn(2930)] }
   ];
@@ -132,9 +141,14 @@ LEVELS.push((() => {
     id: "skate", name: "Skate City", icon: "🛹", blurb: "Skate a sunny city street: ollies, grinds, a handrail, kickflips and the half-pipe.",
     W, ground: G, prop: "board",
     parallax: { "L-sun": .04, "L-far": .2, "L-mid": .5, "L-fore": 1.25 },
-    layers: () => ({ defs, sky: sky(), sun: sun(), far: far(), mid: mid(), main: main(), fore: fore() }),
+    layers: () => ({ defs, sky: sky(), sun: sun(), far: far(), mid: mid(), main: main(), crowd: crowd(), fore: fore() }),
     platforms: [{ a: -100, b: W + 100, y: G }, { a: 640, b: 770, y: 586 }, { a: 1010, b: 1520, y: 520 }, { a: 2790, b: 2950, y: 470 }],
     nodes, edges,
+    moments: {
+      // a 360 off the kicker: time slows, the judges hold up their scores, and someone gets the shot
+      judges(M){ M.slow(.22, 2600); M.phones(true); M.after(500, () => M.cls("scores", true)); M.polaroidsAt([2700], ["SICK 360!! 🛹"]); M.after(3800, () => { M.cls("scores", false); M.phones(false); }); M.after(4400, () => M.clearPolaroids()); }
+    },
+    polaroidBack: (cx, cy) => `<rect x="${cx - 200}" y="${cy - 200}" width="400" height="400" fill="#8fd3ff"/><circle cx="${cx + 60}" cy="${cy - 70}" r="40" fill="#fff6c8"/><rect x="${cx - 200}" y="${cy + 60}" width="400" height="200" fill="#d9a066"/>`,
     extras: [{ hx: 1650, hy: 150, icon: "❓", name: "Rooftop", from: "a2", msg: "❓ A rooftop side quest, coming soon" }]
   };
 })());

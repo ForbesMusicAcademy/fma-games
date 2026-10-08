@@ -76,6 +76,8 @@ LEVELS.push((() => {
     s += `<path d="M3550 ${CAB} ${cone.map(p => "L" + f1(p[0]) + " " + f1(p[1])).join(" ")} L3550 ${G}Z" fill="url(#ampCone)" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>`;
     [60, 120, 180].forEach(r => { const a = arc(3790, CAB, 240 - r * .55, 180, 90, 10); s += `<path d="M${a.map(p => f1(p[0]) + " " + f1(p[1])).join(" L")}" fill="none" stroke="#5d6670" stroke-width="3" opacity=".7"/>`; });
     s += `<path d="M3330 ${CAB} H3560" stroke="#9aa3ad" stroke-width="6"/><text x="3445" y="${CAB - 12}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="18" fill="#dfe3e8">FMA 4×12</text>`;
+    // shrunk-down friends: sitting on the input jack, dancing by the valves
+    s += npc(401, 140, 420, { pose: "wave", phone: false, bob: false, cfg: { acc: "phones" } }) + npc(402, 2530, G, { pose: "rock", bob: 6, beat: .45 }) + npc(403, 3480, CAB, { pose: "cheer", bob: 6 });
     // the boss: Captain Fuzz, a big grumpy fuzz pedal with cable tentacles
     s += `<g><path d="M3960 560 Q3900 520 3880 600 M4180 540 Q4240 500 4260 590" fill="none" stroke="${INK}" stroke-width="16" stroke-linecap="round"/><path d="M3960 560 Q3900 520 3880 600 M4180 540 Q4240 500 4260 590" fill="none" stroke="#a070e8" stroke-width="10" stroke-linecap="round"/><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="1.6s" repeatCount="indefinite"/></g>`;
     s += box(3960, 360, 230, 260, "#ff8a1c", `rx="18"`) + `<rect x="3976" y="376" width="198" height="60" rx="8" fill="#26211f"/><text x="4075" y="418" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="30" fill="#ffc42b">FUZZ</text>`;
@@ -128,7 +130,7 @@ LEVELS.push((() => {
   const keysToValves = () => [jump(1760, G, 1820, KEYTOP, { apex: 26 }), run(1834, 2420, KEYTOP), jump(2420, KEYTOP, 2500, G, { apex: 20 }), run(2514, 2626, G), stop(2626, G)];
   const pedals = () => [run(2650, 2700, G, { start: 1 }), jump(2700, G, 2800, PED, { apex: 30 }), jump(2814, PED, 2920, PED, { apex: 34 }), jump(2934, PED, 3040, PED, { apex: 34 })];
   const upCab = from => [jump(from, PED, 3215, 500, { apex: 40 }), run(3229, 3255, 500), ledge(3255, 500, 3330, CAB)];
-  const coneRide = from => [mount(from, CAB, { board: "pick" }), push(from + 10, 3540, CAB, { start: 1, board: "pick" }), rideCurve([[3540, CAB], [3552, CAB], ...arc(3790, CAB, 240, 175, 90, 12)], { board: "pick" }), push(3790, 3880, G, { cruise: 1, board: "pick" }), rideStop(3880, G, { board: "pick" })];
+  const coneRide = from => [mount(from, CAB, { board: "pick" }), push(from + 10, 3540, CAB, { start: 1, board: "pick" }), Object.assign(rideCurve([[3540, CAB], [3552, CAB], ...arc(3790, CAB, 240, 175, 90, 12)], { board: "pick" }), { fx: [{ u: .25, k: "moment", name: "cone" }] }), push(3790, 3880, G, { cruise: 1, board: "pick" }), rideStop(3880, G, { board: "pick" })];
   const edges = [
     { from: "m1", to: "p2", route: () => [...drums3(), stop(1054, 470)] },
     { from: "m1", to: "p1", route: () => [...drums3(), jump(1054, 470, 1160, STR(1160), { apex: 40 }), grind(1174, STR(1174), 1630, STR(1630), { board: "none" }), run(1630, 1694, CAB), stop(1694, CAB)] },
@@ -153,6 +155,11 @@ LEVELS.push((() => {
     platforms: [{ a: -100, b: W + 100, y: G }, ...DRUMS.map(([cx, top, hw]) => ({ a: cx - hw, b: cx + hw, y: top })), { a: 1640, b: 1780, y: CAB }, { a: 1772, b: 2448, y: KEYTOP },
       ...PEDALS.map(x => ({ a: x, b: x + 80, y: PED })), { a: 3200, b: 3290, y: 500 }, { a: 3330, b: 3560, y: CAB }],
     nodes, edges,
+    moments: {
+      // riding the pick down the speaker cone: slow-mo, and your friend on the cab gets the shot
+      cone(M){ M.slow(.25, 1700); M.phones(true); M.polaroidsAt([3660], ["TURN IT UP TO 11! 🔊"]); M.after(2400, () => M.phones(false)); M.after(3400, () => M.clearPolaroids()); }
+    },
+    polaroidBack: (cx, cy) => `<rect x="${cx - 200}" y="${cy - 200}" width="400" height="400" fill="#0d1f33"/><circle cx="${cx}" cy="${cy}" r="120" fill="url(#ampCone)"/>`,
     extras: [{ hx: 2200, hy: 120, icon: "❓", name: "Tone Knob", from: "p1", msg: "❓ The tone knob: a side quest, coming soon" }]
   };
 })());

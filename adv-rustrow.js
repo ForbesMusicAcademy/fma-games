@@ -109,6 +109,10 @@ LEVELS.push((() => {
     s += `<rect x="2860" y="540" width="215" height="80" fill="url(#chain)" opacity=".7"/><path d="M2860 540 H3075" stroke="#6d6a70" stroke-width="4"/>`;
     return s;
   }
+  function people(){
+    return npc(301, 140, 540, { pose: "wave", phone: false, bob: false, cfg: { acc: "hardhat", top: "hivis" } }) + npc(302, 1480, 360, { pose: "cheer", bob: 6, cfg: { acc: "hardhat", top: "hivis" } })
+      + npc(303, 2440, 620, { pose: "thumbs", phone: false, bob: false, cfg: { eyewear: "gasmask", top: "hivis" } }) + npc(304, 1370, 620, { pose: "cheer", bob: 7, cfg: { acc: "cap" } });
+  }
   function foreLayer(){
     let s = "";
     [380, 1150, 1900, 2700, 3500].forEach((x, i) => { const len = 50 + (i % 3) * 30; s += `<path d="M${x} -10 V${len}" stroke="#1a1220" stroke-width="5" stroke-dasharray="9 4"/><path d="M${x - 6} ${len} q6 14 12 0" stroke="#1a1220" stroke-width="5" fill="none"/>`; });
@@ -121,7 +125,7 @@ LEVELS.push((() => {
     id: "rustrow", name: "Rust Row", icon: "🏭", blurb: "Parkour across an old industrial district: vaults, flips, bar swings and ladders.",
     W, ground: 620, legacy: "fma-rustrow-v1",
     parallax: { "L-sun": .06, "L-far": .22, "L-mid": .5, "L-fore": 1.3 },
-    layers: () => ({ sky: skyLayer(), sun: sunLayer(), far: farLayer(), mid: midLayer(), main: mainLayer(), fore: foreLayer() }),
+    layers: () => ({ sky: skyLayer(), sun: sunLayer(), far: farLayer(), mid: midLayer(), main: mainLayer() + people(), fore: foreLayer() }),
   platforms: [{ a: -100, b: W + 100, y: 620 }, { a: 80, b: 420, y: 540 }, { a: 630, b: 694, y: 570 }, { a: 860, b: 1160, y: 520 }, { a: 980, b: 1160, y: 420 },
   { a: 1425, b: 1825, y: 360 }, { a: 2452, b: 2788, y: 300 }],
   nodes: [
@@ -132,11 +136,16 @@ LEVELS.push((() => {
   { id: "q5", x: 2640, g: 300, hx: 2640, hy: 72, icon: "⚡", name: "Open String Speed Round", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 10 questions", spot: "the factory rooftop", loot: ["gloves"], choice: "r" },
   { id: "q6", x: 3030, g: 620, hx: 3180, hy: 290, icon: "🔊", name: "The Grumpy Amp", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Zombie (Em C G D) · slow · root notes", spot: "the factory gate", loot: ["rust"], boss: true }
 ],
+    moments: {
+      // letting go of the bar: time slows for the flyaway, the workers whip out their phones
+      flyaway(M){ M.slow(.25, 1900); M.phones(true); M.polaroidsAt([1360], ["BIG AIR!! 🏗️"]); M.after(2600, () => M.phones(false)); M.after(3600, () => M.clearPolaroids()); }
+    },
+    polaroidBack: (cx, cy) => `<rect x="${cx - 200}" y="${cy - 200}" width="400" height="400" fill="#e0705a"/><circle cx="${cx - 40}" cy="${cy + 30}" r="70" fill="#ffd99a" opacity=".8"/>`,
     extras: [{ hx: 1905, hy: 248, icon: "❓", name: "Crane Hook", msg: "❓ Crane Hook: a side quest, coming soon" }],
     edges: [
     { from: "q1", to: "q2", route: () => [run(250, 400, 540, { start: 1 }), jump(400, 540, 500, 620, { apex: 26 }), run(514, 565, 620), kong(565, 620, 640, 570, 44), run(746, 785, 620),
     ledge(785, 620, 860, 520), run(896, 915, 520), jump(915, 520, 1010, 420, { flips: 1, apex: 64 }), run(1024, 1036, 420), stop(1036, 420)] },
-    { from: "q2", to: "q3", route: () => [run(1060, 1130, 420, { start: 1 }), barSwing(1130, 420, 1290, 300, 1490, 360), run(1498, 1576, 360, { start: 1 }), stop(1576, 360)] },
+    { from: "q2", to: "q3", route: () => [run(1060, 1130, 420, { start: 1 }), Object.assign(barSwing(1130, 420, 1290, 300, 1490, 360), { fx: [{ u: .25, k: "clang" }, { u: .7, k: "moment", name: "flyaway" }, { u: .93, k: "dust" }] }), run(1498, 1576, 360, { start: 1 }), stop(1576, 360)] },
     { from: "q3", to: "q4", route: () => [run(1600, 1790, 360, { start: 1 }), dropRoll(1790, 360, 1900, 620), run(2024, 2034, 620), slide(2034, 620, 2238), run(2238, 2276, 620), stop(2276, 620)] },
     // a choice: the sewer grate or the rooftop, and either one leads on to the boss
     { from: "q3", to: "q5", route: () => [run(1600, 1790, 360, { start: 1 }), dropRoll(1790, 360, 1900, 620), run(2024, 2034, 620), slide(2034, 620, 2238), run(2238, 2466, 620), stop(2466, 620), ladder(2490, 620, 300), jump(2490, 300, 2550, 300, { apex: 22, fromStand: 1 }), run(2564, 2616, 300), stop(2616, 300)] },

@@ -2,7 +2,7 @@
    lighting truss, then stage-dive and crowd-surf to the Feedback Beast. Choices: 3 backstage, then 2 on stage. */
 LEVELS.push((() => {
   const W = 3950, G = 620, ST = 470, TRUSS = 280;
-  const RAMP = x => 620 - (x - 1290) * (146 / 210);       // the cart ramp up to the stage: (1290, 620) to (1500, 474)
+  const RAMP = x => 620 - (x - 2230) * (150 / 210);       // the ramp at stage right, up from the crowd barrier: (2230, 620) to (2440, 470)
 
   /* ---- scenery ---- */
   const defs = `<linearGradient id="bpSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0a1f"/><stop offset=".6" stop-color="#2a1550"/><stop offset="1" stop-color="#5a2266"/></linearGradient>
@@ -43,6 +43,8 @@ LEVELS.push((() => {
     s += box(560, 380, 120, 240, "#4fb86a") + box(588, 404, 64, 30, "#f7f4ee") + `<text x="620" y="425" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="12" fill="${INK}">GREEN RM</text><circle cx="664" cy="510" r="6" fill="#ffc42b" stroke="${INK}" stroke-width="2"/>`;
     s += box(720, 340, 170, 46, "#e8433f") + `<text x="805" y="370" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="20" fill="#fff">CREW ONLY</text>`;
     [[120, 560, 90, 60], [220, 580, 60, 40], [380, 570, 70, 50]].forEach(([x, y, w, h]) => { s += box(x, y, w, h, "#26211f") + `<path d="M${x} ${y} h10 M${x + w - 10} ${y} h10 M${x} ${y + h} h10 M${x + w - 10} ${y + h} h10" stroke="#9aa3ad" stroke-width="5"/><rect x="${x + w / 2 - 14}" y="${y + h / 2 - 6}" width="28" height="12" fill="#f7f4ee"/>`; });
+    // roadies backstage
+    s += npc(61, 330, G, { pose: "wave", phone: false, bob: false, cfg: { acc: "headset", neck: "laminate", top: "tee", color: "#26211f", extra: "towel" } }) + npc(63, 520, G, { pose: "thumbs", phone: false, bob: false, cfg: { acc: "cap", neck: "laminate", top: "hoodie", color: "#3a3a3d" } });
     // the road case stack (climb it)
     s += box(940, 580, 120, 40, "#26211f") + box(940, 540, 120, 40, "#26211f");
     [[940, 540], [940, 580]].forEach(([x, y]) => { s += `<path d="M${x} ${y} h14 M${x + 106} ${y} h14 M${x} ${y + 40} h14 M${x + 106} ${y + 40} h14" stroke="#9aa3ad" stroke-width="6"/><text x="${x + 60}" y="${y + 26}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="13" fill="#ffc42b">FMA · AMP</text>`; });
@@ -52,7 +54,6 @@ LEVELS.push((() => {
     // cable ramps across the floor (the cart bumps over them)
     [430, 1120].forEach(x => { s += `<path d="M${x - 24} 620 Q${x} 604 ${x + 24} 620Z" fill="url(#bpCable)" stroke="${INK}" stroke-width="3"/>`; });
     // the cart ramp up to the stage, and the stage
-    s += `<path d="M1290 620 L1500 474 L1520 470 L1520 620Z" fill="#5d6670" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M1300 612 L1500 474" stroke="#ffc42b" stroke-width="4" stroke-dasharray="12 10"/>`;
     s += box(1520, ST, 980, 150, "#1d1a24") + `<path d="M1520 ${ST} H2500" stroke="#9aa3ad" stroke-width="6"/>`;
     for(let x = 1540; x < 2500; x += 46) s += `<path d="M${x} ${ST + 10} V${G - 4}" stroke="#2b2733" stroke-width="3"/>`;
     // amp stacks, the drum riser and kit, mic stands
@@ -61,6 +62,10 @@ LEVELS.push((() => {
     s += `<ellipse cx="2080" cy="380" rx="34" ry="34" fill="#e8433f" stroke="${INK}" stroke-width="3"/><ellipse cx="2080" cy="380" rx="22" ry="22" fill="#f7f4ee" stroke="${INK}" stroke-width="2"/><text x="2080" y="386" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="12" fill="${INK}">FMA</text>`;
     s += `<path d="M2120 420 L2130 330 M2110 330 H2160" stroke="${INK}" stroke-width="4"/><ellipse cx="2135" cy="328" rx="28" ry="5" fill="#ffc42b" stroke="${INK}" stroke-width="2"/><ellipse cx="2030" cy="400" rx="16" ry="10" fill="#9aa3ad" stroke="${INK}" stroke-width="2"/>`;
     [1850, 2300].forEach(x => { s += `<path d="M${x} ${ST} L${x} 360 M${x - 16} ${ST} L${x} ${ST - 16} L${x + 16} ${ST}" stroke="#9aa3ad" stroke-width="4" fill="none"/><path d="M${x} 360 L${x + 20} 350" stroke="#9aa3ad" stroke-width="4"/><rect x="${x + 16}" y="340" width="12" height="18" rx="5" fill="#3a3a3d" stroke="${INK}" stroke-width="2" transform="rotate(-30 ${x + 22} 349)"/>`; });
+    // the band, rocking out on stage
+    s += npc(51, 1850, ST, { pose: "rock", phone: false, bob: 6, beat: .42, cfg: { acc: "band", eyewear: "shades" } }) + npc(52, 2300, ST, { phone: false, bob: 5, beat: .42, cfg: { gear: "flyingv", gearColor: "#e8433f", top: "leather", color: "#3a3a3d" } });
+    // the ramp up onto stage right (the crew cart drives up it)
+    s += `<path d="M2230 620 L2440 470 L2500 470 L2500 620Z" fill="#5d6670" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M2240 613 L2440 470" stroke="#ffc42b" stroke-width="4" stroke-dasharray="12 10"/>`;
     // the lighting truss: a tower with a ladder, and a walkway along the top
     const tr = (x0, y0, x1, y1) => { let o = `<path d="M${x0} ${y0} H${x1} M${x0} ${y1} H${x1}" stroke="#9aa3ad" stroke-width="5"/>`; for(let x = x0; x < x1; x += 24) o += `<path d="M${x} ${y0} L${x + 12} ${y1} L${x + 24} ${y0}" stroke="#9aa3ad" stroke-width="2.5" fill="none"/>`; return o; };
     s += `<g stroke-linecap="round">${tr(2180, TRUSS, 2620, TRUSS + 18)}</g><path d="M2180 ${TRUSS} H2620" stroke="${INK}" stroke-width="2"/>`;
@@ -83,12 +88,12 @@ LEVELS.push((() => {
     s += `<g fill="none" stroke="#ff6fa3" stroke-width="5" opacity=".7"><path d="M3540 380 q-30 -30 0 -60"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></path><path d="M3520 400 q-50 -50 0 -100"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin=".4s" repeatCount="indefinite"/></path></g>`;
     return s;
   }
-  function fore(){
-    // the front row of the crowd, close to camera, and stage-light haze
-    seed = 21; let s = "";
-    for(let x = 2380; x < 3500; x += 46){ const y = 700 + rnd() * 16; s += `<circle cx="${f1(x)}" cy="${f1(y)}" r="30" fill="#140f20"/>`; if(rnd() < .35) s += `<path d="M${f1(x + 12)} ${f1(y - 20)} L${f1(x + 22)} ${f1(y - 90)}" stroke="#140f20" stroke-width="14" stroke-linecap="round"/><circle cx="${f1(x + 22)}" cy="${f1(y - 96)}" r="9" fill="#140f20"/>`; }
-    return s + `<path d="M-100 20 H${W * 1.4}" stroke="#140f20" stroke-width="40"/>`;
+  function crowd(){
+    let s = ""; const poses = ["cheer", "rock", "cheer", "star", "rock", "peace"];
+    for(let i = 0, x = 1460; x < 3420; x += 92, i++) s += npc(100 + i, x + (i % 2) * 30, 786 + (i % 3) * 12, { scale: 1.1, pose: poses[i % poses.length], bob: 10, beat: .42 + (i % 3) * .04, flip: i % 3 === 1 });
+    return s;
   }
+  function fore(){ return `<path d="M-100 20 H${W * 1.4}" stroke="#140f20" stroke-width="40"/>`; }
 
   /* ---- quests ---- */
   const nodes = [
@@ -96,24 +101,27 @@ LEVELS.push((() => {
     { id: "k1", x: 700, g: G, hx: 700, hy: 300, icon: "🛋️", name: "Green Room Warm-up", url: "chords.html", lane: "Chords", game: "Chords · A, D and E", spot: "the green room", loot: ["towel"], choice: "k", prop: "cart" },
     { id: "k2", x: 976, g: 540, hx: 976, hy: 230, icon: "🧳", name: "Road Case Riff", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a riff on two strings", spot: "the road cases", loot: ["headset"], choice: "k" },
     { id: "k3", x: 1230, g: G, hx: 1230, hy: 320, icon: "👕", name: "Merch Stand", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2", spot: "the merch stand", loot: ["starshades"], choice: "k", prop: "cart" },
-    { id: "c2", x: 1620, g: ST, hx: 1620, hy: 200, icon: "🎤", name: "Side of Stage", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2 · 10 questions", spot: "the side of the stage", loot: [] },
+    { id: "c2", x: 2470, g: ST, hx: 2470, hy: 232, icon: "🎤", name: "Side of Stage", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2 · 10 questions", spot: "stage right", loot: [], prop: "cart" },
     { id: "t1", x: 2050, g: 420, hx: 2050, hy: 170, icon: "🥁", name: "Drum Riser", url: "chords.html", lane: "Chords", game: "Chords · Am, C, G and F", spot: "the drum riser", loot: ["lightup"], choice: "t" },
-    { id: "t2", x: 2330, g: TRUSS, hx: 2440, hy: 130, icon: "💡", name: "Lighting Rig", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a longer riff", spot: "the lighting truss", loot: ["glowchain"], choice: "t" },
+    { id: "t2", x: 2330, g: TRUSS, hx: 2330, hy: 92, icon: "💡", name: "Lighting Rig", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a longer riff", spot: "the lighting truss", loot: ["glowchain"], choice: "t" },
     { id: "boss", x: 3480, g: G, hx: 3720, hy: 190, icon: "🔈", name: "The Feedback Beast", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Stand By Me · medium · root notes", spot: "front of house", loot: ["glitter"], boss: true }
   ];
   /* ---- routes ---- */
-  const upRamp = from => [drive(from, 1290, G), driveCurve([[1290, G], [1500, 474], [1531, ST]]), drive(1531, 1590, ST), cartStop(1590, ST)];
+  // three poses for the crowd's cameras: rock-on horns, a wave, pointing at the fans
+  const show = x => x > 1890 && x < 1960 ? { sF: 168, eF: 8, sB: 160, eB: 8, ar: 1.4, hd: -18, t: -4 } : x >= 1960 && x < 2025 ? { sF: 150, eF: 24, ar: 1.35, hd: 8, t: 6 } : x >= 2025 && x < 2095 ? { sF: 96, eF: 0, ar: 1.35, hd: -10, t: 10 } : null;
+  const frontOfStage = from => [drive(from, 1840, G, { bumps: from < 1120 ? [1120] : [] }), drive(1840, 2140, G, { show, fx: [{ u: .04, k: "moment", name: "photos" }] }), drive(2140, 2230, G),
+    driveCurve([[2230, G], [2240, 613], [2430, 477], [2446, ST]]), cartStop(2440, ST)];
   const surfToBoss = (x0, y) => [crowdSurf(x0, 3200, y), crowdDrop(3200, y, 3290, G), run(3304, 3456, G), stop(3456, G)];
   const edges = [
     { from: "c1", to: "k1", route: () => [cartIn(200, G), drive(194, 670, G, { start: 1, bumps: [430] }), cartStop(670, G)] },
     { from: "c1", to: "k2", route: () => [run(200, 400, G, { start: 1 }), jump(400, G, 460, G, { apex: 20 }), run(474, 865, G), ledge(865, G, 940, 540)] },
     { from: "c1", to: "k3", route: () => [cartIn(200, G), drive(194, 1200, G, { start: 1, bumps: [430, 1120] }), cartStop(1200, G)] },
-    { from: "k1", to: "c2", route: () => [cartIn(700, G), drive(694, 760, G, { start: 1 }), ...upRamp(760)] },
-    { from: "k2", to: "c2", route: () => [run(976, 1050, 540, { start: 1 }), jump(1050, 540, 1140, G, { apex: 20 }), run(1154, 1300, G),
-      jump(1300, G, 1380, RAMP(1380), { apex: 22 }), jump(1394, RAMP(1394), 1480, RAMP(1480), { apex: 22 }), jump(1494, RAMP(1494), 1560, ST, { apex: 18 }), run(1574, 1596, ST), stop(1596, ST)] },
-    { from: "k3", to: "c2", route: () => [cartIn(1230, G), drive(1224, 1250, G, { start: 1 }), ...upRamp(1250)] },
-    { from: "c2", to: "t1", route: () => [run(1620, 1900, ST, { start: 1 }), jump(1900, ST, 1990, 420, { apex: 30 }), run(2004, 2026, 420), stop(2026, 420)] },
-    { from: "c2", to: "t2", route: () => [run(1620, 2186, ST, { start: 1 }), stop(2186, ST), ladder(2210, ST, TRUSS), jump(2210, TRUSS, 2270, TRUSS, { apex: 22, fromStand: 1 }), run(2284, 2306, TRUSS), stop(2306, TRUSS)] },
+    { from: "k1", to: "c2", route: () => [cartIn(700, G), drive(694, 760, G, { start: 1 }), ...frontOfStage(760)] },
+    { from: "k2", to: "c2", route: () => [run(976, 1050, 540, { start: 1 }), jump(1050, 540, 1140, G, { apex: 20 }), run(1154, 2240, G),
+      jump(2240, G, 2320, RAMP(2320), { apex: 22 }), jump(2334, RAMP(2334), 2410, RAMP(2410), { apex: 22 }), jump(2424, RAMP(2424), 2440, ST, { apex: 16 }), stop(2446, ST)] },
+    { from: "k3", to: "c2", route: () => [cartIn(1230, G), drive(1224, 1250, G, { start: 1 }), ...frontOfStage(1250)] },
+    { from: "c2", to: "t1", route: () => [runTo(2470, 2170, ST, { start: 1 }), jumpTo(2170, ST, 2088, 420, { apex: 30 }), stopAt(2074, 420, -1)] },
+    { from: "c2", to: "t2", route: () => [runTo(2470, 2234, ST, { start: 1 }), stopAt(2234, ST, -1), ladder(2210, ST, TRUSS), jump(2210, TRUSS, 2270, TRUSS, { apex: 22, fromStand: 1 }), run(2284, 2306, TRUSS), stop(2306, TRUSS)] },
     { from: "t1", to: "boss", route: () => [run(2050, 2130, 420, { start: 1 }), jump(2130, 420, 2200, ST, { apex: 20 }), run(2214, 2440, ST), stageDive(2440, ST, 2640, 500), ...surfToBoss(2640, 500)] },
     { from: "t2", to: "boss", route: () => {
       const z = zip(2604, TRUSS - 2, 2770, 474), z0 = z.at(0), z1 = z.at(1);
@@ -124,9 +132,15 @@ LEVELS.push((() => {
     id: "backstage", name: "Backstage Pass", icon: "🎸", blurb: "A night at the rock festival: drive the crew cart, climb the lighting rig, stage-dive and crowd-surf.",
     W, ground: G,
     parallax: { "L-sun": .03, "L-far": .2, "L-mid": .55, "L-fore": 1.3 },
-    layers: () => ({ defs, sky: sky(), sun: sun(), far: far(), mid: mid(), main: main(), fore: fore() }),
+    layers: () => ({ defs, sky: sky(), sun: sun(), far: far(), mid: mid(), main: main(), crowd: crowd(), fore: fore() }),
     platforms: [{ a: -100, b: W + 100, y: G }, { a: 940, b: 1060, y: 540 }, { a: 1520, b: 2500, y: ST }, { a: 1960, b: 2140, y: 420 }, { a: 2180, b: 2620, y: TRUSS }],
     nodes, edges,
+    moments: {
+      // the crowd films you going past the front of the stage: time slows, three Polaroids
+      photos(M){ M.phones(true); M.slow(.2, 3400); M.polaroidsAt([1925, 1990, 2058], ["FRONT ROW!! 🤘", "omg hiii 👋", "LEGEND 🔥"]); M.after(4400, () => M.phones(false)); M.after(5200, () => M.clearPolaroids()); }
+    },
+    polaroidBack: (cx, cy) => `<rect x="${cx - 200}" y="${cy - 200}" width="400" height="400" fill="#2a1550"/><polygon points="${cx - 60},${cy - 160} ${cx - 40},${cy - 160} ${cx + 60},${cy + 120} ${cx - 120},${cy + 120}" fill="url(#bpBeamP)"/><polygon points="${cx + 50},${cy - 160} ${cx + 70},${cy - 160} ${cx + 160},${cy + 120} ${cx},${cy + 120}" fill="url(#bpBeamC)"/>`
+      + Array.from({ length: 9 }, (_, i) => `<circle cx="${cx - 120 + i * 30}" cy="${cy + 112 + (i % 2) * 6}" r="18" fill="#140f20"/>`).join(""),
     extras: [{ hx: 900, hy: 140, icon: "❓", name: "Tour Bus", from: "c1", msg: "❓ The tour bus: a side quest, coming soon" }]
   };
 })());

@@ -414,6 +414,7 @@ class Actor{
       const T = this.seq.total, f = this.seq.find(Math.min(this.t, T));
       this.state = f.m.at(f.u);
       f.m.fx.forEach((e, j) => { const key = f.i + ":" + j; if(f.u >= e.u && !this.fired.has(key)){ this.fired.add(key);
+        if(e.k === "moment"){ if(window.advMoment) window.advMoment(e.name, this.state); return; }
         let x = this.state.cx, y = this.feet(this.state);
         if(e.k === "clang" || e.k === "grab" || e.k === "tap"){ const h = hipOf(this.state.cx, this.state.cy, this.state.p.rot), J = joints(this.state.p), hand = rotV(J.aF[2], this.state.p.rot); x = h[0] + hand[0]; y = h[1] + hand[1]; }
         this.burst(e.k, x, y); } });
@@ -445,6 +446,12 @@ class Actor{
       : `<circle cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(p.r)}" fill="#d9c8b4" stroke="${INK}" stroke-width="2" opacity="${f1((1 - p.life / p.max) * .8)}"/>`).join("");
   }
   body(st, cfg, wear, id, tsx, op){
+    // facing left: drawn as the same move facing right in a mirrored world, then flipped back
+    if(st.face === -1 && st.m === "side"){
+      const inner = `<g transform="scale(-1 1)">${this.body(Object.assign({}, st, { cx: -st.cx, face: 1 }), cfg, wear, id, 1, 1)}</g>`;
+      const wrap = tsx < 1 ? `<g transform="translate(${f1(st.cx)} 0) scale(${f1(tsx * 100) / 100} 1) translate(${f1(-st.cx)} 0)">${inner}</g>` : inner;
+      return op < 1 ? `<g opacity="${f1(op * 100) / 100}">${wrap}</g>` : wrap;
+    }
     let inner = "";
     if(st.m === "side"){
       const h = hipOf(st.cx, st.cy, st.p.rot), sq = st.p.sq;
@@ -607,12 +614,13 @@ const cartCY = g => g - CART_DROP - CO;
 // hop into the cart (it's waiting where you stand)
 const cartIn = (x, g) => kf([{ u: 0, p: STAND, x, g, }, { u: .5, p: P(CROUCH, { hB: 70, hF: 70 }), x: x - 4, y: cartCY(g) - 16 }, { u: 1, p: SIT, x: x - 6, y: cartCY(g) }], .45, [], { veh: "cart" });
 // driving along the floor; bumps: x positions of cables or ramps to bounce over
+// o.fx: events (e.g. a moment); o.show(x): pose changes along the way (waving to the crowd...)
 function drive(x0, x1, g, o){
   o = o || {}; const bumps = o.bumps || [];
-  return { dur: Math.abs(x1 - x0) / CARTV + (o.start ? .3 : 0), fx: [], at(u){
+  return { dur: Math.abs(x1 - x0) / CARTV + (o.start ? .3 : 0), fx: o.fx || [], at(u){
     const e = o.start ? u * u * (3 - 2 * u) * .5 + u * .5 : u, x = lerp(x0, x1, e);
     let up = 0, tilt = 0; bumps.forEach(b => { const d = (x - b) / 40; if(Math.abs(d) < 1){ up = Math.max(up, 16 * (1 - d * d)); tilt = -d * 8; } });
-    const p = P(SIT, { rot: tilt, sF: 62 + Math.sin(x / 30) * 6, sB: 52 - Math.sin(x / 30) * 6, hd: -6 + Math.sin(x / 50) * 4 });
+    const p = P(SIT, Object.assign({ rot: tilt, sF: 62 + Math.sin(x / 30) * 6, sB: 52 - Math.sin(x / 30) * 6, hd: -6 + Math.sin(x / 50) * 4 }, o.show ? o.show(x) : null));
     return { m: "side", cx: x, cy: cartCY(g) - up - Math.abs(Math.sin(x / 9)) * 1.2, p, veh: "cart" };
   } };
 }
@@ -684,3 +692,57 @@ const Sound = { ctx: null,
   } };
 // C major scale from middle C, for keys and the like
 const SCALE = [261.6, 293.7, 329.6, 349.2, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 698.5, 784.0];
+
+/* ---- going left: any move, authored going right, mirrored (positions and drawing) ---- */
+const leftward = m => ({ dur: m.dur, fx: m.fx, at(u){ const s = m.at(u); return s && s.m === "side" ? Object.assign({}, s, { cx: -s.cx, face: -1 }) : s; } });
+// a run, stop or jump in either direction (x1 < x0 goes left)
+const runTo = (x0, x1, g, o) => x1 >= x0 ? run(x0, x1, g, o) : leftward(run(-x0, -x1, g, o));
+const stopAt = (x0, g, dir) => dir < 0 ? leftward(stop(-x0, g)) : stop(x0, g);
+const jumpTo = (x0, g0, x1, g1, o) => x1 >= x0 ? jump(x0, g0, x1, g1, o) : leftward(jump(-x0, g0, -x1, g1, o));
+/* The way between any two spots when no route has been drawn: run along the floor you're on, drop off edges, and jump up to
+   where you need to be at the end. Works both ways along the level. surfaces(x) = the floor heights at x. */
+function walkRoute(x0, g0, x1, g1, surfaces){
+  const d = x1 >= x0 ? 1 : -1, moves = [], near = (a, b) => Math.abs(a - b) < 3;
+  let x = x0, y = g0, from = x0, first = true;
+  const flush = xe => { if(Math.abs(xe - from) > 6){ moves.push(runTo(from, xe, y, { start: first })); first = false; } };
+  for(let guard = 0; guard < 2000 && (x1 - x) * d > 0; guard++){
+    // near the end and on the wrong floor: jump to the right one
+    if(!near(y, g1) && (x1 - x) * d < 130){
+      flush(x); const land = x1 - 38 * d; moves.push(jumpTo(x, y, land, g1, { apex: g1 < y ? 30 : 18 })); first = false; x = land + 14 * d; y = g1; from = x; break;
+    }
+    const nx = x + 6 * d, ys = surfaces(nx);
+    if(ys.some(v => near(v, y))){ x = nx; continue; }
+    // the floor ends here: drop to the next one down (or hop up if there's nothing lower)
+    const lower = ys.filter(v => v > y).sort((a, b) => a - b)[0], to = lower !== undefined ? lower : Math.max(...ys.filter(v => v < y));
+    flush(x); const land = x + 70 * d; moves.push(jumpTo(x, y, land, to, { apex: to < y ? 30 : 16 })); first = false; x = land + 14 * d; y = to; from = x;
+  }
+  const end = x1 - 24 * d;
+  if((end - from) * d > 6){ moves.push(runTo(from, end, y, { start: first })); moves.push(stopAt(end, y, d)); }
+  else moves.push(kf([{ u: 0, p: STAND, x, g: y }, { u: 1, p: STAND, x: x1, g: y }], .25, [], d < 0 ? undefined : undefined));
+  return moves;
+}
+
+/* =====================================================================
+   PEOPLE: background characters in the house style. Each is a random
+   person, but seeded, so a level always has the same faces. They can
+   rock out (bob), and hold up phones when something big happens (the
+   page adds the "phones" class to the world).
+   ===================================================================== */
+function npcCfg(n){
+  const O = PlayerArt.options; let k = n * 9301 + 49297;
+  const r = () => (k = (k * 16807) % 2147483647) / 2147483647, pick = a => a[Math.floor(r() * a.length)], v = a => Array.isArray(a[0]) ? pick(a)[0] : pick(a);
+  return { body: pick(["kid", "kid", "teen", "adult"]), skin: v(O.skins), hair: v(O.hair), hairColor: v(O.hairColors), eyes: pick(["happy", "wide", "calm", "wink"]), mouth: pick(["open", "grin", "smile", "tongue"]),
+    mark: r() < .25 ? v(O.marks) : "none", eyewear: r() < .25 ? pick(["shades", "round", "glasses", "starshades"]) : "none", beard: "none", top: v(O.tops), color: v(O.palette), bottom: pick(["pants", "shorts", "skirt", "baggy", "ripped"]),
+    pants: v(O.palette), shoes: pick(["sneakers", "hightops", "boots"]), accent: v(O.palette), neck: r() < .3 ? pick(["beads", "chain", "laminate", "glowchain"]) : "none", neckColor: v(O.palette),
+    acc: r() < .35 ? pick(["cap", "beanie", "bucket", "band", "phones", "cat"]) : "none", accColor: v(O.palette), gear: "none", gearColor: v(O.palette), extra: "none", extraColor: v(O.palette), name: "" };
+}
+// a person standing at x with their feet at y; pose: wave, cheer, rock, star, peace, thumbs...; bob: rock out; phone: hold one up when filming
+function npc(n, x, y, o){
+  o = o || {}; const k = (o.scale || 1) * S, cfg = Object.assign(npcCfg(n), o.cfg || {});
+  let art = PlayerArt.svg(cfg, "full", o.pose || "cheer").replace(/viewBox="[^"]*"/, 'viewBox="0 0 400 400" width="400" height="400"');
+  if(o.flip) art = `<g transform="translate(400 0) scale(-1 1)">${art}</g>`;
+  const phone = o.phone === false ? "" : `<g class="npc-phone"><rect x="282" y="118" width="44" height="72" rx="8" fill="#26211f" stroke="#fff" stroke-width="3"/><rect x="288" y="126" width="32" height="52" rx="3" fill="#7fe0ff" class="npc-screen"/><circle cx="304" cy="184" r="3" fill="#fff"/></g>`;
+  const card = o.card ? `<g class="npc-card"><path d="M300 210 V150" stroke="#a8723c" stroke-width="8"/><rect x="236" y="60" width="128" height="96" rx="8" fill="#fbf8f1" stroke="#26211f" stroke-width="6"/><text x="300" y="132" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="64" fill="#e8433f">${o.card}</text></g>` : "";
+  const bob = o.bob === false ? "" : `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${-(o.bob || 8)};0 0" dur="${(o.beat || .55).toFixed(2)}s" begin="${((n % 7) * .08).toFixed(2)}s" repeatCount="indefinite"/>`;
+  return `<g transform="translate(${f1(x - 200 * k)} ${f1(y - 370 * k)}) scale(${f1(k * 1000) / 1000})"><g>${art}${phone}${card}${bob}</g></g>`;
+}
