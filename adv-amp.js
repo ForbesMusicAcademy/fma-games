@@ -125,7 +125,7 @@ LEVELS.push((() => {
     { id: "boss", x: 3906, g: G, hx: 4075, hy: 260, icon: "😠", name: "Captain Fuzz", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Someone Like You · medium · whole chords", spot: "the end of the signal chain", loot: ["lightning"], boss: true }
   ];
   /* ---- routes ---- */
-  const drums3 = () => [run(200, 560, G, { start: 1 }), jump(560, G, 690, 560, { apex: 50 }), Object.assign(jump(704, 560, 870, 510, { apex: 70, flips: 1 }), { fx: [{ u: .2, k: "dust" }, { u: .32, k: "moment", name: "boing" }, { u: .8, k: "dust" }] }), jump(884, 510, 1040, 470, { apex: 60 })];
+  const drums3 = () => [run(200, 560, G, { start: 1 }), jump(560, G, 690, 560, { apex: 50 }), jump(704, 560, 870, 510, { apex: 70, flips: 1 }), jump(884, 510, 1040, 470, { apex: 60 })];
   const underStrings = from => [jump(from, 470, 1180, G, { apex: 30 }), run(1194, 1760, G)];
   const keysToValves = () => [jump(1760, G, 1820, KEYTOP, { apex: 26 }), run(1834, 2420, KEYTOP), jump(2420, KEYTOP, 2500, G, { apex: 20 }), run(2514, 2626, G), stop(2626, G)];
   const pedals = () => [run(2650, 2700, G, { start: 1 }), jump(2700, G, 2800, PED, { apex: 30 }), jump(2814, PED, 2920, PED, { apex: 34 }), jump(2934, PED, 3040, PED, { apex: 34 })];
@@ -156,8 +156,6 @@ LEVELS.push((() => {
       ...PEDALS.map(x => ({ a: x, b: x + 80, y: PED })), { a: 3200, b: 3290, y: 500 }, { a: 3330, b: 3560, y: CAB }],
     nodes, edges,
     moments: {
-      // the front flip between the drums
-      boing(M){ M.slow(.25, 1700); M.phones(true); M.polaroidsAt([790], ["BOING! 🥁"]); M.after(2400, () => M.phones(false)); M.after(3300, () => M.clearPolaroids()); },
       // riding the pick down the speaker cone: slow-mo, and your friend on the cab gets the shot
       cone(M){ M.slow(.25, 1700); M.phones(true); M.polaroidsAt([3660], ["TURN IT UP TO 11! 🔊"]); M.after(2400, () => M.phones(false)); M.after(3400, () => M.clearPolaroids()); }
     },

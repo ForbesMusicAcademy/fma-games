@@ -113,9 +113,9 @@ LEVELS.push((() => {
     driveCurve([[2230, G], [2240, 613], [2430, 477], [2446, ST]]), cartStop(2440, ST)];
   const surfToBoss = (x0, y) => [crowdSurf(x0, 3200, y), crowdDrop(3200, y, 3290, G), run(3304, 3456, G), stop(3456, G)];
   const edges = [
-    { from: "c1", to: "k1", route: () => [cartIn(200, G), drive(194, 670, G, { start: 1, bumps: [430], fx: [{ u: .4, k: "moment", name: "bump" }] }), cartStop(670, G)] },
+    { from: "c1", to: "k1", route: () => [cartIn(200, G), drive(194, 670, G, { start: 1, bumps: [430] }), cartStop(670, G)] },
     { from: "c1", to: "k2", route: () => [run(200, 400, G, { start: 1 }), jump(400, G, 460, G, { apex: 20 }), run(474, 865, G), ledge(865, G, 940, 540)] },
-    { from: "c1", to: "k3", route: () => [cartIn(200, G), drive(194, 1200, G, { start: 1, bumps: [430, 1120], fx: [{ u: .19, k: "moment", name: "bump" }] }), cartStop(1200, G)] },
+    { from: "c1", to: "k3", route: () => [cartIn(200, G), drive(194, 1200, G, { start: 1, bumps: [430, 1120] }), cartStop(1200, G)] },
     { from: "k1", to: "c2", route: () => [cartIn(700, G), drive(694, 760, G, { start: 1 }), ...frontOfStage(760)] },
     { from: "k2", to: "c2", route: () => [run(976, 1050, 540, { start: 1 }), jump(1050, 540, 1140, G, { apex: 20 }), run(1154, 2240, G),
       jump(2240, G, 2320, RAMP(2320), { apex: 22 }), jump(2334, RAMP(2334), 2410, RAMP(2410), { apex: 22 }), jump(2424, RAMP(2424), 2440, ST, { apex: 16 }), stop(2446, ST)] },
@@ -136,8 +136,6 @@ LEVELS.push((() => {
     platforms: [{ a: -100, b: W + 100, y: G }, { a: 940, b: 1060, y: 540 }, { a: 1520, b: 2500, y: ST }, { a: 1960, b: 2140, y: 420 }, { a: 2180, b: 2620, y: TRUSS }],
     nodes, edges,
     moments: {
-      // the crew cart jumping the first cable ramp, the roadies filming
-      bump(M){ M.slow(.25, 1700); M.phones(true); M.polaroidsAt([432], ["SEND IT! 🛺"]); M.after(2400, () => M.phones(false)); M.after(3300, () => M.clearPolaroids()); },
       // the crowd films you going past the front of the stage: time slows, three Polaroids
       photos(M){ M.phones(true); M.slow(.2, 3400); M.polaroidsAt([1925, 1990, 2058], ["FRONT ROW!! 🤘", "omg hiii 👋", "LEGEND 🔥"]); M.after(4400, () => M.phones(false)); M.after(5200, () => M.clearPolaroids()); }
     },

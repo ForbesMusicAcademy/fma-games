@@ -175,10 +175,10 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script src="adv-engine.js?v=6"></script>
-<script src="adv-rustrow.js?v=5"></script>
-<script src="adv-skate.js?v=3"></script>
-<script src="adv-backstage.js?v=5"></script>
-<script src="adv-amp.js?v=3"></script>
+<script src="adv-rustrow.js?v=6"></script>
+<script src="adv-skate.js?v=4"></script>
+<script src="adv-backstage.js?v=6"></script>
+<script src="adv-amp.js?v=7"></script>
 <script>
 /* =====================================================================
    ADVENTURE: the page. Loads a level from LEVELS (adv-*.js), draws its
@@ -362,8 +362,8 @@ let captures = [], momentTimers = [];
 const MOMENT = {
   // slow time down to f (of normal) for ms of real time
   // slow time down to f (of normal) for ms of real time: the camera pushes in and cinema bars slide in
-  slow(f, ms){ hero.speed = f; slowEl.classList.add("on"); gameEl.classList.add("cinema"); if(!RM) momentZoom = 1.55;
-    momentTimers.push(setTimeout(() => { hero.speed = slow ? .35 : 1; slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }, ms)); },
+  slow(f, ms){ speedTarget = f; slowEl.classList.add("on"); gameEl.classList.add("cinema"); if(!RM) momentZoom = 1.55;
+    momentTimers.push(setTimeout(() => { speedTarget = slow ? .35 : 1; slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }, ms)); },
   phones(on){ worldSvg.classList.toggle("phones", on); },
   cls(name, on){ worldSvg.classList.toggle(name, on); },
   flash(){ if(RM) return; flashEl.classList.remove("go"); void flashEl.offsetWidth; flashEl.classList.add("go"); },
@@ -380,7 +380,7 @@ function snapPolaroid(c, i){
   el.innerHTML = `<svg viewBox="${f1(cx - 92)} ${f1(cy - 112)} 184 184">${Lv.polaroidBack ? Lv.polaroidBack(cx, cy) : ""}${hero.body(st, cfg, wear, "pol" + i, 1, 1)}</svg><b>${c.cap}</b>`;
   polsEl.appendChild(el); requestAnimationFrame(() => el.classList.add("in")); MOMENT.flash(); Sound.note(1600, .05, "square");
 }
-function endMoments(){ momentTimers.forEach(clearTimeout); momentTimers = []; captures = []; polsEl.innerHTML = ""; worldSvg.classList.remove("phones", "scores"); slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }
+function endMoments(){ speedTarget = null; hero.speed = slow ? .35 : 1; momentTimers.forEach(clearTimeout); momentTimers = []; captures = []; polsEl.innerHTML = ""; worldSvg.classList.remove("phones", "scores"); slowEl.classList.remove("on"); gameEl.classList.remove("cinema"); momentZoom = 1; }
 
 /* ---- off-screen quests you can go to now: a bubble on the edge of the picture, pointing at them ---- */
 const edgesEl = document.getElementById("edges"), edgeEls = {};
@@ -422,11 +422,11 @@ const hero = new Actor(document.getElementById("L-actor"), document.getElementBy
 
 /* ---- buttons ---- */
 const view = { z: 0, target: 0 };
-let slow = false, camX = 0, camY = 0, zoom = 1, momentZoom = 1, CAM = { x: 0, y: 0, w: 1280, h: 720, elW: 1280, elH: 720 };
+let slow = false, speedTarget = null, camX = 0, camY = 0, zoom = 1, momentZoom = 1, CAM = { x: 0, y: 0, w: 1280, h: 720, elW: 1280, elH: 720 };
 const gameEl = document.getElementById("game"), bOver = document.getElementById("bOverview");
 function setOverview(on){ view.target = on ? 1 : 0; bOver.classList.toggle("on", on); gameEl.classList.toggle("over", on); gameEl.style.aspectRatio = on ? `${W}/720` : ""; }
 bOver.onclick = () => setOverview(!view.target);
-document.getElementById("bSlow").onclick = e => { slow = !slow; e.currentTarget.classList.toggle("on", slow); hero.speed = slow ? .35 : 1; };
+document.getElementById("bSlow").onclick = e => { slow = !slow; e.currentTarget.classList.toggle("on", slow); hero.speed = slow ? .35 : 1; speedTarget = null; };
 document.getElementById("bChar").onclick = () => { if(!window.Player) return; cfg = Player.random(); rig(cfg, wear); frontCache.clear(); if(DEV) lib.restart(); toast("Trying a random character (not saved)"); };
 document.getElementById("bReset").onclick = () => { if(busy || !confirm(`Start ${Lv.name} again from the beginning?`)) return; done = new Set(); at = Lv.nodes[0].id; awaitingSecondTap = false; hero.state = arriveAt(at); camX = 0; drawNodes(); drawTray(); saveLevel(); };
 
@@ -547,6 +547,8 @@ if(DEV) lib.start(DEMOS[0]);
 let last = performance.now();
 function loop(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
+  // time eases into and out of slow motion (a snap reads as a glitch)
+  if(speedTarget !== null){ hero.speed += (speedTarget - hero.speed) * Math.min(1, dt * 5); if(Math.abs(hero.speed - speedTarget) < .01){ hero.speed = speedTarget; if(speedTarget >= .35) speedTarget = null; } }
   hero.tick(dt);
   captures.forEach((c, i) => { if(!c.done && hero.state && hero.state.m === "side" && hero.state.cx >= c.x){ c.done = true; snapPolaroid(c, i); } });
   // camera: the picture's shape decides how much of the level shows; phones are zoomed in, moments zoom in further,
