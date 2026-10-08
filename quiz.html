@@ -150,8 +150,9 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <div class="sim" id="sim" hidden></div>
 </div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=24"></script>
+<script src="fma-student.js?v=5"></script>
+<script src="player-art.js?v=28"></script>
+<script src="fma-picks.js?v=3"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -375,9 +376,9 @@ function endGame(){
   const won = G.bots.length && G.bots.every(b => b.score <= G.score);
   setTimeout(() => endP.moment(won ? "win" : isBest && G.score > 0 ? "best" : "done", 0), 300);
   $("savedMsg").textContent = "";
-  if(!SIM && window.FMAStudent && FMAStudent.active()){
-    FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0})
-      .then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
+  if(!SIM && window.FMAStudent){
+    const sent = FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0});
+    if(FMAStudent.active()) sent.then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
   }
   $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
 }

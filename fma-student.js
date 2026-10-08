@@ -114,8 +114,10 @@
       if(!ON) return null;
       try{ const r = await post({ action: "league" }); return r.ok ? r : null; }catch(e){ return null; }
     },
+    // Called after every finished round. Picks (fma-picks.js) are earned on this device whether or not tracking is on.
     // Returns true if the round was saved, false if tracking is off, nobody is playing, or the save failed.
     async send(game, data){
+      try{ if(window.FMAPicks) FMAPicks.round(game, data); }catch(e){}
       const p = prof();
       if(!ON || !p) return false;
       try{

@@ -54,7 +54,37 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .icons button.on{border-color:var(--fg);background:var(--accent);color:var(--fg)}
 .epanel{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:2px 2px 48px}
 .ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
-.opt{border:2px solid var(--line);background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;align-items:center;min-width:0}
+.opt{position:relative;border:2px solid var(--line);background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;align-items:center;min-width:0}
+/* locked items (unlock with picks): greyed out, with their price on a tag */
+.opt.locked{background:#f1ede4}
+.opt.locked svg{filter:grayscale(1);opacity:.42}
+.lock{position:absolute;top:5px;right:5px;display:flex;align-items:center;gap:3px;background:#26211f;color:#ffc42b;border-radius:999px;padding:2px 9px 2px 5px;font:900 14px var(--head);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.opt .lock{color:#ffc42b;font-size:15px;padding:2px 9px 2px 5px}
+.opt .lock.cant{color:#d6d0c4}      /* locked and not affordable yet: still readable, but grey */
+.opt.locked .lock svg{filter:none;opacity:1;width:16px!important;height:16px!important;aspect-ratio:auto!important}
+.opt .lock.quest{padding:4px 6px}
+.lock.quest{padding:4px 6px}
+.sw button{position:relative}
+.sw button.locked{opacity:.45}
+.sw button.locked::after{content:"🔒";position:absolute;inset:0;display:grid;place-items:center;font-size:13px}
+.wallet{display:inline-flex;align-items:center;gap:6px;background:#fff8e1;border:2px solid var(--fg);border-radius:999px;padding:2px 12px 2px 6px;font-family:var(--head);font-weight:900;font-size:16px}
+.wallet small{font-family:var(--ui);font-weight:600;font-size:12px;color:var(--muted)}
+/* the unlock question */
+.ask{position:fixed;inset:0;z-index:60;background:rgba(20,16,12,.45);display:grid;place-items:center;padding:16px}
+.ask .in{background:#fff;border:2px solid var(--fg);border-radius:20px;padding:16px;max-width:340px;width:100%;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.ask .in .pic{width:120px;height:120px}
+.ask .in .pic svg{width:100%;height:100%}
+.ask .in b{font-family:var(--head);font-weight:900;font-size:20px}
+.ask .in p{margin:0;color:var(--muted)}
+.ask .row{display:flex;gap:8px;width:100%}
+.ask .row button{flex:1;min-height:48px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:16px}
+.ask .row button.go{background:var(--accent)}
+/* Adventure gear: found in levels, never bought */
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.adv div{border:2px dashed var(--line);border-radius:16px;padding:8px 6px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);background:#fff}
+.adv div.got{border-style:solid;border-color:var(--fg);color:var(--fg);background:#FFF1C7}
+.adv svg{width:44px;height:44px;display:block;margin:0 auto 4px}
+.adv div:not(.got) svg{filter:grayscale(1);opacity:.4}
 .opt span{font-size:14px;font-weight:800;color:var(--muted);padding:0 0 4px}
 .opt.on span{color:var(--fg)}
 .opt svg{width:100%;height:auto;aspect-ratio:1;display:block}
@@ -104,6 +134,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
         <div class="tag">Your character</div>
         <div class="yart" id="yart"></div>
         <div class="yname" id="yname"></div>
+        <div class="wallet" id="ywallet"></div>
         <button id="yedit">Customise</button>
         <div id="playingAs" style="font-size:14px;color:var(--muted);margin-top:8px;text-align:center"></div>
       </div>
@@ -112,6 +143,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
           <div class="eleft">
             <div class="eprev" id="ebig"></div>
             <div class="eside">
+            <div class="wallet" id="ewallet" style="align-self:center"></div>
             <input id="ename" maxlength="10" placeholder="Name" autocomplete="off" autocapitalize="words" aria-label="Character name">
             <div class="efoot">
               <button id="erand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/></svg>Mix it up</button>
@@ -120,6 +152,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
             </div>
             </div>
           </div>
+          <div class="ask" id="eask" hidden><div class="in" id="easkIn"></div></div>
           <div class="eright">
             <nav class="icons" id="eicons" aria-label="Parts"></nav>
             <div class="epanel" id="epanel"></div>
@@ -140,8 +173,9 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   <small class="foot">Forbes Music Academy</small>
 </main>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=24"></script>
+<script src="fma-student.js?v=5"></script>
+<script src="player-art.js?v=28"></script>
+<script src="fma-picks.js?v=3"></script>
 <script>
 const $ = id => document.getElementById(id);
 let cfg = Player.get();
@@ -154,10 +188,16 @@ function drawYou(hello){
   const p = card = PlayerArt($("yart"), cfg);
   if(hello) setTimeout(() => p.pose(PlayerArt.MOMENTS.hello, 2600), 400);
   $("yname").textContent = cfg.name || "";
+  drawWallet();
   $("yedit").classList.toggle("pulse", !touched());
   $("yedit").textContent = touched() ? "Customise" : "Make it yours!";
 }
 
+// your picks: earned by playing any game, spent on unlocking character items
+function drawWallet(){
+  const html = `${FMAPicks.icon(22)} ${FMAPicks.balance()} <small>picks</small>`;
+  $("ywallet").innerHTML = html; $("ewallet").innerHTML = html;
+}
 /* One tab per part. Each shows a grid of pictures (and colour dots where it makes sense). */
 const ICON = {
   body: '<svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="8" fill="#f6c9a2" stroke="#26211f" stroke-width="2.2"/><path d="M5 30Q5 21 16 21Q27 21 27 30Z" fill="#4aa8ff" stroke="#26211f" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="12" r="1.3" fill="#26211f"/><circle cx="19" cy="12" r="1.3" fill="#26211f"/></svg>',
@@ -173,9 +213,9 @@ const TABS = [
   { id: "face", label: "Face", sections: [["grid", "eyes", O.eyes, "face", "Eyes"], ["grid", "mouth", O.mouths, "face", "Mouth"], ["grid", "mark", O.marks, "face", "Marks"]] },
   { id: "outfit", label: "Outfit", sections: [["grid", "top", O.tops, "item:top", "Top"], ["swatch", "Top colour", "color", O.palette], ["grid", "bottom", O.bottoms, "item:bottom", "Bottoms"], ["swatch", "Bottoms colour", "pants", O.palette],
     ["grid", "shoes", O.shoes, "item:shoes", "Shoes"], ["swatch", "Shoe colour", "accent", O.palette], ["grid", "neck", O.neck, "item:neck", "Neck"], ["swatch", "Neck colour", "neckColor", O.palette],
-    ["grid", "eyewear", O.eyewear, "face", "Eyewear"], ["grid", "extra", O.extras, "fig", "Accessories"], ["swatch", "Accessory colour", "extraColor", O.palette]] },
+    ["grid", "eyewear", O.eyewear, "face", "Eyewear"], ["grid", "extra", O.extras, "item:extra", "Accessories"], ["swatch", "Accessory colour", "extraColor", O.palette]] },
   { id: "head", label: "Head", sections: [["grid", "acc", O.acc, "head"], ["swatch", "Colour", "accColor", O.palette]] },
-  { id: "gear", label: "Gear", sections: [["grid", "gear", O.gear, "fig"], ["swatch", "Colour", "gearColor", O.palette]] }
+  { id: "gear", label: "Gear", sections: [["grid", "gear", O.gear, "gear"], ["swatch", "Colour", "gearColor", O.palette]] }
 ];
 let tab = "body";
 function drawIcons(){
@@ -184,6 +224,7 @@ function drawIcons(){
 }
 // the picture on an option button: the clothes on their own for outfit parts, otherwise the character wearing the option
 function thumb(key, v, view){
+  if(view === "gear") return PlayerArt.gear(v, cfg.gearColor);      // just the instrument, so you can see which one it is
   if(view.startsWith("item:")) return PlayerArt.item(Object.assign({}, cfg, { [key]: v }), view.slice(5));
   return PlayerArt.svg(Object.assign({}, cfg, { name: "", acc: "none", eyewear: "none", mark: "none", extra: "none" }, key === "hair" ? { beard: "none" } : {},
     key === "pose" ? {} : { gear: "none" }, ["head", "face"].includes(view) || key === "extra" ? { pose: "relax" } : {}, { [key]: v }), view);
@@ -194,18 +235,44 @@ function drawPanel(){
   $("epanel").innerHTML = t.sections.map(sec => {
     if(sec[0] === "grid"){
       const [, key, list, view, title, named] = sec;
-      return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + list.map(([v, label]) =>
-        `<button class="opt ${cfg[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}" aria-label="${label}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}</button>`).join("") + `</div>`;
+      // everything you can use first, in one unbroken run; then the locked ones from cheapest to dearest; Adventure gear (padlock) last
+      const cost = v => { const lk = FMAPicks.lock(key, v); return lk.quest ? 1e6 : lk.price; }, have = FMAPicks.balance();
+      const sorted = list.filter(([v]) => FMAPicks.isOpen(key, v)).concat(list.filter(([v]) => !FMAPicks.isOpen(key, v)).sort((a, b) => cost(a[0]) - cost(b[0])));
+      return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + sorted.map(([v, label]) => {
+        const lk = FMAPicks.lock(key, v);
+        // gold when you can afford it, light grey when you can't yet; Adventure gear always shows a grey padlock
+        const tag = !lk ? "" : lk.quest ? `<span class="lock quest">${PADLOCK}</span>`
+          : lk.price <= have ? `<span class="lock">${FMAPicks.icon(16)}${lk.price}</span>` : `<span class="lock cant">${FMAPicks.icon(16, "#d6d0c4")}${lk.price}</span>`;
+        return `<button class="opt ${cfg[key] === v ? "on" : ""} ${lk ? "locked" : ""}" data-k="${key}" data-v="${v}" data-l="${label}" aria-label="${label}${!lk ? "" : lk.quest ? ", locked, found in Adventure" : ", locked, " + lk.price + " picks"}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}${tag}</button>`; }).join("") + `</div>`;
     }
     const [, label, key, colours] = sec;
-    return `<div><div class="sub">${label}</div><div class="sw">` + colours.map(c => `<button class="${cfg[key] === c ? "on" : ""}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${label} ${c}"></button>`).join("") + `</div></div>`;
+    const sortedC = colours.filter(c => FMAPicks.isOpen(key, c)).concat(colours.filter(c => !FMAPicks.isOpen(key, c)));
+    return `<div><div class="sub">${label}</div><div class="sw">` + sortedC.map(c => { const open = FMAPicks.isOpen(key, c);
+      return `<button class="${cfg[key] === c ? "on" : ""} ${open ? "" : "locked"}" data-k="${key}" data-v="${c}" data-l="${label}" style="background:${c}" aria-label="${label} ${c}${open ? "" : ", locked"}"></button>`; }).join("") + `</div></div>`;
   }).join("");
   $("epanel").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+    if(!FMAPicks.isOpen(b.dataset.k, b.dataset.v)) return askUnlock(b.dataset.k, b.dataset.v, b.dataset.l);
     cfg[b.dataset.k] = b.dataset.v;
     save(); drawPanel(); previews();
     if(b.dataset.k === "gear" && b.dataset.v === "flyingv") setTimeout(() => big && big.fire(), 500);      // show off the flames straight away
   });
   $("epanel").scrollTop = keep;
+}
+const PADLOCK = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7.5 10.5V8a4.5 4.5 0 0 1 9 0v2.5" fill="none" stroke="#d6d0c4" stroke-width="2.6" stroke-linecap="round"/><rect x="4.5" y="10" width="15" height="11" rx="2.5" fill="#d6d0c4"/><circle cx="12" cy="15.5" r="1.8" fill="#26211f"/></svg>`;
+// a locked item: unlock it with picks, or see how many more you need; Adventure gear says where to find it
+function askUnlock(k, v, label){
+  const lk = FMAPicks.lock(k, v), p = lk.price || 0, have = FMAPicks.balance(), try_ = Object.assign({}, cfg, { [k]: v });
+  const pic = `<div class="pic">${k === "gear" ? PlayerArt.gear(v, cfg.gearColor) : k === "extra" ? PlayerArt.item(try_, "extra") : PlayerArt.svg(try_, ["hair", "hairColor", "acc", "mark", "eyewear"].includes(k) ? "head" : "fig")}</div>`;
+  $("easkIn").innerHTML = lk.quest
+    ? `${pic}<b>${label}</b><p>🏭 Found in <b style="font-size:inherit">Adventure: ${lk.quest.level}</b>. Clear the quest “${lk.quest.quest}” to find it.</p><p>Adventure gear can't be bought with picks. You have to earn it!</p><div class="row"><button id="eNo">OK</button><button class="go" id="eGo">Go to Adventure</button></div>`
+    : have >= p
+    ? `${pic}<b>Unlock ${label}?</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}.</p><div class="row"><button id="eNo">Not now</button><button class="go" id="eYes">Unlock it!</button></div>`
+    : `${pic}<b>${label} is locked</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}, so you need <b style="font-size:inherit">${p - have} more</b>.</p><p>Every game you finish earns picks, and beating your best earns extra.</p><div class="row"><button class="go" id="eNo">OK, let's play!</button></div>`;
+  $("eask").hidden = false;
+  $("eNo").onclick = () => { $("eask").hidden = true; };
+  if($("eGo")) $("eGo").onclick = () => { closeEditor(); location.href = "adventure.html"; };
+  const yes = $("eYes");
+  if(yes) yes.onclick = () => { if(!FMAPicks.unlock(k, v).ok) return; $("eask").hidden = true; cfg[k] = v; save(); drawPanel(); previews(); drawWallet(); setTimeout(() => big && big.cheer(), 200); };
 }
 // the big preview bounces with a happy face whenever something changes
 function previews(){ big = PlayerArt($("ebig"), cfg); big.react(); lastEdit = performance.now(); drawYou(); }

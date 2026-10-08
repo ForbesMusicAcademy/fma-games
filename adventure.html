@@ -122,8 +122,9 @@ header p{margin:4px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
   </section>
 </div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=26"></script>
+<script src="fma-student.js?v=5"></script>
+<script src="player-art.js?v=28"></script>
+<script src="fma-picks.js?v=3"></script>
 <script>
 (function(){
 "use strict";
@@ -153,6 +154,10 @@ const GUITARS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck"
 function puppetCfg(cfg, wear){
   const c = Object.assign({}, cfg);
   if(wear.hat) c.acc = "none";
+  // the tray's Rust Row gear replaces the same thing worn from the editor, so it never doubles up
+  if((wear.mask || wear.goggles) && ["gasmask", "goggles"].includes(c.eyewear)) c.eyewear = "none";
+  if(wear.vest && c.top === "hivis") c.top = "tee";
+  if(wear.strap && c.extra === "biostrap") c.extra = "none";
   if((wear.strap || wear.rust) && !GUITARS.includes(c.gear)) c.gear = "guitar";
   if(wear.rust){ c.gear = "guitar"; c.gearColor = "#b5562c"; }
   return c;
@@ -248,7 +253,7 @@ function bodyGear(g, wear){
 /* ---- an arm or a leg, built from the character's own sleeves, hands, trousers and shoes ---- */
 function armSVG(Z, a, angle, kind, wear, far){
   const sl = Z.sleeve, AW = 12 * S, SW = (13 + (sl.puffy ? 7 : 0)) * S, col = Z.col, cuff = sl.cuffC || shade(col, 0.82);
-  const handC = wear.gloves ? "#4a4a4f" : Z.skin;
+  const handC = wear.gloves || Z.glove ? "#4a4a4f" : Z.skin;
   let s = pl(a, INK, AW + OL);
   const sleevePts = sl.none ? null : sl.long ? [a[0], a[1], mix(a[1], a[2], 0.72)] : [a[0], mix(a[0], a[1], 0.75)];
   if(sleevePts) s += pl(sleevePts, INK, SW + OL);
@@ -313,7 +318,7 @@ function backSVG(st, cfg, wear, id){
   s += `<g transform="${page}">${Z.torsoBack}${bodyGear(g, Object.assign({}, wear, { strap: false }))}${Z.extraMid}${Z.hairBack}${Z.extraBack && !/pa-cape/.test(Z.extraBack) ? Z.extraBack : ""}${Z.slung}</g>`;
   if(wear.strap) s += `<g transform="${page}"><path d="M${200 + g.tW * 0.42} ${g.tTop + 4} L${200 - g.tW * 0.46} ${g.tTop + g.tH - 8}" stroke="#ffc42b" stroke-width="6" stroke-linecap="round"/><path d="M${200 + g.tW * 0.42} ${g.tTop + 4} L${200 - g.tW * 0.46} ${g.tTop + g.tH - 8}" stroke="${INK}" stroke-width="6" stroke-dasharray="5 6"/></g>`;
   s += `<g transform="${page}">${Z.headBack}${headGear(g, wear, false)}</g>`;
-  const handC = wear.gloves ? "#4a4a4f" : Z.skin;
+  const handC = wear.gloves || Z.glove ? "#4a4a4f" : Z.skin;
   [-1, 1].forEach((sd, i) => {
     const root = [sd * (g.tW / 2 - 6) * S, -LEN.torso], hand = st.h[i], el = ik(root, hand, LEN.ua, LEN.fa, sd), a = [root, el, hand];
     const ang = Math.atan2(hand[0] - el[0], hand[1] - el[1]) / R;      // the forearm's direction, limb convention
@@ -831,6 +836,7 @@ function clearQuest(i){
   const n = NODES[i], fresh = n.loot.filter(k => !owned.has(k));
   n.loot.forEach(k => { owned.add(k); if(first) wear[k] = true; });
   drawNodes(); drawTray(fresh); save();
+  if(first && window.FMAPicks) FMAPicks.milestone("rustrow:" + i, FMAPicks.EARN.quest, "clearing " + n.name);
   // celebrate side-on, so the new gear shows (the front art doesn't wear Rust Row gear yet)
   busy = true;
   hero.play([backflip(n.x + 24, n.g)], () => { busy = false; hero.state = { m: "side", cx: n.x, cy: plantCY(STAND, n.g), p: STAND }; });

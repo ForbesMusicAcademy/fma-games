@@ -118,9 +118,10 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <!-- messages -->
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=4"></script>
+<script src="fma-student.js?v=5"></script>
 <script src="lib/alphaTab.min.js"></script>
-<script src="player-art.js?v=24"></script>
+<script src="player-art.js?v=28"></script>
+<script src="fma-picks.js?v=3"></script>
 <script>
 /* ============================================================
    Song Practice (home). The song list is songs/songs.json (add a song with add-song.py). Progress is kept on this
@@ -399,7 +400,7 @@ function finish(){
   showPop(html);
   const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
   PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
-  if (!sim && FMAStudent.active()) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
+  if (!sim) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
     : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1, improved: pct >= DIAMOND_PCT && !before.diamond });
   const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
   const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
