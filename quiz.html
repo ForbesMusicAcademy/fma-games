@@ -151,6 +151,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 </div>
 
 <script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script>
@@ -268,6 +269,7 @@ const det = {
     return ch;
   }
 };
+if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 // One reading -> the single strongest note (0-11) or -1. Needs the same note on two readings in a row.
 let simNote = -1, lastTop = -1, topRun = 0, dbgText = "";
 function readNote(){

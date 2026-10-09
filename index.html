@@ -163,7 +163,8 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   </header>
 
   <h1>Practice games</h1>
-  <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
+  <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
+  <div id="midiSlot"></div>
   <a class="game" href="adventure.html"><img src="characters/adventure.svg" alt=""><div><b>Adventure <span class="tag2">NEW</span></b><span>Parkour across Rust Row as your own character. Every quest is a practice game, and every one you clear wins you new gear.</span></div></a>
   <a class="game" href="quiz.html"><img src="characters/plucky.png" alt=""><div><b>Note Quiz <span class="tag2">NEW</span></b><span>Answer questions by finding the right note on your guitar. Quicker = more points. Play solo or race the CPUs.</span></div></a>
   <a class="game" href="boss.html"><img src="characters/boss.svg" alt=""><div><b>Boss Battle <span class="tag2">NEW</span></b><span>Play along to a drum beat. Hit the right chord every bar to beat the boss. Ten songs, three speeds.</span></div></a>
@@ -174,6 +175,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 </main>
 
 <script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script>
@@ -317,6 +319,7 @@ function showOff(now){
 setInterval(() => showOff(false), 5500);
 drawYou(true);
 FMAStudent.mount($("playingAs"));
+if(window.FMAMidi) FMAMidi.mount($("midiSlot"));      // "Got a keyboard?": connecting here covers every game
 if(location.hash === "#character") openEditor();
 </script>
 </body>

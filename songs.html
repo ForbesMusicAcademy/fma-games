@@ -119,6 +119,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
 <script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
 <script src="lib/alphaTab.min.js"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
@@ -304,6 +305,21 @@ function listenFrame(){
   if (running) waitMode ? waitJudge() : judge(now);
 }
 
+/* a MIDI keyboard key press is a perfectly clean note start (fma-midi.js). Keyboards can't always reach guitar notes,
+   so the key is moved to the octave of the note the tab wants: only the note name has to be right. */
+if (window.FMAMidi) FMAMidi.onNote(ev => {
+  if (!ev.on || !FMAMidi.active()) return;
+  $("heard").textContent = "Hearing: " + FMAMidi.name(ev.note) + " 🎹"; lastHeardAt = performance.now();
+  if (!running) return;
+  const now = songTime();
+  let ref = null;
+  if (waitMode) ref = expected[idx];
+  else for (const e of expected) if (!e.res && (!ref || Math.abs(e.t - now) < Math.abs(ref.t - now))) ref = e;
+  let m = ev.note;
+  if (ref) { const t = ref.midi.reduce((a, b) => Math.abs(m - a) <= Math.abs(m - b) ? a : b); m += 12 * Math.round((t - m) / 12); }
+  onsets.push({ t: now + lat, midi: m, n: 9, src: "energy", ratio: 9, used: false });   // + lat: no microphone delay to take off
+});
+
 /* ---------- judging ---------- */
 const PLUCK_RATIO = 1.8, REFRACTORY = 0.25, WAIT_CENTS = 40;   // tuning knobs for learn mode
 let lastAcceptedT = -9;
@@ -414,7 +430,7 @@ async function openInput(){
   if (ctx.state === "suspended") await ctx.resume();
   if (analyser) return;
   analyser = ctx.createAnalyser(); analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0; tbuf = new Float32Array(2048);
-  if (sim) return;
+  if (sim || (window.FMAMidi && FMAMidi.active())) return;     // a MIDI keyboard needs no microphone
   // echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   ctx.createMediaStreamSource(stream).connect(analyser);

@@ -107,6 +107,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script>
@@ -274,6 +275,7 @@ const det = {
     return ch;
   }
 };
+if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
 let buddy = null, streak = 0;          // your character beside the Skip button, and chords in a row
@@ -360,6 +362,7 @@ $("pop").onclick = () => { /* taps do nothing, so a stray tap can't skip a celeb
 
 /* ---------- Setup flow ---------- */
 async function calibrate(){
+  if(det.keysOnly){ $("cal").hidden = true; $("game").hidden = false; return; }     // playing a keyboard: no room noise to measure
   $("game").hidden = true; $("cal").hidden = false;
   const samples = [], t0 = performance.now();
   await new Promise(res => {

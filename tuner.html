@@ -124,6 +124,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script>
@@ -193,6 +194,8 @@ const pitch = {
     return {f: sr / tau, clarity: 1 - b};
   }
 };
+// a MIDI keyboard, when one is plugged in, plays straight into the race (fma-midi.js): the right note name in any octave locks the string in
+if(window.FMAMidi) FMAMidi.useFor(pitch, () => STRINGS[race.cur] && STRINGS[race.cur].hz);
 
 /* ---------- Progress (this device only) ---------- */
 const KEY = fmaKey("fma-tuner-v1");          // each player on this device has their own best time
