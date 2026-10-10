@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
 <title>Forbes Music Academy: Practice Games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=1">
 <style>
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--accent:#FFB805;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:560px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--accent:#FFB805;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
@@ -125,7 +127,8 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Practice games</h1></div></div>
 <main>
   <header class="top" id="top">
     <div class="logo"><img src="logos/fma-logo-abrv.png" alt="Forbes Music Academy"></div>
@@ -162,7 +165,6 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
     </section>
   </header>
 
-  <h1>Practice games</h1>
   <p class="lead">Play on your phone, tablet or computer. Your device listens to your guitar through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <div id="midiSlot"></div>
   <a class="game" href="adventure.html"><img src="characters/adventure.svg" alt=""><div><b>Adventure <span class="tag2">NEW</span></b><span>Parkour across Rust Row as your own character. Every quest is a practice game, and every one you clear wins you new gear.</span></div></a>

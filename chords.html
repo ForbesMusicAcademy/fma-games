@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
 <title>Chord Practice</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=1">
 <style>
 /* Home chord practice: one column, phone first. Listens through the microphone, never records.
    Layout: header, the big chord, its notes lighting up as they are heard, a level meter, a status line. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:520px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
@@ -62,9 +64,9 @@ label.set input[type=range]{width:100%}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Chord Practice</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Chord Practice</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <section class="card" id="intro">
     <h2>Play the chord you see</h2>

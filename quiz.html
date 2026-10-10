@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
 <title>Note Quiz | Forbes Music Academy</title>
 <meta name="description" content="Can you find the note on your guitar faster than the CPUs? Play the answer, hold it, score points. Free guitar game from Forbes Music Academy.">
 <link rel="canonical" href="https://games.forbesmusic.com.au/quiz.html">
@@ -22,11 +23,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=1">
 <style>
 /* Home Note Quiz: one player, one column, phone first. A question appears with four answers, each on a note.
    Play the note of the answer you think is right on your guitar and hold it to lock in. Quicker = more points.
    Listens through the microphone, never records. Same game as the classroom screen, minus the classmates. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:560px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
   --rhythm-soft:#FFF1C7;--rhythm-edge:#D99A00;--lead-soft:#E2F2FA;--lead-edge:#4A9CC2;--pink-soft:#FADDE8;--pink-edge:#D4668C;--green-soft:#DDF1E1;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -107,9 +109,9 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Note Quiz</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Note Quiz</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <section class="card" id="start">
     <h2>Find the note, win the points</h2>
