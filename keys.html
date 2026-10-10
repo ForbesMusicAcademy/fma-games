@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEAD9">
+<title>Falling Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Falling Notes: the piano game. Notes fall down onto a keyboard; play each one as it lands. Phone first, same look as
+   the other games. Plays with a MIDI keyboard, the on-screen keys, a computer keyboard, or a real piano through the mic. */
+:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--warn:#E5A100;--sky:#CFE6F2;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:900px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
+a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px}
+.big:disabled{opacity:.5;cursor:default}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700}
+[hidden]{display:none!important}
+/* song list */
+h3.lvl{margin:10px 4px 0;font-family:var(--head);font-weight:900;font-size:19px;color:var(--muted)}
+.song{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 16px;box-shadow:0 14px 40px -30px rgba(35,35,31,.5)}
+.song b{font-family:var(--head);font-weight:900;font-size:20px;display:block;line-height:1.15}
+.song small{color:var(--muted);font-size:14px;display:block;margin-top:2px}
+.song .meta{flex:1;min-width:0}
+.song.next{border:3px solid var(--accent);box-shadow:0 0 0 4px rgba(255,184,5,.25),0 14px 40px -30px rgba(35,35,31,.5)}
+.song .here{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;font-family:var(--ui)}
+.rew{display:flex;align-items:center;gap:2px;flex:none}
+.rew img{height:26px;width:auto}
+.rew img.off{opacity:.45}
+.list{display:flex;flex-direction:column;gap:10px}
+/* player */
+#top{display:flex;align-items:center;gap:10px}
+#top h2{flex:1;margin:0;font-family:var(--head);font-weight:900;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:19px;white-space:nowrap}
+#stage{position:relative;margin-top:12px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#FBF8F0;touch-action:none;user-select:none;-webkit-user-select:none}
+#cv{display:block;width:100%;height:clamp(300px,54vh,560px)}
+#count{position:absolute;left:0;right:0;top:22%;text-align:center;font-family:var(--head);font-size:clamp(56px,16vw,120px);font-weight:900;color:var(--accent);-webkit-text-stroke:3px var(--fg);opacity:0;pointer-events:none}
+#combo{position:absolute;right:12px;top:10px;font-family:var(--head);font-weight:900;font-size:22px;color:var(--fg);opacity:0;transition:opacity .2s;pointer-events:none}
+.row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.seg{display:flex;border:2px solid var(--line);border-radius:999px;background:#fff;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:7px 14px;font-weight:700;color:var(--muted);min-height:38px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--fg)}
+.seg button:disabled{opacity:.4}
+.opt{border:2px solid var(--line);border-radius:999px;background:#fff;padding:7px 14px;font-weight:700;min-height:44px}
+.opt[aria-pressed=true]{border-color:var(--fg);background:#FFF4D1}
+#hint{margin:8px 0 0;color:var(--muted);font-size:15px;min-height:1.4em}
+#heard{font-weight:700;color:var(--muted);font-size:15px}
+#lvl{flex:1;min-width:60px;max-width:180px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+#lvl i{display:block;height:100%;width:0;background:var(--accent)}
+#latBox{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:15px;font-weight:600}
+#latBox button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:800}
+#err{color:var(--bad);font-weight:700}
+/* end of a run */
+.pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fade .25s}
+.pop .box{background:#fff;border-radius:26px;padding:22px 24px;text-align:center;max-width:380px;width:100%;animation:rise .35s ease-out;max-height:calc(100dvh - 32px);overflow:auto}
+.pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
+.pop .box p{color:var(--muted);margin:8px 0}
+.pop .big{margin-top:10px}
+.pop .pct{font-family:var(--head);font-weight:900;font-size:72px;line-height:1;color:var(--good)}
+.pop .stars img{height:66px;width:auto;margin:0 3px}
+.pop .stars img.off{opacity:.45}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;padding:0 6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Falling Notes</h1><a href="./" class="menu">&larr; All games</a></header>
+
+  <!-- 1. the song list -->
+  <section id="menu">
+    <div class="card" style="margin-bottom:14px">
+      <h2>Catch the notes on the keys</h2>
+      <p>Notes fall down onto the keyboard. Play each one as it reaches the keys. Start with <b>Learn</b> (the notes wait for you), then try <b>Play along</b> with the music.</p>
+      <p>Play on a <b>keyboard plugged into this device</b>, a <b>real piano</b> (the microphone listens), the keys on the screen, or a computer keyboard (<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd>… are the white keys).</p>
+      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b></p>
+      <div id="midiSlot" style="margin-top:6px"></div>
+    </div>
+    <div id="list"></div>
+    <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
+  </section>
+
+  <!-- 2. one song -->
+  <section id="player" class="card" hidden>
+    <div id="top"><button class="ghost" id="back">← Songs</button><h2 id="title"></h2><span id="score"></span></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="count"></div><div id="combo"></div></div>
+    <div class="row">
+      <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
+      <button class="big" id="go" style="flex:2">Start</button>
+      <button class="ghost" id="hear" style="flex:1;min-height:56px;border-radius:16px;white-space:nowrap">▶ Hear it</button>
+    </div>
+    <p id="hint"></p>
+    <div class="row">
+      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn</button><button id="mPlay" aria-pressed="false">Play along</button></div>
+      <div class="seg" id="speeds" role="group" aria-label="Speed"></div>
+    </div>
+    <div class="row">
+      <button class="opt" id="names" aria-pressed="true">Note names</button>
+      <button class="opt" id="backing" aria-pressed="true">Backing music</button>
+      <button class="opt" id="mic" aria-pressed="false">🎤 Real piano (mic)</button>
+    </div>
+    <div class="row" id="micRow" hidden><span id="heard">Hearing: –</span><span id="lvl"><i></i></span></div>
+    <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span> <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button></div>
+    <p id="err" hidden></p>
+  </section>
+</div>
+
+<div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
+
+<script src="fma-student.js?v=5"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=31"></script>
+<script src="fma-picks.js?v=6"></script>
+<script>
+/* ============================================================
+   Falling Notes (piano). Songs come from piano-songs.json, built from the royalty-free song bank
+   (curriculum/royalty-free-song-bank/source/build-piano-tiles.cjs in Dave's workspace). Progress stays on this device.
+     LEARN       the notes stop at the keys and wait until you play the right one. Judged on the note only.
+     PLAY ALONG  the song runs at Slow / Medium / Full speed with a count-in and soft backing; notes are judged on time too.
+   Stars per song: 1 for finishing Learn, 2 for 80% in Play along (any speed), 3 for 90% in Play along at Full speed.
+   Only the note NAME has to match (any octave): home keyboards are small and a piano heard through a mic jumps octaves.
+   Add ?sim to the address to test with no keyboard: Start plays the song for you, with a couple of mistakes.
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search), SIM = q.has("sim");
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
+const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
+const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Full", f: 1 }];
+const PLAY_PCT = 80, FULL_PCT = 90;
+const PERFECT = 0.09, GOOD = 0.2;              // seconds either side of the beat
+const LEARN_F = 0.7;                           // Learn mode falls at 70% of the song's speed (then waits anyway)
+const FALL_SECS = 2.6;                         // how long a note takes to fall from the top to the keys
+const KEY = fmaKey("fma-keys-v1");             // each player on this device keeps their own stars
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- progress, kept on this device ---------- */
+let P = { songs: {}, opts: {} };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.songs) P = Object.assign(P, s); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
+const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, learn: 0, best: {}, runs: 0 });
+const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: false, lat: 0.08 }, P.opts);
+const saveOpts = () => { P.opts = O; save(); };
+
+/* ---------- song list ---------- */
+let SONGS = [], cur = null;
+const starImgs = n => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("");
+function drawList(){
+  const nextId = (SONGS.find(s => !rec(s.id).stars) || {}).id;
+  let html = "", lv = "";
+  SONGS.forEach((s, i) => {
+    if (s.level !== lv) { if (lv) html += "</div>"; lv = s.level; html += `<h3 class="lvl">${esc(lv)}</h3><div class="list">`; }
+    const r = rec(s.id), nx = s.id === nextId;
+    html += `<button class="song${nx ? " next" : ""}" data-i="${i}"><span class="meta"><b>${esc(s.title)}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${s.keys ? s.keys + " different keys · " : ""}${esc(s.hook || "")}</small></span>`
+      + `<span class="rew" aria-label="${r.stars} stars">${starImgs(r.stars)}</span></button>`;
+  });
+  $("list").innerHTML = html + (lv ? "</div>" : "");
+}
+$("list").onclick = e => { const b = e.target.closest(".song"); if (b) openSong(SONGS[Number(b.dataset.i)]); };
+fetch("piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => { SONGS = j; drawList(); if (q.get("song")) { const s = SONGS.find(x => x.id === q.get("song")); if (s) openSong(s); } })
+  .catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the songs. Check your connection and refresh."; });
+
+/* ---------- sound: a simple piano for the screen keys, backing and "Hear it" ---------- */
+let ac = null, out = null;
+function audio(){
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = 0.5; out.connect(ac.destination); }
+  if (ac.state === "suspended") ac.resume().catch(() => {});
+  return ac;
+}
+const scheduled = [];
+function tone(m, when, len, vol, type){
+  const c = audio(), f = 440 * Math.pow(2, (m - 69) / 12), t = Math.max(when || c.currentTime, c.currentTime), g = c.createGain(), peak = vol || 0.3;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.3, len || 1.2));
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = Math.min(9000, f * 6 + 600);
+  const o1 = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain();
+  o1.type = type || "triangle"; o1.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.25;
+  o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(out);
+  const end = t + Math.max(0.3, len || 1.2) + 0.05; o1.start(t); o2.start(t); o1.stop(end); o2.stop(end);
+  scheduled.push(o1, o2);
+}
+function click(when, accent){
+  const c = audio(), o = c.createOscillator(), g = c.createGain();
+  o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(accent ? 0.22 : 0.14, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
+  o.connect(g); g.connect(out); o.start(when); o.stop(when + 0.06); scheduled.push(o);
+}
+function hush(){ const t = ac ? ac.currentTime : 0; scheduled.splice(0).forEach(o => { try { o.stop(t); } catch (e) {} }); }
+const PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function chordTones(name){                      // the backing's left hand: root and fifth (plus the third), around C3
+  const m = /^([A-G])(#|b)?(m(?!aj))?(7|5|dim)?/.exec(name); if (!m) return [];
+  let r = (PCS[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12; r += 48; if (r > 52) r -= 12;
+  if (m[4] === "5") return [r, r + 7];
+  return [r, r + (m[4] === "dim" || m[3] ? 3 : 4) + 12, r + (m[4] === "dim" ? 6 : 7)];
+}
+
+/* ---------- the keyboard on screen ---------- */
+const cv = $("cv"), g2 = cv.getContext("2d");
+let W = 0, H = 0, KH = 0, DPR = 1, lo = 60, hi = 72, keys = [], keyOf = {}, shift = 0;
+function layout(){
+  if (!cur) return;
+  // lift low guitar riffs up into the middle of the piano, then show just the keys the song needs (so they fit a phone):
+  // from the C or F at or below its lowest note to the E or B at or above its highest, and at least 10 white keys
+  shift = cur.lo < 48 ? 12 * Math.ceil((48 - cur.lo) / 12) : 0;
+  lo = cur.lo + shift; hi = cur.hi + shift;
+  while (lo % 12 !== 0 && lo % 12 !== 5) lo--;
+  while (hi % 12 !== 4 && hi % 12 !== 11) hi++;
+  const whites = []; for (let m = lo; m <= hi; m++) if (!isBlack(m)) whites.push(m);
+  while (whites.length < 10) { hi++; if (!isBlack(hi)) whites.push(hi); }
+  while (hi % 12 !== 4 && hi % 12 !== 11) { hi++; if (!isBlack(hi)) whites.push(hi); }
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  KH = Math.min(150, Math.max(90, H * 0.26));
+  const ww = W / whites.length;
+  keys = []; keyOf = {};
+  whites.forEach((m, i) => { const k = { m, x: i * ww, w: ww, black: false }; keys.push(k); keyOf[m] = k; });
+  for (let m = lo; m <= hi; m++) if (isBlack(m)) { const left = keyOf[m - 1]; if (!left) continue; const bw = ww * 0.6, k = { m, x: left.x + ww - bw / 2, w: bw, black: true }; keys.push(k); keyOf[m] = k; }
+}
+function keyAt(x, y){
+  const inKeys = y > H - KH, bh = KH * 0.62;
+  for (const k of keys) if (k.black && x >= k.x && x < k.x + k.w && (!inKeys || y < H - KH + bh)) return k;
+  for (const k of keys) if (!k.black && x >= k.x && x < k.x + k.w) return k;
+  return null;
+}
+addEventListener("resize", () => layout());
+
+/* ---------- a run ---------- */
+let mode = O.mode, speed = O.speed, running = false, demo = false, finished = false;
+let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, endBeat = 0, lastFrame = 0;
+const lit = new Map();                          // midi on screen -> {until, cls}
+const pops = [];                                // little "Perfect!" words
+const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
+const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
+function resetRun(){
+  hush(); clearTimeout(simT);
+  running = false; demo = false; finished = false; idx = 0;
+  notes = cur ? cur.notes.map(n => ({ t: n.t, d: n.d, m: n.m + shift, res: null, tries: 0 })) : [];
+  endBeat = notes.length ? notes[notes.length - 1].t + notes[notes.length - 1].d : 0;
+  const barBeats = cur ? cur.ts[0] * 4 / cur.ts[1] : 4; countBeats = barBeats >= 3 ? barBeats : barBeats * 2;
+  pos = mode === "learn" ? -1.5 : -countBeats;
+  Object.assign(stats, { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 });
+  pops.length = 0; lit.clear();
+  $("go").textContent = "Start"; $("hear").textContent = "▶ Hear it"; $("score").textContent = ""; $("count").style.opacity = 0; $("combo").style.opacity = 0;
+  $("latBox").hidden = !(O.mic && mode === "play");
+  hint();
+}
+function hint(text){
+  if (text !== undefined) { $("hint").textContent = text; return; }
+  if (!cur) return;
+  const r = rec(cur.id);
+  $("hint").textContent = mode === "learn"
+    ? (r.stars ? "Learn it again, or try Play along for the next star." : "The notes wait for you. Finish the song for your first star.")
+    : r.stars >= 3 ? "Three stars! Play it again any time." : r.stars >= 2 ? `Get ${FULL_PCT}% at Full speed for the third star.` : `Get ${PLAY_PCT}% at any speed for the second star.`;
+}
+async function startRun(asDemo){
+  $("err").hidden = true;
+  if (!cur) return;
+  audio();
+  if (O.mic && !asDemo && !SIM) { try { await openMic(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone."; return; } }
+  resetRun(); running = true; demo = !!asDemo;
+  spb = 60 / (cur.tempo * (mode === "learn" && !demo ? LEARN_F : speedF()));
+  if (demo) spb = 60 / (cur.tempo * (mode === "play" ? speedF() : 1));      // "Hear it": the real speed, or the speed picked for Play along
+  $("go").textContent = demo ? "Start" : "Stop"; if (demo) $("hear").textContent = "■ Stop";
+  if (buddy && !demo) buddy.moment("start", 1500);
+  lastFrame = performance.now();
+  const sr = $("stage").getBoundingClientRect(); if (sr.top < 0 || sr.bottom > innerHeight) $("stage").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (mode === "play" || demo) {
+    t0 = ac.currentTime + 0.3 + countBeats * spb;     // beat 0 of the song
+    for (let i = 0; i < countBeats; i++) click(t0 - (countBeats - i) * spb, i === 0);
+    if (demo) notes.forEach(n => tone(n.m, t0 + n.t * spb, n.d * spb + 0.2, 0.3));
+    if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
+      const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
+      chordTones(name).forEach((m, k) => tone(m, t0 + b * spb, len, k ? 0.07 : 0.11, "sine"));
+    });
+  }
+  if (SIM && !demo) sim();
+}
+function stopRun(){ resetRun(); }
+function songPos(){
+  if (!running) return pos;
+  if (mode === "play" || demo) return (ac.currentTime - t0) / spb;
+  return pos;
+}
+
+/* ---------- playing a note (from any input) ---------- */
+// m: the MIDI note played. when: the audio-clock time it was played (mic notes arrive late), or null for now.
+function press(m, when, fromScreen){
+  const pc = ((m % 12) + 12) % 12;
+  let show = m;
+  if (running && !demo) {
+    if (mode === "learn") learnPress(pc, (k) => { show = k; });
+    else playPress(pc, when, (k) => { show = k; });
+  }
+  if (!keyOf[show]) { show = lo + pc; if (!keyOf[show]) show += 12; }           // a key outside the picture: light its note in our octave
+  const l = lit.get(show), t = performance.now();
+  if (keyOf[show] && (!l || l.until < t)) lit.set(show, { until: t + 220 });
+}
+function learnPress(pc, setShow){
+  const n = notes[idx]; if (!n) return;
+  if (n.m % 12 === pc) {
+    setShow(n.m); n.res = n.tries ? "late" : "hit"; stats.hit++; if (!n.tries) stats.first++;
+    stats.combo = n.tries ? 0 : stats.combo + 1; stats.maxCombo = Math.max(stats.maxCombo, stats.combo);
+    flash(n.m, "good"); idx++;
+    if (n.t > pos) pos = Math.max(pos, n.t - 0.25);                                // played early: bring the song along
+    if (buddy && stats.combo && stats.combo % 10 === 0) buddy.moment("streak", 1200);
+    score();
+    if (idx >= notes.length) setTimeout(finish, 450);
+  } else {
+    n.tries++; stats.combo = 0; setShow(nearest(pc, n.m)); flash(nearest(pc, n.m), "bad");
+    hint("That was " + NAMES[pc] + ". Look for the glowing key: " + noteName(n.m) + ".");
+  }
+}
+function playPress(pc, when, setShow){
+  const at = when != null ? (when - t0) / spb : songPos();
+  let best = null;
+  for (const n of notes) {
+    if (n.res) continue;
+    const dt = (at - n.t) * spb;
+    if (dt < -GOOD) break;
+    if (Math.abs(dt) <= GOOD && n.m % 12 === pc && (!best || Math.abs(dt) < Math.abs(best.dt))) best = { n, dt };
+  }
+  if (best) {
+    const n = best.n, perfect = Math.abs(best.dt) <= PERFECT;
+    n.res = "hit"; stats.hit++; if (perfect) stats.perfect++;
+    stats.combo++; stats.maxCombo = Math.max(stats.maxCombo, stats.combo);
+    setShow(n.m); flash(n.m, "good"); pops.push({ m: n.m, text: perfect ? "Perfect!" : best.dt < 0 ? "Early" : "Late", born: performance.now() });
+    if (buddy && stats.combo % 15 === 0) buddy.moment("streak", 1200);
+    score();
+  } else {
+    // a wrong key while a note is due breaks the combo; a stray key with nothing due doesn't count against you
+    const due = notes.find(n => !n.res && Math.abs((at - n.t) * spb) <= GOOD);
+    if (due) { stats.combo = 0; setShow(nearest(pc, due.m)); flash(nearest(pc, due.m), "bad"); score(); }
+  }
+}
+const nearest = (pc, m) => { const b = m - (((m % 12) + 12) % 12) + pc; return [b - 12, b, b + 12].reduce((a, x) => Math.abs(x - m) < Math.abs(a - m) ? x : a); };
+function flash(m, cls){ lit.set(m, { until: performance.now() + (cls === "bad" ? 350 : 260), cls }); }
+function score(){
+  $("score").textContent = "✔ " + stats.hit + " / " + notes.length;
+  const c = $("combo"); c.textContent = stats.combo >= 5 ? stats.combo + " in a row!" : ""; c.style.opacity = stats.combo >= 5 ? 1 : 0;
+}
+
+/* ---------- inputs: the screen, a computer keyboard, a MIDI keyboard, the mic ---------- */
+const touches = new Map();
+cv.addEventListener("pointerdown", e => {
+  e.preventDefault(); audio();
+  const r = cv.getBoundingClientRect(), k = keyAt(e.clientX - r.left, e.clientY - r.top); if (!k) return;
+  touches.set(e.pointerId, k.m); tone(k.m, null, 1.2, 0.3); press(k.m, null, true);
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => cv.addEventListener(ev, e => touches.delete(e.pointerId)));
+const KB = "awsedftgyhujkolp;'";                    // A = the lowest C on screen, W = C#, S = D ...
+const kbDown = new Set();
+addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || $("player").hidden) return;
+  if (e.key === " " && !e.repeat) { e.preventDefault(); $("go").click(); return; }
+  const i = KB.indexOf(e.key.toLowerCase()); if (i < 0 || e.repeat || kbDown.has(i)) return;
+  kbDown.add(i); e.preventDefault();
+  const m = lo + i; tone(m, null, 1.2, 0.3); press(m, null, true);
+});
+addEventListener("keyup", e => kbDown.delete(KB.indexOf(e.key.toLowerCase())));
+if (window.FMAMidi) FMAMidi.onNote(ev => { if (ev.on && FMAMidi.active() && !$("player").hidden) press(ev.note, null, false); });   // fma-midi.js plays its own sound
+
+/* The microphone, for a real piano: a note starts when the level jumps, and its pitch is read just after. */
+let an = null, tbuf = null, micOn = false;
+async function openMic(){
+  if (micOn) return;
+  audio();
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  an = ac.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; tbuf = new Float32Array(2048);
+  ac.createMediaStreamSource(stream).connect(an); micOn = true; $("micRow").hidden = false;
+}
+function yin(buf, sr){
+  const half = buf.length >> 1, d = new Float32Array(half), minTau = Math.floor(sr / 2200);
+  for (let tau = 1; tau < half; tau++) { let s = 0; for (let i = 0; i < half; i++) { const x = buf[i] - buf[i + tau]; s += x * x; } d[tau] = s; }
+  let run = 0; d[0] = 1;
+  for (let tau = 1; tau < half; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
+  let tau = -1;
+  for (let t = minTau; t < half - 1; t++) { if (d[t] < 0.15) { while (t + 1 < half - 1 && d[t + 1] < d[t]) t++; tau = t; break; } }
+  if (tau < 0) return null;
+  const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c, tp = den ? tau + (a - c) / (2 * den) : tau;
+  return { freq: sr / tp, clarity: 1 - b };
+}
+const frames = [], pending = []; let lastOnset = -9, rmsWin = [], heardAt = 0;
+function listen(){
+  if (!an || !O.mic) return;
+  an.getFloatTimeDomainData(tbuf);
+  const now = ac.currentTime;
+  let s = 0; for (let i = tbuf.length - 512; i < tbuf.length; i++) s += tbuf[i] * tbuf[i];
+  const rms = Math.sqrt(s / 512);
+  $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%";
+  rmsWin.push({ t: now, rms }); while (rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
+  const floor = Math.min(0.02, Math.max(0.006, Math.min(...rmsWin.map(r => r.rms)) * 3));
+  let midi = null;
+  if (rms > floor) { const p = yin(tbuf, ac.sampleRate); if (p && p.clarity > 0.85) midi = 69 + 12 * Math.log2(p.freq / 440); }
+  frames.push({ t: now, rms, midi }); while (frames.length && frames[0].t < now - 2) frames.shift();
+  if (midi != null) { $("heard").textContent = "Hearing: " + noteName(midi); heardAt = performance.now(); }
+  else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –";
+  let prevMin = Infinity; for (const f of frames) if (f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
+  if (prevMin < Infinity && rms > floor && rms > prevMin * 1.6 + 0.004 && now - lastOnset > 0.12) { lastOnset = now; pending.push(now); }
+  for (let k = pending.length - 1; k >= 0; k--) {
+    const t = pending[k]; if (now < t + 0.12) continue;
+    pending.splice(k, 1);
+    const ms = frames.filter(f => f.midi != null && f.t >= t + 0.03 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
+    if (ms.length >= 2) press(Math.round(ms[ms.length >> 1]), mode === "play" ? t - O.lat : null, false);
+  }
+}
+setInterval(listen, 12);
+
+/* ---------- the test player (?sim): plays the song with a wrong note and a miss ---------- */
+let simT = 0;
+function sim(){
+  if (mode === "learn") {
+    let k = 0; const step = () => { if (!running || idx >= notes.length) return; const n = notes[idx]; press(k === 3 ? n.m + 2 : n.m, null, false); k++; simT = setTimeout(step, 380); };
+    simT = setTimeout(step, 900);
+  } else notes.forEach((n, i) => { if (i === 3) return; simT = setTimeout(() => press(i === 5 ? n.m + 2 : n.m, null, false), (t0 - ac.currentTime + n.t * spb) * 1000 + (Math.random() - .5) * 60); });
+}
+
+/* ---------- drawing ---------- */
+function rr(x, y, w, h, r){ g2.beginPath(); g2.roundRect ? g2.roundRect(x, y, w, h, r) : g2.rect(x, y, w, h); }
+function draw(now){
+  const c = g2; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, W, H);
+  const hitY = H - KH, p = songPos(), pxb = (hitY / FALL_SECS) * spb;
+  // lanes
+  c.fillStyle = "#FBF8F0"; c.fillRect(0, 0, W, hitY);
+  for (const k of keys) if (k.black) { c.fillStyle = "rgba(35,35,31,.045)"; c.fillRect(k.x, 0, k.w, hitY); }
+  c.strokeStyle = "rgba(35,35,31,.07)"; c.lineWidth = 1;
+  for (const k of keys) if (!k.black) { c.beginPath(); c.moveTo(Math.round(k.x) + .5, 0); c.lineTo(Math.round(k.x) + .5, hitY); c.stroke(); }
+  // bar lines, faint, so the music's beat shows
+  if (cur) { const bb = cur.ts[0] * 4 / cur.ts[1]; c.strokeStyle = "rgba(35,35,31,.08)";
+    for (let b = Math.ceil(p / bb) * bb; (b - p) * pxb < hitY; b += bb) { const y = hitY - (b - p) * pxb; if (b < 0) continue; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); } }
+  // the notes
+  const next = mode === "learn" && running && !demo ? notes[idx] : null;
+  c.font = "900 " + Math.round(Math.min(18, keys.length ? keys[0].w * 0.45 : 14)) + "px Nunito, system-ui, sans-serif"; c.textAlign = "center"; c.textBaseline = "bottom";
+  for (const n of notes) {
+    const y = hitY - (n.t - p) * pxb, h = Math.max(10, n.d * pxb - 4), k = keyOf[n.m]; if (!k) continue;
+    if (y < -4 || y - h > hitY + 40) continue;
+    const pad = k.black ? 1 : Math.max(2, k.w * 0.1), x = k.x + pad, w = k.w - pad * 2;
+    let fill = k.black ? "#E39B00" : "#FFB805", stroke = "#23231F", alpha = 1;
+    if (n.res === "hit" || n.res === "late" || (demo && n.t <= p)) { fill = "#7FC08C"; stroke = "#3E7D4C"; alpha = 0.55; }
+    else if (n.res === "miss") { fill = "#E7D8D3"; stroke = "#C0392B"; alpha = 0.6; }
+    c.globalAlpha = alpha; rr(x, y - h, w, h, Math.min(8, w / 3)); c.fillStyle = fill; c.fill(); c.lineWidth = 2; c.strokeStyle = stroke; c.stroke();
+    if (n === next) { c.lineWidth = 4; c.strokeStyle = "rgba(255,184,5,.6)"; rr(x - 3, y - h - 3, w + 6, h + 6, 10); c.stroke(); }
+    if (O.names && h > 16 && w > 12) { c.fillStyle = "#23231F"; c.fillText(noteName(n.m).replace("#", "♯"), x + w / 2, y - 3); }
+    c.globalAlpha = 1;
+  }
+  // the line the notes land on
+  c.fillStyle = "#23231F"; c.fillRect(0, hitY - 3, W, 3);
+  // the keyboard
+  const glow = next && keyOf[next.m] ? next.m : null, pulse = 0.5 + 0.5 * Math.sin(now / 160);
+  const keyFill = k => {
+    const l = lit.get(k.m), on = l && l.until > now;
+    if (on && l.cls === "bad") return "#F2B8AE";
+    if (on && l.cls === "good") return "#9FD3A9";
+    if (on || [...touches.values()].includes(k.m)) return "#FFD66B";
+    if (demo && running) { const n = notes.find(n => n.m === k.m && n.t <= p && p < n.t + n.d); if (n) return "#FFD66B"; }
+    return null;
+  };
+  for (const k of keys) if (!k.black) {
+    rr(k.x + 1, hitY, k.w - 2, KH - 2, 6); c.fillStyle = keyFill(k) || "#fff"; c.fill(); c.lineWidth = 1.5; c.strokeStyle = "#23231F"; c.stroke();
+    if (k.m === glow) { c.fillStyle = `rgba(255,184,5,${0.35 + 0.35 * pulse})`; rr(k.x + 3, hitY + KH * 0.55, k.w - 6, KH * 0.42, 6); c.fill(); }
+    if (O.names) { c.fillStyle = k.m % 12 === 0 ? "#23231F" : "#6B6558"; c.font = (k.m % 12 === 0 ? "900 " : "700 ") + Math.round(Math.min(15, k.w * 0.38)) + "px Nunito, system-ui, sans-serif"; c.textBaseline = "bottom"; c.fillText(noteName(k.m) + (k.m % 12 === 0 ? Math.floor(k.m / 12) - 1 : ""), k.x + k.w / 2, H - 8); }
+  }
+  for (const k of keys) if (k.black) {
+    rr(k.x, hitY, k.w, KH * 0.62, 4); c.fillStyle = keyFill(k) || "#23231F"; c.fill();
+    if (k.m === glow) { c.fillStyle = `rgba(255,184,5,${0.5 + 0.4 * pulse})`; rr(k.x + 2, hitY + KH * 0.3, k.w - 4, KH * 0.28, 4); c.fill(); }
+  }
+  // "Perfect!" words
+  c.font = "900 16px Nunito, system-ui, sans-serif"; c.textBaseline = "middle";
+  for (let i = pops.length - 1; i >= 0; i--) { const w = pops[i], age = (now - w.born) / 600, k = keyOf[w.m]; if (age > 1 || !k) { pops.splice(i, 1); continue; }
+    c.globalAlpha = 1 - age; c.fillStyle = w.text === "Perfect!" ? "#3E7D4C" : "#6B6558"; c.fillText(w.text, Math.min(W - 40, Math.max(40, k.x + k.w / 2)), hitY - 18 - age * 30); }
+  c.globalAlpha = 1;
+}
+function frame(now){
+  const dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
+  if (running && mode === "learn" && !demo) {
+    const n = notes[idx], stopAt = n ? n.t : endBeat + 1;
+    pos = Math.min(stopAt, pos + dt / spb);
+    if (!n && pos >= endBeat + 0.5) finish();
+  }
+  if (running && (mode === "play" || demo)) {
+    const p = songPos();
+    if (p < 0) { const left = Math.ceil(-p); $("count").textContent = left; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
+    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > GOOD) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
+    if (p > endBeat + 1) { if (demo) { resetRun(); } else finish(); }
+  }
+  if (!$("player").hidden && W) draw(now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- end of a run: stars ---------- */
+function finish(){
+  if (finished || !running || demo) return;
+  finished = true; running = false; hush();
+  const r = rec(cur.id), before = r.stars, total = notes.length;
+  let html, pct, improved = false, mom = "done";
+  r.runs++;
+  if (mode === "learn") {
+    pct = Math.round(100 * stats.first / Math.max(1, total));
+    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
+    r.stars = Math.max(r.stars, 1);
+    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
+      <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
+      <p>${stats.first} of ${total} notes right first time.</p>
+      <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
+      <button class="big" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+    mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
+  } else {
+    pct = Math.round(100 * stats.hit / Math.max(1, total));
+    const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
+    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, 2);
+    if (pct >= FULL_PCT && speed === "full") r.stars = 3;
+    r.stars = Math.max(r.stars, 1);
+    const sp = SPEEDS.find(s => s.k === speed).n;
+    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT && speed !== "full" ? `Now try <b>Full</b> speed: ${FULL_PCT}% there wins the third star.`
+      : pct >= PLAY_PCT ? `So close: ${FULL_PCT}% at Full speed wins the third star.` : `${PLAY_PCT}% wins the next star. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
+    html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
+      <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
+      <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
+      <button class="big" id="pAgain">Play again</button>`;
+    mom = r.stars > before ? "win" : improved ? "best" : "done";
+  }
+  const nextSong = SONGS[SONGS.indexOf(cur) + 1];
+  html += (nextSong && r.stars >= 2 ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(nextSong.title)}</button>` : "")
+    + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">All songs</button>`;
+  save(); drawList(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
+  $("popBox").innerHTML = html; $("pop").hidden = false;
+  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
+  if (!SIM) FMAStudent.send("falling-notes", { detail: cur.title, mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved });
+  const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
+  on("pAgain", () => { resetRun(); startRun(); });
+  on("pPlay", () => { setMode("play"); });
+  on("pNext", () => openSong(nextSong));
+  on("pSongs", goMenu);
+}
+
+/* ---------- controls ---------- */
+let buddy = null;
+function setMode(m){
+  mode = m; O.mode = m; saveOpts();
+  $("mLearn").setAttribute("aria-pressed", m === "learn"); $("mPlay").setAttribute("aria-pressed", m === "play");
+  $("speeds").querySelectorAll("button").forEach(b => b.disabled = m === "learn");
+  $("backing").hidden = m === "learn";
+  resetRun();
+}
+$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}</button>`).join("");
+$("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return; speed = b.dataset.k; O.speed = speed; saveOpts();
+  $("speeds").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); resetRun(); };
+$("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");
+const toggle = (id, k, after) => { const b = $(id); b.setAttribute("aria-pressed", O[k]); b.onclick = () => { O[k] = !O[k]; saveOpts(); b.setAttribute("aria-pressed", O[k]); if (after) after(); }; };
+toggle("names", "names"); toggle("backing", "backing");
+toggle("mic", "mic", () => { $("micRow").hidden = !(O.mic && micOn); $("latBox").hidden = !(O.mic && mode === "play"); if (O.mic) openMic().catch(() => { $("err").hidden = false; $("err").textContent = "The microphone was blocked. Allow it in your browser settings, then try again."; }); });
+$("lm").onclick = () => setLat(O.lat - 0.01); $("lp").onclick = () => setLat(O.lat + 0.01);
+function setLat(v){ O.lat = Math.max(0, Math.min(0.4, Math.round(v * 100) / 100)); $("lat").textContent = Math.round(O.lat * 1000) + " ms"; saveOpts(); }
+setLat(O.lat);
+$("go").onclick = () => { if (running && !demo) stopRun(); else startRun(false); };
+$("hear").onclick = () => { if (running && demo) stopRun(); else { if (running) stopRun(); startRun(true); } };
+$("back").onclick = goMenu;
+function goMenu(){ stopRun(); $("pop").hidden = true; $("player").hidden = true; $("menu").hidden = false; cur = null; drawList(); window.scrollTo(0, 0); }
+function openSong(s){
+  cur = s; $("pop").hidden = true; $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
+  if (!buddy) buddy = PlayerArt.buddy($("buddy"));
+  layout(); setMode(mode); window.scrollTo(0, 0);
+}
+if (window.FMAMidi) FMAMidi.mount($("midiSlot"));
+if (window.FMAStudent && FMAStudent.mount && $("playingAs")) FMAStudent.mount($("playingAs"));
+window.__keys = { get notes(){ return notes; }, stats, press, get pos(){ return songPos(); }, get P(){ return P; } };
+</script>
+</body>
+</html>
