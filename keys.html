@@ -240,7 +240,7 @@ addEventListener("resize", () => layout());
 
 /* ---------- a run ---------- */
 let mode = O.mode, speed = O.speed, running = false, demo = false, finished = false;
-let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, endBeat = 0, lastFrame = 0;
+let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, countUnit = 1, endBeat = 0, lastFrame = 0;
 const lit = new Map();                          // midi on screen -> {until, cls}
 const pops = [];                                // little "Perfect!" words
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
@@ -250,7 +250,6 @@ function resetRun(){
   running = false; demo = false; finished = false; idx = 0;
   notes = cur ? cur.notes.map(n => ({ t: n.t, d: n.d, m: n.m + shift, res: null, tries: 0 })) : [];
   endBeat = notes.length ? notes[notes.length - 1].t + notes[notes.length - 1].d : 0;
-  const barBeats = cur ? cur.ts[0] * 4 / cur.ts[1] : 4; countBeats = barBeats >= 3 ? barBeats : barBeats * 2;
   pos = mode === "learn" ? -1.5 : -countBeats;
   Object.assign(stats, { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 });
   pops.length = 0; lit.clear();
@@ -274,13 +273,14 @@ async function startRun(asDemo){
   resetRun(); running = true; demo = !!asDemo;
   spb = 60 / (cur.tempo * (mode === "learn" && !demo ? LEARN_F : speedF()));
   if (demo) spb = 60 / (cur.tempo * (mode === "play" ? speedF() : 1));      // "Hear it": the real speed, or the speed picked for Play along
+  countIn();
   $("go").textContent = demo ? "Start" : "Stop"; if (demo) $("hear").textContent = "■ Stop";
   if (buddy && !demo) buddy.moment("start", 1500);
   lastFrame = performance.now();
   const sr = $("stage").getBoundingClientRect(); if (sr.top < 0 || sr.bottom > innerHeight) $("stage").scrollIntoView({ behavior: "smooth", block: "start" });
   if (mode === "play" || demo) {
     t0 = ac.currentTime + 0.3 + countBeats * spb;     // beat 0 of the song
-    for (let i = 0; i < countBeats; i++) click(t0 - (countBeats - i) * spb, i === 0);
+    for (let b = 0; b < countBeats - 1e-6; b += countUnit) click(t0 - (countBeats - b) * spb, b === 0);
     if (demo) notes.forEach(n => tone(n.m, t0 + n.t * spb, n.d * spb + 0.2, 0.3));
     if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
       const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
@@ -290,6 +290,14 @@ async function startRun(asDemo){
   if (SIM && !demo) sim();
 }
 function stopRun(){ resetRun(); }
+/* A proper musical count-in: one bar, counted up in the song's own beat (1 2 3 4 in 4/4, 1 2 3 in 3/4, 1 2 3 4 5 in 5/4).
+   x/8 songs count the quavers (1 2 3 4 5 6 in 6/8) unless they're too quick to say, then the big dotted beats ("1, 2"). */
+function countIn(){
+  const [n, d] = cur.ts;
+  if (d === 8 && n % 3 === 0 && 0.5 * spb < 0.25) { countUnit = 1.5; countBeats = Math.max(2, n / 3) * 1.5; }
+  else { countUnit = 4 / d; countBeats = n * countUnit; }
+  pos = mode === "learn" && !demo ? -1.5 : -countBeats;
+}
 function songPos(){
   if (!running) return pos;
   if (mode === "play" || demo) return (ac.currentTime - t0) / spb;
@@ -492,7 +500,8 @@ function frame(now){
   }
   if (running && (mode === "play" || demo)) {
     const p = songPos();
-    if (p < 0) { const left = Math.ceil(-p); $("count").textContent = left; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
+    const cn = Math.floor((p + countBeats) / countUnit + 1e-6) + 1;       // 1 on the first click, counting up
+    if (p < 0 && cn >= 1) { $("count").textContent = cn; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
     if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > GOOD) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
     if (p > endBeat + 1) { if (demo) { resetRun(); } else finish(); }
   }

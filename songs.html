@@ -248,7 +248,7 @@ function markNow(force){
 function paint(e, cls){ if (!e.ring) return; e.ring.classList.remove("hit", "near", "miss"); if (cls) e.ring.classList.add(cls); }
 
 /* ---------- clocks ---------- */
-let ctx = null, t0 = 0, countIn = 0, running = false, finished = false, finishing = false;
+let ctx = null, t0 = 0, countIn = 0, countBeat = 0.6, running = false, finished = false, finishing = false;
 let ready = false, out = null, fed = -1, apiPlaying = false;
 const songTime = () => ctx ? ctx.currentTime - t0 - countIn : -99;
 function feed(sec){ if (!ready) return; const ms = Math.max(0, sec * 1000); if (Math.abs(ms - fed) < 1) return; fed = ms; out.updatePosition(ms); }
@@ -437,7 +437,7 @@ async function openInput(){
 }
 function scheduleClicks(){
   const beatLen = beatClicks.length > 1 ? beatClicks[1].t - beatClicks[0].t : 0.6, nPer = api.score.masterBars[0].timeSignatureNumerator || 4;
-  countIn = beatLen * nPer; t0 = ctx.currentTime + 0.4;
+  countIn = beatLen * nPer; countBeat = beatLen; t0 = ctx.currentTime + 0.4;
   const click = (when, accent) => { const o = ctx.createOscillator(), g = ctx.createGain();
     o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.25, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
     o.connect(g); g.connect(ctx.destination); o.start(when); o.stop(when + 0.06); };
@@ -556,7 +556,7 @@ function follow(){
   } else if (running) {
     if (t >= -0.02 && !finished) setApiPlaying(true);
     feed(t);
-    if (t < 0) { const left = Math.ceil(-t / (countIn / 4 || 1)); $("count").textContent = left > 0 && left <= 8 ? left : ""; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
+    if (t < 0) { const n = Math.floor((t + countIn) / (countBeat || 1)) + 1; $("count").textContent = n >= 1 ? n : ""; $("count").style.opacity = 1; } else $("count").style.opacity = 0;   // counts up: 1 2 3 4
     if (!finished && t > songEnd + 1.2) { for (const e of expected) if (!e.res) mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); }
   }
   if (!$("player").hidden) follow();

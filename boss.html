@@ -379,7 +379,7 @@ function frame(){
   requestAnimationFrame(frame);
   const bp = barPos(), beat = Math.floor(((bp + 1) % 1 + 1) % 1 * 4);
   [...$("beats").children].forEach((el, i) => el.className = i === beat ? "on" : "");
-  if(bp < 0){ $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 4 - Math.floor((bp + 1) * 4))); return; }
+  if(bp < 0){ $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
   const idx = Math.floor(bp);
   if(idx >= G.bars){ return finish(); }
   if(idx !== G.idx){
