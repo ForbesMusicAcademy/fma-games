@@ -52,8 +52,8 @@ const Q = new URLSearchParams(location.search), INST = Q.get("inst") === "piano"
 window.fmaInstrument = { get: () => INST, set(){}, word: () => INST };       // the chord list follows this page's instrument
 window.fmaKey = k => k;
 </script>
-<script src="../fma-listen.js?v=2"></script>
-<script src="../fma-chords.js?v=4"></script>
+<script src="../test/fma-listen.js?v=2"></script>
+<script src="../test/fma-chords.js?v=4"></script>
 <script>
 const $ = id => document.getElementById(id);
 $("instName").textContent = INST;
@@ -187,7 +187,7 @@ async function demo(){
 }
 // runPack() wants base64 clips from files; the demo hands it Float32 directly
 const _decode = decode; decode = c => c.pcm instanceof Float32Array ? c : _decode(c);
-FMAChords.load("../chord-ladder.json").then(() => { if(Q.has("demo")) demo(); });
+FMAChords.load("../test/chord-ladder.json").then(() => { if(Q.has("demo")) demo(); });
 </script>
 </body>
 </html>
