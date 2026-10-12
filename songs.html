@@ -198,29 +198,41 @@ const PLAY_PCT = 80, FULL_PCT = 90, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
 const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
 
 /* ---------- the packs (easiest first; "open" = open from day one; "at" = stars needed to open it) ---------- */
+/* Each pack sits on a level of the melody ladder (projects/games-melody-progression.md in Dave's workspace). For guitar,
+   "tab" says how each song is laid out: [strings, highest fret]. One string can use frets 0-12 (Dave, 12 Oct: kids should
+   find every fret from the start; changing strings is the harder skill), so the early packs stay on one string and later
+   packs add strings. "skill" is the line guitar players see on the pack. Anything not listed uses all six strings. */
 const PACKS = [
   { id: "first", name: "First Notes", emo: "🌱", col: "#3E9A57", col2: "#7CC36B", open: true,
-    songs: ["hot-cross-buns", "mary-had-a-little-lamb", "twinkle-twinkle", "row-row-row-your-boat", "this-old-man"],
+    skill: "One string. Find every fret from 0 to 12.", tab: { all: [1, 12] },
+    songs: ["hot-cross-buns", "mary-had-a-little-lamb", "lightly-row", "twinkle-twinkle", "this-old-man"],
     prize: { part: "acc", value: "party", label: "Party hat" } },
   { id: "spooky", name: "Spooky Season", emo: "🎃", col: "#5B3A8C", col2: "#FF8A1C", open: true,
-    songs: ["spooky-creaky-staircase", "spooky-ghost-in-the-hallway", "spooky-haunted-music-box", "spooky-zombie-march", "spooky-witchs-cauldron"],
+    skill: "One string, then two.", tab: { all: [1, 12], "spooky-zombie-march": [2, 12], "spooky-witchs-cauldron": [2, 12] },
+    songs: ["spooky-creaky-staircase", "spooky-haunted-music-box", "spooky-ghost-in-the-hallway", "spooky-zombie-march", "spooky-witchs-cauldron"],
     prize: { part: "acc", value: "pumpkin", label: "Pumpkin hat", only: true } },
   { id: "originals", name: "FMA Originals", emo: "⚡", col: "#26211F", col2: "#FFB805", at: 6,
-    songs: ["riff-gravel-road", "riff-robot-stomp", "riff-skateboard-sun", "riff-thunder-chug", "riff-space-gallop"],
+    skill: "Riffs that pick back and forth between two strings.", tab: { all: [2, 5], "riff-skateboard-sun": [1, 12], "riff-robot-stomp": [1, 12] },
+    songs: ["riff-skateboard-sun", "riff-robot-stomp", "riff-gravel-road", "riff-space-gallop", "riff-thunder-chug"],
     prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
   { id: "campfire", name: "Campfire Songs", emo: "🔥", col: "#C2501B", col2: "#FFB805", at: 14,
-    songs: ["when-the-saints", "oh-susanna", "drunken-sailor", "amazing-grace", "yankee-doodle"],
+    skill: "Two strings, then three.", tab: { all: [2, 12], "amazing-grace": [3, 12], "drunken-sailor": [3, 12], "yankee-doodle": [3, 12] },
+    songs: ["row-row-row-your-boat", "when-the-saints", "oh-susanna", "amazing-grace", "drunken-sailor", "yankee-doodle"],
     prize: { part: "acc", value: "bucket", label: "Bucket hat" } },
   { id: "classical", name: "Classical Hits", emo: "🎻", col: "#2D5C9A", col2: "#8ECAE6", at: 24,
-    songs: ["ode-to-joy", "canon-in-d", "eine-kleine-nachtmusik", "fur-elise", "minuet-in-g"],
+    skill: "Three strings, and some sharps.", tab: { all: [3, 12] },
+    songs: ["ode-to-joy", "eine-kleine-nachtmusik", "canon-in-d", "fur-elise", "minuet-in-g"],
     prize: { part: "neck", value: "bowtie", label: "Bow tie" } },
   { id: "riffs", name: "Riff Pack", emo: "🎸", col: "#B8322C", col2: "#FF8A6B", at: 36,
-    songs: ["beethoven-5-riff", "hall-of-the-mountain-king", "mars-riff", "twelve-bar-shuffle-in-a", "korobeiniki"],
+    skill: "All six strings, down low.", tab: { "mars-riff": [1, 12] },
+    songs: ["beethoven-5-riff", "mars-riff", "korobeiniki", "hall-of-the-mountain-king", "twelve-bar-shuffle-in-a"],
     prize: { part: "eyewear", value: "shades", label: "Shades" } },
   { id: "christmas", name: "Christmas", emo: "🎄", col: "#1F7A45", col2: "#E8433F", december: true,
-    songs: ["silent-night", "jingle-bells", "deck-the-halls", "we-wish-you-a-merry-christmas", "joy-to-the-world"],
+    skill: "One string, then two and three.", tab: { all: [3, 12], "jingle-bells": [1, 12], "joy-to-the-world": [2, 12] },
+    songs: ["jingle-bells", "joy-to-the-world", "silent-night", "deck-the-halls", "we-wish-you-a-merry-christmas"],
     prize: { part: "acc", value: "santa", label: "Santa hat" } }
 ];
+const tabRule = (p, id) => (p && p.tab && (p.tab[id] || p.tab.all)) || null;      // [strings, highest fret], or null = all six
 // Christmas: there in December and January, and kept for good by anyone who's earned a star in it. Out of season it's simply
 // not on the shelf (never a greyed "opens in X days" card: the framework's red lines rule out locks by time and countdowns).
 const xmas = p => { const m = new Date().getMonth(); return m === 11 || m === 0 || packStars(p) > 0 ? "open" : "hidden"; };
@@ -271,6 +283,7 @@ function drawPacks(){
     return `<button class="pack ${st === "open" ? "" : "locked"} ${won ? "won" : ""}" data-i="${i}" ${st === "open" ? "" : 'aria-disabled="true"'}>
       <div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><b>${esc(p.name)}</b><span class="emo">${p.emo}</span><span class="tro">${won ? trophy(p, true) : ""}</span></div>
       <div class="body">${lockLine || `<div class="bar"><i style="width:${pct}%"></i></div><div class="nums"><span><img src="star-on.png" alt=""> ${got} of ${tot} stars</span><span>${won ? "Trophy won!" : pct + "%"}</span></div>`}
+        ${INST === "guitar" && p.skill ? `<small>${esc(p.skill)}</small>` : ""}
         <div class="prize"><span class="pic">${prizePic(p)}</span><span>${won ? "You won the" : "Finish it to win the"} <b>${esc(p.prize.label)}</b></span></div></div></button>`;
   }).join("");
   checkTrophies();
@@ -302,7 +315,7 @@ function drawPack(){
   const p = pack, got = packStars(p), tot = p.songs.length * 3;
   $("packHead").innerHTML = `<div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><span class="emo">${p.emo}</span><div><b>${esc(p.name)}</b>
     <div style="font-weight:700;opacity:.9">${got} of ${tot} stars${PK.won[p.id] ? " · trophy won" : ""}</div></div><span style="margin-left:auto">${trophy(p, !!PK.won[p.id], 54)}</span></div>
-    <div class="bar" style="margin-top:10px"><i style="width:${Math.round(100 * got / tot)}%"></i></div>`;
+    <div class="bar" style="margin-top:10px"><i style="width:${Math.round(100 * got / tot)}%"></i></div>${INST === "guitar" && p.skill ? `<p style="margin:8px 2px 0;color:var(--muted);font-weight:600">${esc(p.skill)}</p>` : ""}`;
   $("viewPick").hidden = INST !== "piano";
   $("vStaff").setAttribute("aria-pressed", PK.view !== "falling"); $("vFall").setAttribute("aria-pressed", PK.view === "falling");
   const nextId = p.songs.find(id => !rec(id).stars) || p.songs.find(id => rec(id).stars < 3);
@@ -327,10 +340,14 @@ fetch("piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => {
 if (INST === "piano") $("introLine").textContent = "Every song earns up to 3 stars, in either piano view. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens more packs.";
 
 /* ---------- melody to guitar tab ----------
-   Pick the octave that keeps the most notes in first position (frets 0-4, low E to the high E's 4th fret), preferring
-   the thinner strings when it's a tie (where beginner books start), then put each note on the string with the lowest fret. */
+   With a pack rule [strings, highest fret]: try every group of that many neighbouring strings, in every octave (the key
+   never changes, so the backing still fits), and lay the notes out with the least hand movement (a small cost for each fret
+   moved, for changing string, and for high frets). A two- or three-string song has to use all its strings. The group that
+   comes out cheapest wins; on a tie the written octave is kept.
+   With no rule (all six strings): the octave that keeps most notes in first position, each note on its lowest fret. */
 const OPEN = [64, 59, 55, 50, 45, 40];           // high E (top line) to low E (bottom line)
-function toTab(notes){
+function toTab(notes, rule){
+  if (rule && rule[0] < 6) { const t = ruledTab(notes, rule[0], rule[1]); if (t) return t; }
   let bestShift = 0, bestScore = -1e9;
   for (const sh of [-24, -12, 0, 12, 24]) {
     let sc = 0; for (const n of notes) { const m = n.m + sh; sc += m >= 40 && m <= 68 ? 10 : m >= 40 && m <= 76 ? 3 : -20; }
@@ -345,6 +362,28 @@ function toTab(notes){
       if (!pick || cost < pick.cost) pick = { s, f, cost }; });
     return { s: pick.s, f: pick.f, sounding: m };
   });
+}
+function ruledTab(notes, n, maxF){
+  let best = null;
+  for (let g = 0; g + n <= 6; g++) {
+    const group = Array.from({ length: n }, (_, k) => g + k);
+    for (const sh of [-36, -24, -12, 0, 12, 24]) {
+      const opts = notes.map(nt => group.map(s => ({ s, f: nt.m + sh - OPEN[s] })).filter(o => o.f >= 0 && o.f <= maxF));
+      if (opts.some(o => !o.length)) continue;
+      let prev = opts[0].map(o => ({ o, c: o.f * 0.05, back: null }));
+      for (let i = 1; i < opts.length; i++) {
+        prev = opts[i].map(o => { let bc = 1e9, bb = null;
+          for (const q of prev) { const c = q.c + Math.abs(o.f - q.o.f) * 0.5 + (o.s !== q.o.s ? 0.8 : 0) + o.f * 0.05; if (c < bc) { bc = c; bb = q; } }
+          return { o, c: bc, back: bb }; });
+      }
+      const end = prev.reduce((a, b) => a.c < b.c ? a : b), path = [];
+      for (let e = end; e; e = e.back) path.unshift(e.o);
+      let cost = end.c + Math.abs(sh) * 0.001;
+      if (new Set(path.map(x => x.s)).size < n) cost += 50;
+      if (!best || cost < best.cost) best = { cost, path };
+    }
+  }
+  return best && best.path.map(x => ({ s: x.s, f: x.f, sounding: OPEN[x.s] + x.f }));
 }
 
 /* ---------- melody to the staff ---------- */
@@ -441,7 +480,7 @@ function resetRun(){
   hush(); clearTimeout(simT); simTs.forEach(clearTimeout); simTs.length = 0;
   running = false; demo = false; finished = false; idx = 0;
   if (cur) {
-    const tab = INST === "guitar" ? toTab(cur.notes) : null;
+    const tab = INST === "guitar" ? toTab(cur.notes, tabRule(pack, cur.id)) : null;
     shift = INST === "piano" ? staffShift(cur.notes) : 0;
     notes = cur.notes.map((n, i) => ({ t: n.t, d: n.d, m: n.m, res: null, tries: 0, tab: tab && tab[i] }));
   } else notes = [];
@@ -658,11 +697,14 @@ function draw(now){
   c.fillStyle = "#fff"; c.fillRect(0, 0, W, H);
   // the lines: six strings or five staff lines
   const nLines = guitar ? 6 : 5;
-  c.strokeStyle = guitar ? "#B9B1A2" : "#8C8576";
-  for (let i = 0; i < nLines; i++) { const y = Math.round(TOP + i * GAP) + .5; c.lineWidth = guitar ? 1 + i * 0.35 : 1.4; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  // on tab, the strings this song uses are drawn darker, so a one-string song shows its one string clearly
+  const used = guitar ? new Set(notes.map(n => n.tab.s)) : null;
+  for (let i = 0; i < nLines; i++) { const y = Math.round(TOP + i * GAP) + .5;
+    c.strokeStyle = guitar ? (used.has(i) ? "#6B6558" : "#E2DCCF") : "#8C8576"; c.lineWidth = guitar ? (used.has(i) ? 1.6 : 1) + i * 0.35 : 1.4;
+    c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
   c.textAlign = "center"; c.textBaseline = "middle";
   if (guitar) { c.font = "900 15px Nunito, system-ui, sans-serif"; c.fillStyle = "rgba(255,255,255,.92)"; c.fillRect(0, TOP - 12, 30, 5 * GAP + 24);
-    c.fillStyle = "#6B6558"; ["T", "A", "B"].forEach((ch, i) => c.fillText(ch, 14, TOP + GAP * (1.5 + i))); }
+    ["e", "B", "G", "D", "A", "E"].forEach((ch, i) => { c.fillStyle = used.has(i) ? "#23231F" : "#C9C1B2"; c.fillText(ch, 14, TOP + GAP * i); }); }
   else if (clefOK) { c.fillStyle = "#23231F"; c.font = Math.round(GAP * 6.4) + "px serif"; c.textBaseline = "alphabetic"; c.fillText("\u{1D11E}", 26, TOP + 4 * GAP + GAP * 1.05); c.textBaseline = "middle"; }
   // bar lines
   const bb = cur.ts[0] * 4 / cur.ts[1];
@@ -833,7 +875,7 @@ function openSong(s){
   layout(); setMode(mode); drawPianoKeys(); glowKey(); window.scrollTo(0, 0);
 }
 if (window.FMAMidi) FMAMidi.mount($("midiSlot"));
-window.__packs = { get notes(){ return notes; }, stats, press, get pos(){ return songPos(); }, get P(){ return P; }, get PK(){ return PK; }, PACKS, toTab, staffShift, SONGS, checkTrophies, drawPacks };
+window.__packs = { get notes(){ return notes; }, stats, press, tabRule, ruledTab, get pos(){ return songPos(); }, get P(){ return P; }, get PK(){ return PK; }, PACKS, toTab, staffShift, SONGS, checkTrophies, drawPacks };
 </script>
 </body>
 </html>
