@@ -81,6 +81,12 @@
     { id: "lightning", part: "gear", value: "lightning", svg: `<circle cx="12" cy="24" r="12" fill="#4fd0c0" opacity=".3"/><path d="M24 8 L15 18" stroke="#26211f" stroke-width="5"/><path d="M24 8 L15 18" stroke="#e0bf82" stroke-width="2.5"/><path d="M22 4 L30 2 L31 6 L24 9 Z" fill="#3a3a3d" stroke="#26211f" stroke-width="2"/><circle cx="12" cy="24" r="9" fill="#4fd0c0" stroke="#26211f" stroke-width="2.5"/><circle cx="9" cy="20" r="5" fill="#4fd0c0" stroke="#26211f" stroke-width="2.5"/><circle cx="12" cy="24" r="9" fill="#4fd0c0"/><path d="M11 17 L7 24 L11 24 L8 31 L16 22 L12 22 L15 17Z" fill="#ffd34d" stroke="#26211f" stroke-width="1.4"/>`, level: "Inside the Amp", name: "Thunderbolt guitar", quest: "Captain Fuzz" },
   ];
 
+  // Song Packs prizes: items only won by finishing a pack (100% of its stars), never bought. Other packs give an ordinary
+  // item for free instead (see PACKS in songs.html); this list is just the ones that can't be had any other way.
+  const PACK_ONLY = [
+    { part: "acc", value: "pumpkin", pack: "Spooky Season" }
+  ];
+
   /* ---------------- the wallet ---------------- */
   const key = () => window.fmaKey ? window.fmaKey("fma-picks-v1") : "fma-picks-v1";
   const fresh = () => ({ picks: 0, total: 0, unlocked: [], days: [], once: {} });
@@ -91,14 +97,17 @@
   const id = (part, v) => part + ":" + v;
 
   const questItem = (part, v) => ADVENTURE.find(a => a.part === part && a.value === v);
+  const packItem = (part, v) => PACK_ONLY.find(a => a.part === part && a.value === v);
   function price(part, v){
-    if(questItem(part, v) || !OPEN[part] || OPEN[part].includes(v)) return 0;
+    if(questItem(part, v) || packItem(part, v) || !OPEN[part] || OPEN[part].includes(v)) return 0;
     return (PRICES[part] || {})[v] || 60;
   }
   const isOpen = (part, v, w) => { const q = questItem(part, v); if(q) return adventureOwned().has(q.id);
+    if(packItem(part, v)) return (w || load()).unlocked.includes(id(part, v));
     return price(part, v) === 0 || (w || load()).unlocked.includes(id(part, v)); };
   // why something is locked: { price } to buy with picks, or { quest } found in Adventure; null when it's open
-  const lockOf = (part, v) => { if(isOpen(part, v)) return null; const q = questItem(part, v); return q ? { quest: q } : { price: price(part, v) }; };
+  const lockOf = (part, v) => { if(isOpen(part, v)) return null; const q = questItem(part, v); if(q) return { quest: q };
+    const pk = packItem(part, v); return pk ? { pack: pk.pack } : { price: price(part, v) }; };
 
   // a character wearing anything that isn't unlocked goes back to the starter set for those parts (identity untouched)
   function clamp(cfg, random){
@@ -146,10 +155,20 @@
   }
   // a one-off reward (Adventure quests)
   function milestone(k, n, why){ const w = load(), list = []; once(w, k, n, why, list); if(list.length){ save(w); show(list, w.picks); } return list; }
+  // a prize (finishing a Song Pack): the item is unlocked for free. If it was already unlocked, the prize is picks instead.
+  // Returns { item: true } or { picks: n }, or null when this prize was already given.
+  function grant(part, v, k, why, picks){
+    const w = load(), list = [];
+    if(w.once[k]) return null;
+    w.once[k] = 1;
+    if(isOpen(part, v, w) && !packItem(part, v)){ add(w, picks || 50, why, list); save(w); show(list, w.picks); return { picks: picks || 50 }; }
+    if(!w.unlocked.includes(id(part, v))) w.unlocked.push(id(part, v));
+    save(w); return { item: true };
+  }
   function unlock(part, v){
     const w = load(), p = price(part, v);
     if(isOpen(part, v, w)) return { ok: true };
-    if(questItem(part, v)) return { ok: false };
+    if(questItem(part, v) || packItem(part, v)) return { ok: false };
     if(w.picks < p) return { ok: false, need: p - w.picks };
     w.picks -= p; w.unlocked.push(id(part, v)); save(w); return { ok: true, spent: p };
   }
@@ -181,5 +200,5 @@
     return got;
   }
 
-  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, unlock, round, milestone, adventureOwned, icon: ICON };
+  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, unlock, grant, round, milestone, adventureOwned, icon: ICON };
 })();

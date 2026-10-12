@@ -135,6 +135,25 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 .instq .row button span{font-size:44px;line-height:1}
 .instq .row button.on{background:var(--accent)}
 .instchip{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:40;min-height:40px;padding:0 14px 0 10px;border-radius:999px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:15px;box-shadow:0 4px 12px -4px rgba(35,35,31,.35)}
+.tunefirst{display:flex;align-items:center;gap:14px;background:#FFF4D1;border:3px solid var(--accent);border-radius:22px;padding:14px 16px;box-shadow:0 0 0 5px rgba(255,184,5,.22),0 14px 40px -26px rgba(35,35,31,.4);animation:tfglow 2.2s ease-in-out infinite}
+.tunefirst img{width:58px;height:58px;object-fit:contain;flex:none}
+.tunefirst b{display:block;font-family:var(--head);font-weight:900;font-size:22px;line-height:1.1}
+.tunefirst span{color:var(--muted);font-size:15px;display:block}
+.tfrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tfrow a,.tfrow button{min-height:44px;padding:0 18px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:16px;display:inline-flex;align-items:center;text-decoration:none;color:var(--fg)}
+.tfrow a.go{background:var(--accent)}
+@keyframes tfglow{0%,100%{box-shadow:0 0 0 4px rgba(255,184,5,.18),0 14px 40px -26px rgba(35,35,31,.4)}50%{box-shadow:0 0 0 9px rgba(255,184,5,.32),0 14px 40px -26px rgba(35,35,31,.4)}}
+/* "Make your player": the first thing a brand-new player sees, after the guitar-or-piano question */
+.hello{position:fixed;inset:0;z-index:65;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));overflow:auto}
+.hello .in{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.hello h2{margin:0;font-family:var(--head);font-weight:900;font-size:32px;line-height:1.1}
+.hello p{margin:0;color:var(--muted)}
+.hello .pic{width:min(62vw,260px);aspect-ratio:1/1.05;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4);display:flex;align-items:flex-end;justify-content:center}
+.hello .pic > div,.hello .pic svg{width:100%;height:100%}
+.hello input{width:100%;max-width:260px;font:inherit;font-size:19px;font-weight:700;padding:10px 12px;border:2px solid var(--fg);border-radius:12px;background:#fff;text-align:center}
+.hello .btns{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px}
+.hello .btns button{min-height:52px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:18px}
+.hello .btns button.go{background:var(--accent);min-height:58px;font-size:20px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -176,22 +195,27 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
     </section>
   </header>
 
+  <!-- "Tune up first?": a guitar player's first visit each day. Skip costs nothing. -->
+  <section class="tunefirst" id="tuneFirst" hidden>
+    <img src="characters/fret.png" alt="">
+    <div><b>Tune up first?</b><span>A guitar in tune makes every game work better. It only takes a minute.</span>
+      <div class="tfrow"><a class="go" href="tuner.html?first">Tune up</a><button id="tuneSkip" type="button">Skip for today</button></div></div>
+  </section>
   <p class="lead">Play on your phone, tablet or computer. Your device listens to your <span class="inst">guitar</span> through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <div id="midiSlot"></div>
   <!-- Wave 1 menu (12 Oct 2026, projects/games-slow-release-plan.md): Adventure, Note Quiz and Boss Battle are held back.
        Their pages still exist, they're just not on the menu. -->
-  <a class="game" href="tuner.html" data-for="guitar"><img src="characters/fret.png" alt=""><div><b>Tune Up</b><span>Get all six strings in tune. Try to beat your best time.</span></div></a>
+  <a class="game" href="tuner.html" data-for="guitar"><img src="characters/fret.png" alt=""><div><b>Tune Up</b><span>Get all six strings in tune, one at a time. Try to beat your best time.</span></div></a>
   <a class="game" href="chords.html" data-for="guitar"><img src="star-on.png" alt=""><div><b>Chord Quest <span class="tag2">NEW</span></b><span>How many chords can you unlock? Every chord you learn opens up more songs.</span></div></a>
-  <a class="game" href="songs.html" data-for="guitar"><img src="diamond.png" alt=""><div><b>Song Packs <span class="tag2">NEW</span></b><span>Packs of songs to learn. Earn stars and finish a pack to win its trophy.</span></div></a>
-  <a class="game" href="keys.html" data-for="piano"><img src="characters/keys.svg" alt=""><div><b>Falling Notes <span class="tag2">NEW</span></b><span>Notes fall onto the keys: play each one as it lands. 48 songs, from Hot Cross Buns to Für Elise.</span></div></a>
+  <a class="game" href="songs.html" data-for="guitar piano"><img src="diamond.png" alt=""><div><b>Song Packs <span class="tag2">NEW</span></b><span>Packs of songs to learn. Earn stars and finish a pack to win its trophy and a prize for your character.</span></div></a>
   <a class="game" href="league.html" id="leagueLink" hidden><img src="star-on.png" alt=""><div><b>Band League</b><span>Every class is a band. See which band is playing best this week, and help yours climb by practising.</span></div></a>
   <small class="foot">Forbes Music Academy</small>
 </main>
 
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=31"></script>
-<script src="fma-picks.js?v=6"></script>
+<script src="player-art.js?v=32"></script>
+<script src="fma-picks.js?v=7"></script>
 <script>
 const $ = id => document.getElementById(id);
 // the Band League link only shows once the league is running (tracking on)
@@ -254,14 +278,14 @@ function drawPanel(){
     if(sec[0] === "grid"){
       const [, key, list, view, title, named] = sec;
       // everything you can use first, in one unbroken run; then the locked ones from cheapest to dearest; Adventure gear (padlock) last
-      const cost = v => { const lk = FMAPicks.lock(key, v); return lk.quest ? 1e6 : lk.price; }, have = FMAPicks.balance();
+      const cost = v => { const lk = FMAPicks.lock(key, v); return lk.quest || lk.pack ? 1e6 : lk.price; }, have = FMAPicks.balance();
       const sorted = list.filter(([v]) => FMAPicks.isOpen(key, v)).concat(list.filter(([v]) => !FMAPicks.isOpen(key, v)).sort((a, b) => cost(a[0]) - cost(b[0])));
       return (title ? `<div class="sub">${title}</div>` : "") + `<div class="ogrid">` + sorted.map(([v, label]) => {
         const lk = FMAPicks.lock(key, v);
         // gold when you can afford it, light grey when you can't yet; Adventure gear always shows a grey padlock
-        const tag = !lk ? "" : lk.quest ? `<span class="lock quest">${PADLOCK}</span>`
+        const tag = !lk ? "" : lk.quest || lk.pack ? `<span class="lock quest">${PADLOCK}</span>`
           : lk.price <= have ? `<span class="lock">${FMAPicks.icon(16)}${lk.price}</span>` : `<span class="lock cant">${FMAPicks.icon(16, "#d6d0c4")}${lk.price}</span>`;
-        return `<button class="opt ${cfg[key] === v ? "on" : ""} ${lk ? "locked" : ""}" data-k="${key}" data-v="${v}" data-l="${label}" aria-label="${label}${!lk ? "" : lk.quest ? ", locked, found in Adventure" : ", locked, " + lk.price + " picks"}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}${tag}</button>`; }).join("") + `</div>`;
+        return `<button class="opt ${cfg[key] === v ? "on" : ""} ${lk ? "locked" : ""}" data-k="${key}" data-v="${v}" data-l="${label}" aria-label="${label}${!lk ? "" : lk.quest ? ", locked, found in Adventure" : lk.pack ? ", locked, won by finishing the " + lk.pack + " song pack" : ", locked, " + lk.price + " picks"}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}${tag}</button>`; }).join("") + `</div>`;
     }
     const [, label, key, colours] = sec;
     const sortedC = colours.filter(c => FMAPicks.isOpen(key, c)).concat(colours.filter(c => !FMAPicks.isOpen(key, c)));
@@ -285,13 +309,16 @@ function askUnlock(k, v, label){
   const bare = {}; ["acc", "eyewear", "mark", "neck", "extra", "gear", "beard"].forEach(p => { if(p !== keepPart) bare[p] = "none"; });
   const lk = FMAPicks.lock(k, v), p = lk.price || 0, have = FMAPicks.balance(), try_ = Object.assign({}, cfg, bare, { [k]: v });
   const pic = `<div class="pic">${k === "gear" ? PlayerArt.gear(v, cfg.gearColor) : k === "extra" ? PlayerArt.item(try_, "extra") : PlayerArt.svg(try_, ["hair", "hairColor", "acc", "mark", "eyewear"].includes(k) ? "head" : "fig")}</div>`;
-  $("easkIn").innerHTML = lk.quest
+  $("easkIn").innerHTML = lk.pack
+    ? `${pic}<b>${label}</b><p>🏆 Won by finishing the <b style="font-size:inherit">${lk.pack}</b> song pack. Earn every star in the pack to win it.</p><p>Song Pack prizes can't be bought with picks.</p><div class="row"><button id="eNo">OK</button><button class="go" id="ePack">Go to Song Packs</button></div>`
+    : lk.quest
     ? `${pic}<b>${label}</b><p>🏭 Found in <b style="font-size:inherit">Adventure: ${lk.quest.level}</b>. Clear the quest “${lk.quest.quest}” to find it.</p><p>Adventure gear can't be bought with picks. You have to earn it!</p><div class="row"><button id="eNo">OK</button><button class="go" id="eGo">Go to Adventure</button></div>`
     : have >= p
     ? `${pic}<b>Unlock ${label}?</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}.</p><div class="row"><button id="eNo">Not now</button><button class="go" id="eYes">Unlock it!</button></div>`
     : `${pic}<b>${label} is locked</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}, so you need <b style="font-size:inherit">${p - have} more</b>.</p><p>Every game you finish earns picks, and beating your best earns extra.</p><div class="row"><button class="go" id="eNo">OK, let's play!</button></div>`;
   $("eask").hidden = false;
   $("eNo").onclick = () => { $("eask").hidden = true; };
+  if($("ePack")) $("ePack").onclick = () => { closeEditor(); location.href = "songs.html"; };
   if($("eGo")) $("eGo").onclick = () => { closeEditor(); location.href = "adventure.html"; };
   const yes = $("eYes");
   if(yes) yes.onclick = () => { if(!FMAPicks.unlock(k, v).ok) return; $("eask").hidden = true; cfg[k] = v; save(); drawPanel(); previews(); drawWallet(); setTimeout(() => big && big.cheer(), 200); };
@@ -352,12 +379,39 @@ function askInstrument(){
   w.className = "instq";
   w.innerHTML = `<div class="in"><b>What do you play?</b><p>We'll show you the games for your instrument. You can change it any time with the button in the corner.</p>
     <div class="row"><button data-v="guitar" class="${cur === "guitar" ? "on" : ""}"><span>🎸</span>Guitar</button><button data-v="piano" class="${cur === "piano" ? "on" : ""}"><span>🎹</span>Piano</button></div></div>`;
-  w.querySelectorAll("button").forEach(b => b.onclick = () => { fmaInstrument.set(b.dataset.v); w.remove(); drawInstrument(); });
+  w.querySelectorAll("button").forEach(b => b.onclick = () => { fmaInstrument.set(b.dataset.v); w.remove(); drawInstrument(); drawTuneFirst(); if(!cur && !touched()) hello(); });
   if(cur) w.addEventListener("click", e => { if(e.target === w) w.remove(); });    // the first time, they choose
   document.body.append(w);
 }
+
+/* ---------- "Tune up first?": glows on a guitar player's first visit each day until they tune or skip ---------- */
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const TUNEDAY = fmaKey("fma-tuneup-day");
+function drawTuneFirst(){
+  let done = false; try{ done = localStorage.getItem(TUNEDAY) === todayStr(); }catch(e){}
+  $("tuneFirst").hidden = done || (fmaInstrument.get() || "guitar") !== "guitar" || !fmaInstrument.get();
+}
+$("tuneSkip").onclick = () => { try{ localStorage.setItem(TUNEDAY, todayStr()); }catch(e){} drawTuneFirst(); };
+
+/* ---------- "Make your player": a brand-new player gets a random character straight away, and this screen lets them
+   change it (Mix it up, or the full editor) or just go and play. It never holds up the first game. ---------- */
+function hello(){
+  const w = document.createElement("div"); w.className = "hello"; w.id = "hello";
+  w.innerHTML = `<div class="in"><h2>Make your player</h2><p>This is you in every game. Mix it up until you like it, or dress them up properly. You can change it any time.</p>
+    <div class="pic" id="hpic"></div>
+    <input id="hname" maxlength="10" placeholder="Your player's name" autocomplete="off" autocapitalize="words" aria-label="Your player's name" value="${(cfg.name || "").replace(/"/g, "")}">
+    <div class="btns"><button id="hmix">🎲 Mix it up</button><button id="hdress">Customise</button><button class="go" id="hgo">Let's play!</button></div></div>`;
+  document.body.append(w);
+  let pic = PlayerArt($("hpic"), cfg); setTimeout(() => pic.pose(PlayerArt.MOMENTS.hello, 2400), 300);
+  const close = () => { cfg.name = $("hname").value.replace(/[<>&"]/g, "").slice(0, 10); save(); w.remove(); drawYou(true); };
+  $("hmix").onclick = () => { const keep = $("hname").value; cfg = Player.random(); cfg.name = keep; pic = PlayerArt($("hpic"), cfg); pic.react(); if(Math.random() < .5) pic.cheer(); };
+  $("hdress").onclick = () => { close(); openEditor(); };
+  $("hgo").onclick = close;
+}
 drawInstrument();
+drawTuneFirst();
 if(!fmaInstrument.get()) askInstrument();
+else if(!touched() && location.hash !== "#character") hello();
 if(location.hash === "#character") openEditor();
 </script>
 </body>

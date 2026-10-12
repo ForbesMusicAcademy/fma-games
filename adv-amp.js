@@ -118,9 +118,9 @@ LEVELS.push((() => {
     { id: "m1", x: 200, g: G, hx: 330, hy: 330, icon: "🔌", name: "Plug In", url: "tuner.html", lane: "Notes", game: "Tuning Race", spot: "the input jack", loot: ["pickpendant"] },
     { id: "p2", x: 1078, g: 470, hx: 1078, hy: 230, icon: "🥁", name: "Drum Bounce", url: "chords.html", lane: "Chords", game: "Chords · E, A and D", spot: "the floor tom", loot: ["spark"], choice: "p" },
     { id: "p1", x: 1718, g: CAB, hx: 1718, hy: 150, icon: "〰️", name: "String Slide", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 3 · all 12 notes", spot: "the fretboard block", loot: ["tuningcrown"], choice: "p" },
-    { id: "p3", x: 2430, g: KEYTOP, hx: 2400, hy: 330, icon: "🎹", name: "Keyboard Run", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a riff across three strings", spot: "the piano keys", loot: ["vumeter"], choice: "p", prop: "pick" },
+    { id: "p3", x: 2430, g: KEYTOP, hx: 2400, hy: 330, icon: "🎹", name: "Keyboard Run", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a riff across three strings", spot: "the piano keys", loot: ["vumeter"], choice: "p", prop: "pick" },
     { id: "s2", x: 2650, g: G, hx: 2650, hy: 300, icon: "💡", name: "Valve Garden", url: "chords.html", lane: "Chords", game: "Chords · G, Em, C and D", spot: "the glowing valves", loot: [] },
-    { id: "q2", x: 3174, g: PED, hx: 3120, hy: 330, icon: "🎛️", name: "Pedal Board", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a riff with a power chord", spot: "the pedal board", loot: ["circuit"], choice: "q" },
+    { id: "q2", x: 3174, g: PED, hx: 3120, hy: 330, icon: "🎛️", name: "Pedal Board", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a riff with a power chord", spot: "the pedal board", loot: ["circuit"], choice: "q" },
     { id: "q1", x: 3400, g: CAB, hx: 3420, hy: 150, icon: "🔊", name: "Speaker Stack", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 3 · 10 questions", spot: "the speaker cabinet", loot: ["cablecoil"], choice: "q" },
     { id: "boss", x: 3906, g: G, hx: 4075, hy: 260, icon: "😠", name: "Captain Fuzz", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Someone Like You · medium · whole chords", spot: "the end of the signal chain", loot: ["lightning"], boss: true }
   ];

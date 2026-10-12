@@ -52,7 +52,7 @@
       ["leggings", "Leggings"], ["flares", "Flares"], ["stage", "Stripe pants"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
     shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"], ["skate", "Skate shoes"], ["lightup", "Light-up sneakers"], ["spark", "Spark high-tops"]],
     neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"], ["bandana", "Bandana"], ["laminate", "AAA laminate"], ["glowchain", "Glow necklace"], ["pickpendant", "Pick pendant"]],
-    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"]],
+    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"], ["pumpkin", "Pumpkin hat"]],
     // "guitar" is the Strat (older saves called it just "Guitar")
     gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"], ["glitter", "Glitter"], ["lightning", "Thunderbolt"]],
     extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"], ["towel", "Roadie towel"], ["cablecoil", "Patch cable"]],
@@ -121,9 +121,9 @@
   // hats that cover the crown: the lower edge of each hat (head units, before the hat's lift). All hair above that edge is hidden,
   // right across, so nothing sticks up out of the crown or puffs out over the sides; hair below the edge (fringes, curls round
   // the ears, long hair) still shows, the way hair comes out from under a hat. (Oct 2026: puffs and spikes used to poke through.)
-  const HAT_BASE = { beanie: -0.12, cap: -0.2, sidecap: -0.2, bucket: -0.1, santa: -0.12, elf: -0.14, pirate: -0.22, hardhat: -0.24, skatehelmet: -0.22 };
-  const HAT_HALF = { beanie: 1.16, cap: 1.1, sidecap: 1.1, bucket: 1.34, santa: 1.18, elf: 1.16, pirate: 1.4, hardhat: 1.32, skatehelmet: 1.16 };     // half the hat's width at that edge
-  const HAT_LIFT = ["beanie", "cap", "sidecap", "visor", "bucket", "santa", "elf", "pirate", "band"];
+  const HAT_BASE = { pumpkin: -0.46, beanie: -0.12, cap: -0.2, sidecap: -0.2, bucket: -0.1, santa: -0.12, elf: -0.14, pirate: -0.22, hardhat: -0.24, skatehelmet: -0.22 };
+  const HAT_HALF = { pumpkin: 1.16, beanie: 1.16, cap: 1.1, sidecap: 1.1, bucket: 1.34, santa: 1.18, elf: 1.16, pirate: 1.4, hardhat: 1.32, skatehelmet: 1.16 };     // half the hat's width at that edge
+  const HAT_LIFT = ["pumpkin", "beanie", "cap", "sidecap", "visor", "bucket", "santa", "elf", "pirate", "band"];
   const SKULL = "M-0.97 -0.12 C-1.0 -0.72 -0.58 -1.0 0 -1.0 C0.58 -1.0 1.0 -0.72 0.97 -0.12 C0.8 -0.42 0.48 -0.56 0 -0.56 C-0.48 -0.56 -0.8 -0.42 -0.97 -0.12Z";
   function hairSvg(style, color, g, hat){
     const h = hairShapes(style, color, g), base = HAT_BASE[hat];
@@ -342,6 +342,11 @@
       // Inside the Amp (Adventure): a crown of silver tuning pegs on a gold band
       case "tuningcrown": return U(`<path d="M-0.82 -0.84 Q0 -1.02 0.82 -0.84 L0.8 -0.66 Q0 -0.84 -0.8 -0.66Z" fill="#ffc42b"/>` + [-0.6, -0.3, 0, 0.3, 0.6].map(x => { const y = -0.92 - (0.36 - x * x) * 0.3;
           return `<path d="M${x} ${n3(y + 0.04)} V${n3(y - 0.18)}" stroke-width="${W(7)}"/><ellipse cx="${x}" cy="${n3(y - 0.3)}" rx="0.11" ry="0.16" fill="#dfe3e8" stroke-width="${W(4)}"/><circle cx="${x}" cy="${n3(y - 0.3)}" r="0.035" fill="${INK}" stroke="none"/>`; }).join(""));
+      // Song Packs prize (finish Spooky Season): a little jack-o'-lantern worn as a hat, ridged, with a curly stem and leaf
+      case "pumpkin": return U(`<g transform="translate(0 -0.3) scale(0.94)"><path d="M-1.14 -0.2 C-1.3 -0.9 -0.9 -1.5 -0.36 -1.46 C-0.2 -1.56 0.2 -1.56 0.36 -1.46 C0.9 -1.5 1.3 -0.9 1.14 -0.2 Q0 0.02 -1.14 -0.2Z" fill="#ff8a1c"/>`
+        + `<path d="M-0.36 -1.44 Q-0.62 -0.8 -0.5 -0.14 M0.36 -1.44 Q0.62 -0.8 0.5 -0.14 M0 -1.5 V-0.1" fill="none" stroke="#c45a0a" stroke-width="${W(5)}"/>`
+        + `<path d="M-0.08 -1.48 C-0.1 -1.7 0 -1.84 0.16 -1.9" fill="none" stroke="#4f7a2a" stroke-width="${W(11)}" stroke-linecap="round"/><path d="M0.06 -1.62 C0.3 -1.86 0.62 -1.8 0.7 -1.62 C0.46 -1.5 0.24 -1.52 0.06 -1.62Z" fill="#6fbf4a" stroke-width="${W(3.4)}"/>`
+        + `<path d="M-0.62 -0.86 L-0.42 -1.08 L-0.24 -0.86Z M0.24 -0.86 L0.42 -1.08 L0.62 -0.86Z" fill="#3a2410" stroke="none"/><path d="M-0.5 -0.56 L-0.3 -0.44 L-0.12 -0.58 L0.06 -0.44 L0.26 -0.58 L0.5 -0.44 Q0 -0.3 -0.5 -0.56Z" fill="#3a2410" stroke="none"/></g>`);
       case "horns": return U(`<path d="M-0.5 -0.95 C-0.72 -1.3 -0.56 -1.62 -0.26 -1.8 C-0.32 -1.5 -0.18 -1.25 -0.12 -1.0Z" fill="#d7262f"/><path d="M0.5 -0.95 C0.72 -1.3 0.56 -1.62 0.26 -1.8 C0.32 -1.5 0.18 -1.25 0.12 -1.0Z" fill="#d7262f"/>`);
     }
     return "";

@@ -112,10 +112,10 @@ LEVELS.push((() => {
     { id: "s1", x: 220, g: G, hx: 220, hy: 300, icon: "🛹", name: "Kick-Off", url: "tuner.html", lane: "Notes", game: "Tuning Race", spot: "the skate shop", loot: ["skatehelmet"] },
     { id: "a1", x: 880, g: G, hx: 880, hy: 340, icon: "🚌", name: "Bus Stop Bop", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2 · natural notes", spot: "the bus stop", loot: ["kneepads"], choice: "a" },
     { id: "a2", x: 1250, g: 520, hx: 1250, hy: 250, icon: "🌳", name: "Plaza Ledge", url: "chords.html", lane: "Chords", game: "Chords · G, C and D", spot: "the plaza", loot: ["skateshoes"], choice: "a" },
-    { id: "a3", x: 1850, g: G, hx: 1850, hy: 330, icon: "🎨", name: "Mural Jam", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a Beginner riff", spot: "the mural wall", loot: ["graffiti"], choice: "a" },
+    { id: "a3", x: 1850, g: G, hx: 1850, hy: 330, icon: "🎨", name: "Mural Jam", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a Beginner riff", spot: "the mural wall", loot: ["graffiti"], choice: "a" },
     { id: "s2", x: 2150, g: G, hx: 2150, hy: 360, icon: "🌮", name: "Food Truck Chords", url: "chords.html", lane: "Chords", game: "Chords · Em, Am, G and C", spot: "the taco truck", loot: [] },
     { id: "b1", x: 2520, g: G, hx: 2520, hy: 360, icon: "🔁", name: "Kickflip Corner", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2 · 10 questions", spot: "the corner", loot: ["shutter"], choice: "b" },
-    { id: "b2", x: 2880, g: 470, hx: 2880, hy: 210, icon: "🛝", name: "Deck Riff", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a riff on two strings", spot: "the half-pipe deck", loot: ["bandana"], choice: "b" },
+    { id: "b2", x: 2880, g: 470, hx: 2880, hy: 210, icon: "🛝", name: "Deck Riff", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a riff on two strings", spot: "the half-pipe deck", loot: ["bandana"], choice: "b" },
     { id: "boss", x: 3360, g: G, hx: 3560, hy: 280, icon: "🗑️", name: "The Garbage Gobbler", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Wagon Wheel (G D Em C) · slow · whole chords", spot: "the end of the street", loot: ["stickerbomb"], boss: true }
   ];
   /* ---- the routes (on the board the whole way) ---- */
