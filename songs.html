@@ -109,6 +109,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
       <button class="big" id="go" style="flex:2">Start (allow microphone)</button>
       <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
+      <button class="ghost" id="listen" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px">▶ Listen</button>
     </div>
     <p id="diaHint" style="margin:8px 0 0;font-size:14px;color:var(--muted)"></p>
     <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span>  <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button> </div>
@@ -145,7 +146,8 @@ const KEY = fmaKey("fma-home-songs-v1");          // each player on this device 
 /* ---------- progress, kept on this device ---------- */
 let P = { songs: {}, log: [] };
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.songs) P = s; } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
+// only the last 50 plays are kept: the whole save has to fit in one sheet cell for cloud saves (the Game Log tab has the full history)
+const save = () => { try { P.log = (P.log || []).slice(-50); localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
 const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, best: 0, diamond: false, runs: 0 });
 const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
@@ -176,7 +178,7 @@ function makeApi(){
   for (const el of ["ScoreTitle","ScoreSubTitle","ScoreArtist","ScoreAlbum","ScoreWords","ScoreMusic","ScoreWordsAndMusic","ScoreCopyright"])
     api.settings.notation.elements.set(alphaTab.NotationElement[el], false);
   api.updateSettings();
-  api.scoreLoaded.on(score => { buildExpected(score); $("msg").style.display = "none"; $("go").disabled = false; });
+  api.scoreLoaded.on(score => { buildExpected(score); $("msg").style.display = "none"; $("go").disabled = false; $("listen").disabled = false; });
   api.error.on(e => { $("msg").style.display = "flex"; $("msg").textContent = "Couldn't load this song."; });
   api.playedBeatChanged.on(b => { if (!waitMode && b) $("bars").textContent = "Bar " + (b.voice.bar.index + 1) + " / " + api.score.masterBars.length; });
   api.renderFinished.on(relayout); api.postRenderFinished.on(relayout);
@@ -194,7 +196,7 @@ function buildExpected(score){
       const a = segs[i].tick, b = i + 1 < segs.length ? segs[i + 1].tick : Infinity;
       if (tick <= a) break; s += (Math.min(tick, b) - a) / TPQ * 60 / segs[i].bpm; }
     return s; };
-  expected = []; beatClicks = [];
+  toSecG = toSec; expected = []; beatClicks = [];
   const track = score.tracks[trackNo] || score.tracks[0];
   for (const bar of track.staves[0].bars) for (const voice of bar.voices) for (const beat of voice.beats) {
     const notes = beat.notes.filter(n => !n.isDead && !n.isTieDestination);
@@ -475,9 +477,76 @@ function startSimTimed(){          // plays along in time, with one miss and one
     g.gain.setValueAtTime(1, Math.max(p.start, stop - 0.01)); g.gain.linearRampToValueAtTime(0, stop); s.connect(g); g.connect(analyser); s.start(p.start); });
 }
 
+/* ---------- the band: hear the whole song (Listen), or backing for the diamond run (headphones only) ----------
+   Songs from the royalty-free song bank have three tracks (guitar melody, guitar chords, piano). Listen plays them all
+   with the microphone off. The diamond backing leaves the melody out, and is only offered with headphones, because the
+   microphone would hear the band through speakers and mark notes the student didn't play. Single-track songs just play
+   their melody. Everything is synthesised here (the same plucked string as the simulator); no sound files. */
+let toSecG = null, bus = null, listening = false, bandOn = false;
+const pluckCache = new Map();
+function guitarBuf(m, secs){
+  const d = Math.min(2, Math.max(0.4, Math.round(secs * 4) / 4)), k = m + "|" + d;
+  if (!pluckCache.has(k)) pluckCache.set(k, pluck(440 * Math.pow(2, (m - 69) / 12), d + 0.3));
+  return pluckCache.get(k);
+}
+function bandNotes(withMelody){
+  const notes = [];
+  api.score.tracks.forEach((tr, ti) => {
+    const piano = tr.playbackInfo.program < 8;            // General MIDI 0-7 are pianos
+    tr.staves.forEach((st, si) => {
+      let voice = piano ? "pno" : "gtr", vol;
+      if (ti === trackNo && si === 0) { if (!withMelody) return; vol = 0.9; }
+      else if (piano) { if (si === 0 && tr.staves.length > 1) return; vol = 0.3; }   // piano right hand = the melody again
+      else vol = 0.25;
+      for (const bar of st.bars) for (const v of bar.voices) for (const b of v.beats) {
+        const ns = b.notes.filter(n => !n.isDead && !n.isTieDestination).map(n => n.realValue).sort((a, c) => a - c);
+        if (!ns.length) continue;
+        const t = toSecG(b.absolutePlaybackStart), dur = toSecG(b.absolutePlaybackStart + b.playbackDuration) - t;
+        ns.forEach((m, k) => notes.push({ t: t + (voice === "gtr" && ns.length > 2 ? k * 0.012 : 0), dur, midi: m, voice, vol }));   // chords strum low to high
+      }
+    });
+  });
+  return notes;
+}
+function playBand(start, withMelody){
+  stopBand();
+  bus = ctx.createGain(); bus.gain.value = 0.8; bus.connect(ctx.destination);
+  for (const n of bandNotes(withMelody)) {
+    const when = start + n.t; if (when < ctx.currentTime) continue;
+    const g = ctx.createGain(); g.connect(bus);
+    if (n.voice === "gtr") {
+      const s = ctx.createBufferSource(); s.buffer = guitarBuf(n.midi, n.dur); g.gain.value = n.vol; s.connect(g); s.start(when);
+    } else {
+      const f = 440 * Math.pow(2, (n.midi - 69) / 12), end = when + n.dur + 0.25;
+      for (const [type, mul, amp] of [["triangle", 1, 1], ["sine", 2, 0.3]]) {
+        const o = ctx.createOscillator(), og = ctx.createGain(); o.type = type; o.frequency.value = f * mul; og.gain.value = amp;
+        o.connect(og); og.connect(g); o.start(when); o.stop(end);
+      }
+      g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(n.vol, when + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, end);
+    }
+  }
+}
+function stopBand(){ if (bus) { try { bus.disconnect(); } catch (e) {} bus = null; } }
+async function listen(){
+  if (listening) { stopListen(); return; }
+  if (!ready || !expected.length || running) return;
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === "suspended") await ctx.resume();
+  listening = true; $("listen").textContent = "■ Stop"; $("go").disabled = true;
+  waitMode = false; document.body.classList.remove("wait");      // show the moving cursor
+  t0 = ctx.currentTime + 0.3; countIn = 0;
+  playBand(t0, true);
+}
+function stopListen(){
+  if (!listening) return;
+  listening = false; stopBand(); setApiPlaying(false); fed = -1; feed(0); scroller.scrollLeft = 0;
+  waitMode = true; document.body.classList.add("wait"); $("listen").textContent = "▶ Listen"; $("go").disabled = false;
+}
+$("listen").onclick = listen;
+
 /* ---------- start / stop / navigation ---------- */
 function resetRun(){
-  clearInterval(simTimer);
+  clearInterval(simTimer); stopBand();
   for (const e of expected) { e.res = null; e.tries = 0; paint(e, ""); }
   idx = 0; dispT = 0; finishing = false; finished = false; running = false; lastAcceptedT = -9;
   stats.hit = stats.near = stats.miss = stats.done = 0; onsets.length = 0; pending.length = 0;
@@ -485,14 +554,14 @@ function resetRun(){
   setApiPlaying(false); fed = -1; feed(0); showBar(); markNow(true);
 }
 async function startRun(learn){
-  $("err").hidden = true;
+  stopListen(); $("err").hidden = true;
   if (!ready || !expected.length) { $("last").textContent = "The song is still loading…"; return; }
   try { await openInput(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone: " + (e && e.message || e); return; }
   waitMode = learn; document.body.classList.toggle("wait", learn); $("latBox").hidden = learn;
   resetRun(); running = true; $("go").textContent = "Stop"; markNow(true); buddyRun = 0;
   if (buddy) buddy.moment("start", 1500);
   if (learn) { setApiPlaying(true); if (sim) startSimWait(); }
-  else { scheduleClicks(); if (sim) startSimTimed(); }
+  else { scheduleClicks(); if (bandOn) playBand(t0 + countIn, false); if (sim) startSimTimed(); }
 }
 function stopRun(){ resetRun(); $("latBox").hidden = true; }
 $("go").onclick = () => { if (running) stopRun(); else startRun(true); };
@@ -502,8 +571,9 @@ $("dia").onclick = () => {
     <p>You'll play the whole song to a click, at the proper speed, and notes need to be right <b>and on time</b>. You need ${DIAMOND_PCT}%.</p>
     <p>Playing at home might not be as accurate as in your lesson, because phones and speakers add small delays. So don't get discouraged if it doesn't go your way first time.</p>
     <p>Wear headphones if you can, so the click doesn't leak into the microphone.</p>
+    ${api.score && api.score.tracks.length > 1 ? `<label style="display:flex;gap:10px;align-items:center;margin:0 0 12px;font-weight:700"><input type="checkbox" id="dband" style="width:22px;height:22px"${bandOn ? " checked" : ""}> 🎧 Play with the band (headphones on only: through speakers the microphone hears the band)</label>` : ""}
     <button class="big" id="dgo">Start the click</button><button class="ghost" id="dno" style="margin-top:8px;width:100%">Not now</button>`);
-  $("dgo").onclick = () => { hidePop(); startRun(false); };
+  $("dgo").onclick = () => { bandOn = !!($("dband") && $("dband").checked); hidePop(); startRun(false); };
   $("dno").onclick = hidePop;
 };
 function refreshButtons(){
@@ -519,10 +589,10 @@ $("lm").onclick = () => setLat(lat - 0.01); $("lp").onclick = () => setLat(lat +
 function setLat(v){ lat = Math.max(0, Math.min(0.4, v)); $("lat").textContent = Math.round(lat * 1000) + " ms"; try { localStorage.setItem("tabListenLatency", lat); } catch (e) {} }
 setLat(lat);
 
-function goMenu(){ stopRun(); $("player").hidden = true; $("menu").hidden = false; drawList(); window.scrollTo(0, 0); }
+function goMenu(){ stopListen(); stopRun(); $("player").hidden = true; $("menu").hidden = false; drawList(); window.scrollTo(0, 0); }
 $("back").onclick = goMenu;
 function openSong(s){
-  cur = s; trackNo = s.track || 0; expected = []; ready = ready && !!api;
+  stopListen(); cur = s; trackNo = s.track || 0; expected = []; ready = ready && !!api; $("listen").disabled = true;
   $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
   if (!buddy) buddy = PlayerArt.buddy($("buddy"));
   $("msg").style.display = "flex"; $("msg").textContent = "Loading tab…"; $("go").disabled = true;
@@ -560,6 +630,11 @@ function follow(){
     feed(t);
     if (t < 0) { const n = Math.floor((t + countIn) / (countBeat || 1)) + 1; $("count").textContent = n >= 1 ? n : ""; $("count").style.opacity = 1; } else $("count").style.opacity = 0;   // counts up: 1 2 3 4
     if (!finished && t > songEnd + 1.2) { for (const e of expected) if (!e.res) mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); }
+  }
+  if (listening) {
+    if (t >= -0.02) setApiPlaying(true);
+    feed(Math.max(0, t));
+    if (t > songEnd + 0.6) stopListen();
   }
   if (!$("player").hidden) follow();
   requestAnimationFrame(frame);
