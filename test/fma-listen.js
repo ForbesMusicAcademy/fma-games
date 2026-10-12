@@ -1,6 +1,6 @@
 /* The one listener for every game (13 Oct 2026). Before this, Chord Quest, Boss Battle, Song Packs, Falling Notes and Tune Up
    each carried their own copy of the same code, so a fix in one never reached the others. Now they all use this file, and
-   the test pages (test/replay.html) run the very same code over recordings, so what's measured is what the games do.
+   the test pages (dev/replay.html) run the very same code over recordings, so what's measured is what the games do.
    Load after fma-student.js and before fma-midi.js's hook (FMAMidi.useFor works on these listeners unchanged).
 
    const det = FMAListen.create();           one per page
@@ -62,7 +62,7 @@
           if(!stream) stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
           this.ctx.createMediaStreamSource(stream).connect(into);
         }
-        // (an OfflineAudioContext, used by test/replay.html, can't be resumed before it renders)
+        // (an OfflineAudioContext, used by dev/replay.html, can't be resumed before it renders)
         if(this.ctx.state === "suspended" && !(window.OfflineAudioContext && this.ctx instanceof OfflineAudioContext)) await this.ctx.resume();
         this.ready = true;
       },
