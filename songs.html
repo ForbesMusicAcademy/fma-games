@@ -43,7 +43,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 .pack .nums{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;color:var(--muted)}
 .pack .nums img{height:18px;vertical-align:-3px}
 .pack.locked .cover{filter:grayscale(.85) brightness(1.05);opacity:.7}
-.pack.locked .lockline{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);font-size:15px}
+.pack.locked .lockline{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;font-weight:700;color:var(--fg);font-size:15px}
 .pack.won{border:3px solid var(--accent)}
 .prize{display:flex;align-items:center;gap:10px;background:#FFF8E1;border-radius:14px;padding:6px 10px;font-size:14px;font-weight:600;color:var(--muted)}
 .prize .pic{width:40px;height:40px;flex:none}
@@ -197,53 +197,98 @@ const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.
 const PLAY_PCT = 80, FULL_PCT = 90, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
 const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
 
-/* ---------- the packs (easiest first; "open" = open from day one; "at" = stars needed to open it) ---------- */
-/* Each pack sits on a level of the melody ladder (projects/games-melody-progression.md in Dave's workspace). For guitar,
-   "tab" says how each song is laid out: [strings, highest fret]. One string can use frets 0-12 (Dave, 12 Oct: kids should
-   find every fret from the start; changing strings is the harder skill), so the early packs stay on one string and later
-   packs add strings. "skill" is the line guitar players see on the pack. Anything not listed uses all six strings. */
-const PACKS = [
-  { id: "first", name: "First Notes", emo: "🌱", col: "#3E9A57", col2: "#7CC36B", open: true,
-    skill: "One string. Find every fret from 0 to 12.",
-    // a mix of the high E and low E strings (Dave, 12 Oct): each song is moved to a key that fits its string
-    tab: { "hot-cross-buns": [1, 12, [0]], "mary-had-a-little-lamb": [1, 12, [5]], "lightly-row": [1, 12, [0]], "twinkle-twinkle": [1, 12, [5]], "this-old-man": [1, 12, [0]] },
-    songs: ["hot-cross-buns", "mary-had-a-little-lamb", "lightly-row", "twinkle-twinkle", "this-old-man"],
+/* ---------- the catalogue ----------
+   Two separate sections share this page (Dave, 12 Oct):
+     SONG PACKS (songs.html)        ten levels of melody playing, one new skill per pack, each pack mixing in songs from up
+                                    to three levels before it (projects/games-melody-progression.md in Dave's workspace),
+                                    plus the seasonal packs (Spooky Season, Christmas).
+     RIFF LAB   (songs.html?lab)    ten labs of FMA original riffs (riff-lab.json, built by tools/build-riff-lab.py): plain
+                                    notes on the low E first, then palm mutes, slides, hammer-ons, pull-offs, bends, vibrato,
+                                    then the A and D strings, the G and B strings, and the pentatonic box. Guitar only.
+   For guitar, each song in a pack has a layout rule [strings, highest fret, starting strings?]: one string can use frets 0-12
+   (finding every fret comes before changing strings), and the game picks the frets with the least hand movement. A song
+   can appear in more than one pack at different levels; its stars are kept per pack. Riffs carry their own tab. */
+const LAB = q.has("lab");
+const R1e = [1, 12, [0]], R1E = [1, 12, [5]], R2 = [1, 12, [1, 2, 3, 4]], R3 = [2, 12], R4 = [2, 5], R5 = [3, 12];
+// a pack's songs: [id, rule] (rule null = all six strings, first position)
+const SONG_PACKS = [
+  { id: "first", lv: 1, name: "First Notes", emo: "🌱", col: "#3E9A57", col2: "#7CC36B", open: true,
+    skill: "One string: the high E or the low E. Find every fret from 0 to 12.",
+    songs: [["hot-cross-buns", R1e], ["mary-had-a-little-lamb", R1E], ["lightly-row", R1e], ["twinkle-twinkle", R1E], ["this-old-man", R1e]],
     prize: { part: "acc", value: "party", label: "Party hat" } },
-  { id: "spooky", name: "Spooky Season", emo: "🎃", col: "#5B3A8C", col2: "#FF8A1C", open: true,
-    skill: "One string, then two.", tab: { all: [1, 12], "spooky-zombie-march": [2, 12], "spooky-witchs-cauldron": [2, 12] },
-    songs: ["spooky-creaky-staircase", "spooky-haunted-music-box", "spooky-ghost-in-the-hallway", "spooky-zombie-march", "spooky-witchs-cauldron"],
-    prize: { part: "acc", value: "pumpkin", label: "Pumpkin hat", only: true } },
-  { id: "originals", name: "FMA Originals", emo: "⚡", col: "#26211F", col2: "#FFB805", at: 6,
-    skill: "Riffs that pick back and forth between two strings.", tab: { all: [2, 5], "riff-skateboard-sun": [1, 12], "riff-robot-stomp": [1, 12] },
-    songs: ["riff-skateboard-sun", "riff-robot-stomp", "riff-gravel-road", "riff-space-gallop", "riff-thunder-chug"],
-    prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
-  { id: "campfire", name: "Campfire Songs", emo: "🔥", col: "#C2501B", col2: "#FFB805", at: 14,
-    skill: "Two strings, then three.", tab: { all: [2, 12], "amazing-grace": [3, 12], "drunken-sailor": [3, 12], "yankee-doodle": [3, 12] },
-    songs: ["row-row-row-your-boat", "when-the-saints", "oh-susanna", "amazing-grace", "drunken-sailor", "yankee-doodle"],
+  { id: "explorer", lv: 2, name: "String Explorer", emo: "🧭", col: "#2E7DA8", col2: "#8ECAE6",
+    skill: "One string at a time, now on the B, G, D and A strings.",
+    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["mars-riff", R2]],
+    prize: { part: "eyewear", value: "round", label: "Round glasses" } },
+  { id: "crossing", lv: 3, name: "Crossing Over", emo: "🌉", col: "#7A4EA8", col2: "#C9A7F0",
+    skill: "Two strings: the tune steps from one string to the next.",
+    songs: [["row-row-row-your-boat", R3], ["when-the-saints", R3], ["pop-goes-the-weasel", R3], ["hot-cross-buns", R2], ["this-old-man", R1E]],
+    prize: { part: "neck", value: "beads", label: "Beads" } },
+  { id: "backforth", lv: 4, name: "Back and Forth", emo: "🏓", col: "#C2501B", col2: "#FFB805",
+    skill: "Two strings, picking back and forth between them.",
+    songs: [["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
+    prize: { part: "acc", value: "visor", label: "Visor" } },
+  { id: "three", lv: 5, name: "Three Strings", emo: "🔱", col: "#1F7A6B", col2: "#7FD1C2",
+    skill: "Three strings side by side.",
+    songs: [["ode-to-joy", R5], ["amazing-grace", R5], ["drunken-sailor", R5], ["oh-susanna", R4], ["london-bridge", R3], ["twinkle-twinkle", R2]],
     prize: { part: "acc", value: "bucket", label: "Bucket hat" } },
-  { id: "classical", name: "Classical Hits", emo: "🎻", col: "#2D5C9A", col2: "#8ECAE6", at: 24,
-    skill: "Three strings, and some sharps.", tab: { all: [3, 12] },
-    songs: ["ode-to-joy", "eine-kleine-nachtmusik", "canon-in-d", "fur-elise", "minuet-in-g"],
+  { id: "sharps", lv: 6, name: "Sharp Shooter", emo: "🎯", col: "#B8322C", col2: "#FF8A6B",
+    skill: "Sharps and flats: the notes in between.",
+    songs: [["fur-elise", R5], ["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
     prize: { part: "neck", value: "bowtie", label: "Bow tie" } },
-  { id: "riffs", name: "Riff Pack", emo: "🎸", col: "#B8322C", col2: "#FF8A6B", at: 36,
-    skill: "All six strings, down low.", tab: { "mars-riff": [1, 12] },
-    songs: ["beethoven-5-riff", "mars-riff", "korobeiniki", "hall-of-the-mountain-king", "twelve-bar-shuffle-in-a"],
-    prize: { part: "eyewear", value: "shades", label: "Shades" } },
-  { id: "christmas", name: "Christmas", emo: "🎄", col: "#1F7A45", col2: "#E8433F", december: true,
-    skill: "One string, then two and three.", tab: { all: [3, 12], "jingle-bells": [1, 12], "joy-to-the-world": [2, 12] },
-    songs: ["jingle-bells", "joy-to-the-world", "silent-night", "deck-the-halls", "we-wish-you-a-merry-christmas"],
+  { id: "neck", lv: 7, name: "Whole Neck", emo: "🎸", col: "#26211F", col2: "#FFB805",
+    skill: "All six strings.",
+    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
+    prize: { part: "top", value: "jacket", label: "Jacket" } },
+  { id: "groove", lv: 8, name: "Groove", emo: "🕺", col: "#C23B7A", col2: "#FF9BC8",
+    skill: "Tricky rhythms: dotted notes, swing, 3/4 and 6/8.",
+    songs: [["twelve-bar-shuffle-in-a", null], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
+    prize: { part: "acc", value: "phones", label: "Headphones" } },
+  { id: "speed", lv: 9, name: "Speed Run", emo: "⚡", col: "#2D5C9A", col2: "#FFD34D",
+    skill: "Faster notes. Can you do them at Full speed?",
+    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["happy-birthday", null], ["minuet-in-g", null]],
+    prize: { part: "extra", value: "sweatbands", label: "Sweatbands" } },
+  { id: "picking", lv: 10, name: "Picking Patterns", emo: "👑", col: "#8A6A1F", col2: "#FFC42B",
+    skill: "Long picking patterns across all six strings.",
+    songs: [["house-of-the-rising-sun", null], ["bach-prelude-in-c", null], ["canon-in-d", null], ["korobeiniki", null], ["brahms-lullaby", null]],
+    prize: { part: "acc", value: "crown", label: "Crown" } },
+  // seasonal packs, separate from the ladder
+  { id: "spooky", name: "Spooky Season", emo: "🎃", col: "#5B3A8C", col2: "#FF8A1C", open: true, seasonal: true,
+    skill: "One string, then two.",
+    songs: [["spooky-creaky-staircase", [1, 12]], ["spooky-haunted-music-box", [1, 12]], ["spooky-ghost-in-the-hallway", [1, 12]], ["spooky-zombie-march", [2, 12]], ["spooky-witchs-cauldron", [2, 12]]],
+    prize: { part: "acc", value: "pumpkin", label: "Pumpkin hat", only: true } },
+  { id: "christmas", name: "Christmas", emo: "🎄", col: "#1F7A45", col2: "#E8433F", december: true, seasonal: true,
+    skill: "One string, then two and three.",
+    songs: [["jingle-bells", [1, 12]], ["joy-to-the-world", [2, 12]], ["silent-night", [3, 12]], ["deck-the-halls", [3, 12]], ["we-wish-you-a-merry-christmas", [3, 12]]],
     prize: { part: "acc", value: "santa", label: "Santa hat" } }
 ];
-const tabRule = (p, id) => (p && p.tab && (p.tab[id] || p.tab.all)) || null;      // [strings, highest fret], or null = all six
+// each lab's look and prize (its riffs and skill line come from riff-lab.json)
+const LAB_LOOK = [
+  { emo: "🎵", col: "#3E9A57", col2: "#7CC36B", prize: { part: "acc", value: "band", label: "Headband" } },
+  { emo: "🔇", col: "#26211F", col2: "#8C8576", prize: { part: "neck", value: "chain", label: "Chain" } },
+  { emo: "🛝", col: "#2E7DA8", col2: "#8ECAE6", prize: { part: "bottom", value: "ripped", label: "Ripped jeans" } },
+  { emo: "🔨", col: "#B8322C", col2: "#FF8A6B", prize: { part: "top", value: "leather", label: "Leather jacket" } },
+  { emo: "🪝", col: "#7A4EA8", col2: "#C9A7F0", prize: { part: "eyewear", value: "shades", label: "Shades" } },
+  { emo: "🌙", col: "#1F7A6B", col2: "#7FD1C2", prize: { part: "hair", value: "mohawk", label: "Mohawk" } },
+  { emo: "〰️", col: "#C23B7A", col2: "#FF9BC8", prize: { part: "shoes", value: "platforms", label: "Platform boots" } },
+  { emo: "⚡", col: "#C2501B", col2: "#FFB805", prize: { part: "gear", value: "bass", label: "Bass guitar" } },
+  { emo: "🔥", col: "#8A1F1F", col2: "#FF6B3D", prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
+  { emo: "👑", col: "#8A6A1F", col2: "#FFC42B", prize: { part: "gear", value: "doubleneck", label: "Double-neck guitar" } }
+];
+let PACKS = LAB ? [] : SONG_PACKS;
+const NEED = LAB ? 4 : 5;            // stars in the pack before it that open the next one
+const tabRule = (p, id) => { const e = p && p.songs.find(x => x[0] === id); return e ? e[1] : null; };
+const ids = p => p.songs.map(x => x[0]);
 // Christmas: there in December and January, and kept for good by anyone who's earned a star in it. Out of season it's simply
 // not on the shelf (never a greyed "opens in X days" card: the framework's red lines rule out locks by time and countdowns).
 const xmas = p => { const m = new Date().getMonth(); return m === 11 || m === 0 || packStars(p) > 0 ? "open" : "hidden"; };
 
 /* ---------- progress ----------
-   Guitar stars live in fma-tabs-v1. Piano stars live in Falling Notes' own store (fma-keys-v1), so a song learned in
-   either piano view counts in the pack. Trophies (and the piano view choice) live in fma-packs-v1. All via fmaKey, so
-   each player on a device has their own, and they follow the player when tracking is on. */
-const STORE = fmaKey(INST === "piano" ? "fma-keys-v1" : "fma-tabs-v1"), PKEY = fmaKey("fma-packs-v1");
+   Song Packs on guitar: fma-tabs-v2, stars per pack ("pack:song"), since a song comes back at a higher level laid out a new
+   way. Piano: Falling Notes' own store (fma-keys-v1), per song, so both piano views fill the same packs. Riff Lab:
+   fma-riffs-v1, per riff. Trophies (and the piano view choice) in fma-packs-v1. All via fmaKey, so each player on a device
+   has their own, and they follow the player when tracking is on. */
+const STORE = fmaKey(LAB ? "fma-riffs-v1" : INST === "piano" ? "fma-keys-v1" : "fma-tabs-v2"), PKEY = fmaKey("fma-packs-v1");
 const readJSON = k => { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } };
 const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 let P = Object.assign({ songs: {}, opts: {} }, readJSON(STORE) || {});
@@ -251,20 +296,24 @@ let PK = Object.assign({ won: {}, view: "staff", seen: {} }, readJSON(PKEY) || {
 // merge into whatever is saved (Falling Notes shares the piano store and keeps its own settings in it)
 const save = () => { const fresh = readJSON(STORE) || {}; fresh.songs = Object.assign(fresh.songs || {}, P.songs); fresh.packOpts = P.packOpts; if (!fresh.opts) fresh.opts = {}; P = fresh; writeJSON(STORE, fresh); };
 const savePK = () => writeJSON(PKEY, PK);
-const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, learn: 0, best: {}, runs: 0 });
+const rk = (p, id) => LAB || INST === "piano" ? id : p.id + ":" + id;          // where a song's stars are kept
+const rec = key => P.songs[key] || (P.songs[key] = { stars: 0, learn: 0, best: {}, runs: 0 });
+const starsOf = (p, id) => (P.songs[rk(p, id)] || {}).stars || 0;
 const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: INST === "guitar", lat: 0.08, hop: true }, P.packOpts || {});
 if (INST === "guitar") O.mic = true;
 const saveOpts = () => { P.packOpts = O; save(); };
 
 let SONGS = {}, pack = null, cur = null;
 const starImgs = n => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("");
-const totalStars = () => PACKS.reduce((a, p) => a + p.songs.reduce((b, id) => b + (P.songs[id] ? P.songs[id].stars : 0), 0), 0);
-const packStars = p => p.songs.reduce((b, id) => b + (P.songs[id] ? P.songs[id].stars : 0), 0);
+const packStars = p => ids(p).reduce((b, id) => b + starsOf(p, id), 0);
+const prevPack = p => { const ladder = PACKS.filter(x => !x.seasonal), i = ladder.indexOf(p); return i > 0 ? ladder[i - 1] : null; };
 function packState(p){
   if (p.december) return xmas(p);
-  if (p.open || PK.won[p.id] || totalStars() >= p.at) return "open";
+  const pv = prevPack(p);
+  if (p.open || PK.won[(LAB ? "lab:" : "") + p.id] || !pv || packStars(pv) >= NEED) return "open";
   return "locked";
 }
+const wonKey = p => (LAB ? "lab:" : "") + p.id;
 // a trophy cup in the pack's colours (gold once won, an outline before)
 function trophy(p, won, size){
   const s = size || 40, c = won ? "#FFC42B" : "#E8E1D2", ink = won ? "#23231F" : "#B9B1A2";
@@ -272,22 +321,32 @@ function trophy(p, won, size){
     <path d="M14 9H8a6 6 0 0 0 7 8M34 9h6a6 6 0 0 1-7 8" fill="none" stroke="${ink}" stroke-width="2.6"/><path d="M21 26h6v7h-6z" fill="${c}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M15 34h18v6H15z" rx="2" fill="${won ? p.col : "#F1EDE4"}" stroke="${ink}" stroke-width="2.6" stroke-linejoin="round"/>${won ? `<path d="M19 10q2-2 4 0" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/>` : ""}</svg>`;
 }
-const prizePic = p => p.prize.part === "gear" ? PlayerArt.gear(p.prize.value, "#e8433f")
-  : PlayerArt.svg(Object.assign({}, Player.get(), { acc: "none", eyewear: "none", neck: "none", gear: "none", [p.prize.part]: p.prize.value }), ["acc", "eyewear"].includes(p.prize.part) ? "head" : "chest");
+function prizePic(p){
+  const pz = p.prize, me = Player.get();
+  if (pz.part === "gear") return PlayerArt.gear(pz.value, "#e8433f");
+  if (["top", "bottom", "shoes", "extra", "neck"].includes(pz.part) && PlayerArt.item) return PlayerArt.item(Object.assign({}, me, { [pz.part]: pz.value }), pz.part);
+  return PlayerArt.svg(Object.assign({}, me, { acc: "none", eyewear: "none", neck: "none", gear: "none", [pz.part]: pz.value }), ["acc", "eyewear", "hair"].includes(pz.part) ? "head" : "chest");
+}
 
 /* ---------- 1. the packs ---------- */
 function drawPacks(){
-  const have = totalStars();
-  $("packs").innerHTML = PACKS.map((p, i) => {
-    const st = packState(p); if (st === "hidden") return "";
-    const got = packStars(p), tot = p.songs.length * 3, won = !!PK.won[p.id], pct = Math.round(100 * got / tot);
-    const lockLine = st === "locked" ? `<div class="lockline">🔒 Opens at ${p.at} stars <small>(you have ${have})</small></div>` : "";
-    return `<button class="pack ${st === "open" ? "" : "locked"} ${won ? "won" : ""}" data-i="${i}" ${st === "open" ? "" : 'aria-disabled="true"'}>
-      <div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><b>${esc(p.name)}</b><span class="emo">${p.emo}</span><span class="tro">${won ? trophy(p, true) : ""}</span></div>
+  // the seasonal packs (Spooky Season, Christmas) sit on top while they're out, then the ladder of levels
+  let html = "", head = t => `<h3 style="grid-column:1/-1;margin:6px 0 -4px;font-family:var(--head);font-weight:900;font-size:20px">${t}</h3>`;
+  const order = PACKS.map((p, i) => i).sort((a, b) => (PACKS[b].seasonal ? 1 : 0) - (PACKS[a].seasonal ? 1 : 0));
+  const anySeason = PACKS.some(p => p.seasonal && packState(p) !== "hidden");
+  order.forEach(i => { const p = PACKS[i];
+    const st = packState(p); if (st === "hidden") return;
+    if (anySeason && p.seasonal && !html.includes("This season")) html += head("This season");
+    if (anySeason && !p.seasonal && !html.includes("Levels")) html += head(LAB ? "Labs" : "Levels");
+    const got = packStars(p), tot = p.songs.length * 3, won = !!PK.won[wonKey(p)], pct = Math.round(100 * got / tot), pv = prevPack(p);
+    const lockLine = st === "locked" ? `<div class="lockline">🔒 Opens at ${NEED} stars in ${esc(pv.name)} <small>(you have ${packStars(pv)})</small></div>` : "";
+    html += `<button class="pack ${st === "open" ? "" : "locked"} ${won ? "won" : ""}" data-i="${i}" ${st === "open" ? "" : 'aria-disabled="true"'}>
+      <div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><b>${p.lv ? `<small style="display:block;font-size:14px;opacity:.85">${LAB ? "Lab" : "Level"} ${p.lv}</small>` : ""}${esc(p.name)}</b><span class="emo">${p.emo}</span><span class="tro">${won ? trophy(p, true) : ""}</span></div>
       <div class="body">${lockLine || `<div class="bar"><i style="width:${pct}%"></i></div><div class="nums"><span><img src="star-on.png" alt=""> ${got} of ${tot} stars</span><span>${won ? "Trophy won!" : pct + "%"}</span></div>`}
         ${INST === "guitar" && p.skill ? `<small>${esc(p.skill)}</small>` : ""}
         <div class="prize"><span class="pic">${prizePic(p)}</span><span>${won ? "You won the" : "Finish it to win the"} <b>${esc(p.prize.label)}</b></span></div></div></button>`;
-  }).join("");
+  });
+  $("packs").innerHTML = html;
   checkTrophies();
 }
 $("packs").onclick = e => { const b = e.target.closest(".pack"); if (!b) return; const p = PACKS[Number(b.dataset.i)];
@@ -295,34 +354,44 @@ $("packs").onclick = e => { const b = e.target.closest(".pack"); if (!b) return;
   openPack(p); };
 // any pack at 100% that hasn't had its trophy yet gets it now (stars can come from Falling Notes too)
 function checkTrophies(){
-  const p = PACKS.find(p => !PK.won[p.id] && packStars(p) >= p.songs.length * 3);
+  const p = PACKS.find(p => !PK.won[wonKey(p)] && packStars(p) >= p.songs.length * 3);
   if (!p) return false;
-  PK.won[p.id] = new Date().toISOString().slice(0, 10); savePK();
-  const g = FMAPicks.grant(p.prize.part, p.prize.value, "pack:" + p.id, "finishing " + p.name, 50) || {};
-  $("popBox").innerHTML = `<div class="trophy">${trophy(p, true, 120)}</div><h3>${esc(p.name)} complete!</h3><p>Every star in the pack. That's the trophy!</p>
+  PK.won[wonKey(p)] = new Date().toISOString().slice(0, 10); savePK();
+  const g = FMAPicks.grant(p.prize.part, p.prize.value, (LAB ? "lab:" : "pack:") + p.id, "finishing " + p.name, 50) || {};
+  $("popBox").innerHTML = `<div class="trophy">${trophy(p, true, 120)}</div><h3>${esc(p.name)} complete!</h3><p>Every star in the ${LAB ? "lab" : "pack"}. That's the trophy!</p>
     ${g.picks ? `<p>You already had the ${esc(p.prize.label)}, so here are <b>${g.picks} picks</b> instead.</p>` : `<div class="prizepic">${prizePic(p)}</div><p>You won the <b>${esc(p.prize.label)}</b>. Put it on in the character editor.</p>`}
     <a class="big" href="./#character" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">Dress up my player</a><button class="ghost" id="pOk" style="margin-top:8px;width:100%">Keep playing</button>`;
   $("pop").hidden = false; PlayerArt.popIn($("popBox"), "win");
   $("pOk").onclick = () => { $("pop").hidden = true; drawPacks(); if (pack) drawPack(); };
-  if (!SIM) FMAStudent.send("song-packs", { detail: p.name + " trophy", mode: "pack", level: p.id, score: 100, right: 1, total: 1, improved: false });
+  if (!SIM) FMAStudent.send(GAME, { detail: p.name + " trophy", mode: "pack", level: p.id, score: 100, right: 1, total: 1, improved: false });
   return true;
 }
+const GAME = LAB ? "riff-lab" : "song-packs";
 
 /* ---------- 2. one pack ---------- */
 function openPack(p){
   pack = p; $("packsView").hidden = true; $("packView").hidden = false; $("player").hidden = true; drawPack(); window.scrollTo(0, 0);
-  history.replaceState(null, "", "#" + p.id);
+  history.replaceState(null, "", location.pathname + location.search + "#" + p.id);
 }
 function drawPack(){
   const p = pack, got = packStars(p), tot = p.songs.length * 3;
   $("packHead").innerHTML = `<div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><span class="emo">${p.emo}</span><div><b>${esc(p.name)}</b>
-    <div style="font-weight:700;opacity:.9">${got} of ${tot} stars${PK.won[p.id] ? " · trophy won" : ""}</div></div><span style="margin-left:auto">${trophy(p, !!PK.won[p.id], 54)}</span></div>
+    <div style="font-weight:700;opacity:.9">${p.lv ? (LAB ? "Lab " : "Level ") + p.lv + " · " : ""}${got} of ${tot} stars${PK.won[wonKey(p)] ? " · trophy won" : ""}</div></div><span style="margin-left:auto">${trophy(p, !!PK.won[wonKey(p)], 54)}</span></div>
     <div class="bar" style="margin-top:10px"><i style="width:${Math.round(100 * got / tot)}%"></i></div>${INST === "guitar" && p.skill ? `<p style="margin:8px 2px 0;color:var(--muted);font-weight:600">${esc(p.skill)}</p>` : ""}`;
   $("viewPick").hidden = INST !== "piano";
   $("vStaff").setAttribute("aria-pressed", PK.view !== "falling"); $("vFall").setAttribute("aria-pressed", PK.view === "falling");
-  const nextId = p.songs.find(id => !rec(id).stars) || p.songs.find(id => rec(id).stars < 3);
-  $("songList").innerHTML = p.songs.map(id => { const s = SONGS[id]; if (!s) return ""; const r = rec(id), nx = id === nextId;
-    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${esc(s.level)} · ${esc(s.hook || "")}</small></span><span class="rew" aria-label="${r.stars} stars">${starImgs(r.stars)}</span></button>`; }).join("");
+  const list = ids(p), nextId = list.find(id => !starsOf(p, id)) || list.find(id => starsOf(p, id) < 3);
+  $("songList").innerHTML = list.map(id => { const s = SONGS[id]; if (!s) return ""; const st = starsOf(p, id), nx = id === nextId;
+    const lvl = !LAB && p.lv && INST === "guitar" ? levelOf(p, id) : "";
+    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
+}
+// a review song's label: which earlier level it comes from (new songs at this pack's own level get "New")
+function levelOf(p, id){
+  const r = tabRule(p, id), key = JSON.stringify(r);
+  const own = JSON.stringify(tabRule(p, ids(p)[0]));
+  if (key === own) return "New";
+  const L = { [JSON.stringify(R1e)]: 1, [JSON.stringify(R1E)]: 1, [JSON.stringify(R2)]: 2, [JSON.stringify(R3)]: 3, [JSON.stringify(R4)]: 4, [JSON.stringify(R5)]: 5 }[key];
+  return L ? "Level " + L + " review" : "Review";
 }
 const cleanTitle = t => t.replace(/ \((Halloween|original riff)\)$/, "");
 $("songList").onclick = e => { const b = e.target.closest(".song"); if (!b) return;
@@ -333,13 +402,23 @@ $("vFall").onclick = () => { PK.view = "falling"; savePK(); drawPack(); };
 $("toPacks").onclick = goPacks;
 function goPacks(){ stopRun(); pack = null; $("pop").hidden = true; $("player").hidden = true; $("packView").hidden = true; $("packsView").hidden = false; drawPacks(); history.replaceState(null, "", location.pathname + location.search); window.scrollTo(0, 0); }
 
-fetch("piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => {
-  j.forEach(s => SONGS[s.id] = s);
+if (LAB) {
+  document.title = "Riff Lab"; document.querySelector(".fma-band h1").textContent = "Riff Lab";
+  document.querySelector("#packsView h2").textContent = "Learn the moves of rock guitar";
+  $("introLine").textContent = "Ten labs of riffs, each one teaching a new move: plain notes on the low E first, then palm mutes, slides, hammer-ons, pull-offs, bends and vibrato. Every riff earns up to 3 stars, and every star you need is shown. Finish a lab to win its trophy and a prize for your character.";
+  $("toPacks").textContent = "← All labs"; $("back").textContent = "← Lab";
+}
+if (LAB && INST === "piano") {
+  $("packs").innerHTML = `<div class="card" style="grid-column:1/-1"><h2>Riff Lab is for guitar</h2><p>Every riff here is guitar tab. Piano players: Song Packs has the same songs for you.</p><a class="big" href="songs.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">Go to Song Packs</a></div>`;
+} else fetch(LAB ? "riff-lab.json" : "piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => {
+  if (LAB) PACKS = j.labs.map((l, i) => Object.assign({ id: "lab" + l.lab, lv: l.lab, name: l.name, skill: l.skill, open: i === 0,
+    songs: l.riffs.map(r => { SONGS[r.id] = r; return [r.id, null]; }) }, LAB_LOOK[i]));
+  else j.forEach(s => SONGS[s.id] = s);
   drawPacks();
   const p = PACKS.find(p => p.id === location.hash.slice(1));
   if (p && packState(p) === "open") openPack(p);
 }).catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the songs. Check your connection and refresh."; });
-if (INST === "piano") $("introLine").textContent = "Every song earns up to 3 stars, in either piano view. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens more packs.";
+if (INST === "piano" && !LAB) $("introLine").textContent = "Every song earns up to 3 stars, in either piano view. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens the next pack.";
 
 /* ---------- melody to guitar tab ----------
    With a pack rule [strings, highest fret]: try every group of that many neighbouring strings, in every octave (the key
@@ -419,7 +498,8 @@ function audio(){
   return ac;
 }
 const scheduled = [];
-function tone(m, when, len, vol, type){
+// fx (optional): { from: a pitch to glide up or down from (slides, bends), glide: seconds, vib: true for vibrato }
+function tone(m, when, len, vol, type, fx){
   const c = audio(), f = 440 * Math.pow(2, (m - 69) / 12), t = Math.max(when || c.currentTime, c.currentTime), g = c.createGain(), peak = vol || 0.3;
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
   g.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.3, len || 1.2));
@@ -428,6 +508,10 @@ function tone(m, when, len, vol, type){
   o1.type = type || "triangle"; o1.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.25;
   o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(out);
   const end = t + Math.max(0.3, len || 1.2) + 0.05; o1.start(t); o2.start(t); o1.stop(end); o2.stop(end);
+  if (fx && fx.from != null) { const f0 = 440 * Math.pow(2, (fx.from - 69) / 12);
+    o1.frequency.setValueAtTime(f0, t); o1.frequency.linearRampToValueAtTime(f, t + fx.glide); o2.frequency.setValueAtTime(f0 * 2, t); o2.frequency.linearRampToValueAtTime(f * 2, t + fx.glide); }
+  if (fx && fx.vib) { const lfo = c.createOscillator(), lg = c.createGain(), lg2 = c.createGain(); lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lg2.gain.value = f * 0.024;
+    lfo.connect(lg); lfo.connect(lg2); lg.connect(o1.frequency); lg2.connect(o2.frequency); lfo.start(t + 0.12); lfo.stop(end); scheduled.push(lfo); }
   scheduled.push(o1, o2);
 }
 function click(when, accent){
@@ -459,7 +543,7 @@ function layout(){
   PLAYX = Math.max(80, Math.min(170, W * 0.24));
   // tight enough to see what's coming, wide enough that the shortest notes don't crowd
   const minD = cur ? Math.min(...cur.notes.slice(1).map((n, i) => n.t - cur.notes[i].t).filter(d => d > 0)) : 1;
-  PXB = Math.max(40 / Math.max(0.25, minD), Math.min(130, W / 7));
+  PXB = Math.max(34 / Math.max(0.25, minD), Math.min(130, W / 7));
   g2.font = "64px serif"; const a = g2.measureText("\u{1D11E}").width, b = g2.measureText("\u{1D127}").width; clefOK = a > 8 && Math.abs(a - b) > 1;
 }
 addEventListener("resize", () => { if (cur) layout(); });
@@ -479,7 +563,8 @@ function makeChar(){
 /* ---------- a run ---------- */
 let mode = O.mode, speed = O.speed, running = false, demo = false, finished = false;
 let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, countUnit = 1, endBeat = 0, lastFrame = 0;
-let hopFrom = -1, hopTo = 0, hopAt = 0, trans = 0;      // learn mode: the character's last hop (note indices)
+let hopFrom = -1, hopTo = 0, hopAt = 0, trans = 0, LEG = false;
+const LEGATO = ["hammer", "pull", "slide", "slidedown"];      // learn mode: the character's last hop (note indices)
 const pops = [];
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
 const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
@@ -487,9 +572,10 @@ function resetRun(){
   hush(); clearTimeout(simT); simTs.forEach(clearTimeout); simTs.length = 0;
   running = false; demo = false; finished = false; idx = 0;
   if (cur) {
-    const tab = INST === "guitar" ? toTab(cur.notes, tabRule(pack, cur.id)) : null;
+    const tab = INST !== "guitar" ? null : cur.notes[0].s !== undefined ? cur.notes.map(n => ({ s: n.s, f: n.f, sounding: n.m })) : toTab(cur.notes, tabRule(pack, cur.id));
     shift = INST === "piano" ? staffShift(cur.notes) : 0;
-    notes = cur.notes.map((n, i) => ({ t: n.t, d: n.d, m: tab ? tab[i].sounding : n.m, res: null, tries: 0, tab: tab && tab[i] }));
+    notes = cur.notes.map((n, i) => ({ i, t: n.t, d: n.d, m: tab ? tab[i].sounding : n.m, res: null, tries: 0, tab: tab && tab[i], tech: n.tech || [], bend: n.bend || 0 }));
+    LEG = notes.some(n => n.bend || n.tech.some(x => LEGATO.includes(x)));
     trans = tab && tab.length ? (((tab[0].sounding - cur.notes[0].m) % 12) + 12) % 12 : 0;      // a key change for guitar, in semitones
   } else notes = [];
   endBeat = notes.length ? notes[notes.length - 1].t + notes[notes.length - 1].d : 0;
@@ -504,9 +590,9 @@ function resetRun(){
 function hint(text){
   if (text !== undefined) { $("hint").textContent = text; return; }
   if (!cur) return;
-  const r = rec(cur.id);
+  const r = rec(rk(pack, cur.id));
   $("hint").textContent = mode === "learn"
-    ? (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Finish the song for your first star." : "The notes wait for you. Finish the song for your first star.")
+    ? (techTip(notes[0]) || (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Finish the song for your first star." : "The notes wait for you. Finish the song for your first star."))
     : r.stars >= 3 ? "Three stars! Play it again any time." : r.stars >= 2 ? `Get ${FULL_PCT}% at Full speed for the third star.` : `Get ${PLAY_PCT}% at any speed for the second star.`;
 }
 async function startRun(asDemo){
@@ -527,7 +613,16 @@ async function startRun(asDemo){
   if (mode === "play" || demo) {
     t0 = ac.currentTime + 0.3 + countBeats * spb;
     for (let b = 0; b < countBeats - 1e-6; b += countUnit) click(t0 - (countBeats - b) * spb, b === 0);
-    if (demo) notes.forEach(n => tone(soundOf(n), t0 + n.t * spb, n.d * spb + 0.2, 0.3, INST === "guitar" ? "sawtooth" : null));
+    if (demo) notes.forEach((n, i) => {
+      const when = t0 + n.t * spb, prev = notes[i - 1], pm = n.tech.includes("pm");
+      let fx = null, vol = 0.3, len = n.d * spb + 0.2;
+      if (n.bend) fx = { from: soundOf(n) - n.bend, glide: Math.min(0.18, n.d * spb * 0.45) };
+      else if (prev && (n.tech.includes("slide") || n.tech.includes("slidedown"))) fx = { from: soundOf(prev), glide: 0.07 };
+      if (n.tech.includes("hammer") || n.tech.includes("pull")) vol = 0.2;
+      if (n.tech.includes("vib")) fx = Object.assign(fx || {}, { vib: true });
+      if (pm) { vol = 0.22; len = 0.14; }
+      tone(soundOf(n), when, len, vol, INST === "guitar" ? "sawtooth" : null, fx);
+    });
     if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
       const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
       chordTones(name).forEach((m, k) => { m += trans > 6 ? trans - 12 : trans; tone(m, t0 + b * spb, len, k ? 0.07 : 0.11, "sine"); });
@@ -551,13 +646,30 @@ function songPos(){
 }
 
 /* ---------- playing a note (from any input) ---------- */
-function press(m, when){
+// legato: the note came from a pitch change while the string was still ringing (a hammer-on, pull-off, slide or bend), not
+// a new pick. Those only ever count when they're right: the notes a slide or bend passes through on the way are ignored.
+const preBend = (n, pc) => { for (let k = 1; k <= n.bend; k++) if ((((n.m - k) % 12) + 12) % 12 === pc) return true; return false; };
+function press(m, when, legato){
   if (!running || demo) return;
   const pc = ((m % 12) + 12) % 12;
-  if (mode === "learn") learnPress(pc); else playPress(pc, when);
+  if (mode === "learn") learnPress(pc, legato); else playPress(pc, when, legato);
 }
-function learnPress(pc){
+const TECH_TIP = {
+  pm: n => "Palm mute: rest the edge of your picking hand on the string, right by the bridge, for a tight chug.",
+  slide: n => `Slide: keep the string pressed down and slide your finger up to fret ${n.tab.f}. Don't pick again.`,
+  slidedown: n => `Slide down: keep pressing and slide your finger down to fret ${n.tab.f}. Don't pick again.`,
+  hammer: n => `Hammer-on: don't pick. Tap a finger down hard on fret ${n.tab.f} so it sounds.`,
+  pull: n => `Pull-off: flick your finger off the string sideways so fret ${n.tab.f} (or the open string) rings.`,
+  vib: n => "Vibrato: while the note rings, wobble the string gently up and down so it sings."
+};
+function techTip(n){
+  if (!n || !n.tab) return "";
+  if (n.bend) return `Bend: pick fret ${n.tab.f}, then push the string sideways until it sounds like fret ${n.tab.f + n.bend}.`;
+  const t = n.tech.find(x => TECH_TIP[x]); return t ? TECH_TIP[t](n) : "";
+}
+function learnPress(pc, legato){
   const n = notes[idx]; if (!n) return;
+  if (n.m % 12 !== pc && (legato || preBend(n, pc))) return;
   if (n.m % 12 === pc) {
     n.res = n.tries ? "late" : "hit"; stats.hit++; if (!n.tries) stats.first++;
     stats.combo = n.tries ? 0 : stats.combo + 1; stats.maxCombo = Math.max(stats.maxCombo, stats.combo);
@@ -566,13 +678,14 @@ function learnPress(pc){
     if (n.t > pos) pos = Math.max(pos, n.t - 0.25);
     if (buddy && stats.combo && stats.combo % 10 === 0) buddy.moment("streak", 1200);
     score(); glowKey();
+    const tip = techTip(notes[idx]); if (tip) hint(tip);
     if (idx >= notes.length) setTimeout(finish, 450);
   } else {
     n.tries++; stats.combo = 0; n.wrong = performance.now();
     hint("That was " + NAMES[pc] + ". " + (n.tab ? `Look for fret ${n.tab.f} on the ${["high E", "B", "G", "D", "A", "low E"][n.tab.s]} string: that's ${noteName(n.m)}.` : `Look for the glowing note: ${noteName(n.m)}.`));
   }
 }
-function playPress(pc, when){
+function playPress(pc, when, legato){
   const at = when != null ? (when - t0) / spb : songPos();
   let best = null;
   for (const n of notes) {
@@ -590,7 +703,7 @@ function playPress(pc, when){
     score();
   } else {
     const due = notes.find(n => !n.res && Math.abs((at - n.t) * spb) <= GOOD);
-    if (due) { stats.combo = 0; due.wrong = performance.now(); score(); }
+    if (due && !legato && !preBend(due, pc)) { stats.combo = 0; due.wrong = performance.now(); score(); }
   }
 }
 function score(){
@@ -654,7 +767,7 @@ function yin(buf, sr){
   const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c, tp = den ? tau + (a - c) / (2 * den) : tau;
   return { freq: sr / tp, clarity: 1 - b };
 }
-const frames = [], pending = []; let lastOnset = -9, rmsWin = [], heardAt = 0;
+const frames = [], pending = []; let lastOnset = -9, rmsWin = [], heardAt = 0, stab = { m: null, c: 0 }, lastEmit = null;
 function listen(){
   if (!an || !O.mic || $("player").hidden) return;
   if (window.FMAMidi && FMAMidi.active()) return;
@@ -668,6 +781,12 @@ function listen(){
   let midi = null;
   if (rms > floor) { const p = yin(tbuf, ac.sampleRate); if (p && p.clarity > 0.85 && p.freq > 70 && p.freq < 1400) midi = 69 + 12 * Math.log2(p.freq / 440); }
   frames.push({ t: now, rms, midi }); while (frames.length && frames[0].t < now - 2) frames.shift();
+  // songs with hammer-ons, pull-offs, slides or bends: a new pitch that holds steady for ~50 ms, with no new pick, is a note too
+  if (LEG && midi != null && Math.abs(midi - Math.round(midi)) < 0.35) {
+    const r = Math.round(midi);
+    if (r === stab.m) stab.c++; else stab = { m: r, c: 1 };
+    if (stab.c === 4 && r !== lastEmit && now - lastOnset > 0.16) { lastEmit = r; press(r, mode === "play" ? now - 0.05 - O.lat : null, true); flashKey(r); }
+  } else if (midi == null) stab = { m: null, c: 0 };
   if (midi != null) { $("heard").textContent = "Hearing: " + noteName(midi); heardAt = performance.now(); }
   else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –";
   let prevMin = Infinity; for (const f of frames) if (f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
@@ -676,7 +795,7 @@ function listen(){
     const t = pending[k]; if (now < t + 0.12) continue;
     pending.splice(k, 1);
     const ms = frames.filter(f => f.midi != null && f.t >= t + 0.03 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
-    if (ms.length >= 2) { const m = Math.round(ms[ms.length >> 1]); press(m, mode === "play" ? t - O.lat : null); flashKey(m); }
+    if (ms.length >= 2) { const m = Math.round(ms[ms.length >> 1]); lastEmit = m; press(m, mode === "play" ? t - O.lat : null); flashKey(m); }
   }
 }
 setInterval(listen, 12);
@@ -697,6 +816,31 @@ const noteX = (t, p) => PLAYX + (t - p) * PXB;
 function noteY(n){
   if (INST === "guitar") return TOP + n.tab.s * GAP;
   return TOP + 4 * GAP - (dia(n.m + shift) - E4) * GAP / 2;
+}
+/* technique marks, drawn round a tab note: h / p arcs from the note before, slide lines, a bend arrow, vibrato, PM */
+function drawTech(c, n, x, y, w, p){
+  if (!n.tech.length && !n.bend) return;
+  const prev = notes[n.i - 1], px = prev ? noteX(prev.t, p) : x - 40;
+  c.save(); c.strokeStyle = "#23231F"; c.fillStyle = "#23231F"; c.lineWidth = 2; c.font = "900 13px Nunito, system-ui, sans-serif";
+  for (const t of n.tech) {
+    if (t === "hammer" || t === "pull") {
+      c.beginPath(); c.moveTo(px + 8, y - 15); c.quadraticCurveTo((px + x) / 2, y - 36, x - 8, y - 15); c.stroke();
+      c.fillText(t === "hammer" ? "h" : "p", (px + x) / 2, y - 33);
+    } else if (t === "slide" || t === "slidedown") {
+      const up = t === "slide"; c.beginPath(); c.moveTo(px + 15, y + (up ? 7 : -7)); c.lineTo(x - w / 2 - 3, y + (up ? -7 : 7)); c.stroke();
+    } else if (t === "vib") {
+      c.beginPath(); for (let k = 0; k <= 24; k++) { const xx = x - 12 + k, yy = y - 22 + Math.sin(k / 24 * Math.PI * 4) * 3; k ? c.lineTo(xx, yy) : c.moveTo(xx, yy); } c.stroke();
+    } else if (t === "pm") {
+      c.fillStyle = "#6B6558"; c.font = "800 11px Nunito, system-ui, sans-serif"; c.fillText("PM", x, y - 21); c.fillStyle = "#23231F";
+    }
+  }
+  if (n.bend) {
+    const bx = x + w / 2 + 2;
+    c.beginPath(); c.moveTo(bx - 2, y - 4); c.quadraticCurveTo(bx + 12, y - 8, bx + 12, y - 30); c.stroke();
+    c.beginPath(); c.moveTo(bx + 7, y - 25); c.lineTo(bx + 12, y - 32); c.lineTo(bx + 17, y - 25); c.stroke();
+    c.fillText(n.bend === 2 ? "full" : "½", bx + 12, y - 41);
+  }
+  c.restore();
 }
 const headR = () => INST === "guitar" ? 13 : GAP * 0.78;
 function draw(now){
@@ -741,6 +885,7 @@ function draw(now){
       rr(x - w / 2, y - 13, w, 26, 9); c.fillStyle = miss ? "#F6DCD6" : done ? "#CFE9D4" : wrong ? "#F2B8AE" : "#fff"; c.fill();
       c.lineWidth = 2.4; c.strokeStyle = miss ? "#C0392B" : done ? "#3E7D4C" : "#23231F"; c.stroke();
       c.fillStyle = "#23231F"; c.font = "900 18px Nunito, system-ui, sans-serif"; c.fillText(label, x, y + 1);
+      drawTech(c, n, x, y, w, p);
       if (O.names) { c.font = "800 12px Nunito, system-ui, sans-serif"; c.fillStyle = "#6B6558"; c.fillText(noteName(n.m).replace("#", "♯"), x, TOP + 5 * GAP + 22); }
     } else {
       c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2);
@@ -808,7 +953,7 @@ requestAnimationFrame(frame);
 function finish(){
   if (finished || !running || demo) return;
   finished = true; running = false; hush();
-  const r = rec(cur.id), before = r.stars, total = notes.length;
+  const r = rec(rk(pack, cur.id)), before = r.stars, total = notes.length;
   let html, pct, improved = false, mom = "done";
   r.runs++;
   if (mode === "learn") {
@@ -836,14 +981,14 @@ function finish(){
       <button class="big" id="pAgain">Play again</button>`;
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
-  const i = pack.songs.indexOf(cur.id), nextSong = SONGS[pack.songs[i + 1]];
+  const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
   html += (nextSong && r.stars >= 1 ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(cleanTitle(nextSong.title))}</button>` : "")
     + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">Back to ${esc(pack.name)}</button>`
     + (slowDevice ? `<p style="font-size:13px">This device was working hard, so your player stopped hopping to keep the notes smooth.</p>` : "");
   save(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
   $("popBox").innerHTML = html; $("pop").hidden = false;
   PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
-  if (!SIM) FMAStudent.send("song-packs", { detail: cleanTitle(cur.title), mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved, instrument: INST });
+  if (!SIM) FMAStudent.send(GAME, { detail: cleanTitle(cur.title), mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved, instrument: INST });
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
   on("pAgain", () => { resetRun(); startRun(); });
   on("pPlay", () => setMode("play"));
@@ -883,7 +1028,7 @@ function openSong(s){
   layout(); setMode(mode); drawPianoKeys(); glowKey(); window.scrollTo(0, 0);
 }
 if (window.FMAMidi) FMAMidi.mount($("midiSlot"));
-window.__packs = { get notes(){ return notes; }, stats, press, tabRule, ruledTab, get pos(){ return songPos(); }, get P(){ return P; }, get PK(){ return PK; }, PACKS, toTab, staffShift, SONGS, checkTrophies, drawPacks };
+window.__packs = { get notes(){ return notes; }, get PACKS(){ return PACKS; }, openPack, openSong, stats, press, tabRule, ruledTab, get pos(){ return songPos(); }, get P(){ return P; }, get PK(){ return PK; }, toTab, staffShift, SONGS, checkTrophies, drawPacks };
 </script>
 </body>
 </html>
