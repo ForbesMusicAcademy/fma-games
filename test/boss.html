@@ -246,7 +246,7 @@ body.piano #diag{width:100%;max-width:380px}
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=10"></script>
+<script src="fma-picks.js?v=11"></script>
 <script src="fma-chords.js?v=4"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
@@ -522,6 +522,7 @@ function finish(quit){
   // the score to beat is damage (combos and the encore count), per song, speed and mode
   const win = G.down, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.dmgBest || {})[key] || 0, isBest = G.dmg > best;
   if(isBest){ st.dmgBest = st.dmgBest || {}; st.dmgBest[key] = G.dmg; }
+  delete st.best;          // the old hits-per-song list (before damage became the score): dropped to keep the cloud save small
   const before = starsOf(song.id);
   if(win){
     st.won = st.won || {}; const w = st.won[song.id] = st.won[song.id] || {};
