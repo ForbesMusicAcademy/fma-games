@@ -240,6 +240,7 @@ body.piano #diag{width:100%;max-width:380px}
 </div>
 
 <script src="fma-student.js?v=7"></script>
+<script src="fma-listen.js?v=1"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -314,59 +315,7 @@ function say(text, ms){
   setTimeout(() => b.remove(), ms || 1800);
 }
 
-const FFT = 16384, TONAL_MIN = 0.30;
-const det = {
-  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
-    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
-    // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-    const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-    this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
-  },
-  chroma(){
-    this.an.getFloatFrequencyData(this.buf);
-    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
-    const mag = new Float32Array(n); let mx = 0;
-    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
-    // Is this sound tonal at all? Notes are sharp spectral peaks; a cough, a rustle or room hiss is energy spread over everything.
-    { let tot = 0, pk = 0; const W = 15;
-      for(let i = 0; i < n; i++){
-        const e = mag[i] * mag[i]; tot += e;
-        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
-          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
-          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
-        }
-      }
-      this.tonal = pk / (tot + 1e-30);
-    }
-    if(this.tonal < TONAL_MIN) return null;
-    // tuning: where do the strong peaks sit relative to the nearest semitone? (so a slightly flat guitar still reads right)
-    let sx = 0, sy = 0;
-    for(let i = 1; i < n - 1; i++){
-      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
-        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
-        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
-        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
-      }
-    }
-    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
-    const ch = new Float32Array(12);
-    for(let i = 0; i < n; i++){
-      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
-      ch[pc] += Math.sqrt(mag[i]);
-    }
-    return ch;
-  }
-};
+const det = FMAListen.create();        // the shared listener every game uses (fma-listen.js)
 if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 
 
@@ -376,23 +325,13 @@ function readScores(){
   if(!det.ready) return null;
   const db = det.level();
   $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
-  if(db <= det.gateDb){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate"; return null; }
-  const ch = det.chroma();
-  if(!ch){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ": not musical"; return null; }
-  const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
-  const raw = Array.from(ch, v => Math.max(v - floor, 0) / span);
-  // a note's overtones land on other notes: take a small share off where they land
-  const sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
-  if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ", tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
+  const sc = det.scores();
+  if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + "), tonal " + det.tonal.toFixed(2) + ", tuning " + (det.tune * 100).toFixed(0) + " cents\n" +
+    (sc ? NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n") : "(below the gate, or not musical)");
   return sc;
 }
 // Root mode: the chord's root must be the clearly strongest note (it has to beat both neighbouring semitones by 25%).
-function strongest(sc){
-  if(!sc) return -1;
-  let b = 0; sc.forEach((v, i) => { if(v > sc[b]) b = i; });
-  const nb = Math.max(sc[(b + 1) % 12], sc[(b + 11) % 12]);
-  return sc[b] - nb >= 0.25 ? b : -1;
-}
+const strongest = sc => FMAListen.strongest(sc, 0.25);
 
 /* ---------- The beat: drums made on the device ---------- */
 const snd = { ctx:null, out:null, noise:null, next:0, beat:0, timer:null, t0:0, bpm:80, mode:"drums", bars:0 };
@@ -519,7 +458,7 @@ function frame(){
   if(idx !== G.idx){
     if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
     if(G.done) return;
-    G.idx = idx; G.hit = false; G.run = 0; G.rootRun = 0; G.latched.fill(false); G.onFor.fill(0); G.settle = performance.now() + 250;
+    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx]); G.settle = performance.now() + 250;
     setChord(idx);
     [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
     if(idx > 0 && G.outcomes[idx - 1]) $("status").textContent = "";
@@ -569,19 +508,9 @@ function tick(){
     G.rootRun = top === c.root ? G.rootRun + 1 : 0;
     hit = G.rootRun >= 3;                                  // about a quarter of a second, held
   }else if(SIM){ hit = simChord; }
-  else if(!sc){ G.run = 0; G.latched.fill(false); G.onFor.fill(0); }
   else{
-    let missing = 0, strays = 0;
-    for(let i = 0; i < 12; i++){
-      const x = sc[i], inC = (c.mask >> i) & 1;
-      G.latched[i] = x >= 0.40 || (G.latched[i] && x >= 0.30);
-      G.onFor[i] = G.latched[i] ? G.onFor[i] + 1 : 0;
-      if(inC && !G.latched[i]) missing++;
-      if(!inC && !(((c.allow || c.mask) >> i) & 1) && G.latched[i]) strays++;
-    }
-    G.run = (missing === 0 && strays === 0) ? G.run + 1 : 0;
-    hit = G.run >= 3;
-    [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!G.latched[c.pcs[i]]));
+    const r = G.match.step(sc); hit = r.hit;
+    [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!r.latched[c.pcs[i]]));
   }
   if(hit && !G.hit) landHit();
 }
