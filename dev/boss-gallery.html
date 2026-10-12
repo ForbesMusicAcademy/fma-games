@@ -16,11 +16,11 @@ h1{font:900 24px Nunito,system-ui}
 <h1>Boss gallery (test page)</h1>
 <p>Every boss, with buttons for each state. <code>?boss=kind</code> shows one. <code>?stage=0..4</code> sets them all (4 = dead).</p>
 <div class="grid" id="g"></div>
-<script src="../boss-anim.js"></script>
+<script src="../test/boss-anim.js"></script>
 <script>
 // new bosses register themselves from their own files: list them here as they're added
 const EXTRA = ["metronome", "kit", "stompbox", "sournote", "mic", "smoke"];
-const load = f => new Promise(r => { const s = document.createElement("script"); s.src = "../boss-art-" + f + ".js?" + Date.now(); s.onload = r; s.onerror = r; document.head.appendChild(s); });
+const load = f => new Promise(r => { const s = document.createElement("script"); s.src = "../test/boss-art-" + f + ".js?" + Date.now(); s.onload = r; s.onerror = r; document.head.appendChild(s); });
 (async () => {
   for(const f of EXTRA) await load(f);
   const q = new URLSearchParams(location.search), only = q.get("boss"), stage = q.has("stage") ? Number(q.get("stage")) : null;
