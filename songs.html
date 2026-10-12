@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Song Packs: songs in packs of five, three stars a song, a trophy and a character prize for finishing a pack.
    Guitar players read scrolling tab; piano players choose coloured notes on a staff or Falling Notes. Phone first.
@@ -145,7 +145,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div id="pkeys" hidden></div>
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big" id="go" style="flex:2">Start</button>
+      <button class="big play" id="go" style="flex:2">Start</button>
       <button class="ghost" id="hear" style="flex:1;min-height:56px;border-radius:16px;white-space:nowrap">▶ Hear it</button>
     </div>
     <p id="hint"></p>
@@ -169,7 +169,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 /* ============================================================
    Song Packs (home). Wave 1 of the games site: projects/games-slow-release-plan.md in Dave's workspace.
@@ -218,7 +218,7 @@ const SONG_PACKS = [
     prize: { part: "acc", value: "party", label: "Party hat" } },
   { id: "explorer", lv: 2, name: "String Explorer", emo: "🧭", col: "#2E7DA8", col2: "#8ECAE6",
     skill: "One string at a time, now on the B, G, D and A strings.",
-    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["mars-riff", R2]],
+    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["frere-jacques", R2]],
     prize: { part: "eyewear", value: "round", label: "Round glasses" } },
   { id: "crossing", lv: 3, name: "Crossing Over", emo: "🌉", col: "#7A4EA8", col2: "#C9A7F0",
     skill: "Two strings: the tune steps from one string to the next.",
@@ -246,7 +246,7 @@ const SONG_PACKS = [
     prize: { part: "acc", value: "phones", label: "Headphones" } },
   { id: "speed", lv: 9, name: "Speed Run", emo: "⚡", col: "#2D5C9A", col2: "#FFD34D",
     skill: "Faster notes. Can you do them at Full speed?",
-    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["happy-birthday", null], ["minuet-in-g", null]],
+    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["mars-riff", null], ["happy-birthday", null], ["minuet-in-g", null]],
     prize: { part: "extra", value: "sweatbands", label: "Sweatbands" } },
   { id: "picking", lv: 10, name: "Picking Patterns", emo: "👑", col: "#8A6A1F", col2: "#FFC42B",
     skill: "Long picking patterns across all six strings.",
@@ -275,6 +275,43 @@ const LAB_LOOK = [
   { emo: "🔥", col: "#8A1F1F", col2: "#FF6B3D", prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
   { emo: "👑", col: "#8A6A1F", col2: "#FFC42B", prize: { part: "gear", value: "doubleneck", label: "Double-neck guitar" } }
 ];
+/* ---------- pace (13 Oct 2026, Dave: early packs have to feel achievable, mainly how many notes and how fast) ----------
+   Each level sets the fastest "Full" speed can be (bpm), how busy a song can be (notes a second on average, nps) and how long
+   it can run (notes). A song over the length plays its opening phrases (whole 4-bar chunks up to the limit), and a song
+   faster than the level allows is slowed to fit (never below 50 bpm, never faster than the song itself). Slow and Medium are
+   still 60% and 80% of that. Each lab lists its riffs easiest first. Levels 9 and 10 are the full songs. */
+const PACE = {
+  1: { bpm: 72, nps: 1.4, notes: 26 }, 2: { bpm: 76, nps: 1.6, notes: 28 }, 3: { bpm: 80, nps: 1.8, notes: 32 }, 4: { bpm: 84, nps: 2.0, notes: 36 },
+  5: { bpm: 90, nps: 2.2, notes: 44 }, 6: { bpm: 96, nps: 2.4, notes: 52 }, 7: { bpm: 100, nps: 2.6, notes: 64 }, 8: { bpm: 108, nps: 3.0, notes: 80 },
+  9: { bpm: 999, nps: 99, notes: 999 }, 10: { bpm: 999, nps: 99, notes: 999 } };
+const SEASON_PACE = { bpm: 80, nps: 1.8, notes: 32 };
+const LAB_PACE = { 1: { bpm: 72, nps: 1.6 }, 2: { bpm: 76, nps: 1.8 }, 3: { bpm: 80, nps: 2.0 }, 4: { bpm: 84, nps: 2.1 }, 5: { bpm: 84, nps: 2.2 },
+  6: { bpm: 84, nps: 2.2 }, 7: { bpm: 88, nps: 2.4 }, 8: { bpm: 92, nps: 2.6 }, 9: { bpm: 96, nps: 2.8 }, 10: { bpm: 100, nps: 3.0 } };
+const paceOf = p => !p ? null : LAB ? LAB_PACE[p.lv] : p.seasonal ? SEASON_PACE : PACE[p.lv];
+const pacedCache = {};
+function paced(s, p){
+  const pc = paceOf(p); if (!pc || !s || !s.notes || !s.notes.length) return s;
+  const ck = p.id + ":" + s.id; if (pacedCache[ck]) return pacedCache[ck];
+  const bb = s.ts[0] * 4 / s.ts[1]; let n = s.notes, bars = s.bars, cut = 0;
+  if (pc.notes && n.length > pc.notes) {
+    let best = 0;
+    for (let b = 4; b < s.bars; b += 4) if (n.filter(x => x.t < b * bb - 1e-6).length <= pc.notes) best = b;
+    if (!best) best = Math.min(4, s.bars);
+    if (best < s.bars) { cut = best * bb; n = n.filter(x => x.t < cut - 1e-6); bars = best; }
+  }
+  const beats = n[n.length - 1].t + n[n.length - 1].d;
+  let tempo = Math.min(s.tempo, pc.bpm, pc.nps * 60 * beats / n.length);
+  tempo = Math.round(Math.max(Math.min(s.tempo, 50), tempo));
+  return pacedCache[ck] = Object.assign({}, s, { notes: n, bars, tempo, chords: cut ? (s.chords || []).filter(([b]) => b < cut) : s.chords,
+    paced: { cut: !!cut, bars, of: s.bars, slower: tempo < s.tempo } });
+}
+// how hard a song is at its pack's pace: busier and longer is harder
+const hardness = (p, id) => { const s = SONGS[id] && paced(SONGS[id], p); if (!s) return 0; const beats = s.notes[s.notes.length - 1].t + s.notes[s.notes.length - 1].d;
+  return (s.notes.length / (beats * 60 / s.tempo)) * Math.sqrt(s.notes.length) * (1 + 0.15 * new Set(s.notes.map(x => x.s === undefined ? 0 : x.s)).size)
+    * (0.6 + 0.1 * new Set(s.notes.map(x => x.m)).size); };      // more different notes to find is harder too (Hot Cross Buns has 3)
+// Riff Lab's riffs go easiest first. Song Packs keep their chosen order (Hot Cross Buns first, new songs before reviews).
+function easiestFirst(){ if (!LAB) return; PACKS.forEach(p => { if (p.sorted) return; p.songs = p.songs.slice().sort((a, b) => hardness(p, a[0]) - hardness(p, b[0])); p.sorted = true; }); }
+
 let PACKS = LAB ? [] : SONG_PACKS;
 const NEED = LAB ? 4 : 5;            // stars in the pack before it that open the next one
 const tabRule = (p, id) => { const e = p && p.songs.find(x => x[0] === id); return e ? e[1] : null; };
@@ -383,7 +420,8 @@ function drawPack(){
   const list = ids(p), nextId = list.find(id => !starsOf(p, id)) || list.find(id => starsOf(p, id) < 3);
   $("songList").innerHTML = list.map(id => { const s = SONGS[id]; if (!s) return ""; const st = starsOf(p, id), nx = id === nextId;
     const lvl = !LAB && p.lv && INST === "guitar" ? levelOf(p, id) : "";
-    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
+    const ps = paced(s, p), part = ps && ps.paced && ps.paced.cut ? `<span class="fma-info" style="margin-right:6px">First ${ps.bars} bars</span>` : "";
+    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${part}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
 }
 // a review song's label: which earlier level it comes from (new songs at this pack's own level get "New")
 function levelOf(p, id){
@@ -395,8 +433,9 @@ function levelOf(p, id){
 }
 const cleanTitle = t => t.replace(/ \((Halloween|original riff)\)$/, "");
 $("songList").onclick = e => { const b = e.target.closest(".song"); if (!b) return;
-  if (INST === "piano" && PK.view === "falling") { location.href = "keys.html?song=" + encodeURIComponent(b.dataset.id) + "&pack=" + pack.id; return; }
-  openSong(SONGS[b.dataset.id]); };
+  if (INST === "piano" && PK.view === "falling") { const ps = paced(SONGS[b.dataset.id], pack);
+    location.href = "keys.html?song=" + encodeURIComponent(b.dataset.id) + "&pack=" + pack.id + (ps && ps.paced ? "&bpm=" + ps.tempo + (ps.paced.cut ? "&bars=" + ps.bars : "") : ""); return; }
+  openSong(paced(SONGS[b.dataset.id], pack)); };
 $("vStaff").onclick = () => { PK.view = "staff"; savePK(); drawPack(); };
 $("vFall").onclick = () => { PK.view = "falling"; savePK(); drawPack(); };
 $("toPacks").onclick = goPacks;
@@ -414,6 +453,7 @@ if (LAB && INST === "piano") {
   if (LAB) PACKS = j.labs.map((l, i) => Object.assign({ id: "lab" + l.lab, lv: l.lab, name: l.name, skill: l.skill, open: i === 0,
     songs: l.riffs.map(r => { SONGS[r.id] = r; return [r.id, null]; }) }, LAB_LOOK[i]));
   else j.forEach(s => SONGS[s.id] = s);
+  easiestFirst();
   drawPacks();
   const p = PACKS.find(p => p.id === location.hash.slice(1));
   if (p && packState(p) === "open") openPack(p);
@@ -964,7 +1004,7 @@ function finish(){
       <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
       <p>${stats.first} of ${total} notes right first time.</p>
       <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
-      <button class="big" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
     mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
@@ -978,7 +1018,7 @@ function finish(){
     html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
       <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
       <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
-      <button class="big" id="pAgain">Play again</button>`;
+      <button class="big play" id="pAgain">Play again</button>`;
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
   const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
@@ -992,7 +1032,7 @@ function finish(){
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
   on("pAgain", () => { resetRun(); startRun(); });
   on("pPlay", () => setMode("play"));
-  on("pNext", () => openSong(nextSong));
+  on("pNext", () => openSong(paced(nextSong, pack)));
   on("pSongs", backToPack);
 }
 

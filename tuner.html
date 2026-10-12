@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Tune Up: one column, phone first, same look as the chord game. Listens through the microphone, never records.
    Layout: header, the six strings as chips, the big note, a cents needle, a status line, the clock. */
@@ -94,7 +94,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
     <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
     <p id="best"></p>
-    <button class="big" id="start">Start (allow microphone)</button>
+    <button class="big play" id="start">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
   </section>
 
@@ -128,7 +128,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 /* ============================================================
    Tune Up (home; was the Tuning Race, which stays in the classroom rig). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
@@ -321,7 +321,7 @@ const race = {
         <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
         <div class="splits">${sp}</div>
         <p style="font-size:14px">Seconds per string. Give all six a final strum: tuning one string can nudge the others.</p>
-        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big" id="again">Tune again</button>`}`;
+        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big play" id="again">Tune again</button>`}`;
       PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };

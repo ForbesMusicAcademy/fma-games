@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Falling Notes: the piano game. Notes fall down onto a keyboard; play each one as it lands. Phone first, same look as
    the other games. Plays with a MIDI keyboard, the on-screen keys, a computer keyboard, or a real piano through the mic. */
@@ -102,7 +102,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
     <div id="stage"><canvas id="cv"></canvas><div id="count"></div><div id="combo"></div></div>
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big" id="go" style="flex:2">Start</button>
+      <button class="big play" id="go" style="flex:2">Start</button>
       <button class="ghost" id="hear" style="flex:1;min-height:56px;border-radius:16px;white-space:nowrap">▶ Hear it</button>
     </div>
     <p id="hint"></p>
@@ -126,7 +126,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 /* ============================================================
    Falling Notes (piano). Songs come from piano-songs.json, built from the royalty-free song bank
@@ -173,7 +173,7 @@ function drawList(){
   $("list").innerHTML = html + (lv ? "</div>" : "");
 }
 $("list").onclick = e => { const b = e.target.closest(".song"); if (b) openSong(SONGS[Number(b.dataset.i)]); };
-fetch("piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => { SONGS = j; drawList(); if (q.get("song")) { const s = SONGS.find(x => x.id === q.get("song")); if (s) openSong(s); } })
+fetch("piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => { SONGS = j; drawList(); if (q.get("song")) { const s = SONGS.find(x => x.id === q.get("song")); if (s) openSong(pacedFromLink(s)); } })
   .catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the songs. Check your connection and refresh."; });
 
 /* ---------- sound: a simple piano for the screen keys, backing and "Hear it" ---------- */
@@ -527,7 +527,7 @@ function finish(){
       <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
       <p>${stats.first} of ${total} notes right first time.</p>
       <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
-      <button class="big" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
     mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
@@ -541,7 +541,7 @@ function finish(){
     html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
       <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
       <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
-      <button class="big" id="pAgain">Play again</button>`;
+      <button class="big play" id="pAgain">Play again</button>`;
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
   const nextSong = SONGS[SONGS.indexOf(cur) + 1];
@@ -585,6 +585,14 @@ function openSong(s){
   cur = s; $("pop").hidden = true; $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
   if (!buddy) buddy = PlayerArt.buddy($("buddy"));
   layout(); setMode(mode); window.scrollTo(0, 0);
+}
+/* Song Packs sets each level's pace (songs.html, PACE): the link carries the speed (&bpm=) and, for a song cut to its opening
+   phrases, how many bars (&bars=), so Falling Notes plays the same version the pack does */
+function pacedFromLink(s){
+  const bpm = Number(q.get("bpm")) || 0, bars = Number(q.get("bars")) || 0; if (!bpm && !bars) return s;
+  const bb = s.ts[0] * 4 / s.ts[1], cut = bars && bars < s.bars ? bars * bb : 0;
+  return Object.assign({}, s, { tempo: bpm >= 40 && bpm <= s.tempo ? bpm : s.tempo, bars: cut ? bars : s.bars,
+    notes: cut ? s.notes.filter(n => n.t < cut - 1e-6) : s.notes, chords: cut ? (s.chords || []).filter(([b]) => b < cut) : s.chords });
 }
 /* opened from Song Packs (?pack=...): the back buttons and "All songs" go back to that pack, and the stars count there too */
 const FROM_PACK = /^[a-z]{2,20}$/.test(q.get("pack") || "") ? q.get("pack") : "";

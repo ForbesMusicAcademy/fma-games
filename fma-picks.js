@@ -160,6 +160,8 @@
     save(w); show(list, w.picks, game === "chords" && list.length === 1);
     return list;
   }
+  // a bonus for a surprise (Boss Battle's golden boss): paid every time it happens
+  function bonus(n, why){ const w = load(), list = []; add(w, n, why, list); save(w); show(list, w.picks); return list; }
   // a one-off reward (Adventure quests)
   function milestone(k, n, why){ const w = load(), list = []; once(w, k, n, why, list); if(list.length){ save(w); show(list, w.picks); } return list; }
   // a prize (finishing a Song Pack): the item is unlocked for free. If it was already unlocked, the prize is picks instead.
@@ -207,5 +209,5 @@
     return got;
   }
 
-  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, adventureOwned, icon: ICON };
+  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, bonus, adventureOwned, icon: ICON };
 })();

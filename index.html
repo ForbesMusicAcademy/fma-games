@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 :root{color-scheme:light;--bg:#FBF8EF;--fma-width:560px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--accent:#FFB805;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
@@ -34,6 +34,7 @@ h1{margin:6px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-he
 .yview .yart{width:100%;max-width:170px;aspect-ratio:1}
 .yview .yname{font-family:var(--head);font-weight:900;font-size:17px;line-height:1.1;min-height:1.1em;text-align:center;overflow-wrap:anywhere}
 .yview button{margin-top:4px;min-height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--fg);background:var(--accent);font-weight:800}
+body.fma .yview button.fma-go{width:auto;min-height:42px;padding:0 18px;font-size:16px;margin-top:6px}
 .yview button.pulse{animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
@@ -120,6 +121,7 @@ html.editing,html.editing body{overflow:hidden}
 a.game{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;color:inherit;text-decoration:none;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
 a.game:active{transform:scale(.99)}
 a.game img{width:64px;height:64px;object-fit:contain;flex:none}
+a.game .gboss{width:70px;height:70px;flex:none;margin:-4px -3px}
 a.game b{display:block;font-family:var(--head);font-weight:900;font-size:22px;line-height:1.1}
 a.game span{color:var(--muted);font-size:15px}
 .tag2{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;color:var(--fg)}
@@ -142,6 +144,8 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 .tfrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .tfrow a,.tfrow button{min-height:44px;padding:0 18px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:16px;display:inline-flex;align-items:center;text-decoration:none;color:var(--fg)}
 .tfrow a.go{background:var(--accent)}
+body.fma .tfrow a.fma-go{width:auto}
+body.fma .ask .row button.fma-go{flex:1;width:auto}
 @keyframes tfglow{0%,100%{box-shadow:0 0 0 4px rgba(255,184,5,.18),0 14px 40px -26px rgba(35,35,31,.4)}50%{box-shadow:0 0 0 9px rgba(255,184,5,.32),0 14px 40px -26px rgba(35,35,31,.4)}}
 /* "Make your player": the first thing a brand-new player sees, after the guitar-or-piano question */
 .hello{position:fixed;inset:0;z-index:65;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));overflow:auto}
@@ -168,7 +172,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
         <div class="yart" id="yart"></div>
         <div class="yname" id="yname"></div>
         <div class="wallet" id="ywallet"></div>
-        <button id="yedit">Customise</button>
+        <button id="yedit" class="fma-go small">Customise</button>
         <div id="playingAs" style="font-size:14px;color:var(--muted);margin-top:8px;text-align:center"></div>
       </div>
       <div class="yeditor" id="yeditor" hidden>
@@ -181,7 +185,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
             <div class="efoot">
               <button id="erand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/></svg>Mix it up</button>
               <button id="eclear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Clear</button>
-              <button id="edone" class="go">Done</button>
+              <button id="edone" class="go fma-go small">Done</button>
             </div>
             </div>
           </div>
@@ -199,14 +203,16 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   <section class="tunefirst" id="tuneFirst" hidden>
     <img src="characters/fret.png" alt="">
     <div><b>Tune up first?</b><span>A guitar in tune makes every game work better. It only takes a minute.</span>
-      <div class="tfrow"><a class="go" href="tuner.html?first">Tune up</a><button id="tuneSkip" type="button">Skip for today</button></div></div>
+      <div class="tfrow"><a class="go fma-go small play" href="tuner.html?first">Tune up</a><button id="tuneSkip" type="button">Skip for today</button></div></div>
   </section>
   <p class="lead">Play on your phone, tablet or computer. Your device listens to your <span class="inst">guitar</span> through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <div id="midiSlot"></div>
-  <!-- Wave 1 menu (12 Oct 2026, projects/games-slow-release-plan.md): Adventure, Note Quiz and Boss Battle are held back.
-       Their pages still exist, they're just not on the menu. -->
+  <!-- Wave 1 menu (12 Oct 2026, projects/games-slow-release-plan.md): Adventure and Note Quiz are held back (their pages
+       still exist, they're just not on the menu). Wave 2 (13 Oct): Boss Battle is back, for guitar and piano, and Chord Quest
+       is on piano too. -->
   <a class="game" href="tuner.html" data-for="guitar"><img src="characters/fret.png" alt=""><div><b>Tune Up</b><span>Get all six strings in tune, one at a time. Try to beat your best time.</span></div></a>
-  <a class="game" href="chords.html" data-for="guitar"><img src="star-on.png" alt=""><div><b>Chord Quest <span class="tag2">NEW</span></b><span>How many chords can you unlock? Every chord you learn opens up more songs.</span></div></a>
+  <a class="game" href="chords.html" data-for="guitar piano"><img src="star-on.png" alt=""><div><b>Chord Quest <span class="tag2">NEW</span></b><span>How many chords can you unlock? Every chord you learn opens up songs in Boss Battle.</span></div></a>
+  <a class="game" href="boss.html" data-for="guitar piano"><div class="gboss" id="menuBoss"></div><div><b>Boss Battle <span class="tag2">NEW</span></b><span>Play the chords of real songs to beat eight bosses. Chain your chords for big combos.</span></div></a>
   <a class="game" href="songs.html?lab" data-for="guitar"><img src="characters/shredder.png" alt=""><div><b>Riff Lab <span class="tag2">NEW</span></b><span>Learn the moves of rock guitar: palm mutes, slides, hammer-ons, bends and more, one lab at a time.</span></div></a>
   <a class="game" href="songs.html" data-for="guitar piano"><img src="diamond.png" alt=""><div><b>Song Packs <span class="tag2">NEW</span></b><span>Ten levels of songs, from your first notes on one string to playing across all six. Earn stars and win prizes for your character.</span></div></a>
   <a class="game" href="league.html" id="leagueLink" hidden><img src="star-on.png" alt=""><div><b>Band League</b><span>Every class is a band. See which band is playing best this week, and help yours climb by practising.</span></div></a>
@@ -216,7 +222,8 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=10"></script>
+<script src="boss-anim.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
 // the Band League link only shows once the league is running (tracking on)
@@ -315,8 +322,8 @@ function askUnlock(k, v, label){
     : lk.quest
     ? `${pic}<b>${label}</b><p>🏭 Found in <b style="font-size:inherit">Adventure: ${lk.quest.level}</b>. Clear the quest “${lk.quest.quest}” to find it.</p><p>Adventure gear can't be bought with picks. You have to earn it!</p><div class="row"><button id="eNo">OK</button><button class="go" id="eGo">Go to Adventure</button></div>`
     : have >= p
-    ? `${pic}<b>Unlock ${label}?</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}.</p><div class="row"><button id="eNo">Not now</button><button class="go" id="eYes">Unlock it!</button></div>`
-    : `${pic}<b>${label} is locked</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}, so you need <b style="font-size:inherit">${p - have} more</b>.</p><p>Every game you finish earns picks, and beating your best earns extra.</p><div class="row"><button class="go" id="eNo">OK, let's play!</button></div>`;
+    ? `${pic}<b>Unlock ${label}?</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}.</p><div class="row"><button id="eNo">Not now</button><button class="go fma-go small" id="eYes">Unlock it!</button></div>`
+    : `${pic}<b>${label} is locked</b><p>It costs ${FMAPicks.icon(16)} ${p} picks. You have ${have}, so you need <b style="font-size:inherit">${p - have} more</b>.</p><p>Every game you finish earns picks, and beating your best earns extra.</p><div class="row"><button class="go fma-go small" id="eNo">OK, let's play!</button></div>`;
   $("eask").hidden = false;
   $("eNo").onclick = () => { $("eask").hidden = true; };
   if($("ePack")) $("ePack").onclick = () => { closeEditor(); location.href = "songs.html"; };
@@ -401,7 +408,7 @@ function hello(){
   w.innerHTML = `<div class="in"><h2>Make your player</h2><p>This is you in every game. Mix it up until you like it, or dress them up properly. You can change it any time.</p>
     <div class="pic" id="hpic"></div>
     <input id="hname" maxlength="10" placeholder="Your player's name" autocomplete="off" autocapitalize="words" aria-label="Your player's name" value="${(cfg.name || "").replace(/"/g, "")}">
-    <div class="btns"><button id="hmix">🎲 Mix it up</button><button id="hdress">Customise</button><button class="go" id="hgo">Let's play!</button></div></div>`;
+    <div class="btns"><button id="hmix">🎲 Mix it up</button><button id="hdress">Customise</button><button class="go fma-go play" id="hgo">Let's play!</button></div></div>`;
   document.body.append(w);
   let pic = PlayerArt($("hpic"), cfg); setTimeout(() => pic.pose(PlayerArt.MOMENTS.hello, 2400), 300);
   const close = () => { cfg.name = $("hname").value.replace(/[<>&"]/g, "").slice(0, 10); save(); w.remove(); drawYou(true); };
@@ -411,6 +418,7 @@ function hello(){
 }
 drawInstrument();
 drawTuneFirst();
+BossArt($("menuBoss"), { kind: "amp" });
 if(!fmaInstrument.get()) askInstrument();
 else if(!touched() && location.hash !== "#character") hello();
 if(location.hash === "#character") openEditor();

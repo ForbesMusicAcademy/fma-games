@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Home Note Quiz: one player, one column, phone first. A question appears with four answers, each on a note.
    Play the note of the answer you think is right on your guitar and hold it to lock in. Quicker = more points.
@@ -132,7 +132,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
     <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
     <p id="tip">Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
     <p id="playingAs" style="color:var(--fg)"></p>
-    <button class="big" id="go">Start (allow microphone)</button>
+    <button class="big play" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
     <div class="best" id="bests"></div>
   </section>
@@ -156,7 +156,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
     <div class="board" id="endBoard" hidden></div>
     <div id="endBest"></div>
     <div class="best" id="savedMsg" role="status"></div>
-    <button class="big" id="again" style="margin-top:10px">Play again</button>
+    <button class="big play" id="again" style="margin-top:10px">Play again</button>
   </section>
 
   <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
@@ -166,7 +166,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");

@@ -722,5 +722,113 @@
     "Fmaj7#11"
    ]
   }
+ ],
+ "_piano_readme": "Piano players climb their own ladder (Chord Quest and Boss Battle on piano): white-key chords first, then chords with one black key, sevenths, sus/add chords, the black-key majors and the colour chords. Piano listens for the plain chord type (no shapes) and shows a keyboard diagram, right hand, root position. Same chord names as guitar, so the same songs open up.",
+ "pianoTiers": [
+  {
+   "name": "White-key chords",
+   "chords": [
+    "C",
+    "G",
+    "F",
+    "Am",
+    "Em",
+    "Dm"
+   ]
+  },
+  {
+   "name": "One black key",
+   "chords": [
+    "D",
+    "A",
+    "E",
+    "Bm",
+    "Gm",
+    "Cm",
+    "Fm"
+   ]
+  },
+  {
+   "name": "Sevenths",
+   "chords": [
+    "G7",
+    "C7",
+    "D7",
+    "A7",
+    "E7",
+    "Cmaj7",
+    "Fmaj7",
+    "Am7",
+    "Dm7",
+    "Em7"
+   ]
+  },
+  {
+   "name": "Sus and add",
+   "chords": [
+    "Csus2",
+    "Csus4",
+    "Dsus2",
+    "Dsus4",
+    "Asus2",
+    "Asus4",
+    "Gsus4",
+    "Cadd9"
+   ]
+  },
+  {
+   "name": "Black-key majors",
+   "chords": [
+    "Bb",
+    "Eb",
+    "Ab",
+    "B",
+    "F#m",
+    "C#m",
+    "G#m",
+    "Db"
+   ]
+  },
+  {
+   "name": "Colour chords",
+   "chords": [
+    "C6",
+    "Am6",
+    "Bm7",
+    "F#m7",
+    "Gm7",
+    "Cm7",
+    "B7",
+    "F7",
+    "Bb7"
+   ]
+  },
+  {
+   "name": "Extended chords",
+   "chords": [
+    "C9",
+    "G9",
+    "D9",
+    "Am9",
+    "Dm9",
+    "Cmaj9",
+    "Gmaj9"
+   ]
+  },
+  {
+   "name": "Advanced colours",
+   "chords": [
+    "Bdim",
+    "Caug",
+    "Bm7b5",
+    "Cdim7",
+    "E7#9",
+    "B7b9",
+    "A7sus4",
+    "G13",
+    "Dm11",
+    "Fmaj7#11"
+   ]
+  }
  ]
 }
