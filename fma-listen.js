@@ -62,7 +62,8 @@
           if(!stream) stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
           this.ctx.createMediaStreamSource(stream).connect(into);
         }
-        if(this.ctx.state === "suspended") await this.ctx.resume();
+        // (an OfflineAudioContext, used by test/replay.html, can't be resumed before it renders)
+        if(this.ctx.state === "suspended" && !(window.OfflineAudioContext && this.ctx instanceof OfflineAudioContext)) await this.ctx.resume();
         this.ready = true;
       },
       _time(){ this.tan.getFloatTimeDomainData(this.td); return this.td; },

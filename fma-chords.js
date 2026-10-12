@@ -129,7 +129,7 @@
   }
 
   window.FMAChords = {
-    load(){ return loading || (loading = fetch("chord-ladder.json", {cache: "no-cache"}).then(r => r.json()).then(j => { ladder = j; build(); return list; })); },
+    load(url){ return loading || (loading = fetch(url || "chord-ladder.json", {cache: "no-cache"}).then(r => r.json()).then(j => { ladder = j; build(); return list; })); },
     get list(){ return list; }, get tiers(){ return tiers; },
     info: name => byName[name] || null,
     label: name => { const c = byName[name]; if(PIANO) return c && c.easy ? "Easy-" + c.base : (c ? c.base : name);
