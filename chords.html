@@ -33,7 +33,10 @@ button{font:inherit;cursor:pointer}
 .tier{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--muted);font-size:14px}
 .bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;flex:1}
 .bar i{display:block;height:100%;background:var(--fg);width:0}
-#chord{font-family:var(--head);font-weight:900;font-size:clamp(72px,24vw,150px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(72px,24vw,150px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em;white-space:nowrap;min-width:0}
+/* long labels (Easy-G, Easy-C, Cmaj7...) shrink to stay on one line beside the diagram */
+#chord.long{font-size:clamp(44px,13vw,92px)}
+#chord.longer{font-size:clamp(36px,10vw,72px)}
 .chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
 #diag{width:clamp(130px,38vw,200px);flex:none}
 #diag svg{display:block;width:100%;height:auto}
@@ -332,7 +335,8 @@ const game = {
   begin(idx){
     this.idx = idx; this.run = 0; this.latched.fill(false); this.onFor.fill(0); this.heard = 0; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
-    $("chord").textContent = FMAChords.label(c.name);
+    const lab = FMAChords.label(c.name);
+    $("chord").textContent = lab; $("chord").classList.toggle("long", lab.length > 3 && lab.length <= 6); $("chord").classList.toggle("longer", lab.length > 6);
     $("diag").innerHTML = FMAChords.diagram(c.name);
     if(!buddy) buddy = PlayerArt.buddy($("buddy"));
     $("chips").innerHTML = c.tones.map(t => `<span class="chip">${t}</span>`).join("");
