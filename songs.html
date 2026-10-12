@@ -204,7 +204,9 @@ const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
    packs add strings. "skill" is the line guitar players see on the pack. Anything not listed uses all six strings. */
 const PACKS = [
   { id: "first", name: "First Notes", emo: "🌱", col: "#3E9A57", col2: "#7CC36B", open: true,
-    skill: "One string. Find every fret from 0 to 12.", tab: { all: [1, 12] },
+    skill: "One string. Find every fret from 0 to 12.",
+    // a mix of the high E and low E strings (Dave, 12 Oct): each song is moved to a key that fits its string
+    tab: { "hot-cross-buns": [1, 12, [0]], "mary-had-a-little-lamb": [1, 12, [5]], "lightly-row": [1, 12, [0]], "twinkle-twinkle": [1, 12, [5]], "this-old-man": [1, 12, [0]] },
     songs: ["hot-cross-buns", "mary-had-a-little-lamb", "lightly-row", "twinkle-twinkle", "this-old-man"],
     prize: { part: "acc", value: "party", label: "Party hat" } },
   { id: "spooky", name: "Spooky Season", emo: "🎃", col: "#5B3A8C", col2: "#FF8A1C", open: true,
@@ -347,7 +349,7 @@ if (INST === "piano") $("introLine").textContent = "Every song earns up to 3 sta
    With no rule (all six strings): the octave that keeps most notes in first position, each note on its lowest fret. */
 const OPEN = [64, 59, 55, 50, 45, 40];           // high E (top line) to low E (bottom line)
 function toTab(notes, rule){
-  if (rule && rule[0] < 6) { const t = ruledTab(notes, rule[0], rule[1]); if (t) return t; }
+  if (rule && rule[0] < 6) { const t = ruledTab(notes, rule[0], rule[1], rule[2]); if (t) return t; }
   let bestShift = 0, bestScore = -1e9;
   for (const sh of [-24, -12, 0, 12, 24]) {
     let sc = 0; for (const n of notes) { const m = n.m + sh; sc += m >= 40 && m <= 68 ? 10 : m >= 40 && m <= 76 ? 3 : -20; }
@@ -363,11 +365,16 @@ function toTab(notes, rule){
     return { s: pick.s, f: pick.f, sounding: m };
   });
 }
-function ruledTab(notes, n, maxF){
+// starts: which strings the group may start on (0 = high E ... 5 = low E). When it's given, the song may also move key for
+// guitar (a small cost per move, so its own key wins whenever it fits), because a C-major tune can't sit low on an E string.
+function ruledTab(notes, n, maxF, starts){
   let best = null;
+  const shifts = [];
+  for (const o of [-36, -24, -12, 0, 12, 24]) for (let k = starts ? -6 : 0; k <= (starts ? 5 : 0); k++) shifts.push(o + k);
   for (let g = 0; g + n <= 6; g++) {
+    if (starts && !starts.includes(g)) continue;
     const group = Array.from({ length: n }, (_, k) => g + k);
-    for (const sh of [-36, -24, -12, 0, 12, 24]) {
+    for (const sh of shifts) {
       const opts = notes.map(nt => group.map(s => ({ s, f: nt.m + sh - OPEN[s] })).filter(o => o.f >= 0 && o.f <= maxF));
       if (opts.some(o => !o.length)) continue;
       let prev = opts[0].map(o => ({ o, c: o.f * 0.05, back: null }));
@@ -378,7 +385,7 @@ function ruledTab(notes, n, maxF){
       }
       const end = prev.reduce((a, b) => a.c < b.c ? a : b), path = [];
       for (let e = end; e; e = e.back) path.unshift(e.o);
-      let cost = end.c + Math.abs(sh) * 0.001;
+      let cost = end.c + Math.abs(sh) * 0.001 + (((sh % 12) + 12) % 12 ? 0.3 : 0);
       if (new Set(path.map(x => x.s)).size < n) cost += 50;
       if (!best || cost < best.cost) best = { cost, path };
     }
@@ -472,7 +479,7 @@ function makeChar(){
 /* ---------- a run ---------- */
 let mode = O.mode, speed = O.speed, running = false, demo = false, finished = false;
 let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, countUnit = 1, endBeat = 0, lastFrame = 0;
-let hopFrom = -1, hopTo = 0, hopAt = 0;      // learn mode: the character's last hop (note indices)
+let hopFrom = -1, hopTo = 0, hopAt = 0, trans = 0;      // learn mode: the character's last hop (note indices)
 const pops = [];
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
 const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
@@ -482,7 +489,8 @@ function resetRun(){
   if (cur) {
     const tab = INST === "guitar" ? toTab(cur.notes, tabRule(pack, cur.id)) : null;
     shift = INST === "piano" ? staffShift(cur.notes) : 0;
-    notes = cur.notes.map((n, i) => ({ t: n.t, d: n.d, m: n.m, res: null, tries: 0, tab: tab && tab[i] }));
+    notes = cur.notes.map((n, i) => ({ t: n.t, d: n.d, m: tab ? tab[i].sounding : n.m, res: null, tries: 0, tab: tab && tab[i] }));
+    trans = tab && tab.length ? (((tab[0].sounding - cur.notes[0].m) % 12) + 12) % 12 : 0;      // a key change for guitar, in semitones
   } else notes = [];
   endBeat = notes.length ? notes[notes.length - 1].t + notes[notes.length - 1].d : 0;
   pos = mode === "learn" ? -1.5 : -countBeats;
@@ -522,7 +530,7 @@ async function startRun(asDemo){
     if (demo) notes.forEach(n => tone(soundOf(n), t0 + n.t * spb, n.d * spb + 0.2, 0.3, INST === "guitar" ? "sawtooth" : null));
     if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
       const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
-      chordTones(name).forEach((m, k) => tone(m, t0 + b * spb, len, k ? 0.07 : 0.11, "sine"));
+      chordTones(name).forEach((m, k) => { m += trans > 6 ? trans - 12 : trans; tone(m, t0 + b * spb, len, k ? 0.07 : 0.11, "sine"); });
     });
   }
   if (SIM && !demo) sim();
