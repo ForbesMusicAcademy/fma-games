@@ -8,59 +8,85 @@
 <title>Boss Battle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
-/* Home Boss Battle: pick a song, a speed and a mode; a drum beat plays; play the chord of each bar to wear the boss down.
-   Listens through the microphone, never records. The beat is made on the device (no audio files). */
+/* Home Boss Battle (Wave 2, 13 Oct 2026). Eight bosses guard the songs your chords open in Chord Quest. Pick a song, a
+   drum beat plays, play the chord of each bar to hit the boss. Chords in a row build a combo (3 in a row: hits do 3
+   damage; 6 in a row: 5 damage), the same rule as the classroom rig. Each song has 3 stars. Listens through the
+   microphone, never records. The beat is made on the device (no audio files). */
 :root{color-scheme:light;--bg:#FBF8EF;--fma-width:560px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--pink:#D4668C;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
 #app{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
-header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
-a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
 .card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
 .card p{margin:8px 0;color:var(--muted)}
+.card p a{color:var(--fg);font-weight:700;text-decoration-color:var(--mustard);text-decoration-thickness:3px;text-underline-offset:2px}
 button{font:inherit;cursor:pointer;color:var(--fg)}
-.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px}
-.big:disabled{opacity:.5}
 [hidden]{display:none!important}
-h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.songs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.song{border:2px solid var(--line);background:#fff;border-radius:14px;padding:8px 10px;text-align:left;line-height:1.2}
-.song b{display:block;font-family:var(--head);font-weight:900;font-size:16px}
-.song small{display:block;color:var(--muted);font-weight:600;font-size:12px}
-.song span{display:block;font-family:var(--head);font-weight:800;font-size:14px;margin-top:2px}
-.song.on{border-color:var(--fg);background:#FFF1C7}
-.song:disabled{opacity:.45;cursor:default}
-.lvl{grid-column:1/-1;font-family:var(--head);font-weight:900;font-size:15px;margin:8px 0 0 2px}
-.lvl small{display:block;font-family:var(--ui);font-weight:600;font-size:13px;color:var(--muted)}
-.lvl.locked{color:var(--muted)}
-.chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
-#diag{width:clamp(110px,32vw,170px);flex:none}
-#diag:empty{display:none}
-#diag svg{display:block;width:100%;height:auto}
+h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* ---- the boss map: one card per boss, its songs under it ---- */
+.intro{display:flex;align-items:center;gap:12px}
+.intro .me{width:86px;height:86px;flex:none;margin:-8px -6px -6px -8px}
+.intro h2{margin:0}
+.intro p{margin:2px 0 0!important}
+.tally{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tally span{background:var(--pick-bg);border-radius:999px;padding:3px 12px;font-family:var(--head);font-weight:900;font-size:15px}
+.lair{padding:0;overflow:hidden}
+.lair .top{display:flex;align-items:center;gap:12px;padding:12px 16px 10px;background:linear-gradient(180deg,#FFF6DB,#fff)}
+.lair .bimg{width:96px;height:96px;flex:none;margin:-6px 0 -8px -6px}
+.lair .who b{display:block;font-family:var(--head);font-weight:900;font-size:21px;line-height:1.1}
+.lair .who small{display:block;color:var(--muted);font-weight:600;font-size:14px;line-height:1.3}
+.lair .who .prog{display:inline-block;margin-top:4px;font-family:var(--head);font-weight:900;font-size:14px;color:#B07D00}
+.lair.locked .top{background:#F4F1EA}
+.lair.locked .bimg{filter:brightness(0) opacity(.18)}
+.lair.locked .who b{color:var(--muted)}
+.lair.beaten .top{background:linear-gradient(180deg,#E9F5EC,#fff)}
+.slist{list-style:none;margin:0;padding:0 8px 8px}
+.slist li{border-top:1px solid var(--line)}
+.srow{width:100%;display:flex;align-items:center;gap:10px;padding:10px 8px;border:0;background:none;text-align:left;border-radius:12px}
+.srow:hover:not(:disabled){background:#FFFCF2}
+.srow .t{flex:1;min-width:0}
+.srow .t b{display:block;font-family:var(--head);font-weight:900;font-size:17px;line-height:1.15}
+.srow .t small{display:block;color:var(--muted);font-size:13px;font-weight:600}
+.pills{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.pill{font-family:var(--head);font-weight:900;font-size:12px;padding:1px 7px;border-radius:999px;background:var(--line)}
+.pill.need{background:#fff;border:2px dashed var(--accent)}
+.stars{flex:none;font-size:18px;letter-spacing:1px;color:#E0A400;white-space:nowrap}
+.stars i{font-style:normal;color:#D9D2C2}
+.srow:disabled{cursor:default}
+.srow:disabled .t b{color:var(--muted)}
+.srow .lk{flex:none;font-size:13px;font-weight:700;color:var(--muted)}
+.more{display:block;width:calc(100% - 16px);margin:0 8px 10px;min-height:38px;border-radius:12px;border:2px dashed var(--line);background:none;color:var(--muted);font-weight:700}
+
+/* ---- setup sheet ---- */
+.vs{display:flex;align-items:flex-end;justify-content:center;gap:4px}
+.vs .p{width:42%;aspect-ratio:1}
+.vs .vsword{font-family:var(--head);font-weight:900;font-size:28px;color:var(--pink);align-self:center}
+.vs .b{width:50%;aspect-ratio:1}
+.setup h2{text-align:center;margin-top:4px!important}
+.setup .by{text-align:center;color:var(--muted);margin:0!important}
+.goals{list-style:none;margin:12px 0 4px;padding:0;display:flex;flex-direction:column;gap:6px}
+.goals li{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:#FAF7EE;font-weight:600;font-size:15px}
+.goals li .s{font-size:20px;color:#D9D2C2;flex:none}
+.goals li.done{background:#FFF4D1}
+.goals li.done .s{color:#E0A400}
 .chips{display:flex;gap:8px}
 .chips button{flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;line-height:1.15;padding:4px}
 .chips button b{display:block;font-family:var(--head);font-weight:900;font-size:16px}
-.chips button small{color:var(--muted);font-weight:600}
-.chips button.on{border-color:var(--fg);background:var(--accent)}
-.chips button.on small{color:var(--fg)}
-.mine{display:flex;align-items:center;gap:14px;border:2px solid var(--line);border-radius:16px;padding:6px 12px 6px 6px;background:#fff}
-.mine .mart{width:84px;flex:none;aspect-ratio:1}
-.mine b{display:block;font-family:var(--head);font-weight:900;font-size:19px}
-.mine a{color:var(--muted);font-weight:700}
-.best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
-.tip{background:#FFF1C7;border-radius:12px;padding:8px 12px;font-weight:600;font-size:15px;margin:12px 0;color:var(--fg)!important}
+.chips button small{color:var(--muted);font-weight:600;font-size:12px}
+.chips button.on{border-color:var(--fg);background:var(--pick-bg)}
+.tip{background:var(--sky-bg);color:var(--sky-ink)!important;border-radius:12px;padding:8px 12px;font-weight:600;font-size:14px;margin:14px 0!important}
+.back{display:block;margin:10px auto 0;min-height:44px;padding:0 18px}
 
-/* The fight */
+/* ---- the fight ---- */
 .stage{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
-.arena{display:flex;gap:6px;width:100%;align-items:flex-end}
-.fighter{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.arena{display:flex;gap:6px;width:100%;align-items:flex-end;position:relative}
+.fighter{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
 .fart{width:100%;aspect-ratio:1;position:relative}
 .fhp{width:100%;height:24px;border-radius:12px;background:var(--line);border:3px solid var(--fg);overflow:hidden;position:relative}
 .fhp i{display:block;height:100%;width:100%;transition:width .35s,background .3s}
@@ -68,19 +94,49 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .fhp.you i{background:linear-gradient(#5fae6f,#3E7D4C)}
 .fhp.you.low i{background:linear-gradient(#f08a5d,#C0392B)}
 .fhp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:900;font-size:13px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
-.fname{font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-.endarena{max-width:420px;margin:0 auto 6px}
+.fname{font-family:var(--head);font-weight:900;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.bubble{position:absolute;left:4%;right:4%;top:-6px;z-index:4;background:#fff;border:3px solid var(--fg);border-radius:16px;padding:6px 10px;font-family:var(--head);font-weight:900;font-size:15px;line-height:1.2;text-align:center;
+  box-shadow:0 6px 0 rgba(35,35,31,.12);animation:bub .25s ease-out;pointer-events:none}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-11px;width:16px;height:16px;background:#fff;border-right:3px solid var(--fg);border-bottom:3px solid var(--fg);transform:translateX(-50%) rotate(45deg)}
+@keyframes bub{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 .dnum{position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:var(--head);font-weight:900;font-size:34px;color:var(--bad);-webkit-text-stroke:2px #fff;paint-order:stroke fill;pointer-events:none;animation:dnum 1s ease-out forwards;z-index:3;white-space:nowrap}
-.dnum.big{font-size:44px;color:#e07b00}
+.dnum.c1{font-size:44px;color:#e07b00}
+.dnum.c2{font-size:54px;color:#c0141c}
 @keyframes dnum{from{transform:translate(-50%,0) scale(.7);opacity:1}25%{transform:translate(-50%,-8px) scale(1.15)}to{transform:translate(-50%,-70px) scale(1);opacity:0}}
-.combo{min-height:30px;font-family:var(--head);font-weight:900;font-size:18px;text-align:center;color:var(--muted)}
-.combo b{color:var(--fg)}
-.combo.x15 b{color:#d98200}.combo.x2 b{color:#d9490b}.combo.x3 b{color:#c0141c}
+/* the combo: a counter and six pips (3 = combo, 6 = super combo) */
+.combo{display:flex;align-items:center;justify-content:center;gap:10px;min-height:38px;width:100%}
+.combo .lbl{font-family:var(--head);font-weight:900;font-size:18px;color:var(--muted);min-width:118px;text-align:right}
+.combo .lbl b{font-size:24px;color:var(--fg)}
+.pips{display:flex;gap:5px}
+.pips i{width:20px;height:12px;border-radius:6px;background:var(--line);transition:background .15s}
+.pips i.on{background:var(--accent)}
+.pips i.on.t2{background:#E8502E}
+.pips i:nth-child(3){margin-right:6px}
+.combo .tier{font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);min-width:96px}
+.combo.c1 .lbl b,.combo.c1 .tier{color:#C98000}
+.combo.c2 .lbl b,.combo.c2 .tier{color:#D2381C}
 .combo.pop{animation:cpop .3s ease-out}
-.call{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-size:14px;margin-top:6px}
-#chord{font-family:var(--head);font-weight:900;font-size:clamp(90px,34vw,170px);line-height:.95;letter-spacing:-.02em;text-align:center}
+@media (max-width:440px){ .combo{gap:6px} .combo .lbl{min-width:0;font-size:15px} .combo .lbl b{font-size:20px} .pips{gap:3px} .pips i{width:13px;height:10px} .pips i:nth-child(3){margin-right:4px} .combo .tier{min-width:0;font-size:12px}
+  .fart{max-height:34vh} #chord{font-size:clamp(64px,22vw,110px)} }
+.shout{position:absolute;left:0;right:0;top:34%;z-index:5;text-align:center;pointer-events:none;font-family:var(--head);font-weight:900;font-size:clamp(30px,9vw,46px);color:#fff;-webkit-text-stroke:3px var(--fg);paint-order:stroke fill;
+  text-shadow:0 5px 0 var(--fg);animation:shout 1.1s ease-out forwards;letter-spacing:.02em}
+.shout.s1{color:var(--accent)}.shout.s2{color:#FF6B3D}.shout.s3{color:var(--pink)}
+@keyframes shout{0%{transform:scale(.4) rotate(-6deg);opacity:0}18%{transform:scale(1.12) rotate(2deg);opacity:1}70%{transform:scale(1) rotate(0);opacity:1}100%{transform:translateY(-30px);opacity:0}}
+.stage.shake{animation:shake .32s linear}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,-1px)}}
+.fighter.hot .fart{filter:drop-shadow(0 0 10px rgba(255,184,5,.9))}
+.fighter.super .fart{filter:drop-shadow(0 0 14px rgba(232,80,46,.95))}
+.call{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-size:13px;margin-top:2px}
+.chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(84px,30vw,160px);line-height:.95;letter-spacing:-.02em;text-align:center;white-space:nowrap}
+#chord.long{font-size:clamp(54px,17vw,100px)}
 #chord.pop{animation:cpop .25s ease-out}
 @keyframes cpop{from{transform:scale(.8);opacity:.4}to{transform:none;opacity:1}}
+#diag{width:clamp(110px,32vw,170px);flex:none}
+#diag:empty{display:none}
+#diag svg{display:block;width:100%;height:auto}
+body.piano .chordrow{flex-direction:column;gap:2px}
+body.piano #diag{width:100%;max-width:380px}
 .ctones{display:flex;gap:8px;justify-content:center;min-height:40px}
 .ctones span{min-width:44px;padding:4px 12px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:22px;text-align:center;transition:background .2s,color .2s}
 .ctones span.on{background:var(--good);color:#fff}
@@ -94,16 +150,26 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .bars i.hit{background:var(--good)}
 .bars i.miss{background:var(--pink)}
 .bars i.now{background:var(--fg)}
-.meter{height:10px;border-radius:6px;background:var(--line);overflow:hidden;width:100%}
+.meter{height:8px;border-radius:6px;background:var(--line);overflow:hidden;width:100%}
 .meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
 #status{text-align:center;font-family:var(--head);font-weight:900;font-size:18px;min-height:1.3em}
+.quit{min-height:40px;padding:0 16px;margin-top:4px}
+
+/* ---- end ---- */
 .end{text-align:center}
-.end .bimg{margin:0 auto}
-.end h2{font-size:34px}
-.end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700}
+.end .endarena{display:flex;max-width:420px;margin:0 auto 6px}
+.end h2{font-size:32px}
+.bigstars{display:flex;justify-content:center;gap:6px;margin:6px 0}
+.bigstars span{font-size:46px;line-height:1;color:#E3DCCB;transition:color .2s}
+.bigstars span.got{color:#FFB805;-webkit-text-stroke:2px #B07D00}
+.bigstars span.new{animation:starpop .6s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes starpop{0%{transform:scale(0) rotate(-40deg)}100%{transform:none}}
+.end .goalnote{font-weight:700;color:var(--fg);margin:4px 0}
+.end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700;font-size:14px}
 .end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
 .end .btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.ghost{min-height:48px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700}
+.end .btns .ghost{min-height:48px}
+.gold{background:linear-gradient(90deg,#FFE58A,#FFC93C);border-radius:999px;padding:3px 14px;font-family:var(--head);font-weight:900;display:inline-block}
 #dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
 .sim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .sim button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:800;user-select:none;touch-action:none}
@@ -115,28 +181,38 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 <div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Boss Battle</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
 
-  <section class="card" id="start">
-    <h2>Beat the boss with your guitar</h2>
-    <p>A drum beat plays. Play the chord shown for each bar to hit the boss. Land enough hits before the song ends and you win.</p>
-    <h3>Pick a song</h3><div class="songs" id="songs"></div>
+  <!-- the boss map -->
+  <div id="map">
+    <section class="card">
+      <div class="intro"><div class="me" id="mapMe"></div><div><h2>Eight bosses. How many can you beat?</h2><p>Play the chords of real songs to beat each boss. Every chord you unlock in <a href="chords.html">Chord Quest</a> opens more songs.</p></div></div>
+      <div class="tally" id="tally"></div>
+    </section>
+    <div id="lairs" style="display:flex;flex-direction:column;gap:14px"></div>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin:0"><span data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are each song's main loop, simplified.</p>
+  </div>
+
+  <!-- getting ready for one song -->
+  <section class="card setup" id="setup" hidden>
+    <div class="vs"><div class="p" id="suMe"></div><div class="vsword">VS</div><div class="b" id="suBoss"></div></div>
+    <h2 id="suTitle"></h2>
+    <p class="by" id="suBy"></p>
+    <ul class="goals" id="goals"></ul>
     <h3>Speed</h3><div class="chips" id="speeds"></div>
     <h3>What do you play?</h3><div class="chips" id="modes"></div>
     <h3>Backing</h3><div class="chips" id="backs"></div>
-    <h3>Your player</h3><div class="mine"><div class="mart" id="mart"></div><div><b id="mname"></b><a href="./#character">Change my character</a></div></div>
-    <p class="tip">Use headphones so the game doesn't hear its own drums. Tune up first.</p>
-    <button class="big" id="go">Start (allow microphone)</button>
+    <p class="tip" id="tip">Use headphones so the game doesn't hear its own drums.</p>
+    <button class="big play" id="go">Fight!</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
-    <div class="best" id="bests"></div>
-    <p style="font-size:14px"><span data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are the main loop of each song, simplified. New songs open up as you unlock chords in Chord Practice.</p>
+    <button class="ghost back" id="toMap">All bosses</button>
   </section>
 
   <section class="card" id="play" hidden>
-    <div class="stage">
+    <div class="stage" id="stage">
       <div class="arena">
-        <div class="fighter"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
-        <div class="fighter"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname">Boss</div></div>
+        <div class="fighter" id="pf"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
+        <div class="fighter" id="bf"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname" id="bname">Boss</div></div>
       </div>
-      <div class="combo" id="combo"></div>
+      <div class="combo" id="combo"><div class="lbl" id="cLbl">COMBO <b>0</b></div><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="tier" id="cTier">1 damage</div></div>
       <div class="call" id="call"></div>
       <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="ctones" id="tones"></div>
@@ -145,130 +221,101 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
       <div class="bars" id="bars"></div>
       <div class="meter"><i id="lvl"></i></div>
       <div id="status"></div>
+      <button class="ghost quit" id="quit">Stop</button>
     </div>
   </section>
 
   <section class="card end" id="end" hidden>
-    <div class="arena endarena"><div class="fart" id="endPlayer"></div><div class="fart" id="endImg"></div></div>
+    <div class="endarena"><div class="fart" id="endPlayer" style="flex:1;aspect-ratio:1"></div><div class="fart" id="endImg" style="flex:1;aspect-ratio:1"></div></div>
     <h2 id="endTitle"></h2>
-    <div class="rows"><div><b id="endHits">0</b>hits</div><div><b id="endAcc">0%</b>of bars</div><div><b id="endStreak">0</b>best streak</div></div>
+    <div class="bigstars" id="endStars"></div>
+    <p class="goalnote" id="endGoal"></p>
+    <div class="rows"><div><b id="endHits">0</b>chords hit</div><div><b id="endStreak">0</b>best combo</div><div><b id="endDmg">0</b>damage</div></div>
     <div id="endBest"></div>
-    <div class="btns"><button class="big" id="again">Fight again</button><button class="ghost" id="other">Pick another song or speed</button></div>
+    <div class="btns"><button class="big play" id="again">Fight again</button><button class="ghost" id="nextSong" hidden></button><button class="ghost" id="other">All bosses</button></div>
   </section>
 
   <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
   <div class="sim" id="sim" hidden></div>
 </div>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="boss-anim.js"></script>
+<script src="boss-anim.js?v=2"></script>
+<script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
+<script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
-<script src="fma-chords.js?v=1"></script>
+<script src="fma-picks.js?v=11"></script>
+<script src="fma-chords.js?v=4"></script>
+<script src="fma-boss-songs.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
-const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
+const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim"), TEACHER = q.has("teacher");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const PCS = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
 const QUAL = {"":[0,4,7], m:[0,3,7], "7":[0,4,7,10], m7:[0,3,7,10], maj7:[0,4,7,11], sus4:[0,5,7], sus2:[0,2,7]};
+const PIANO = FMAChords.inst === "piano", INST = FMAChords.inst;
+if(PIANO) document.body.classList.add("piano");
 function chordInfo(name){
-  const L = window.FMAChords && FMAChords.info(name);
-  if(L) return { name, root:L.root, pcs:L.pcs, mask:L.mask, tones:L.tones };     // the ladder's shape (e.g. the two-finger G)
+  const L = FMAChords.forSong(name, openSet());      // piano: the full chord once it's won, else the easy two-note one
+  if(L) return { name:L.name, root:L.root, pcs:L.pcs, mask:L.mask, allow:L.allow, tones:L.tones };     // the ladder's shape on guitar (e.g. the two-finger G)
   const m = /^([A-G][#b]?)(.*)$/.exec(name), iv = m && QUAL[m[2]]; if(!iv) return null;
   const r = PCS[m[1]], pcs = iv.map(i => (r + i) % 12);
   return { name, root:r, pcs, mask:pcs.reduce((a, p) => a | (1 << p), 0), tones:pcs.map(p => NOTE_NAMES[p]) };
 }
-/* The songs, each as its main chord loop (one chord per bar), and which boss guards it (BossArt kinds: amp, cables).
-   A song unlocks once the player has unlocked every chord in it in Chord Practice (the Band Skills Ladder order, from
-   fma-chords.js), so the song list grows with their chords. ?teacher opens them all (for class). Chord loops are simplified
-   and can differ between versions: check them against how each song is taught. Keep each id for good: bests are saved by it. */
-const SONGS = [
-  {id:"em-g-stomp", b:"amp", t:"Em–G Stomp", a:"FMA warm-up", c:["Em","Em","G","G"]},
-  {id:"g-em-groove", b:"cables", t:"G–Em Groove", a:"FMA warm-up", c:["G","Em","G","Em"]},
-  {id:"three-chord-trick", b:"amp", t:"Three-Chord Trick", a:"FMA warm-up", c:["G","C","Em","C"]},
-  {id:"zombie", b:"amp", t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
-  {id:"wagon-wheel", b:"cables", t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
-  {id:"brown-eyed-girl", b:"cables", t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
-  {id:"sweet-home-alabama", b:"amp", t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
-  {id:"perfect", b:"cables", t:"Perfect", a:"Ed Sheeran", c:["G","Em","C","D"]},
-  {id:"riptide", b:"amp", t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
-  {id:"shake-it-off", b:"cables", t:"Shake It Off", a:"Taylor Swift", c:["Am","C","G","G"]},
-  {id:"let-it-be", b:"amp", t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
-  {id:"little-talks", b:"cables", t:"Little Talks", a:"Of Monsters and Men", c:["Am","F","C","G"]},
-  {id:"la-bamba", b:"amp", t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]},
-  {id:"dreams", b:"cables", t:"Dreams", a:"Fleetwood Mac", c:["F","G","F","G"]},
-  {id:"born-in-the-usa", b:"amp", t:"Born in the U.S.A.", a:"Bruce Springsteen", c:["A","A","D","D"]},
-  {id:"wild-thing", b:"cables", t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]}
-];
-const TEACHER = q.has("teacher");
-// where a song sits on the ladder: the position of its hardest chord
-const ladderPos = s => Math.max(...s.c.map(n => FMAChords.list.findIndex(c => c.name === n)));
-const isOpen = (s, open) => TEACHER || s.c.every(n => open.has(n));
-const songById = id => SONGS.find(s => s.id === id);
+const SONGS = FMABossSongs, L = n => { const c = FMAChords.forSong(n, openSet()); return FMAChords.label(c ? c.name : n); };
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
-const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
+const MODES = [{k:"root", n:PIANO ? "One key" : "Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
-const BARS = 16, WIN = 0.6;       // each song plays 16 bars (whole loops); you win with 60% of them landed
-const KEY = fmaKey("fma-boss-v1");          // each player on this device has their own bests
+/* The rules, set once.
+   16 bars a song (whole loops). Chords in a row make a combo: hits do 1 damage, 3 in a row 3 damage, 6 in a row 5 damage.
+   Boss health is the classroom rig's own formula (bossHP in classroom.html) for a class of one: the average damage of 400
+   pretend players who land each chord 6 times in 10 (17 for 16 bars). With one player a single combo is the whole attack,
+   so a perfect run still beats the boss by about bar 7 (bigger health would make it unwinnable for an average player);
+   the encore is what keeps a strong player playing the whole song. You're knocked out on your KO_MISSES-th
+   miss. Once the boss is down the song plays on as an ENCORE: every hit still counts towards your damage, the score to beat
+   next time, so a strong player still practises the whole song. Nothing carries over between fights (framework: loss only
+   inside one round). */
+const BARS = 16, WIN_RATE = 0.6, KO_MISSES = 9, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
+const dmgOf = streak => streak >= 6 ? 5 : streak >= 3 ? 3 : 1;
+// the classroom's bossHP() with one player: seeded, so a song length always gives the same number
+function bossHP(T){
+  let seed = 7919 + T * 104729 + 1, sum = 0; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for(let r = 0; r < 400; r++){ let st = 0; for(let s = 0; s < T; s++){ if(rnd() < WIN_RATE){ st++; sum += dmgOf(st); } else st = 0; } }
+  return Math.max(1, Math.round(sum / 400));
+}
+const KEY = fmaKey(PIANO ? "fma-boss-piano-v1" : "fma-boss-v1");          // each player (and instrument) has their own stars and bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
-const S = Object.assign({ song:"zombie", speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
-const songNo = () => SONGS.indexOf(songById(S.song));       // 0-based, for the boss colour
+const S = Object.assign({ song:"em-g-stomp", speed:"slow", mode:"root", back:"drums" }, store.get().sel || {});
+function saveSel(){ const st = store.get(); st.sel = S; store.set(st); }
 
-const FFT = 16384, TONAL_MIN = 0.30;
-const det = {
-  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
-    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
-    // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-    const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-    this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
-  },
-  chroma(){
-    this.an.getFloatFrequencyData(this.buf);
-    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
-    const mag = new Float32Array(n); let mx = 0;
-    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
-    // Is this sound tonal at all? Notes are sharp spectral peaks; a cough, a rustle or room hiss is energy spread over everything.
-    { let tot = 0, pk = 0; const W = 15;
-      for(let i = 0; i < n; i++){
-        const e = mag[i] * mag[i]; tot += e;
-        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
-          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
-          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
-        }
-      }
-      this.tonal = pk / (tot + 1e-30);
-    }
-    if(this.tonal < TONAL_MIN) return null;
-    // tuning: where do the strong peaks sit relative to the nearest semitone? (so a slightly flat guitar still reads right)
-    let sx = 0, sy = 0;
-    for(let i = 1; i < n - 1; i++){
-      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
-        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
-        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
-        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
-      }
-    }
-    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
-    const ch = new Float32Array(12);
-    for(let i = 0; i < n; i++){
-      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
-      ch[pc] += Math.sqrt(mag[i]);
-    }
-    return ch;
-  }
+/* ---------- stars: 1 for beating the boss, 2 for beating it with whole chords, 3 for whole chords at Fast ---------- */
+const wonOf = id => (store.get().won || {})[id] || {};
+const starsOf = id => { const w = wonOf(id); return (w.any ? 1 : 0) + (w.chord ? 1 : 0) + (w.fast ? 1 : 0); };
+const GOALS = boss => [["any", `Beat ${boss}`], ["chord", "Beat it playing whole chords"], ["fast", "Beat it with whole chords at Fast"]];
+const starRow = n => "★".repeat(n) + `<i>${"★".repeat(3 - n)}</i>`;
+
+/* ---------- what each boss says (a short line at the start, when you miss, at half health, and at the end) ---------- */
+const LINES = {
+  amp: { intro:["Turn it DOWN? Never!", "I go all the way to eleven!"], taunt:["Too quiet!", "Bzzzt! Missed!", "Can't hear you!"], rage:["Now I'm cranked UP!", "Feedback time!"], lose:["My knobs... my lovely knobs...", "Unplugged!"], win:["Ha! Turn it up next time!"] },
+  cables: { intro:["Try and untangle THIS!", "I'm all knotted up and ready!"], taunt:["Tangled you up!", "Knot this time!"], rage:["Now I'm REALLY twisted!", "Grrr, loops everywhere!"], lose:["All neat and coiled... how embarrassing.", "Untangled!"], win:["Still in knots? Ha!"] },
+  metronome: { intro:["Tick. Tock. You're late!", "Keep my beat if you can!"], taunt:["Off the beat!", "Tick-tock, too slow!"], rage:["Double time!", "TICKTOCKTICKTOCK!"], lose:["I've... lost... the beat...", "Wound down!"], win:["Practise with me more, ha!"] },
+  kit: { intro:["Ba-dum TSS! Let's go!", "I've got the beat, you've got nothing!"], taunt:["Ba-dum TSS!", "Drum roll for that miss!"], rage:["Blast beat mode!", "SMASH THE CYMBALS!"], lose:["My sticks! My skins!", "Out of rhythm..."], win:["Drummers rule!"] },
+  stompbox: { intro:["Ahoy! Prepare to be FUZZED!", "Captain Fuzz at your service. NOT!"], taunt:["Bzzzzzz! Fuzzed!", "Stomped ya!"], rage:["Maximum fuzz!", "Me moustache is furious!"], lose:["Me knobs have fallen off!", "Bypassed!"], win:["Arr, fuzzed again!"] },
+  sournote: { intro:["I'm the wrongest note you'll ever hear!", "Prepare to sound SOUR!"], taunt:["Blehhh! Sour!", "Wah-wah-waaah!"], rage:["Now I'm extra flat!", "Sharp AND sour!"], lose:["I'm... back in tune? Noooo!", "Sweet. Yuck."], win:["Sour power!"] },
+  mic: { intro:["Testing, testing... you're TOAST!", "Is this thing on? It is now!"], taunt:["SCREEEECH!", "Feedback! Ha!"], rage:["MAXIMUM FEEDBACK!", "Turn me up, I dare you!"], lose:["Mic... drop...", "Check one, two... ugh."], win:["One, two, you lose!"] },
+  smoke: { intro:["I'm the headliner, kid!", "Lights! Smoke! Boss fight!"], taunt:["Puff! Can't see you!", "Smoke in your eyes!"], rage:["FULL STAGE SHOW!", "More smoke! More lights!"], lose:["The show... is over...", "Lights out!"], win:["The crowd loves ME!"] }
 };
+const pickLine = (boss, k) => { const l = (LINES[boss] || LINES.amp)[k]; return l[Math.floor(Math.random() * l.length)]; };
+function say(text, ms){
+  const host = $("bf"); host.querySelectorAll(".bubble").forEach(b => b.remove());
+  const b = document.createElement("div"); b.className = "bubble"; b.textContent = text; host.appendChild(b);
+  setTimeout(() => b.remove(), ms || 1800);
+}
+
+const det = FMAListen.create();        // the shared listener every game uses (fma-listen.js)
 if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 
 
@@ -278,23 +325,13 @@ function readScores(){
   if(!det.ready) return null;
   const db = det.level();
   $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
-  if(db <= det.gateDb){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate"; return null; }
-  const ch = det.chroma();
-  if(!ch){ if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ": not musical"; return null; }
-  const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
-  const raw = Array.from(ch, v => Math.max(v - floor, 0) / span);
-  // a note's overtones land on other notes: take a small share off where they land
-  const sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
-  if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB, tonal " + det.tonal.toFixed(2) + ", tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
+  const sc = det.scores();
+  if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + "), tonal " + det.tonal.toFixed(2) + ", tuning " + (det.tune * 100).toFixed(0) + " cents\n" +
+    (sc ? NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n") : "(below the gate, or not musical)");
   return sc;
 }
 // Root mode: the chord's root must be the clearly strongest note (it has to beat both neighbouring semitones by 25%).
-function strongest(sc){
-  if(!sc) return -1;
-  let b = 0; sc.forEach((v, i) => { if(v > sc[b]) b = i; });
-  const nb = Math.max(sc[(b + 1) % 12], sc[(b + 11) % 12]);
-  return sc[b] - nb >= 0.25 ? b : -1;
-}
+const strongest = sc => FMAListen.strongest(sc, 0.25);
 
 /* ---------- The beat: drums made on the device ---------- */
 const snd = { ctx:null, out:null, noise:null, next:0, beat:0, timer:null, t0:0, bpm:80, mode:"drums", bars:0 };
@@ -352,82 +389,113 @@ function sndStop(){ clearInterval(snd.timer); }
 const barDur = () => 4 * 60 / snd.bpm;
 const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 during the count-in
 
+
 /* ---------- The fight ---------- */
-const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false, bossHp:100, streak:0, bestStreak:0 };
-let song, info, art, pArt, me;
+const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false,
+  chords:[], bars:BARS, misses:0, ko:false, bossHp:17, maxHp:17, streak:0, bestStreak:0, dmg:0, raged:false, gold:false, down:false };
+let song, boss, art, pArt, me, lastTaunt = 0;
 function buildFight(){
-  song = songById(S.song);
+  song = FMABoss.byId(S.song); boss = FMABoss.bossOf(song);
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
-  G.bars = n; G.need = Math.max(1, Math.round(n * WIN));
-  G.dmgPer = 100 / Math.max(1, G.bars - G.need + 1);       // knocked out on the miss that makes winning impossible
+  G.bars = n; G.maxHp = bossHP(n);
 }
 function setHp(){
-  $("phpbar").style.width = G.hp + "%"; $("phptxt").textContent = Math.round(G.hp); $("phpw").classList.toggle("low", G.hp <= 35);
-  $("hpbar").style.width = G.bossHp + "%"; $("hptxt").textContent = G.bossHp > 0 ? Math.ceil(G.bossHp) : "DEFEATED!";
+  const youPct = 100 * (1 - G.misses / KO_MISSES);
+  $("phpbar").style.width = Math.max(0, youPct) + "%"; $("phptxt").textContent = Math.max(0, KO_MISSES - G.misses) + " ♥"; $("phpw").classList.toggle("low", youPct <= 35);
+  $("hpbar").style.width = (100 * G.bossHp / G.maxHp) + "%"; $("hptxt").textContent = G.bossHp > 0 ? G.bossHp + " / " + G.maxHp : "DEFEATED! Encore!";
 }
-// Hit streaks pay more: 3 in a row = x1.5, 5 = x2, 8 = x3 damage. A miss resets the streak.
-const multOf = n => n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1.5 : 1;
-function floatNum(host, text, big){ const d = document.createElement("div"); d.className = "dnum" + (big ? " big" : ""); d.textContent = text; host.appendChild(d); setTimeout(() => d.remove(), 1000); }
-function comboUI(m){
-  const el = $("combo");
-  el.className = "combo " + (m >= 3 ? "x3" : m >= 2 ? "x2" : m > 1 ? "x15" : "");
-  el.innerHTML = G.streak >= 2 ? `STREAK <b>${G.streak}</b>${m > 1 ? " · DAMAGE <b>x" + m + "</b>" : ""}` : "";
-  void el.offsetWidth; el.classList.add("pop");
+function floatNum(host, text, cls){ const d = document.createElement("div"); d.className = "dnum " + (cls || ""); d.textContent = text; host.appendChild(d); setTimeout(() => d.remove(), 1000); }
+function shout(text, cls){ const d = document.createElement("div"); d.className = "shout " + cls; d.textContent = text; $("stage").appendChild(d); setTimeout(() => d.remove(), 1100); }
+function comboUI(pop){
+  const n = G.streak, d = dmgOf(n), el = $("combo");
+  el.className = "combo " + (n >= 6 ? "c2" : n >= 3 ? "c1" : "");
+  $("cLbl").innerHTML = `COMBO <b>${n}</b>`;
+  [...$("pips").children].forEach((p, i) => p.className = i < Math.min(n, 6) ? (i >= 3 ? "on t2" : "on") : "");
+  $("cTier").textContent = n >= 6 ? "5 damage!" : n >= 3 ? "3 damage!" : `${3 - n} more for x3`;
+  $("pf").classList.toggle("hot", n >= 3 && n < 6); $("pf").classList.toggle("super", n >= 6);
+  if(pop){ el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
 }
 function startFight(){
   buildFight();
-  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
+  Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, misses:0, ko:false, bossHp:G.maxHp, streak:0, bestStreak:0, dmg:0, raged:false, down:false });
+  G.gold = !SIM && !!wonOf(song.id).any && Math.random() < GOLD_CHANCE;      // a rare golden boss, once you've beaten this song
   G.latched.fill(false); G.onFor.fill(0);
-  art = BossArt($("bimg"), { kind:song.b, hue:songNo() * 36 });
+  art = BossArt($("bimg"), { kind:boss, gold:G.gold });
+  $("bname").textContent = (G.gold ? "Golden " : "") + FMABoss.name(boss);
   me = Player.get();
   pArt = PlayerArt($("pimg"), me);
   setTimeout(() => pArt.pose(PlayerArt.MOMENTS.start, 1800), 300);
   $("pname").textContent = me.name || "You";
-  $("combo").className = "combo"; $("combo").textContent = "";
-  setHp();
+  comboUI(false); setHp();
   $("bars").innerHTML = G.chords.map(() => "<i></i>").join("");
   $("beats").innerHTML = "<i></i><i></i><i></i><i></i>";
   $("status").textContent = "";
   const sp = SPEEDS.find(x => x.k === S.speed);
   sndStart(sp.bpm, S.back);
   show("play");
+  setTimeout(() => say(G.gold ? "I'm GOLDEN! Beat me for bonus picks!" : pickLine(boss, "intro"), 2200), 350);
 }
 function setChord(i){
   const c = G.chords[i], root = S.mode === "root";
-  $("chord").textContent = root ? NOTE_NAMES[c.root] : c.name;
+  const lab = root ? NOTE_NAMES[c.root] : L(c.name);
+  $("chord").textContent = lab; $("chord").classList.toggle("long", lab.length > 3);
   $("chord").classList.remove("pop"); void $("chord").offsetWidth; $("chord").classList.add("pop");
   $("tones").innerHTML = root ? "" : c.tones.map(t => `<span>${t}</span>`).join("");
   $("diag").innerHTML = root ? "" : FMAChords.diagram(c.name);
   const nx = G.chords[i + 1];
-  $("next").innerHTML = nx ? "Next: <b>" + (root ? NOTE_NAMES[nx.root] : nx.name) + "</b>" : "Last bar!";
-  $("call").textContent = root ? "Play the note" : "Play the chord";
+  $("next").innerHTML = nx ? "Next: <b>" + (root ? NOTE_NAMES[nx.root] : L(nx.name)) + "</b>" : "Last bar!";
+  $("call").textContent = root ? (PIANO ? "Play the key" : "Play the note") : "Play the chord";
 }
 function frame(){
   if(!G.on){ return; }
   requestAnimationFrame(frame);
   const bp = barPos(), beat = Math.floor(((bp + 1) % 1 + 1) % 1 * 4);
   [...$("beats").children].forEach((el, i) => el.className = i === beat ? "on" : "");
-  if(bp < 0){ $("diag").innerHTML = ""; $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
+  if(bp < 0){ $("diag").innerHTML = ""; $("tones").innerHTML = ""; $("next").innerHTML = ""; $("call").textContent = "Get ready…"; $("chord").classList.remove("long"); $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
   const idx = Math.floor(bp);
   if(idx >= G.bars){ return finish(); }
   if(idx !== G.idx){
     if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
-    G.idx = idx; G.hit = false; G.run = 0; G.rootRun = 0; G.latched.fill(false); G.onFor.fill(0); G.settle = performance.now() + 250;
+    if(G.done) return;
+    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx]); G.settle = performance.now() + 250;
     setChord(idx);
     [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
-    if(idx > 0 && !G.outcomes[idx - 1]) $("status").textContent = "";
+    if(idx > 0 && G.outcomes[idx - 1]) $("status").textContent = "";
   }
 }
 function miss(){
   if(G.done) return;
-  const lost = G.streak; G.streak = 0;
-  G.hp = Math.max(0, G.hp - G.dmgPer);
-  setHp(); pArt.hurt(); pArt.setDamage(1 - G.hp / 100); art.taunt();
-  floatNum($("pimg"), "-" + Math.round(G.dmgPer));
-  $("combo").className = "combo"; $("combo").textContent = lost >= 3 ? "Streak lost!" : "";
-  $("status").textContent = "Ouch!"; $("status").style.color = "var(--bad)";
-  if(G.hp <= 0.5){ G.done = true; G.ko = true; pArt.ko(); setTimeout(() => finish(), 1200); }
+  const lost = G.streak; G.streak = 0; G.misses++;
+  setHp(); pArt.hurt(); pArt.setDamage(G.misses / KO_MISSES); art.taunt();
+  floatNum($("pimg"), "-1 ♥");
+  comboUI(false);
+  $("status").textContent = lost >= 3 ? "Combo dropped! Start a new one." : "Missed that one. Next chord!"; $("status").style.color = "var(--bad)";
+  if(performance.now() - lastTaunt > 4000){ lastTaunt = performance.now(); say(pickLine(boss, "taunt"), 1500); }
+  if(G.down) $("status").textContent = "Encore! Keep going for a bigger score.";
+  if(G.misses >= KO_MISSES && !G.down){ G.done = true; G.ko = true; pArt.ko(); setTimeout(() => finish(), 1200); }
+}
+function landHit(){
+  G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
+  const d = dmgOf(G.streak); G.dmg += d;
+  G.bossHp = Math.max(0, G.bossHp - d);
+  setHp(); if(!G.down){ art.setDamage(1 - G.bossHp / G.maxHp); art.hit(d >= 5 ? 3 : d >= 3 ? 2 : 1); }
+  pArt.pose([3, 6, 10].includes(G.streak) ? PlayerArt.MOMENTS.streak : PlayerArt.MOMENTS.hit, 1100); pArt.attack(1);
+  floatNum($("bimg"), "-" + d, d >= 5 ? "c2" : d >= 3 ? "c1" : "");
+  comboUI(true);
+  if(G.streak === 3) shout("COMBO!", "s1");
+  else if(G.streak === 6){ shout("SUPER COMBO!", "s2"); $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
+  else if(G.streak === 10 || G.streak === 16) shout(G.streak === 16 ? "PERFECT!" : "UNSTOPPABLE!", "s3");
+  else if(d >= 5){ $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
+  $("status").textContent = d > 1 ? `Hit! ${d} damage` : "Hit!"; $("status").style.color = "var(--good)";
+  if(!G.raged && G.bossHp > 0 && G.bossHp <= G.maxHp / 2){ G.raged = true; art.rage(); setTimeout(() => { if(!G.down) say(pickLine(boss, "rage"), 1700); }, 450); }
+  if(G.down) $("status").textContent = `Encore! ${G.dmg} damage`;
+  if(G.bossHp <= 0 && !G.down){
+    G.down = true; art.die(); say(pickLine(boss, "lose"), 1600);
+    setTimeout(() => { pArt.pose(PlayerArt.MOMENTS.win, 1500); pArt.cheer(); shout("BOSS DOWN!", "s1"); }, 500);
+    setTimeout(() => { if(G.on && G.idx < G.bars - 1) shout("ENCORE!", "s3"); }, 1800);
+    $("hptxt").textContent = "DEFEATED! Encore!";
+  }
 }
 function tick(){
   if(!G.on || G.done || G.idx < 0 || !(det.ready || SIM)) return;
@@ -440,76 +508,110 @@ function tick(){
     G.rootRun = top === c.root ? G.rootRun + 1 : 0;
     hit = G.rootRun >= 3;                                  // about a quarter of a second, held
   }else if(SIM){ hit = simChord; }
-  else if(!sc){ G.run = 0; G.latched.fill(false); G.onFor.fill(0); }
   else{
-    let missing = 0, strays = 0;
-    for(let i = 0; i < 12; i++){
-      const x = sc[i], inC = (c.mask >> i) & 1;
-      G.latched[i] = x >= 0.40 || (G.latched[i] && x >= 0.30);
-      G.onFor[i] = G.latched[i] ? G.onFor[i] + 1 : 0;
-      if(inC && !G.latched[i]) missing++;
-      if(!inC && G.latched[i]) strays++;
-    }
-    G.run = (missing === 0 && strays === 0) ? G.run + 1 : 0;
-    hit = G.run >= 3;
-    [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!G.latched[c.pcs[i]]));
+    const r = G.match.step(sc); hit = r.hit;
+    [...$("tones").children].forEach((el, i) => el.classList.toggle("on", !!r.latched[c.pcs[i]]));
   }
-  if(hit && !G.hit){
-    G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
-    const m = multOf(G.streak), dmg = Math.round(100 / G.need * m);
-    G.bossHp = Math.max(0, G.bossHp - dmg);
-    setHp(); pArt.pose([3, 5, 8].includes(G.streak) ? PlayerArt.MOMENTS.streak : PlayerArt.MOMENTS.hit, 1100); pArt.attack(1); art.setDamage(1 - G.bossHp / 100); art.hit(m > 1 ? 2 : 1);
-    floatNum($("bimg"), "-" + dmg, m > 1);
-    comboUI(m);
-    $("status").textContent = m > 1 ? "Hit! x" + m : "Hit!"; $("status").style.color = "var(--good)";
-    if(G.bossHp <= 0){ G.done = true; art.die(); setTimeout(() => { pArt.pose(PlayerArt.MOMENTS.win, 0); pArt.cheer(); }, 700); setTimeout(() => finish(), 1600); }
-  }
+  if(hit && !G.hit) landHit();
 }
-function finish(){
+function finish(quit){
   if(!G.on) return;
   G.on = false; sndStop();
+  if(quit){ drawMap(); show("map"); return; }
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
-  const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
-  if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
-  const endArt = BossArt($("endImg"), { kind:song.b, hue:songNo() * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
-  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.hits > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
-  if(!SIM) FMAStudent.send("boss-battle", {detail:song.t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.hits > 0});
-  $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
-  $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
-  $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
+  // the score to beat is damage (combos and the encore count), per song, speed and mode
+  const win = G.down, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.dmgBest || {})[key] || 0, isBest = G.dmg > best;
+  if(isBest){ st.dmgBest = st.dmgBest || {}; st.dmgBest[key] = G.dmg; }
+  delete st.best;          // the old hits-per-song list (before damage became the score): dropped to keep the cloud save small
+  const before = starsOf(song.id);
+  if(win){
+    st.won = st.won || {}; const w = st.won[song.id] = st.won[song.id] || {};
+    w.any = 1; if(S.mode === "chord"){ w.chord = 1; if(S.speed === "fast") w.fast = 1; }
+  }
+  store.set(st);
+  const after = starsOf(song.id), name = (G.gold ? "the golden " : "") + FMABoss.name(boss);
+  const endArt = BossArt($("endImg"), { kind:boss, gold:G.gold }); endArt.setDamage(1 - G.bossHp / G.maxHp); if(win) endArt.die(); else setTimeout(() => endArt.taunt(), 500);
+  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(G.misses / KO_MISSES); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.dmg > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
+  if(!SIM) FMAStudent.send("boss-battle", {detail:song.t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.dmg > 0, instrument:INST});
+  if(win && G.gold && window.FMAPicks && FMAPicks.bonus) FMAPicks.bonus(GOLD_PICKS, "beating a golden boss");
+  $("endTitle").textContent = win ? (G.gold ? "Golden boss beaten!" : `You beat ${FMABoss.name(boss)}!`) : G.ko ? "You were knocked out!" : `${FMABoss.name(boss)} got away…`;
+  $("endStars").innerHTML = [1, 2, 3].map(i => `<span class="${i <= after ? "got" : ""} ${i > before && i <= after ? "new" : ""}" style="animation-delay:${(i - before - 1) * 0.25}s">★</span>`).join("");
+  const goals = GOALS(FMABoss.name(boss)), nextGoal = goals[after];
+  $("endGoal").innerHTML = after > before ? `New star! ${after === 3 ? "All three stars for this song." : "Next star: " + esc(nextGoal[1].toLowerCase()) + "."}`
+    : after < 3 ? `Next star: ${esc(nextGoal[1].toLowerCase())}.` : "All three stars. Can you set a new best combo?";
+  $("endHits").textContent = G.hits + " / " + G.bars; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = G.dmg;
+  $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks for the golden boss!</span></p>` : "") +
+    (isBest && G.dmg > 0 ? `<p><span class="gold" style="background:var(--pick-bg)">New best: ${G.dmg} damage!</span></p>` : best ? `<p style="color:var(--muted)">Your best at this speed: ${best} damage</p>` : "");
+  const nx = nextSong();
+  $("nextSong").hidden = !nx; if(nx) $("nextSong").textContent = `Next: ${nx.t} (vs ${FMABoss.name(FMABoss.bossOf(nx))})`;
+  $("nextSong").onclick = () => { if(nx){ S.song = nx.id; saveSel(); openSetup(); } };
+  if(!win) setTimeout(() => say(pickLine(boss, "win"), 1800), 300);
   show("end");
 }
+// the next open song that still has stars to win, after this one
+function nextSong(){
+  const open = openSongs(), i = open.indexOf(song);
+  return open.slice(i + 1).concat(open.slice(0, i)).find(s => starsOf(s.id) < 3) || null;
+}
 
-/* ---------- Menus ---------- */
-const show = id => ["start","play","end"].forEach(s => { $(s).hidden = s !== id; });
+/* ---------- The boss map ---------- */
+const show = id => { ["map","setup","play","end"].forEach(s => { $(s).hidden = s !== id; }); scrollTo(0, 0); };
+const openSet = () => TEACHER ? new Set(FMAChords.list.map(c => c.name)) : FMAChords.unlocked();
+const openSongs = () => { const o = openSet(); return FMABoss.order().filter(s => FMABoss.isOpen(s, o)); };
+const expanded = new Set();
+function drawMap(){
+  const open = openSet(), order = FMABoss.order(), byBoss = {};
+  order.forEach(s => (byBoss[FMABoss.bossOf(s)] = byBoss[FMABoss.bossOf(s)] || []).push(s));
+  let totalStars = 0, beaten = 0, songsOpen = 0;
+  const html = FMABoss.ROSTER.filter(b => byBoss[b]).map(b => {
+    const songs = byBoss[b], openHere = songs.filter(s => FMABoss.isOpen(s, open)), stars = songs.reduce((a, s) => a + starsOf(s.id), 0);
+    totalStars += stars; songsOpen += openHere.length;
+    const won = songs.some(s => wonOf(s.id).any); if(won) beaten++;
+    const locked = !openHere.length;
+    const firstNeed = locked ? songs[0].c.find(n => !open.has(n)) : null;
+    const tag = locked ? `Unlock ${esc(L(firstNeed))} in Chord Quest to meet this boss.` : won ? "Beaten! Win every star to finish it off." : "Not beaten yet.";
+    // a boss's open songs, then the next couple of locked ones (the rest behind "show more")
+    const lockedSongs = songs.filter(s => !FMABoss.isOpen(s, open)), showLocked = expanded.has(b) ? lockedSongs : lockedSongs.slice(0, locked ? 0 : 2);
+    const rows = openHere.concat(showLocked).map(s => {
+      const isO = FMABoss.isOpen(s, open), need = s.c.filter(n => !open.has(n));
+      return `<li><button class="srow" data-id="${s.id}" ${isO ? "" : "disabled"}><span class="t"><b>${esc(s.t)}</b><small>${esc(s.a)}</small><span class="pills">${[...new Set(s.c)].map(n => `<span class="pill ${need.includes(n) ? "need" : ""}">${esc(L(n))}</span>`).join("")}</span></span>` +
+        (isO ? `<span class="stars" aria-label="${starsOf(s.id)} of 3 stars">${starRow(starsOf(s.id))}</span>` : `<span class="lk">🔒 ${esc(L(need[0]))}</span>`) + `</button></li>`;
+    }).join("");
+    const rest = lockedSongs.length - showLocked.length;
+    return `<section class="card lair ${locked ? "locked" : ""} ${won && stars === songs.length * 3 ? "beaten" : ""}"><div class="top"><div class="bimg" data-boss="${b}"></div><div class="who"><b>${locked ? "???" : esc(FMABoss.name(b))}</b><small>${tag}</small>` +
+      `${locked ? "" : `<span class="prog">★ ${stars} / ${songs.length * 3}</span>`}</div></div>` +
+      (rows ? `<ul class="slist">${rows}</ul>` : "") + (rest > 0 && !locked ? `<button class="more" data-more="${b}">${rest} more song${rest > 1 ? "s" : ""} to unlock</button>` : "") + `</section>`;
+  }).join("");
+  $("lairs").innerHTML = html;
+  $("lairs").querySelectorAll(".bimg").forEach(el => { const a = BossArt(el, { kind: el.dataset.boss }); if(el.closest(".beaten")) a.die(); });
+  $("tally").innerHTML = `<span>🎸 ${songsOpen} song${songsOpen === 1 ? "" : "s"} open</span><span>★ ${totalStars} stars</span><span>👊 ${beaten} / ${FMABoss.ROSTER.length} bosses beaten</span>`;
+  const m = Player.get(); const mp = PlayerArt($("mapMe"), m); setTimeout(() => mp.pose(PlayerArt.MOMENTS.hello, 2600), 400);
+}
+$("lairs").onclick = e => {
+  const m = e.target.closest("[data-more]"); if(m){ expanded.add(m.dataset.more); drawMap(); return; }
+  const b = e.target.closest(".srow"); if(!b || b.disabled) return;
+  S.song = b.dataset.id; saveSel(); openSetup();
+};
+
+/* ---------- Getting ready for one song ---------- */
 function chips(el, list, key, sub){
   $(el).innerHTML = list.map(o => `<button data-k="${o.k}" class="${S[key] === o.k ? "on" : ""}"><b>${o.n}</b><small>${sub(o)}</small></button>`).join("");
-  $(el).querySelectorAll("button").forEach(b => b.onclick = () => { S[key] = b.dataset.k; saveSel(); draw(); });
+  $(el).querySelectorAll("button").forEach(b => b.onclick = () => { S[key] = b.dataset.k; saveSel(); drawSetup(); });
 }
-function saveSel(){ const st = store.get(); st.sel = S; store.set(st); }
-function draw(){
-  const open = FMAChords.unlocked(), L = FMAChords.list, groups = [];
-  SONGS.slice().sort((a, b) => ladderPos(a) - ladderPos(b)).forEach(s => {
-    const pos = Math.max(1, ladderPos(s)), g = groups[groups.length - 1];
-    if(g && g.pos === pos) g.songs.push(s); else groups.push({ pos, songs: [s] });
-  });
-  if(!songById(S.song) || !isOpen(songById(S.song), open)) S.song = (SONGS.find(s => isOpen(s, open)) || SONGS[0]).id;
-  $("songs").innerHTML = groups.map(g => {
-    const head = g.pos === 1 ? L[0].name + " and " + L[1].name : "With " + L[g.pos].name;
-    const locked = !TEACHER && !open.has(L[g.pos].name);
-    return `<div class="lvl${locked ? " locked" : ""}">${locked ? "🔒 " : ""}${esc(head)}${locked ? `<small>Unlock ${esc(L[g.pos].name)} in Chord Practice</small>` : ""}</div>` +
-      g.songs.map(s => `<button class="song ${S.song === s.id ? "on" : ""}" data-id="${s.id}" ${isOpen(s, open) ? "" : "disabled"}><b>${esc(s.t)}</b><small>${esc(s.a)}</small><span>${s.c.join(" ")}</span></button>`).join("");
-  }).join("");
-  $("songs").querySelectorAll("button").forEach(b => b.onclick = () => { S.song = b.dataset.id; saveSel(); draw(); });
+function openSetup(){ drawSetup(); show("setup"); }
+function drawSetup(){
+  const s = FMABoss.byId(S.song), b = FMABoss.bossOf(s), w = wonOf(s.id);
+  $("suTitle").textContent = s.t; $("suBy").textContent = s.a + " · the loop: " + s.c.map(L).join(" ");
+  const ba = BossArt($("suBoss"), { kind: b }); setTimeout(() => ba.taunt(), 500);
+  const pa = PlayerArt($("suMe"), Player.get()); setTimeout(() => pa.pose(PlayerArt.MOMENTS.start, 1800), 300);
+  $("goals").innerHTML = GOALS(FMABoss.name(b)).map(([k, t]) => `<li class="${w[k] ? "done" : ""}"><span class="s">★</span>${esc(t)}</li>`).join("");
   chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
-  { const m = Player.get(); const mp = PlayerArt($("mart"), m); setTimeout(() => mp.pose(PlayerArt.MOMENTS.hello, 2600), 400); $("mname").textContent = m.name || "Your character"; }
-  const best = store.get().best || {}, k = S.song + "-" + S.speed + "-" + S.mode;
-  $("bests").textContent = best[k] ? "Your best for this song, speed and mode: " + best[k] + " hits" : "";
+  $("tip").textContent = PIANO ? "Use headphones so the game doesn't hear its own drums." : "Use headphones so the game doesn't hear its own drums. Tune up first.";
 }
 async function begin(){
-  $("go").disabled = true; $("err").hidden = true;
+  $("go").disabled = true; $("again").disabled = true; $("err").hidden = true;
   try{
     if(!snd.ctx){
       if(SIM){ sndInit(new (window.AudioContext || window.webkitAudioContext)()); }
@@ -520,19 +622,26 @@ async function begin(){
   }catch(e){
     $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone is blocked. Allow it for this page (the address-bar icon) and try again."
       : e && e.name === "NotFoundError" ? "No microphone was found." : String(e && e.message || e);
-    $("err").hidden = false;
+    $("err").hidden = false; show("setup");
   }
-  $("go").disabled = false;
+  $("go").disabled = false; $("again").disabled = false;
 }
 $("go").onclick = begin;
 $("again").onclick = () => begin();
-$("other").onclick = () => { draw(); show("start"); };
-FMAChords.load().then(draw, () => { $("songs").textContent = "Couldn't load the song list. Check your connection and reload."; });
+$("other").onclick = () => { drawMap(); show("map"); };
+$("toMap").onclick = () => { drawMap(); show("map"); };
+$("quit").onclick = () => finish(true);
+FMAChords.load().then(() => {
+  const want = q.get("song");
+  if(!FMABoss.byId(S.song) || !FMABoss.isOpen(FMABoss.byId(S.song), openSet())) S.song = (openSongs()[0] || FMABoss.order()[0]).id;
+  drawMap();
+  if(want && FMABoss.byId(want) && FMABoss.isOpen(FMABoss.byId(want), openSet())){ S.song = want; saveSel(); openSetup(); }
+}, () => { $("lairs").textContent = "Couldn't load the song list. Check your connection and reload."; });
 setInterval(tick, 90);
 
 /* ---------- No-microphone test mode: ?sim (note buttons / keys C D E F G A B, hold Space for "I'm playing the whole chord") ---------- */
 if(SIM){
-  $("sim").hidden = false; $("go").textContent = "Start (test mode, no microphone)";
+  $("sim").hidden = false; $("go").textContent = "Fight! (test mode, no microphone)";
   $("sim").innerHTML = NOTE_NAMES.map((n, i) => `<button data-pc="${i}">${n}</button>`).join("") + `<button data-chord="1" style="min-width:120px">Whole chord</button>`;
   $("sim").querySelectorAll("button").forEach(b => {
     const on = () => { if(b.dataset.chord) simChord = true; else simNote = Number(b.dataset.pc); b.classList.add("on"); };
@@ -547,6 +656,7 @@ if(SIM){
   });
   document.addEventListener("keyup", e => { simNote = -1; if(e.key === " ") simChord = false; });
 }
+window.__boss = { G, S, landHit, miss, finish, drawMap, openSetup, starsOf };
 </script>
 </body>
 </html>

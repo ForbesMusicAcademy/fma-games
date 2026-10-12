@@ -143,6 +143,9 @@
   // a practice day, and the 3- and 5-day bonuses for the week
   function practised(w, list){
     const now = new Date(), today = dayStr(now), wk = weekOf(now);
+    // a week's "once" marks only matter during that week: drop ones over 8 weeks old so the save doesn't grow forever
+    const old = weekOf(new Date(now.getTime() - 56 * 864e5));
+    Object.keys(w.once).forEach(k => { const m = /^(?:week|studio):(\d{4}-\d\d-\d\d)/.exec(k); if(m && m[1] < old) delete w.once[k]; });
     if(!w.days.includes(today)) w.days.push(today);
     w.days = w.days.slice(-21);
     const n = w.days.filter(d => weekOf(new Date(d + "T12:00")) === wk).length;
@@ -160,6 +163,8 @@
     save(w); show(list, w.picks, game === "chords" && list.length === 1);
     return list;
   }
+  // a bonus for a surprise (Boss Battle's golden boss): paid every time it happens
+  function bonus(n, why){ const w = load(), list = []; add(w, n, why, list); save(w); show(list, w.picks); return list; }
   // a one-off reward (Adventure quests)
   function milestone(k, n, why){ const w = load(), list = []; once(w, k, n, why, list); if(list.length){ save(w); show(list, w.picks); } return list; }
   // a prize (finishing a Song Pack): the item is unlocked for free. If it was already unlocked, the prize is picks instead.
@@ -207,5 +212,5 @@
     return got;
   }
 
-  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, adventureOwned, icon: ICON };
+  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, bonus, adventureOwned, icon: ICON };
 })();

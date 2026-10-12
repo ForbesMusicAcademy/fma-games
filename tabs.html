@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Home song practice: pick a song, play it note by note, earn stars. Phone first, same look as the chord page.
    The page listens through the microphone and never records. */
@@ -93,7 +93,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <div class="card" style="margin-bottom:14px">
       <h2>Play the tab, note by note</h2>
       <p>Your device listens through its microphone. Play each note on the tab. It only moves on when you get it right.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
     </div>
     <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
     <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
@@ -107,7 +107,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <div id="last"></div>
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big" id="go" style="flex:2">Start (allow microphone)</button>
+      <button class="big play" id="go" style="flex:2">Start (allow microphone)</button>
       <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
       <button class="ghost" id="listen" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px">▶ Listen</button>
     </div>
@@ -121,11 +121,11 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <!-- messages -->
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=8"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="lib/alphaTab.min.js"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=11"></script>
 <script>
 /* ============================================================
    Song Practice (home). The song list is songs/songs.json (add a song with add-song.py). Progress is kept on this
@@ -404,7 +404,7 @@ function finish(){
     html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(stars, false)}</div>
       <h3>${stars > before.stars ? "New: " + stars + " star" + (stars > 1 ? "s" : "") + "!" : "Run finished"}</h3>
       <p>${stats.hit} of ${total} notes first time · ${stats.near} took another go</p><p>${msg}</p>
-      <button class="big" id="again">Play again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+      <button class="big play" id="again">Play again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
   } else {
     const won = pct >= DIAMOND_PCT;
     r.runs++; if (won) r.diamond = true;
@@ -414,7 +414,7 @@ function finish(){
          <button class="big" id="songs">All songs</button>`
       : `<div class="pct" style="color:var(--warn)">${pct}%</div><h3>Not this time</h3><p>${stats.hit} of ${total} notes right and on time. You need ${DIAMOND_PCT}%.</p>
          <p>Playing at home isn't always as accurate as in your lesson, so don't get discouraged. Try again, or nudge the timing delay if everything shows as late.</p>
-         <button class="big" id="again">Try again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+         <button class="big play" id="again">Try again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
   }
   save(); drawList(); refreshButtons();
   showPop(html);

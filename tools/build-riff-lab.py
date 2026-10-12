@@ -82,9 +82,10 @@ lab(1, "Straight Notes", "Low E string, plain notes. Find the frets and keep it 
 lab(2, "Palm Mutes", "Rest the side of your picking hand on the strings for a tight chug.", [
   riff("lab2-chug-engine", "Chug Engine", "Muted chugs, then two loud notes to finish each bar.", 100,
        ["E0pm:e E0pm:e E0pm:e E0pm:e E0pm:e E0pm:e E3:e E5:e", "E0pm:e E0pm:e E0pm:e E0pm:e E0pm:e E0pm:e E7:e E5:e"], ["E5", "E5"]),
+  # 13 Oct (Dave): no semiquavers in the early labs, so the gallop is crotchet-quaver-quaver (same long-short-short feel)
   riff("lab2-night-gallop", "Night Gallop", "The galloping horse rhythm of classic metal: long, short, short.", 92,
-       ["E0pm:e E0pm:s E0pm:s E0pm:e E0pm:s E0pm:s E0pm:e E0pm:s E0pm:s E5:e E3:e",
-        "E0pm:e E0pm:s E0pm:s E0pm:e E0pm:s E0pm:s E7:q E5:q"], ["E5", "E5"]),
+       ["E0pm:q E0pm:e E0pm:e E0pm:q E5:e E3:e",
+        "E0pm:q E0pm:e E0pm:e E7:q E5:q"], ["E5", "E5"]),
   riff("lab2-brick-wall", "Brick Wall", "Chug, chug, then a big open note. Heavy and simple.", 96,
        ["E0pm:e E0pm:e E7:q E0pm:e E0pm:e E8:e E7:e", "E0pm:e E0pm:e E0pm:e E0pm:e E5:q E3:q"], ["E5", "E5"]),
   riff("lab2-power-station", "Power Station", "A bouncy pub-rock chug with notes popping out between.", 120,

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Song Packs: songs in packs of five, three stars a song, a trophy and a character prize for finishing a pack.
    Guitar players read scrolling tab; piano players choose coloured notes on a staff or Falling Notes. Phone first.
@@ -121,7 +121,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div class="card" style="margin-bottom:14px">
       <h2>Pick a pack</h2>
       <p id="introLine">Every song earns up to 3 stars. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens more packs.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, or you can plug in a keyboard.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, or you can plug in a keyboard.</p>
       <div id="midiSlot" style="margin-top:6px"></div>
     </div>
     <div class="packs" id="packs"></div>
@@ -145,7 +145,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div id="pkeys" hidden></div>
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big" id="go" style="flex:2">Start</button>
+      <button class="big play" id="go" style="flex:2">Start</button>
       <button class="ghost" id="hear" style="flex:1;min-height:56px;border-radius:16px;white-space:nowrap">▶ Hear it</button>
     </div>
     <p id="hint"></p>
@@ -166,10 +166,11 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=11"></script>
 <script>
 /* ============================================================
    Song Packs (home). Wave 1 of the games site: projects/games-slow-release-plan.md in Dave's workspace.
@@ -218,7 +219,7 @@ const SONG_PACKS = [
     prize: { part: "acc", value: "party", label: "Party hat" } },
   { id: "explorer", lv: 2, name: "String Explorer", emo: "🧭", col: "#2E7DA8", col2: "#8ECAE6",
     skill: "One string at a time, now on the B, G, D and A strings.",
-    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["mars-riff", R2]],
+    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["frere-jacques", R2]],
     prize: { part: "eyewear", value: "round", label: "Round glasses" } },
   { id: "crossing", lv: 3, name: "Crossing Over", emo: "🌉", col: "#7A4EA8", col2: "#C9A7F0",
     skill: "Two strings: the tune steps from one string to the next.",
@@ -226,7 +227,7 @@ const SONG_PACKS = [
     prize: { part: "neck", value: "beads", label: "Beads" } },
   { id: "backforth", lv: 4, name: "Back and Forth", emo: "🏓", col: "#C2501B", col2: "#FFB805",
     skill: "Two strings, picking back and forth between them.",
-    songs: [["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
+    songs: [["spooky-zombie-march", R3], ["spooky-witchs-cauldron", R3], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
     prize: { part: "acc", value: "visor", label: "Visor" } },
   { id: "three", lv: 5, name: "Three Strings", emo: "🔱", col: "#1F7A6B", col2: "#7FD1C2",
     skill: "Three strings side by side.",
@@ -234,19 +235,19 @@ const SONG_PACKS = [
     prize: { part: "acc", value: "bucket", label: "Bucket hat" } },
   { id: "sharps", lv: 6, name: "Sharp Shooter", emo: "🎯", col: "#B8322C", col2: "#FF8A6B",
     skill: "Sharps and flats: the notes in between.",
-    songs: [["fur-elise", R5], ["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
+    songs: [["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
     prize: { part: "neck", value: "bowtie", label: "Bow tie" } },
   { id: "neck", lv: 7, name: "Whole Neck", emo: "🎸", col: "#26211F", col2: "#FFB805",
     skill: "All six strings.",
-    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
+    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["fur-elise", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
     prize: { part: "top", value: "jacket", label: "Jacket" } },
   { id: "groove", lv: 8, name: "Groove", emo: "🕺", col: "#C23B7A", col2: "#FF9BC8",
     skill: "Tricky rhythms: dotted notes, swing, 3/4 and 6/8.",
-    songs: [["twelve-bar-shuffle-in-a", null], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
+    songs: [["twelve-bar-shuffle-in-a", null], ["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
     prize: { part: "acc", value: "phones", label: "Headphones" } },
   { id: "speed", lv: 9, name: "Speed Run", emo: "⚡", col: "#2D5C9A", col2: "#FFD34D",
     skill: "Faster notes. Can you do them at Full speed?",
-    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["happy-birthday", null], ["minuet-in-g", null]],
+    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["mars-riff", null], ["happy-birthday", null], ["minuet-in-g", null]],
     prize: { part: "extra", value: "sweatbands", label: "Sweatbands" } },
   { id: "picking", lv: 10, name: "Picking Patterns", emo: "👑", col: "#8A6A1F", col2: "#FFC42B",
     skill: "Long picking patterns across all six strings.",
@@ -275,6 +276,52 @@ const LAB_LOOK = [
   { emo: "🔥", col: "#8A1F1F", col2: "#FF6B3D", prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
   { emo: "👑", col: "#8A6A1F", col2: "#FFC42B", prize: { part: "gear", value: "doubleneck", label: "Double-neck guitar" } }
 ];
+/* ---------- pace (13 Oct 2026, Dave: early packs have to feel achievable, mainly how many notes and how fast) ----------
+   Each level sets the fastest "Full" speed can be (bpm), how busy a song can be (notes a second on average, nps) and how long
+   it can run (notes). A song over the length plays its opening phrases (whole 4-bar chunks up to the limit), and a song
+   faster than the level allows is slowed to fit (never below 50 bpm, never faster than the song itself). Slow and Medium are
+   still 60% and 80% of that. Each lab lists its riffs easiest first. Levels 9 and 10 are the full songs.
+   Note lengths count too (Dave, 13 Oct): "rate" caps how fast the QUICKEST notes in a song come (notes a second at Full),
+   so a song can't hide a fast run inside a slow average, and nothing shorter than a quaver goes in Levels 1-6, the
+   seasonal packs or Riff Lab (no semiquavers or triplets; checkNoteLengths() warns in the console if one slips in). */
+const PACE = {
+  1: { bpm: 72, nps: 1.4, rate: 2.0, notes: 26 }, 2: { bpm: 76, nps: 1.6, rate: 2.2, notes: 28 }, 3: { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 },
+  4: { bpm: 84, nps: 2.0, rate: 2.6, notes: 36 }, 5: { bpm: 90, nps: 2.2, rate: 2.8, notes: 44 }, 6: { bpm: 96, nps: 2.4, rate: 3.0, notes: 52 },
+  7: { bpm: 100, nps: 2.6, rate: 3.4, notes: 64 }, 8: { bpm: 108, nps: 3.0, rate: 4.0, notes: 80 },
+  9: { bpm: 999, nps: 99, rate: 99, notes: 999 }, 10: { bpm: 999, nps: 99, rate: 99, notes: 999 } };
+const SEASON_PACE = { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 };
+const LAB_PACE = { 1: { bpm: 72, nps: 1.6, rate: 2.0 }, 2: { bpm: 76, nps: 1.8, rate: 2.2 }, 3: { bpm: 80, nps: 2.0, rate: 2.4 }, 4: { bpm: 84, nps: 2.1, rate: 2.6 },
+  5: { bpm: 84, nps: 2.2, rate: 2.6 }, 6: { bpm: 84, nps: 2.2, rate: 2.6 }, 7: { bpm: 88, nps: 2.4, rate: 2.8 }, 8: { bpm: 92, nps: 2.6, rate: 3.0 },
+  9: { bpm: 96, nps: 2.8, rate: 3.2 }, 10: { bpm: 100, nps: 3.0, rate: 3.4 } };
+const paceOf = p => !p ? null : LAB ? LAB_PACE[p.lv] : p.seasonal ? SEASON_PACE : PACE[p.lv];
+const pacedCache = {};
+function paced(s, p){
+  const pc = paceOf(p); if (!pc || !s || !s.notes || !s.notes.length) return s;
+  const ck = p.id + ":" + s.id; if (pacedCache[ck]) return pacedCache[ck];
+  const bb = s.ts[0] * 4 / s.ts[1]; let n = s.notes, bars = s.bars, cut = 0;
+  if (pc.notes && n.length > pc.notes) {
+    let best = 0;
+    for (let b = 4; b < s.bars; b += 4) if (n.filter(x => x.t < b * bb - 1e-6).length <= pc.notes) best = b;
+    if (!best) best = Math.min(4, s.bars);
+    if (best < s.bars) { cut = best * bb; n = n.filter(x => x.t < cut - 1e-6); bars = best; }
+  }
+  const beats = n[n.length - 1].t + n[n.length - 1].d;
+  const gaps = n.slice(1).map((x, i) => x.t - n[i].t).filter(g => g > 1e-6), gap = gaps.length ? Math.min(...gaps) : 1;    // the quickest notes
+  let tempo = Math.min(s.tempo, pc.bpm, pc.nps * 60 * beats / n.length, (pc.rate || 99) * 60 * gap);
+  tempo = Math.round(Math.max(Math.min(s.tempo, 50), tempo));
+  return pacedCache[ck] = Object.assign({}, s, { notes: n, bars, tempo, chords: cut ? (s.chords || []).filter(([b]) => b < cut) : s.chords,
+    paced: { cut: !!cut, bars, of: s.bars, slower: tempo < s.tempo } });
+}
+// how hard a song is at its pack's pace: busier and longer is harder
+const hardness = (p, id) => { const s = SONGS[id] && paced(SONGS[id], p); if (!s) return 0; const beats = s.notes[s.notes.length - 1].t + s.notes[s.notes.length - 1].d;
+  return (s.notes.length / (beats * 60 / s.tempo)) * Math.sqrt(s.notes.length) * (1 + 0.15 * new Set(s.notes.map(x => x.s === undefined ? 0 : x.s)).size)
+    * (0.6 + 0.1 * new Set(s.notes.map(x => x.m)).size); };      // more different notes to find is harder too (Hot Cross Buns has 3)
+// Riff Lab's riffs go easiest first. Song Packs keep their chosen order (Hot Cross Buns first, new songs before reviews).
+// no note shorter than a quaver below Level 7 (and in the seasonal packs and Riff Lab): a warning for whoever edits the packs
+function checkNoteLengths(){ PACKS.forEach(p => { if (p.lv >= 7 && !LAB) return; p.songs.forEach(([id]) => { const s = SONGS[id];
+  if (s && s.notes.some(x => x.d < 0.5 - 1e-6)) console.warn("Note shorter than a quaver in " + p.name + ": " + id); }); }); }
+function easiestFirst(){ if (!LAB) return; PACKS.forEach(p => { if (p.sorted) return; p.songs = p.songs.slice().sort((a, b) => hardness(p, a[0]) - hardness(p, b[0])); p.sorted = true; }); }
+
 let PACKS = LAB ? [] : SONG_PACKS;
 const NEED = LAB ? 4 : 5;            // stars in the pack before it that open the next one
 const tabRule = (p, id) => { const e = p && p.songs.find(x => x[0] === id); return e ? e[1] : null; };
@@ -383,7 +430,8 @@ function drawPack(){
   const list = ids(p), nextId = list.find(id => !starsOf(p, id)) || list.find(id => starsOf(p, id) < 3);
   $("songList").innerHTML = list.map(id => { const s = SONGS[id]; if (!s) return ""; const st = starsOf(p, id), nx = id === nextId;
     const lvl = !LAB && p.lv && INST === "guitar" ? levelOf(p, id) : "";
-    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
+    const ps = paced(s, p), part = ps && ps.paced && ps.paced.cut ? `<span class="fma-info" style="margin-right:6px">First ${ps.bars} bars</span>` : "";
+    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${part}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
 }
 // a review song's label: which earlier level it comes from (new songs at this pack's own level get "New")
 function levelOf(p, id){
@@ -395,8 +443,9 @@ function levelOf(p, id){
 }
 const cleanTitle = t => t.replace(/ \((Halloween|original riff)\)$/, "");
 $("songList").onclick = e => { const b = e.target.closest(".song"); if (!b) return;
-  if (INST === "piano" && PK.view === "falling") { location.href = "keys.html?song=" + encodeURIComponent(b.dataset.id) + "&pack=" + pack.id; return; }
-  openSong(SONGS[b.dataset.id]); };
+  if (INST === "piano" && PK.view === "falling") { const ps = paced(SONGS[b.dataset.id], pack);
+    location.href = "keys.html?song=" + encodeURIComponent(b.dataset.id) + "&pack=" + pack.id + (ps && ps.paced ? "&bpm=" + ps.tempo + (ps.paced.cut ? "&bars=" + ps.bars : "") : ""); return; }
+  openSong(paced(SONGS[b.dataset.id], pack)); };
 $("vStaff").onclick = () => { PK.view = "staff"; savePK(); drawPack(); };
 $("vFall").onclick = () => { PK.view = "falling"; savePK(); drawPack(); };
 $("toPacks").onclick = goPacks;
@@ -414,6 +463,7 @@ if (LAB && INST === "piano") {
   if (LAB) PACKS = j.labs.map((l, i) => Object.assign({ id: "lab" + l.lab, lv: l.lab, name: l.name, skill: l.skill, open: i === 0,
     songs: l.riffs.map(r => { SONGS[r.id] = r; return [r.id, null]; }) }, LAB_LOOK[i]));
   else j.forEach(s => SONGS[s.id] = s);
+  easiestFirst(); checkNoteLengths();
   drawPacks();
   const p = PACKS.find(p => p.id === location.hash.slice(1));
   if (p && packState(p) === "open") openPack(p);
@@ -748,55 +798,21 @@ addEventListener("keydown", e => {
 addEventListener("keyup", e => kbDown.delete(KB.indexOf(e.key.toLowerCase())));
 
 /* The microphone: a note starts when the level jumps, and its pitch is read just after (the same listener as Falling Notes). */
-let an = null, tbuf = null, micOn = false;
+let det = null, tracker = null, micOn = false, heardAt = 0;      // the shared listener (fma-listen.js)
 async function openMic(){
   if (micOn) return;
   audio();
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-  an = ac.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; tbuf = new Float32Array(2048);
-  ac.createMediaStreamSource(stream).connect(an); micOn = true; $("micRow").hidden = false;
+  det = FMAListen.create(); await det.start({ ctx: ac });
+  tracker = FMAListen.notes(det, { legato: () => LEG,
+    onLevel: rms => { $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%"; },
+    onHeard: m => { if (m != null) { $("heard").textContent = "Hearing: " + noteName(m); heardAt = performance.now(); } else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –"; },
+    onNote: (m, t, leg) => { press(m, mode === "play" ? t - O.lat : null, leg); flashKey(m); } });
+  micOn = true; $("micRow").hidden = false;
 }
-function yin(buf, sr){
-  const half = buf.length >> 1, d = new Float32Array(half), minTau = Math.floor(sr / 1400);
-  for (let tau = 1; tau < half; tau++) { let s = 0; for (let i = 0; i < half; i++) { const x = buf[i] - buf[i + tau]; s += x * x; } d[tau] = s; }
-  let run = 0; d[0] = 1;
-  for (let tau = 1; tau < half; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
-  let tau = -1;
-  for (let t = minTau; t < half - 1; t++) { if (d[t] < 0.15) { while (t + 1 < half - 1 && d[t + 1] < d[t]) t++; tau = t; break; } }
-  if (tau < 0) return null;
-  const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c, tp = den ? tau + (a - c) / (2 * den) : tau;
-  return { freq: sr / tp, clarity: 1 - b };
-}
-const frames = [], pending = []; let lastOnset = -9, rmsWin = [], heardAt = 0, stab = { m: null, c: 0 }, lastEmit = null;
 function listen(){
-  if (!an || !O.mic || $("player").hidden) return;
+  if (!tracker || !O.mic || $("player").hidden) return;
   if (window.FMAMidi && FMAMidi.active()) return;
-  an.getFloatTimeDomainData(tbuf);
-  const now = ac.currentTime;
-  let s = 0; for (let i = tbuf.length - 512; i < tbuf.length; i++) s += tbuf[i] * tbuf[i];
-  const rms = Math.sqrt(s / 512);
-  $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%";
-  rmsWin.push({ t: now, rms }); while (rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
-  const floor = Math.min(0.02, Math.max(0.006, Math.min(...rmsWin.map(r => r.rms)) * 3));
-  let midi = null;
-  if (rms > floor) { const p = yin(tbuf, ac.sampleRate); if (p && p.clarity > 0.85 && p.freq > 70 && p.freq < 1400) midi = 69 + 12 * Math.log2(p.freq / 440); }
-  frames.push({ t: now, rms, midi }); while (frames.length && frames[0].t < now - 2) frames.shift();
-  // songs with hammer-ons, pull-offs, slides or bends: a new pitch that holds steady for ~50 ms, with no new pick, is a note too
-  if (LEG && midi != null && Math.abs(midi - Math.round(midi)) < 0.35) {
-    const r = Math.round(midi);
-    if (r === stab.m) stab.c++; else stab = { m: r, c: 1 };
-    if (stab.c === 4 && r !== lastEmit && now - lastOnset > 0.16) { lastEmit = r; press(r, mode === "play" ? now - 0.05 - O.lat : null, true); flashKey(r); }
-  } else if (midi == null) stab = { m: null, c: 0 };
-  if (midi != null) { $("heard").textContent = "Hearing: " + noteName(midi); heardAt = performance.now(); }
-  else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –";
-  let prevMin = Infinity; for (const f of frames) if (f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
-  if (prevMin < Infinity && rms > floor && rms > prevMin * 1.6 + 0.004 && now - lastOnset > 0.12) { lastOnset = now; pending.push(now); }
-  for (let k = pending.length - 1; k >= 0; k--) {
-    const t = pending[k]; if (now < t + 0.12) continue;
-    pending.splice(k, 1);
-    const ms = frames.filter(f => f.midi != null && f.t >= t + 0.03 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
-    if (ms.length >= 2) { const m = Math.round(ms[ms.length >> 1]); lastEmit = m; press(m, mode === "play" ? t - O.lat : null); flashKey(m); }
-  }
+  tracker.step();
 }
 setInterval(listen, 12);
 
@@ -964,7 +980,7 @@ function finish(){
       <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
       <p>${stats.first} of ${total} notes right first time.</p>
       <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
-      <button class="big" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
     mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
@@ -978,7 +994,7 @@ function finish(){
     html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
       <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
       <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
-      <button class="big" id="pAgain">Play again</button>`;
+      <button class="big play" id="pAgain">Play again</button>`;
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
   const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
@@ -992,7 +1008,7 @@ function finish(){
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
   on("pAgain", () => { resetRun(); startRun(); });
   on("pPlay", () => setMode("play"));
-  on("pNext", () => openSong(nextSong));
+  on("pNext", () => openSong(paced(nextSong, pack)));
   on("pSongs", backToPack);
 }
 

@@ -722,5 +722,128 @@
     "Fmaj7#11"
    ]
   }
+ ],
+ "_piano_readme": "Piano players climb their own ladder (Chord Quest and Boss Battle on piano). Like guitar's Easy-G and Easy-C, the first four chords are simpler: TWO-NOTE chords (pianoEasy: the root and the 3rd, so C is C+E and Am is A+C), labelled Easy-C etc. Playing the full chord still counts. The next shelf is the same four as full chords (C:3 = full C), then the rest. Full chords show fingers 1-2-4 (Dave, 13 Oct: 1-3-5 is too much of a stretch for little hands); four-note chords 1-2-3-5. Same chord names as guitar, so the same songs open up; once a full chord is won, songs use it.",
+ "pianoTiers": [
+  {
+   "name": "Two-note chords",
+   "chords": [
+    "C",
+    "G",
+    "F",
+    "Am"
+   ]
+  },
+  {
+   "name": "Full chords",
+   "chords": [
+    "C:3",
+    "G:3",
+    "F:3",
+    "Am:3",
+    "Em",
+    "Dm"
+   ]
+  },
+  {
+   "name": "One black key",
+   "chords": [
+    "D",
+    "A",
+    "E",
+    "Bm",
+    "Gm",
+    "Cm",
+    "Fm"
+   ]
+  },
+  {
+   "name": "Sevenths",
+   "chords": [
+    "G7",
+    "C7",
+    "D7",
+    "A7",
+    "E7",
+    "Cmaj7",
+    "Fmaj7",
+    "Am7",
+    "Dm7",
+    "Em7"
+   ]
+  },
+  {
+   "name": "Sus and add",
+   "chords": [
+    "Csus2",
+    "Csus4",
+    "Dsus2",
+    "Dsus4",
+    "Asus2",
+    "Asus4",
+    "Gsus4",
+    "Cadd9"
+   ]
+  },
+  {
+   "name": "Black-key majors",
+   "chords": [
+    "Bb",
+    "Eb",
+    "Ab",
+    "B",
+    "F#m",
+    "C#m",
+    "G#m",
+    "Db"
+   ]
+  },
+  {
+   "name": "Colour chords",
+   "chords": [
+    "C6",
+    "Am6",
+    "Bm7",
+    "F#m7",
+    "Gm7",
+    "Cm7",
+    "B7",
+    "F7",
+    "Bb7"
+   ]
+  },
+  {
+   "name": "Extended chords",
+   "chords": [
+    "C9",
+    "G9",
+    "D9",
+    "Am9",
+    "Dm9",
+    "Cmaj9",
+    "Gmaj9"
+   ]
+  },
+  {
+   "name": "Advanced colours",
+   "chords": [
+    "Bdim",
+    "Caug",
+    "Bm7b5",
+    "Cdim7",
+    "E7#9",
+    "B7b9",
+    "A7sus4",
+    "G13",
+    "Dm11",
+    "Fmaj7#11"
+   ]
+  }
+ ],
+ "pianoEasy": [
+  "C",
+  "G",
+  "F",
+  "Am"
  ]
 }

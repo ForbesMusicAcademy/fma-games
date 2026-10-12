@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=1">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Tune Up: one column, phone first, same look as the chord game. Listens through the microphone, never records.
    Layout: header, the six strings as chips, the big note, a cents needle, a status line, the clock. */
@@ -91,10 +91,10 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section class="card" id="intro">
     <h2>Tune up before you play</h2>
     <p>Tune your guitar one string at a time, starting with the thick low E. Each string turns green when it's in tune, then the next one lights up. The clock starts when you pluck your first string, so you can try to beat your own best time.</p>
-    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
+    <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
     <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
     <p id="best"></p>
-    <button class="big" id="start">Start (allow microphone)</button>
+    <button class="big play" id="start">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
   </section>
 
@@ -125,10 +125,11 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=9"></script>
+<script src="fma-picks.js?v=11"></script>
 <script>
 /* ============================================================
    Tune Up (home; was the Tuning Race, which stays in the classroom rig). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
@@ -153,50 +154,9 @@ const cents = (f, ref) => 1200 * Math.log2(f / ref);
 /* ---------- Pitch detection (YIN) ----------
    Works on 4096 samples (about 85 ms). Searches 60-420 Hz, which covers every open string with room to be a long way out. */
 const BUF = 4096, W = 2048, FMIN = 60, FMAX = 420, YIN_T = 0.15;
-const pitch = {
-  ctx: null, an: null, td: new Float32Array(BUF), d: null, testGain: null, ready: false,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = BUF; this.an.smoothingTimeConstant = 0;
-    if(SELFTEST){
-      this.testGain = this.ctx.createGain(); this.testGain.connect(this.an);    // test tones go straight in, never to the speaker
-    }else{
-      // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-      const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-      this.ctx.createMediaStreamSource(stream).connect(this.an);
-    }
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){   // loudness in dB (0 = full scale)
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < BUF; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / BUF) + 1e-9);
-  },
-  // Returns {f, clarity} for the latest block, or null when there isn't a clear pitch.
-  read(){
-    const x = this.td, sr = this.ctx.sampleRate;
-    const tMin = Math.floor(sr / FMAX), tMax = Math.min(Math.ceil(sr / FMIN), BUF - W - 1);
-    if(!this.d || this.d.length !== tMax + 2) this.d = new Float32Array(tMax + 2);
-    const d = this.d;
-    for(let t = 1; t <= tMax; t++){
-      let s = 0; for(let j = 0; j < W; j++){ const e = x[j] - x[j + t]; s += e * e; }
-      d[t] = s;
-    }
-    // cumulative mean normalised difference
-    let run = 0; d[0] = 1;
-    for(let t = 1; t <= tMax; t++){ run += d[t]; d[t] = d[t] * t / (run || 1); }
-    let t = tMin;
-    while(t < tMax){
-      if(d[t] < YIN_T){ while(t + 1 < tMax && d[t + 1] < d[t]) t++; break; }
-      t++;
-    }
-    if(t >= tMax) return null;
-    const a = d[t - 1], b = d[t], c = d[t + 1], den = a - 2 * b + c;
-    const tau = t + (den ? 0.5 * (a - c) / den : 0);
-    return {f: sr / tau, clarity: 1 - b};
-  }
-};
+// the shared listener every game uses (fma-listen.js), reading pitch with a long window over the guitar's range
+const pitch = FMAListen.create(), sharedRead = pitch.read;
+pitch.read = function(){ return sharedRead.call(this, { fmin: FMIN, fmax: FMAX, window: W, threshold: YIN_T }); };
 // a MIDI keyboard, when one is plugged in, plays straight into the tune-up (fma-midi.js): the right note name in any octave locks the string in
 if(window.FMAMidi) FMAMidi.useFor(pitch, () => STRINGS[race.cur] && STRINGS[race.cur].hz);
 
@@ -321,7 +281,7 @@ const race = {
         <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
         <div class="splits">${sp}</div>
         <p style="font-size:14px">Seconds per string. Give all six a final strum: tuning one string can nudge the others.</p>
-        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big" id="again">Tune again</button>`}`;
+        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big play" id="again">Tune again</button>`}`;
       PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };
@@ -350,7 +310,7 @@ function showBest(){
 $("start").onclick = async () => {
   $("err").hidden = true; $("start").disabled = true;
   try{
-    await pitch.start();
+    await pitch.start(SELFTEST ? { test: true } : {});
     $("intro").hidden = true; $("game").hidden = false;
     $("status").textContent = "Shh… listening to the room"; $("chips").innerHTML = "";
     await calibrate();
