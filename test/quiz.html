@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
 <title>Note Quiz | Forbes Music Academy</title>
 <meta name="description" content="Can you find the note on your guitar faster than the CPUs? Play the answer, hold it, score points. Free guitar game from Forbes Music Academy.">
 <link rel="canonical" href="https://games.forbesmusic.com.au/quiz.html">
@@ -23,11 +23,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Home Note Quiz: one player, one column, phone first. A question appears with four answers, each on a note.
    Play the note of the answer you think is right on your guitar and hold it to lock in. Quicker = more points.
    Listens through the microphone, never records. Same game as the classroom screen, minus the classmates. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:560px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
   --rhythm-soft:#FFF1C7;--rhythm-edge:#D99A00;--lead-soft:#E2F2FA;--lead-edge:#4A9CC2;--pink-soft:#FADDE8;--pink-edge:#D4668C;--green-soft:#DDF1E1;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -50,6 +51,11 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 .levels button b{display:block;font-family:var(--head);font-weight:900;font-size:18px}
 .levels button small{color:var(--muted);font-weight:600}
 .levels button.on{border-color:var(--fg);background:var(--accent)}
+h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.cats button{min-height:62px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:var(--head);font-weight:900;font-size:15px;line-height:1.1;padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.cats button span{font-size:22px;line-height:1}
+.cats button.on{border-color:var(--fg);background:var(--accent)}
 .levels button.on small{color:var(--fg)}
 .best{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
 
@@ -108,19 +114,25 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Note Quiz</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Note Quiz</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <section class="card" id="start">
     <h2>Find the note, win the points</h2>
-    <p>Each question has four answers. Every answer sits on a note. Work out the right answer, then <b>find its note on your guitar</b> and hold it to lock in. Faster = more points.</p>
-    <div class="levels" id="modes"></div>
+    <p>Each question has four answers. Every answer sits on a note. Work out the right answer, then <b>find its note on your <span class="inst">guitar</span></b> and hold it to lock in. Faster = more points.</p>
+    <h3 class="pick">Topic</h3>
+    <div class="cats" id="cats"></div>
+    <h3 class="pick">Questions</h3>
+    <div class="levels" id="diffs"></div>
+    <h3 class="pick">Notes to play</h3>
     <div class="levels" id="levels"></div>
-    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
-    <p>Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
+    <h3 class="pick">Play</h3>
+    <div class="levels" id="modes"></div>
+    <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, works out which note you played, and throws the sound away.</p>
+    <p id="tip">Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
     <p id="playingAs" style="color:var(--fg)"></p>
-    <button class="big" id="go">Start (allow microphone)</button>
+    <button class="big play" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
     <div class="best" id="bests"></div>
   </section>
@@ -144,15 +156,17 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div class="board" id="endBoard" hidden></div>
     <div id="endBest"></div>
     <div class="best" id="savedMsg" role="status"></div>
-    <button class="big" id="again" style="margin-top:10px">Play again</button>
+    <button class="big play" id="again" style="margin-top:10px">Play again</button>
   </section>
 
   <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
   <div class="sim" id="sim" hidden></div>
 </div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=2"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=33"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -163,10 +177,13 @@ const CHARS = {
   4:{name:"Shredder", img:"characters/shredder.png"}, 9:{name:"Clang", img:"characters/clang.png"}, 2:{name:"Fret", img:"characters/fret.png"},
   7:{name:"Plucky", img:"characters/plucky.png"}, 11:{name:"Scales", img:"characters/scales.png"}, 0:{name:"Callus", img:"characters/callus.png"}
 };
+// Naturals only for now (Oct 2026): guitarists work out where the notes are on the fretboard by playing; piano students
+// can use note stickers on their keys. Sharps and flats (all 12 notes) come back as a Level 3 later:
+//   {n:3, name:"Level 3", sub:"All 12 notes", pool:[0,1,2,3,4,5,6,7,8,9,10,11]}
+const PIANO = !!(window.fmaInstrument && fmaInstrument.get() === "piano");
 const LEVELS = [
-  {n:1, name:"Level 1", sub:"Open strings", pool:[4,9,2,7,11]},
-  {n:2, name:"Level 2", sub:"Natural notes", pool:[0,2,4,5,7,9,11]},
-  {n:3, name:"Level 3", sub:"All 12 notes", pool:[0,1,2,3,4,5,6,7,8,9,10,11]}
+  PIANO ? {n:1, name:"Level 1", sub:"C D E F G", pool:[0,2,4,5,7]} : {n:1, name:"Level 1", sub:"Open strings", pool:[4,9,2,7,11]},
+  {n:2, name:"Level 2", sub:"All the natural notes", pool:[0,2,4,5,7,9,11]}
 ];
 const Q_SECS = 30, HOLD_MS = 1000, DROP_MS = 350, MAX_PTS = 1000, REVEAL_MS = 3800;   // an instant answer = 1000, a last-second one = 500
 const Q_COUNT = Math.max(3, Math.min(40, Number(q.get("n")) || 10));
@@ -198,15 +215,36 @@ async function loadBank(){
       const rows = parseCSV(await (await fetch(u, {cache:"no-store"})).text());
       const h = rows[0].map(c => c.trim().toLowerCase()), col = k => h.indexOf(k);
       const b = rows.slice(1).map(r => ({ q:(r[col("question")] || "").trim(), correct:(r[col("correct")] || "").trim(),
-        wrong:["wrong1","wrong2","wrong3"].map(k => (r[col(k)] || "").trim()).filter(Boolean), cat:(r[col("category")] || "").trim() }))
+        wrong:["wrong1","wrong2","wrong3"].map(k => (r[col(k)] || "").trim()).filter(Boolean), cat:(r[col("category")] || "").trim(),
+        lvl:Number((r[col("level")] || "").trim()) || 0 }))
         .filter(x => x.q && x.correct && x.wrong.length);
       if(b.length >= 4){ bank = b; return true; }
     }catch(e){}
   }
   return false;
 }
+/* Topics and question difficulty. Each player's recently asked questions are remembered (fmaKey, so it follows them to
+   any device): questions they haven't had come first, and a question only comes back once they've seen the rest. */
+const CATS = [{k:"mix", e:"🎲", n:"Mix it up"}, {k:"Music", e:"🎵", n:"Music"}, {k:"Australia", e:"🦘", n:"Australia"},
+  {k:"Animals", e:"🐾", n:"Animals"}, {k:"Science", e:"🔬", n:"Science"}, {k:"Space", e:"🚀", n:"Space"},
+  {k:"World", e:"🌍", n:"World"}, {k:"Maths", e:"➗", n:"Maths"}, {k:"Words", e:"📚", n:"Words"}];
+const DIFFS = [{k:1, name:"Easier", sub:"Younger players"}, {k:2, name:"Harder", sub:"Older players"}];
+const SEEN_KEY = fmaKey("fma-quiz-seen-v1"), SEEN_MAX = 400;
+const qid = t => { let h = 5381; for(let i = 0; i < t.length; i++) h = (h * 33 ^ t.charCodeAt(i)) >>> 0; return h.toString(36); };
+const seenList = () => { try{ const a = JSON.parse(localStorage.getItem(SEEN_KEY)); return Array.isArray(a) ? a : []; }catch(e){ return []; } };
+function markSeen(qs){
+  const ids = qs.map(x => qid(x.q)), a = seenList().filter(x => !ids.includes(x)).concat(ids).slice(-SEEN_MAX);
+  try{ localStorage.setItem(SEEN_KEY, JSON.stringify(a)); }catch(e){}
+}
+function pickBank(n){
+  const want = bank.filter(b => (G.cat === "mix" || b.cat === G.cat) && (!b.lvl || b.lvl === G.diff));
+  const from = want.length >= 4 ? want : bank;                 // a topic with too few questions falls back to everything
+  const seen = seenList(), at = id => seen.indexOf(id);        // -1 = never asked; otherwise lower = longer ago
+  return shuffle(from).sort((a, b) => at(qid(a.q)) - at(qid(b.q))).slice(0, n);
+}
 function makeQuestions(n, pool){
-  return shuffle(bank).slice(0, n).map(b => {
+  const picked = pickBank(n); markSeen(picked);
+  return shuffle(picked).map(b => {
     const wrongs = shuffle(b.wrong).slice(0, 3);
     while(wrongs.length < 3){ const o = bank[Math.floor(Math.random() * bank.length)].correct; if(o !== b.correct && !wrongs.includes(o)) wrongs.push(o); }
     const pcs = shuffle(pool).slice(0, 4);
@@ -268,6 +306,7 @@ const det = {
     return ch;
   }
 };
+if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 // One reading -> the single strongest note (0-11) or -1. Needs the same note on two readings in a row.
 let simNote = -1, lastTop = -1, topRun = 0, dbgText = "";
 function readNote(){
@@ -376,9 +415,9 @@ function endGame(){
   const won = G.bots.length && G.bots.every(b => b.score <= G.score);
   setTimeout(() => endP.moment(won ? "win" : isBest && G.score > 0 ? "best" : "done", 0), 300);
   $("savedMsg").textContent = "";
-  if(!SIM && window.FMAStudent && FMAStudent.active()){
-    FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0})
-      .then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
+  if(!SIM && window.FMAStudent){
+    const sent = FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0});
+    if(FMAStudent.active()) sent.then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
   }
   $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
 }
@@ -427,6 +466,13 @@ function drawLevels(){
   const st = store.get(), bits = LEVELS.filter(l => st["best" + l.n]).map(l => l.name + ": " + st["best" + l.n]);
   $("bests").textContent = bits.length ? "Your best scores. " + bits.join(" · ") : "";
 }
+function drawCats(){
+  $("cats").innerHTML = CATS.map(c => `<button data-k="${c.k}" class="${G.cat === c.k ? "on" : ""}"><span>${c.e}</span>${c.n}</button>`).join("");
+  $("cats").querySelectorAll("button").forEach(b => b.onclick = () => { G.cat = b.dataset.k; saveSel(); drawCats(); });
+  $("diffs").innerHTML = DIFFS.map(d => `<button data-k="${d.k}" class="${G.diff === d.k ? "on" : ""}"><b>${d.name}</b><small>${d.sub}</small></button>`).join("");
+  $("diffs").querySelectorAll("button").forEach(b => b.onclick = () => { G.diff = Number(b.dataset.k); saveSel(); drawCats(); });
+}
+function saveSel(){ const st = store.get(); st.sel = { cat: G.cat, diff: G.diff }; store.set(st); }
 const MODES = [{k:"solo", name:"Just me", sub:"Beat your best score"}, {k:"cpu", name:"Race the CPUs", sub:"Three rivals, same questions"}];
 function drawModes(){
   $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${G.mode === m.k ? "on" : ""}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
@@ -445,8 +491,13 @@ async function begin(){
   }
 }
 $("go").onclick = begin;
-$("again").onclick = () => { drawLevels(); drawModes(); show("start"); $("go").disabled = false; G.phase = "start"; };
-drawLevels(); drawModes(); if(window.FMAStudent) FMAStudent.mount($("playingAs"));
+$("again").onclick = () => { drawCats(); drawLevels(); drawModes(); show("start"); $("go").disabled = false; G.phase = "start"; };
+if(PIANO){
+  document.querySelectorAll(".inst").forEach(el => { el.textContent = "piano"; });
+  $("tip").textContent = "Tip: find a quiet spot and don't play music through the speaker. Middle of the keyboard works best. Note stickers on your keys help.";
+}
+{ const sel = store.get().sel || {}; G.cat = CATS.some(c => c.k === sel.cat) ? sel.cat : "mix"; G.diff = sel.diff === 2 ? 2 : 1; }
+drawCats(); drawLevels(); drawModes(); if(window.FMAStudent) FMAStudent.mount($("playingAs"));
 setInterval(tick, 90);
 
 /* ---------- No-microphone test mode: ?sim ---------- */

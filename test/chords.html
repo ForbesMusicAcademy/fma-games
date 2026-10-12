@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
-<title>Chord Practice</title>
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<title>Chord Quest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
 /* Home chord practice: one column, phone first. Listens through the microphone, never records.
    Layout: header, the big chord, its notes lighting up as they are heard, a level meter, a status line. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:520px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
@@ -32,7 +33,13 @@ button{font:inherit;cursor:pointer}
 .tier{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--muted);font-size:14px}
 .bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;flex:1}
 .bar i{display:block;height:100%;background:var(--fg);width:0}
-#chord{font-family:var(--head);font-weight:900;font-size:clamp(88px,34vw,170px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(72px,24vw,150px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em;white-space:nowrap;min-width:0}
+/* long labels (Easy-G, Easy-C, Cmaj7...) shrink to stay on one line beside the diagram */
+#chord.long{font-size:clamp(44px,13vw,92px)}
+#chord.longer{font-size:clamp(36px,10vw,72px)}
+.chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
+#diag{width:clamp(130px,38vw,200px);flex:none}
+#diag svg{display:block;width:100%;height:auto}
 .chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:54px}
 .chip{min-width:58px;padding:6px 14px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:26px;text-align:center;transition:background .2s,color .2s}
 .chip.on{background:var(--good);color:#fff}
@@ -60,21 +67,99 @@ label.set input[type=range]{width:100%}
 .test{display:flex;flex-wrap:wrap;gap:8px}
 .test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- Chord Quest home: the count, the trophy cabinet, the songs they open ---------- */
+.quest{display:flex;align-items:center;gap:14px}
+.quest .n{font-family:var(--head);font-weight:900;font-size:54px;line-height:1;white-space:nowrap;flex:none}
+.quest .n small{font-size:20px;color:var(--muted)}
+.quest p{margin:2px 0 0}
+.hint{margin-top:12px;padding:10px 12px;border-radius:14px;background:#FFF6DB;border:1px solid #F2DFA6;font-weight:600;font-size:15px}
+.shelf{margin-top:16px}
+.shelf h3{margin:0 0 8px;font-family:var(--head);font-weight:900;font-size:16px;display:flex;justify-content:space-between;gap:8px}
+.shelf h3 span{color:var(--muted);font-weight:800;font-size:14px}
+.trophies{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px 6px;padding:8px 6px 10px;border-bottom:8px solid #C9A46A;border-radius:6px;background:linear-gradient(#FBF3E2,#F4E6CB)}
+.tro{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border:0;background:none;border-radius:12px;color:var(--fg);min-height:92px}
+.tro svg.cup{width:44px;height:44px}
+.tro b{font-family:var(--head);font-weight:900;font-size:16px;line-height:1.1;text-align:center}
+.tro .st{font-size:11px;letter-spacing:1px;color:#C98F00;min-height:14px}
+.tro.learning .st{color:var(--muted)}
+.tro.next{outline:3px dashed var(--accent);outline-offset:-3px;background:#FFF6DB;animation:glow 1.6s ease-in-out infinite}
+.tro.locked{color:#B9B1A0;cursor:default}
+.tro.locked b{font-size:14px}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,184,5,.0)}50%{box-shadow:0 0 0 6px rgba(255,184,5,.35)}}
+.more{margin:12px 0 0;color:var(--muted);font-weight:700;font-size:14px;text-align:center}
+.songs{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column}
+.songs li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.songs li:first-child{border-top:0}
+.songs .t{font-weight:700}
+.songs .a{color:var(--muted);font-size:14px}
+.pills{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:45%}
+.pill{font-family:var(--head);font-weight:900;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--line)}
+.pill.need{background:#fff;border:2px dashed var(--accent)}
+.soonlist .t{color:var(--muted)}
+.chordpop{position:fixed;inset:0;z-index:30;background:rgba(35,35,31,.45);display:grid;place-items:center;padding:16px}
+.chordpop .in{background:#fff;border-radius:24px;padding:18px 22px;max-width:320px;width:100%;text-align:center}
+.chordpop .in b{display:block;font-family:var(--head);font-weight:900;font-size:40px;line-height:1}
+.chordpop .in .d{width:170px;margin:6px auto}
+.chordpop .in p{color:var(--muted);margin:4px 0 12px}
+/* Home (Wave 2): the Play card first, so the game is one tap away; Boss Battle's songs and the trophy cabinet below it */
+.hero{display:flex;flex-direction:column;gap:12px}
+.hero-top{display:flex;align-items:center;gap:12px}
+.hbuddy{width:92px;height:92px;flex:none;margin:-8px -4px -6px -8px}
+.hero-top .quest{gap:10px}
+.qlbl{font-family:var(--head);font-weight:900;font-size:17px;line-height:1.1}
+.qlbl small{display:block;font-family:var(--ui);font-weight:600;font-size:14px;color:var(--muted);margin-top:2px}
+.hero .hint{margin-top:0}
+.fine{margin:0!important;font-size:13px;color:var(--muted);text-align:center}
+a.bosslink{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--fg);padding:12px 16px}
+a.bosslink .bimg{width:74px;height:74px;flex:none;margin:-6px 0}
+a.bosslink b{display:block;font-family:var(--head);font-weight:900;font-size:20px;line-height:1.1}
+a.bosslink span{display:block;color:var(--muted);font-size:14px}
+a.bosslink .go{flex:none;margin-left:auto;color:var(--mustard-dark)}
+a.bosslink > div:nth-child(2){flex:1;min-width:0}
+.tips summary{font-weight:700}
+.tips ul{margin:8px 0 2px;padding-left:20px;color:var(--muted)}
+.newsongs{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:#FFF4D1;border:2px solid var(--accent);color:var(--fg);text-decoration:none;font-weight:700;font-size:15px;animation:rise .35s ease-out}
+.newsongs b{font-family:var(--head);font-weight:900}
+.newsongs .go{margin-left:auto;font-family:var(--head);font-weight:900;white-space:nowrap}
+.pop .songlist{display:block;font-weight:600;color:var(--muted);margin-top:4px;font-size:15px}
+.pop .bossmini{width:110px;height:110px;margin:0 auto}
+/* piano: the keyboard diagram goes full width under the chord name */
+body.piano .chordrow{flex-direction:column;gap:4px}
+body.piano #diag{width:100%;max-width:420px}
+body.piano #chord{font-size:clamp(64px,20vw,120px)}
+body.piano .tips .gtr{display:none}
+.chordpop .in .d.keys{width:100%}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Chord Quest</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Chord Practice</h1><a href="./" class="menu">&larr; All games</a></header>
 
-  <section class="card" id="intro">
-    <h2>Play the chord you see</h2>
-    <p>Your device listens through its microphone and lights up each note it hears. Hit every note of the chord to score.</p>
-    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away.</p>
-    <p>Tip: find a quiet spot, tune your guitar first, and don't play music or videos through the speaker while you practise.</p>
-    <button class="big" id="start">Start (allow microphone)</button>
-    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
-  </section>
+  <div id="home">
+    <section class="card hero">
+      <div class="hero-top">
+        <div class="hbuddy" id="hbuddy"></div>
+        <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div class="qlbl">chords unlocked<small id="qSub">Every chord you learn opens up songs in Boss Battle.</small></div></div>
+      </div>
+      <div class="hint" id="qHint" hidden></div>
+      <button class="big play" id="start">Play Chord Quest</button>
+      <p class="fine"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away.</p>
+      <p id="err" style="color:var(--bad);font-weight:700;margin:0" hidden></p>
+    </section>
+
+    <a class="card bosslink" id="bossLink" href="boss.html"><div class="bimg" id="bossImg"></div><div><b id="bossHead">Boss Battle</b><span id="bossSub"></span></div><svg class="go" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+
+    <section class="card">
+      <h2>Your trophy cabinet</h2>
+      <p>Tap a trophy to practise that chord.</p>
+      <div id="cabinet"></div>
+    </section>
+
+    <details class="card tips"><summary>Tips for a good game</summary>
+      <ul><li>Find a quiet spot.</li><li class="gtr">Tune your guitar first (Tune Up on the games menu).</li><li>Don't play music or videos through the speaker while you practise.</li><li>Played a chord right but it didn't count? Let it ring a little longer.</li></ul>
+    </details>
+  </div>
 
   <section class="card" id="cal" hidden>
     <h2>Shh… listening to the room</h2>
@@ -85,13 +170,14 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section id="game" hidden>
     <div class="card">
       <div class="tier"><span id="tierName"></span><div class="bar"><i id="prog"></i></div><span id="progTxt"></span></div>
-      <div id="chord">–</div>
+      <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="chips" id="chips"></div>
       <div id="status">Play it!</div>
       <div id="timer"><i id="timerBar"></i></div>
       <div class="meter"><i id="lvl"></i></div>
       <div class="sub"><span id="tune"></span><span id="today"></span></div>
-      <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button></div>
+      <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button><button class="ghost" id="toHome">🏆 Trophies</button></div>
+      <div id="newSongs"></div>
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
       <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
@@ -107,11 +193,19 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=2"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=33"></script>
+<script src="fma-picks.js?v=10"></script>
+<script src="fma-chords.js?v=4"></script>
+<script src="fma-boss-songs.js?v=2"></script>
+<script src="boss-anim.js?v=2"></script>
+<script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
+<script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script>
 /* ============================================================
-   Chord Practice (home). One file. The chord list comes from chord-ladder.json, the same file the
+   Chord Quest (home; was Chord Practice). One file. The chord list comes from chord-ladder.json, the same file the
    classroom rig reads, so the two can't drift apart. Progress is kept on this device only.
    ============================================================ */
 const $ = id => document.getElementById(id);
@@ -119,25 +213,9 @@ const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
 
 /* ---------- Chord list (built from the shared ladder file) ---------- */
-const PCV = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-const SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"], FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+// fma-chords.js builds it: the ladder order, and the notes each chord's guitar shape actually sounds
 let CHORDS = [], TIERS = [];
-function buildChords(ladder){
-  CHORDS = []; TIERS = [];
-  ladder.tiers.forEach((t, ti) => {
-    const first = CHORDS.length;
-    t.chords.forEach(name => {
-      const m = /^([A-G][#b]?)(.*)$/.exec(name), ivs = m && ladder.qualities[m[2]];
-      if(!ivs) return;
-      const rpc = (PCV[m[1][0]] + (m[1][1] === "#" ? 1 : m[1][1] === "b" ? -1 : 0) + 12) % 12;
-      const spell = (m[1].includes("b") || m[1] === "F") ? FLAT : SHARP;
-      let mask = 0; const tones = [];
-      ivs.forEach(iv => { const pc = (rpc + iv) % 12; mask |= 1 << pc; tones.push(spell[pc]); });
-      CHORDS.push({name, tones, mask, pcs: ivs.map(iv => (rpc + iv) % 12), tier: ti});
-    });
-    TIERS.push({name: t.name, first, last: CHORDS.length - 1});
-  });
-}
+function buildChords(){ CHORDS = FMAChords.list; TIERS = FMAChords.tiers; }
 
 /* ---------- Spaced repetition (the same rules as the classroom rig, with practice DAYS as the lessons) ----------
    A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (star 1). It is then due for review
@@ -146,7 +224,9 @@ function buildChords(ladder){
    NEW_PER_WEEK new chords in any 7 days (a new shape needs teaching, so home practice is mostly review). Home practice can earn up to three stars; the diamond (mastery)
    is only earned in class. */
 const START_POOL = 2, NEW_PER_WEEK = 2, GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 3;
-const KEY = fmaKey("fma-home-chords-v1");          // each player on this device has their own progress
+const KEY = fmaKey(FMAChords.storeKey);          // each player on this device has their own progress (guitar and piano kept apart)
+const PIANO = FMAChords.inst === "piano";
+if(PIANO) document.body.classList.add("piano");
 let P = null;
 function load(){
   try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
@@ -164,6 +244,7 @@ function starsOf(c){ if(!c) return 0; return c.grad ? Math.min(MAX_STARS, c.k + 
 function applyResult(name, hit, sess){
   const c = cardOf(name);
   if(c.grad && !isDue(c, sess)) return;                    // extra practice: schedule unchanged
+  c.t = Date.now();                                         // when this chord last changed: class and home merge by it
   if(hit){
     c.miss = 0;
     if(c.grad){ c.k++; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
@@ -193,7 +274,10 @@ function score(idx, hit){
   save();
   return {stars: starsOf(P.cards[name]), starsBefore: before, unlocked: P.unlocked > ub ? CHORDS[P.unlocked - 1].name : null};
 }
+let focus = null;                       // a chord picked from the trophy cabinet comes up first
 function pickChord(){
+  if(focus !== null && focus < P.unlocked){ const c = focus; focus = null; P.last = c; save(); return c; }
+  focus = null;
   const sess = sessionNow();
   maybeUnlock(sess);
   if(P.fresh !== null){ const c = P.fresh; P.fresh = null; P.last = c; save(); return c; }
@@ -212,77 +296,21 @@ function pickChord(){
   P.last = P.unlocked - 1; save(); return P.last;
 }
 
-/* ---------- The listener: turns sound into "which of the 12 notes are being played" ---------- */
-const FFT = 16384, TONAL_MIN = 0.30;
-const det = {
-  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false, testGain: null,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
-    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
-    if(SELFTEST){
-      this.testGain = this.ctx.createGain(); this.testGain.connect(this.an);   // synthetic chords go straight in, never to the speaker
-    }else{
-      // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-      const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-      this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
-    }
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){   // loudness in dB (0 = full scale)
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
-  },
-  // Chroma: how much energy sits on each of the 12 note names (70 Hz to 1.1 kHz), after correcting for a
-  // guitar that is a little sharp or flat. Also returns the estimated tuning offset in cents.
-  chroma(){
-    this.an.getFloatFrequencyData(this.buf);
-    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
-    const mag = new Float32Array(n); let mx = 0;
-    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
-    // Is this sound tonal at all? A chord is a handful of sharp spectral peaks; a cough, a rustle or a room's hiss is
-    // energy spread over everything. Measure how much of the energy sits in peaks that stand well above their
-    // neighbours. Chords score about 0.85-1.0 (even with noise on top), noise well under 0.15.
-    { let tot = 0, pk = 0; const W = 15;
-      for(let i = 0; i < n; i++){
-        const e = mag[i] * mag[i]; tot += e;
-        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
-          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
-          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
-        }
-      }
-      this.tonal = pk / (tot + 1e-30);
-    }
-    if(this.tonal < TONAL_MIN) return null;     // not musical: don't guess notes (and don't touch the tuning estimate)
-    // tuning: where do the strong peaks sit relative to the nearest semitone? (circular mean, weighted by size)
-    let sx = 0, sy = 0;
-    for(let i = 1; i < n - 1; i++){
-      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
-        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
-        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
-        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
-      }
-    }
-    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
-    const ch = new Float32Array(12);
-    for(let i = 0; i < n; i++){
-      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
-      ch[pc] += Math.sqrt(mag[i]);
-    }
-    return ch;
-  }
-};
+/* ---------- The listener: the shared one every game uses (fma-listen.js) ---------- */
+const det = FMAListen.create(), TONAL_MIN = FMAListen.TONAL_MIN;
+if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
-let buddy = null, streak = 0;          // your character beside the Skip button, and chords in a row
+let buddy = null, streak = 0, paused = false, running = false;          // your character beside the Skip button, and chords in a row
 const game = {
-  idx: 0, run: 0, latched: new Array(12).fill(false), onFor: new Array(12).fill(0), heard: 0, started: 0, over: false, thr: 0.40, strays: 0,
+  idx: 0, match: null, started: 0, over: false, thr: 0.40, strays: 0,
   begin(idx){
-    this.idx = idx; this.run = 0; this.latched.fill(false); this.onFor.fill(0); this.heard = 0; this.started = performance.now(); this.over = false;
+    this.idx = idx; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
-    $("chord").textContent = c.name;
+    this.match = FMAListen.chordMatch(c, { thr: this.thr, strays: this.strays });
+    const lab = FMAChords.label(c.name);
+    $("chord").textContent = lab; $("chord").classList.toggle("long", lab.length > 3 && lab.length <= 6); $("chord").classList.toggle("longer", lab.length > 6);
+    $("diag").innerHTML = FMAChords.diagram(c.name);
     if(!buddy) buddy = PlayerArt.buddy($("buddy"));
     $("chips").innerHTML = c.tones.map(t => `<span class="chip">${t}</span>`).join("");
     $("status").textContent = "Play it!"; $("status").className = "";
@@ -293,59 +321,48 @@ const game = {
   },
   // Called about 11 times a second with the latest reading.
   step(){
-    if(this.over) return;
+    if(this.over || paused) return;
     const db = det.level();
     $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
     const secs = (performance.now() - this.started) / 1000;
     $("timerBar").style.transform = "scaleX(" + Math.max(0, 1 - secs / 30) + ")";
     if(secs > 30){ this.finish(false); return; }
-    if(db <= det.gateDb || performance.now() < this.settle){ this.run = 0; $("tune").textContent = ""; if(DEBUG) this.dbg(db, null); return; }
-    const ch = det.chroma();
-    if(!ch){   // a cough, a clatter or the room: nothing musical to read
-      this.run = 0; this.latched.fill(false); this.onFor.fill(0); $("tune").textContent = "";
-      if(DEBUG) this.dbg(db, null); return;
-    }
+    if(performance.now() < this.settle){ this.match.step(null); $("tune").textContent = ""; if(DEBUG) this.dbg(db, null); return; }
+    const sc = det.scores();       // null below the gate, or for a cough, a clatter or the room: nothing musical to read
+    const r = this.match.step(sc);
+    if(!sc){ $("tune").textContent = ""; if(DEBUG) this.dbg(db, null); return; }
     const sh = det.tune * 100; $("tune").textContent = Math.abs(sh) < 8 ? "In tune ✓" : "Sounds " + Math.abs(Math.round(sh)) + " cents " + (sh > 0 ? "sharp" : "flat");
-    const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, mx = sorted[11], span = mx - floor + 1e-9;
-    const c = CHORDS[this.idx]; let missing = 0, strays = 0; const raw = [], sc = [];
-    for(let i = 0; i < 12; i++) raw.push(Math.max(ch[i] - floor, 0) / span);
-    // Every note also rings overtones: the 3rd overtone of a note sits 7 semitones up, the 5th 4 semitones up. Take a
-    // small share of each note's own overtones off the notes where they land, so a C chord doesn't light up the B
-    // (an overtone of its E) and look like part of Em.
-    for(let i = 0; i < 12; i++) sc.push(Math.max(0, raw[i] - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
-    for(let i = 0; i < 12; i++){
-      const v = sc[i];
-      // once a note has been counted it stays counted until it drops a little below the line
-      this.latched[i] = v >= this.thr || (this.latched[i] && v >= this.thr - 0.10);
-      const inChord = (c.mask >> i) & 1;
-      this.onFor[i] = this.latched[i] ? this.onFor[i] + 1 : 0;
-      if(this.onFor[i] >= 2 && inChord) this.heard |= 1 << i;   // a chip lights only after two readings in a row
-      if(inChord && !this.latched[i]) missing++;
-      if(!inChord && this.latched[i]) strays++;
-    }
-    c.pcs.forEach(pc => { if((this.heard >> pc) & 1){ const el = $("chips").children[c.pcs.indexOf(pc)]; if(el) el.classList.add("on"); } });
-    this.run = (missing === 0 && strays <= this.strays) ? this.run + 1 : 0;
-    if(DEBUG) this.dbg(db, {sc, missing, strays});
-    if(this.run >= 3) this.finish(true);
+    const c = CHORDS[this.idx];
+    c.pcs.forEach(pc => { if((r.heard >> pc) & 1){ const el = $("chips").children[c.pcs.indexOf(pc)]; if(el) el.classList.add("on"); } });
+    if(DEBUG) this.dbg(db, {sc});
+    if(r.hit) this.finish(true);
   },
   dbg(db, x){
     $("dbg").hidden = false;
     $("dbg").textContent = "level " + db.toFixed(1) + " dB  gate " + det.gateDb.toFixed(1) + "  tonal " + det.tonal.toFixed(2) + " (needs " + TONAL_MIN + ")  tuning " + (det.tune * 100).toFixed(0) + " cents\n" +
-      (x ? "missing " + x.missing + "  strays " + x.strays + "\n" + SHARP.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(x.sc[i] * 20))).join("\n") : "(below the gate or settling)");
+      (x ? FMAListen.NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(x.sc[i] * 20))).join("\n") : "(below the gate or settling)");
   },
   finish(hit){
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
     $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
     streak = hit ? streak + 1 : 0;
-    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked});
+    if(!SELFTEST) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked, graduated:r.starsBefore === 0 && r.stars >= 1});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
     $("status").className = hit ? "ok" : "";
     $("today").textContent = "";
     let delay = hit ? 1300 : 1500;
     const queue = [];
-    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${CHORDS[this.idx].name}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
-    if(r.unlocked) queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${r.unlocked}</b></span>`);
+    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${FMAChords.label(CHORDS[this.idx].name)}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
+    if(r.unlocked){
+      queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${FMAChords.label(r.unlocked)}</b></span>`);
+      const ns = newBossSongs();
+      if(ns.songs.length){
+        const names = ns.songs.slice(0, 3).map(x => esc(x.t)).join(", ") + (ns.songs.length > 3 ? ` and ${ns.songs.length - 3} more` : "");
+        queue.push(`<span><div class="bossmini" data-boss="${ns.boss || FMABoss.bossOf(ns.songs[0])}"></div><b>${ns.songs.length} new song${ns.songs.length > 1 ? "s" : ""} in Boss Battle!</b><span class="songlist">${names}</span>${ns.boss ? `<span class="songlist">A new boss is waiting: <b style="display:inline;font-size:inherit;color:var(--fg)">${esc(FMABoss.name(ns.boss))}</b></span>` : ""}</span>`);
+        $("newSongs").innerHTML = `<a class="newsongs" href="boss.html?song=${ns.songs[0].id}">🎸 <span>New in Boss Battle: <b>${names}</b></span><span class="go">Play ›</span></a>`;
+      }
+    }
     const next = () => { game.begin(pickChord()); };
     if(queue.length){ setTimeout(() => popQueue(queue, next), 900); } else setTimeout(next, delay);
   }
@@ -353,6 +370,7 @@ const game = {
 function popQueue(items, done){
   if(!items.length){ $("pop").hidden = true; done(); return; }
   $("popBox").parentElement.hidden = false; $("popBox").innerHTML = items[0];
+  const bm = $("popBox").querySelector(".bossmini"); if(bm){ const b = BossArt(bm, { kind: bm.dataset.boss }); setTimeout(() => b.taunt(), 400); }
   PlayerArt.popIn($("popBox"), items[0].includes("unlocked.png") ? "best" : "win");
   setTimeout(() => popQueue(items.slice(1), done), 2300);
 }
@@ -360,41 +378,119 @@ $("pop").onclick = () => { /* taps do nothing, so a stray tap can't skip a celeb
 
 /* ---------- Setup flow ---------- */
 async function calibrate(){
+  if(det.keysOnly){ $("cal").hidden = true; $("game").hidden = false; return; }     // playing a keyboard: no room noise to measure
   $("game").hidden = true; $("cal").hidden = false;
-  const samples = [], t0 = performance.now();
-  await new Promise(res => {
-    const tick = () => {
-      const e = performance.now() - t0; samples.push(det.level()); $("calBar").style.width = Math.min(100, e / 20) + "%";
-      if(e >= 2000) res(); else setTimeout(tick, 60);
-    };
-    tick();
-  });
-  samples.sort((a, b) => a - b);
-  const quiet = samples[Math.floor(samples.length * 0.8)];
-  det.gateDb = Math.max(-75, Math.min(-38, quiet + 9));      // a note has to be well above the room's own noise
+  const t0 = performance.now(), bar = setInterval(() => { $("calBar").style.width = Math.min(100, (performance.now() - t0) / 20) + "%"; }, 60);
+  await det.calibrate(2000); clearInterval(bar);
   $("cal").hidden = true; $("game").hidden = false;
 }
 $("start").onclick = async () => {
   $("err").hidden = true; $("start").disabled = true;
   try{
-    const ladder = await (await fetch("chord-ladder.json", {cache: "no-store"})).json();
-    buildChords(ladder); load();
-    await det.start();
-    $("intro").hidden = true;
-    await calibrate();
-    $("today").textContent = "";
-    game.begin(pickChord());
-    setInterval(() => game.step(), 90);
+    await det.start(SELFTEST ? { test: true } : {});
+    await enterGame();
     if(SELFTEST) setupSelfTest();
   }catch(e){
     $("start").disabled = false; $("err").hidden = false;
     $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start: " + (e && e.message || e);
   }
 };
+// from the cabinet into the game (the microphone stays on while they look at their trophies, so coming back is instant)
+async function enterGame(){
+  $("home").hidden = true; paused = false; scrollTo(0, 0);
+  if(!running){ await calibrate(); running = true; setInterval(() => game.step(), 90); }
+  else $("game").hidden = false;
+  $("today").textContent = "";
+  game.begin(pickChord());
+}
+$("toHome").onclick = () => { paused = true; game.over = true; $("game").hidden = true; drawHome(); $("home").hidden = false; scrollTo(0, 0); };
+
+/* ---------- Chord Quest home: how many unlocked, the trophy cabinet, and the songs they open ---------- */
+const CUP = (fill, stroke) => `<svg class="cup" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h20v10c0 7-4.5 12-10 12s-10-5-10-12z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 10H8c0 6 3 9 7 9M34 10h6c0 6-3 9-7 9" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/><path d="M21 28h6v7h-6z" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/><path d="M15 41h18v-4c0-1-1-2-2-2H17c-1 0-2 1-2 2z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+const esc = t => String(t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
+function nextUnlockWhen(){        // when the weekly limit on new chords lifts, or null if it isn't what's holding them back
+  let introduced = 0, earliest = Infinity;
+  for(let k = START_POOL + 1; k <= P.unlocked; k++) if(P.intro[k] !== undefined && dayNum() - P.intro[k] < 7){ introduced++; earliest = Math.min(earliest, P.intro[k]); }
+  if(introduced < NEW_PER_WEEK) return null;
+  const d = new Date((earliest + 7) * 86400000);
+  return d.toLocaleDateString("en-AU", {weekday: "long", timeZone: "UTC"});
+}
+function drawHome(){
+  const L = n => FMAChords.label(n);
+  const open = CHORDS.slice(0, P.unlocked), grads = open.filter(c => P.cards[c.name] && P.cards[c.name].grad).length;
+  $("qCount").innerHTML = P.unlocked + `<small> / ${CHORDS.length}</small>`;
+  $("qSub").textContent = grads + (grads === 1 ? " trophy" : " trophies") + " won so far. Every chord opens songs in Boss Battle.";
+  $("start").textContent = P.sess ? "Keep playing" : "Play Chord Quest";
+  // the glowing next step
+  const newest = CHORDS[P.unlocked - 1], next = CHORDS[P.unlocked], nc = newest && P.cards[newest.name];
+  let hint = "";
+  if(!next) hint = "You've unlocked every chord on the ladder. Keep them all shining!";
+  else if(!(nc && nc.grad)) hint = `Next: play <b>${L(newest.name)}</b> right ${LEARN_STREAK} times in a row to win its trophy and unlock <b>${L(next.name)}</b>.`;
+  else { const when = nextUnlockWhen(); hint = when ? `<b>${L(next.name)}</b> unlocks on ${when}. New chords open two a week, so keep your trophies shining until then.` : `<b>${L(next.name)}</b> unlocks as soon as you play your next round.`; }
+  $("qHint").innerHTML = hint; $("qHint").hidden = !hint;
+  // the cabinet: every shelf up to the one you're on, plus the next one, so the road ahead is visible but not overwhelming
+  const curTier = (CHORDS[Math.min(P.unlocked, CHORDS.length - 1)] || {}).tier || 0;
+  const showTo = Math.min(TIERS.length - 1, curTier + 1);
+  let html = "";
+  for(let ti = 0; ti <= showTo; ti++){
+    const t = TIERS[ti], here = CHORDS.slice(t.first, t.last + 1);
+    const got = here.filter(c => P.cards[c.name] && P.cards[c.name].grad).length;
+    html += `<div class="shelf"><h3>${esc(t.name)}<span>${got} / ${here.length}</span></h3><div class="trophies">`;
+    here.forEach((c, k) => {
+      const i = t.first + k, card = P.cards[c.name], st = starsOf(card);
+      if(i < P.unlocked){
+        const won = card && card.grad;
+        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${st} stars">${won ? CUP("#FFC93C", "#9A6B00") : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st">${won ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) : "learning"}</span></button>`;
+      }else{
+        html += `<div class="tro locked" aria-label="${esc(L(c.name))}, locked">${CUP("#EFEAE0", "#CFC7B6")}<b>${esc(L(c.name))}</b><span class="st">🔒</span></div>`;
+      }
+    });
+    html += `</div></div>`;
+  }
+  const hidden = TIERS.length - 1 - showTo;
+  if(hidden > 0) html += `<p class="more">${hidden} more shelves to discover</p>`;
+  $("cabinet").innerHTML = html;
+  drawBossLink();
+}
+/* ---------- Boss Battle: the songs your chords open (they used to be listed here; they live in Boss Battle now) ---------- */
+const openSet = n => new Set(CHORDS.slice(0, n).flatMap(c => [c.name, c.base]));
+function newBossSongs(){         // songs the newest unlock just opened, and a boss they bring that wasn't guarding anything open before
+  const now = openSet(P.unlocked), before = openSet(P.unlocked - 1);
+  const was = FMABoss.openNow(before), songs = FMABoss.openNow(now).filter(x => !was.includes(x));
+  const seen = new Set(was.map(FMABoss.bossOf)), fresh = songs.map(FMABoss.bossOf).find(b => !seen.has(b));
+  return { songs, boss: fresh || null };
+}
+function drawBossLink(){
+  const L = n => FMAChords.label(n), open = FMABoss.openNow(openSet(P.unlocked)), next = CHORDS[P.unlocked];
+  const more = next ? FMABoss.openNow(openSet(P.unlocked + 1)).length - open.length : 0;
+  $("bossHead").textContent = open.length ? `Boss Battle: ${open.length} song${open.length === 1 ? "" : "s"} ready` : "Boss Battle";
+  $("bossSub").textContent = open.length ? (more > 0 ? `Unlock ${L(next.name)} for ${more} more.` : "Play the songs your chords open and beat the bosses.")
+    : next ? `Unlock ${L(next.name)} to open your first song.` : "";
+  const last = open[open.length - 1];
+  BossArt($("bossImg"), { kind: last ? FMABoss.bossOf(last) : "amp" });
+}
+$("cabinet").onclick = ev => {
+  const b = ev.target.closest("button.tro[data-i]"); if(!b) return;
+  const i = Number(b.dataset.i), c = CHORDS[i], card = P.cards[c.name], st = starsOf(card);
+  const w = document.createElement("div"); w.className = "chordpop";
+  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) + " Keep it shining." : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
+  const [go, close] = w.querySelectorAll("button");
+  close.onclick = () => w.remove();
+  w.onclick = e => { if(e.target === w) w.remove(); };
+  go.onclick = async () => { w.remove(); focus = i; if(det.ready) enterGame(); else $("start").click(); };
+  document.body.append(w);
+};
+(async function initHome(){
+  try{
+    await FMAChords.load(); buildChords(); load();
+    drawHome();
+    const hb = PlayerArt.buddy ? PlayerArt.buddy($("hbuddy")) : null; if(hb) setTimeout(() => hb.moment("hello", 2200), 500);
+  }catch(e){ $("cabinet").innerHTML = `<p>Couldn't load the chords. Check the internet connection and refresh.</p>`; }
+})();
 $("skip").onclick = () => game.begin(pickChord());
 $("recal").onclick = () => calibrate();
-$("stray").oninput = e => { game.strays = Number(e.target.value); $("strayV").textContent = e.target.value; };
-$("thr").oninput = e => { game.thr = Number(e.target.value) / 100; $("thrV").textContent = e.target.value; };
+$("stray").oninput = e => { game.strays = Number(e.target.value); if(game.match) game.match.opts.strays = game.strays; $("strayV").textContent = e.target.value; };
+$("thr").oninput = e => { game.thr = Number(e.target.value) / 100; if(game.match) game.match.opts.thr = game.thr; $("thrV").textContent = e.target.value; };
 if(SELFTEST) $("testbox").hidden = false;
 if(DEBUG) $("dbg").hidden = false;
 

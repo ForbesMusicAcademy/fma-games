@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex">
+<title>Listening Replay</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../fma-style.css?v=3">
+<style>
+/* Runs the games' own listener (fma-listen.js, the same file every game loads) over clips made with dev/recorder.html,
+   and reports what it heard: does each chord light up in Chord Quest / Boss Battle (and in root-note mode), does any
+   OTHER chord light up by mistake, are single notes read right (Song Packs, Tune Up), and does the quiet room or talking
+   trigger anything. The clips are rendered offline, faster than real time, so a whole file takes seconds.
+   ?inst=piano for piano clips (the page reloads itself to match a file). ?demo makes a synthetic set to check the page. */
+:root{--fma-width:1100px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.4;padding:0 16px 30px}
+main{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--fma-shadow)}
+h2{margin:0 0 6px;font-family:var(--font-display);font-weight:900;font-size:20px}
+.drop{border:3px dashed var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--muted);font-weight:700}
+.drop.over{border-color:var(--mustard);background:var(--pick-bg)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--font-display);font-weight:900;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.ok{color:#2E7D3E;font-weight:700}.bad{color:#C0392B;font-weight:700}.meh{color:#B07D00;font-weight:700}
+.sum{display:flex;flex-wrap:wrap;gap:10px}
+.sum div{background:var(--page);border-radius:12px;padding:8px 14px}
+.sum b{display:block;font-family:var(--font-display);font-size:24px}
+small{color:var(--muted)}
+.ghost{min-height:40px;padding:0 14px}
+</style>
+</head>
+<body class="fma" data-no-bug>
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="../"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Listening replay</h1></div></div>
+<main>
+  <section class="card">
+    <h2>Replay test clips</h2>
+    <p>Drop one or more files from the <a href="recorder.html">recorder</a> here (or choose them). Every clip goes through the games' own listener. Instrument: <b id="instName"></b>.</p>
+    <div class="drop" id="drop">Drop clip files here, or <input type="file" id="files" accept=".json,application/json" multiple></div>
+    <p id="status"></p>
+  </section>
+  <section class="card" id="sumCard" hidden><h2>Summary</h2><div class="sum" id="sum"></div>
+    <p><button class="ghost" id="copy">Copy the report (for Claude)</button> <small id="copied"></small></p></section>
+  <section class="card" id="tabCard" hidden><h2>Every clip</h2><table><thead><tr><th>File</th><th>Clip</th><th>Whole chord</th><th>Root note</th><th>Other chords that lit up</th><th>Single note</th></tr></thead><tbody id="rows"></tbody></table></section>
+</main>
+<script>
+const Q = new URLSearchParams(location.search), INST = Q.get("inst") === "piano" ? "piano" : "guitar";
+window.fmaInstrument = { get: () => INST, set(){}, word: () => INST };       // the chord list follows this page's instrument
+window.fmaKey = k => k;
+</script>
+<script src="../fma-listen.js?v=2"></script>
+<script src="../fma-chords.js?v=4"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("instName").textContent = INST;
+const NAMES = FMAListen.NAMES, PC = n => { const m = /^([A-G])([#b]?)(\d)?$/.exec(n); const base = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0); return { pc: (base + 12) % 12, midi: m[3] ? 12 * (Number(m[3]) + 1) + base : null }; };
+const CHORD_STEP = 0.09, NOTE_STEP = 0.012;      // the games read chords about 11 times a second, notes every 12 ms
+const results = [];
+
+// render one clip offline through a fresh listener, calling read() every `step` seconds
+async function render(clip, step, read, gateDb){
+  const len = clip.pcm.length + Math.round(clip.sr * 0.3);
+  const oc = new OfflineAudioContext(1, len, clip.sr), det = FMAListen.create();
+  await det.start({ ctx: oc, test: true }); det.gateDb = gateDb;
+  const buf = oc.createBuffer(1, clip.pcm.length, clip.sr); buf.getChannelData(0).set(clip.pcm);
+  const src = oc.createBufferSource(); src.buffer = buf; src.connect(det.testGain); src.start(0);
+  const out = [];
+  for(let t = step; t < len / clip.sr - 0.01; t += step) oc.suspend(Number(t.toFixed(4))).then(() => { out.push(read(det, oc.currentTime)); oc.resume(); });
+  await oc.startRendering();
+  return out;
+}
+// the room's own level sets the gate, the way the games calibrate (Chord Quest listens for 2 s before the first chord)
+async function roomGate(pack){
+  const room = pack.clips.find(c => c.kind === "noise" && c.target === "room"); if(!room) return -50;
+  const lv = (await render(room, 0.06, d => d.level(), -50)).sort((a, b) => a - b);
+  return Math.max(-75, Math.min(-38, lv[Math.floor(lv.length * 0.8)] + 9));
+}
+const candidates = () => FMAChords.list.slice(0, 20);
+async function chordPass(clip, gate){
+  const frames = await render(clip, CHORD_STEP, d => d.scores(), gate);
+  const res = {};
+  for(const c of candidates()){
+    const m = FMAListen.chordMatch(c); let at = null;
+    frames.forEach((sc, i) => { if(at === null && m.step(sc).hit) at = (i + 1) * CHORD_STEP; });
+    res[c.name] = at;
+  }
+  let rootAt = {}, run = {};
+  frames.forEach((sc, i) => { const s = FMAListen.strongest(sc, 0.25); for(let pc = 0; pc < 12; pc++){ run[pc] = s === pc ? (run[pc] || 0) + 1 : 0; if(run[pc] >= 3 && rootAt[pc] === undefined) rootAt[pc] = (i + 1) * CHORD_STEP; } });
+  return { res, rootAt, musical: frames.filter(Boolean).length / Math.max(1, frames.length) };
+}
+async function notePass(clip, gate){
+  const det = { notes: [] }; let tracker = null; const pitches = [];
+  await render(clip, NOTE_STEP, (d, t) => {
+    if(!tracker) tracker = FMAListen.notes(d, { onNote: m => det.notes.push(m) });
+    tracker.step();
+    if(pitches.length < 400){ const p = d.read({ fmin: 60, fmax: 1400 }); if(p && p.clarity > 0.85) pitches.push(69 + 12 * Math.log2(p.f / 440)); }
+  }, gate);
+  pitches.sort((a, b) => a - b);
+  return { notes: det.notes, median: pitches.length ? pitches[pitches.length >> 1] : null };
+}
+function decode(c){ const bin = atob(c.pcm), u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const q = new Int16Array(u8.buffer), f = new Float32Array(q.length); for(let i = 0; i < q.length; i++) f[i] = q[i] / 32767; return Object.assign({}, c, { pcm: f }); }
+const fmt = t => t === null || t === undefined ? "" : t.toFixed(2) + " s";
+async function runPack(pack, file){
+  if(pack.kind !== "fma-listen-clips") throw new Error("not a clip file");
+  if((pack.inst === "piano") !== (INST === "piano")){ location.search = "?inst=" + pack.inst; return; }
+  const clips = pack.clips.map(decode), gate = await roomGate({ clips });
+  for(const c of clips){
+    $("status").textContent = `${file}: ${c.label}…`;
+    const r = { file, device: pack.device, room: pack.room, kind: c.kind, target: c.target, label: c.label };
+    if(c.kind === "chord" || c.kind === "noise"){
+      const cp = await chordPass(c, gate);
+      r.chordAt = c.kind === "chord" ? cp.res[c.target] : undefined;
+      r.others = Object.entries(cp.res).filter(([n, t]) => t !== null && n !== c.target && !(FMAChords.info(c.target) && FMAChords.info(n) && FMAChords.info(n).base === FMAChords.info(c.target).base)).map(([n]) => n);
+      const root = c.kind === "chord" && FMAChords.info(c.target) ? FMAChords.info(c.target).root : null;
+      r.rootAt = root !== null ? cp.rootAt[root] : undefined;
+      r.rootWrong = Object.keys(cp.rootAt).filter(pc => Number(pc) !== root).map(pc => NAMES[pc]);
+    }
+    if(c.kind === "note" || c.kind === "noise"){
+      const np = await notePass(c, gate);
+      r.heard = np.notes.map(m => NAMES[m % 12]);
+      if(c.kind === "note"){ const want = PC(c.target); r.noteOk = np.notes.length > 0 && np.notes[0] % 12 === want.pc;
+        r.cents = np.median !== null && want.midi !== null ? Math.round(100 * (np.median - want.midi - 12 * Math.round((np.median - want.midi) / 12))) : null;
+        r.octave = np.median !== null && want.midi !== null ? Math.round((np.median - want.midi) / 12) : null; }
+    }
+    results.push(r); draw();
+  }
+  $("status").textContent = "Done.";
+}
+function draw(){
+  $("tabCard").hidden = $("sumCard").hidden = false;
+  const lab = n => FMAChords.label(n);
+  $("rows").innerHTML = results.map(r => `<tr><td><small>${r.device || r.file}<br>${r.room || ""}</small></td><td><b>${r.label}</b><br><small>${r.kind}</small></td>` +
+    `<td>${r.kind === "chord" ? (r.chordAt != null ? `<span class="ok">✓ ${fmt(r.chordAt)}</span>` : `<span class="bad">✗ missed</span>`) : r.kind === "noise" ? "" : ""}</td>` +
+    `<td>${r.kind === "chord" ? (r.rootAt != null ? `<span class="ok">✓ ${fmt(r.rootAt)}</span>` : `<span class="bad">✗</span>`) + (r.rootWrong && r.rootWrong.length ? ` <small>also ${r.rootWrong.join(" ")}</small>` : "") : r.kind === "noise" && r.rootWrong.length ? `<span class="bad">${r.rootWrong.join(" ")}</span>` : ""}</td>` +
+    `<td>${r.others && r.others.length ? `<span class="bad">${r.others.map(lab).join(", ")}</span>` : r.others ? `<span class="ok">none</span>` : ""}</td>` +
+    `<td>${r.kind === "note" ? (r.noteOk ? `<span class="ok">✓ ${r.heard[0]}</span>` : `<span class="bad">✗ ${r.heard.length ? "heard " + r.heard.slice(0, 4).join(" ") : "nothing"}</span>`) + (r.cents !== null ? ` <small>${r.cents > 0 ? "+" : ""}${r.cents}¢${r.octave ? `, ${r.octave > 0 ? "+" : ""}${r.octave} oct` : ""}</small>` : "") + (r.heard.length > 1 ? ` <small>(${r.heard.length} notes)</small>` : "")
+      : r.kind === "noise" ? (r.heard.length ? `<span class="bad">heard ${r.heard.slice(0, 5).join(" ")}</span>` : `<span class="ok">silent ✓</span>`) : ""}</td></tr>`).join("");
+  const ch = results.filter(r => r.kind === "chord"), nt = results.filter(r => r.kind === "note"), nz = results.filter(r => r.kind === "noise");
+  const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
+  const times = ch.map(r => r.chordAt).filter(t => t != null).sort((a, b) => a - b);
+  $("sum").innerHTML = [["Chords heard", pct(ch.filter(r => r.chordAt != null).length, ch.length), `${ch.filter(r => r.chordAt != null).length} of ${ch.length}`],
+    ["Typical time to hit", times.length ? times[times.length >> 1].toFixed(2) + " s" : "–", "median"],
+    ["Wrong chords lit", ch.filter(r => r.others.length).length, "clips where another chord also counted"],
+    ["Root note mode", pct(ch.filter(r => r.rootAt != null).length, ch.length), "chords whose root was read"],
+    ["Single notes", pct(nt.filter(r => r.noteOk).length, nt.length), `${nt.filter(r => r.noteOk).length} of ${nt.length}`],
+    ["Noise false alarms", nz.filter(r => (r.others && r.others.length) || r.heard.length).length, `of ${nz.length} quiet/talking clips`]]
+    .map(([a, b, c]) => `<div><small>${a}</small><b>${b}</b><small>${c}</small></div>`).join("");
+}
+$("copy").onclick = () => {
+  const lines = ["# Listening replay report (" + INST + ", " + new Date().toISOString().slice(0, 10) + ")", "", "| Device / room | Clip | Kind | Chord | Root | Other chords | Note |", "|---|---|---|---|---|---|---|"];
+  results.forEach(r => lines.push(`| ${r.device || r.file} / ${r.room || ""} | ${r.label} | ${r.kind} | ${r.kind === "chord" ? (r.chordAt != null ? "hit " + fmt(r.chordAt) : "MISS") : ""} | ${r.kind === "chord" ? (r.rootAt != null ? "hit" : "MISS") : ""} | ${(r.others || []).join(" ")} ${(r.rootWrong || []).length && r.kind === "noise" ? "root:" + r.rootWrong.join(" ") : ""} | ${r.kind === "note" ? (r.noteOk ? "ok" : "WRONG") + " heard " + r.heard.join(" ") + (r.cents !== null ? " (" + r.cents + "c)" : "") : r.kind === "noise" ? "heard " + (r.heard.join(" ") || "nothing") : ""} |`));
+  navigator.clipboard.writeText(lines.join("\n")).then(() => { $("copied").textContent = "Copied. Paste it to Claude."; });
+};
+async function takeFiles(files){
+  for(const f of files){ try{ await runPack(JSON.parse(await f.text()), f.name); }catch(e){ $("status").textContent = f.name + ": " + e.message; } }
+}
+$("files").onchange = e => takeFiles([...e.target.files]);
+$("drop").ondragover = e => { e.preventDefault(); $("drop").classList.add("over"); };
+$("drop").ondragleave = () => $("drop").classList.remove("over");
+$("drop").ondrop = e => { e.preventDefault(); $("drop").classList.remove("over"); takeFiles([...e.dataTransfer.files]); };
+
+/* ?demo: a synthetic clip set (plucked strings made with the Karplus-Strong trick, plus hiss and a "voice"), to check the
+   page itself works. It says nothing about real devices: only real recordings do that. */
+function pluck(sr, secs, midis, gain){
+  const out = new Float32Array(Math.round(sr * secs));
+  midis.forEach((m, k) => {
+    const f = 440 * Math.pow(2, (m - 69) / 12), N = Math.round(sr / f), line = new Float32Array(N).map(() => Math.random() * 2 - 1);
+    const start = Math.round(sr * 0.25 + k * sr * 0.012); let idx = 0;
+    for(let i = start; i < out.length; i++){ const a = line[idx], b = line[(idx + 1) % N]; line[idx] = 0.996 * 0.5 * (a + b); out[i] += a * (gain || 0.25); idx = (idx + 1) % N; }
+  });
+  return out;
+}
+async function demo(){
+  const sr = 44100, clips = [], mk = (kind, target, label, pcm) => clips.push({ kind, target, label, sr, pcm });
+  const noise = new Float32Array(sr * 3).map(() => (Math.random() * 2 - 1) * 0.002);
+  mk("noise", "room", "Shh", noise);
+  const talk = new Float32Array(sr * 3); for(let i = 0; i < talk.length; i++){ const t = i / sr; talk[i] = 0.08 * Math.sin(2 * Math.PI * (140 + 40 * Math.sin(t * 3)) * t) * (Math.sin(t * 9) > 0 ? 1 : 0.2) + (Math.random() - .5) * 0.04; }
+  mk("noise", "talk", "Talk", talk);
+  const V = INST === "piano" ? { C: [60, 64], G: [67, 71], "C:3": [60, 64, 67], Em: [64, 67, 71], Am: [57, 60] } : { Em: [40, 47, 52, 55, 59, 64], G: [43, 47, 50, 55, 59, 64], C: [48, 52, 55, 60, 64], D: [50, 57, 62, 66], Am: [45, 52, 57, 60, 64] };
+  Object.entries(V).forEach(([c, ms]) => mk("chord", c, FMAChords.label(c), pluck(sr, 3, ms)));
+  ["E2", "A2", "G3", "C4", "E4"].forEach(n => mk("note", n, n, pluck(sr, 3, [PC(n).midi], 0.4)));
+  await runPack({ kind: "fma-listen-clips", device: "Synthetic demo", room: "none", inst: INST, clips: clips.map(c => Object.assign({}, c)) }, "demo");
+}
+// runPack() wants base64 clips from files; the demo hands it Float32 directly
+const _decode = decode; decode = c => c.pcm instanceof Float32Array ? c : _decode(c);
+FMAChords.load("../chord-ladder.json").then(() => { if(Q.has("demo")) demo(); });
+</script>
+</body>
+</html>

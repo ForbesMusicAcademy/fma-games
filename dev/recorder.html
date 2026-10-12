@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex">
+<title>Listening Test Recorder</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../fma-style.css?v=3">
+<style>
+/* Dave's tool for testing the games' listening on real phones and tablets (13 Oct 2026). It plays nothing and sends
+   nothing: it records short clips (a chord, a note, the quiet room) on THIS device, and "Save the clips" makes one file
+   to AirDrop or email to Dave's Mac. Drop that file into dev/replay.html, which runs the games' own listener
+   (fma-listen.js) over every clip and reports what it heard. Only record people who've agreed to it. */
+:root{--fma-width:560px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:0 16px 30px}
+main{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--fma-shadow)}
+.card h2{margin:0 0 6px;font-family:var(--font-display);font-weight:900;font-size:22px}
+.card p{margin:6px 0;color:var(--muted)}
+label{display:block;font-weight:700;margin:10px 0 4px}
+input,select{width:100%;font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:#fff}
+.row{display:flex;gap:8px;margin-top:10px}
+.row > *{flex:1}
+.ghost{min-height:46px;padding:0 14px}
+[hidden]{display:none!important}
+.prompt{text-align:center}
+.prompt .what{font-family:var(--font-display);font-weight:900;font-size:clamp(48px,16vw,84px);line-height:1}
+.prompt .how{color:var(--muted);font-weight:600;min-height:1.4em}
+.meter{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin:12px 0}
+.meter i{display:block;height:100%;width:0;background:#3E7D4C}
+.count{font-family:var(--font-display);font-weight:900;font-size:20px;color:var(--mustard-dark);min-height:1.3em}
+.list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.list li{border:2px solid var(--line);border-radius:12px;padding:6px;text-align:center;font-weight:700;font-size:14px;cursor:pointer;background:#fff}
+.list li.done{border-color:#3E7D4C;background:#EAF5EC}
+.list li.on{border-color:var(--ink);background:var(--pick-bg)}
+.note{background:var(--sky-bg);color:var(--sky-ink);border-radius:12px;padding:10px 12px;font-weight:600;font-size:15px}
+</style>
+</head>
+<body class="fma" data-no-bug>
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="../"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Listening test recorder</h1></div></div>
+<main>
+  <section class="card" id="setup">
+    <h2>Record test clips</h2>
+    <p>Records short clips of chords and notes on this device so the games' listening can be checked against real phones, tablets and rooms. Nothing leaves this device until you save the clips and send the file yourself.</p>
+    <p class="note">Only record players (and parents) who've said yes. Record in the room the game will really be played in.</p>
+    <label for="dev">This device</label><input id="dev" placeholder="e.g. Dave's iPhone 13, Mia's old Samsung tablet" maxlength="60">
+    <label for="who">Who's playing (optional)</label><input id="who" placeholder="e.g. Dave, a 7 year old" maxlength="60">
+    <label for="inst">Instrument</label><select id="inst"><option value="guitar">Guitar</option><option value="piano">Piano / keyboard</option></select>
+    <label for="room">The room</label><select id="room"><option>Quiet room</option><option>Lounge with TV/people</option><option>Studio</option><option>Other</option></select>
+    <div class="row"><button class="big play" id="begin">Start (allow microphone)</button></div>
+    <p id="err" style="color:#C0392B;font-weight:700" hidden></p>
+  </section>
+
+  <section class="card prompt" id="rec" hidden>
+    <div class="how" id="kind"></div>
+    <div class="what" id="what"></div>
+    <div class="how" id="how"></div>
+    <div class="meter"><i id="lvl"></i></div>
+    <div class="count" id="count"></div>
+    <div class="row"><button class="big play" id="go">Record</button></div>
+    <div class="row"><button class="ghost" id="hear" disabled>Play it back</button><button class="ghost" id="skip">Skip</button></div>
+  </section>
+
+  <section class="card" id="all" hidden>
+    <h2>Clips</h2>
+    <p id="tally"></p>
+    <ul class="list" id="list"></ul>
+    <div class="row"><button class="big" id="save">Save the clips</button></div>
+    <p style="font-size:14px">Saves one file. On a phone, choose AirDrop or Mail to send it to Dave's Mac, then drop it into the replay page.</p>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const SECS = 3;
+// what to record: chords from the start of each ladder, single notes across the range, and the room on its own
+const PROMPTS = {
+  guitar: [
+    { kind: "noise", target: "room", what: "Shh", how: "Stay quiet: this records the room on its own." },
+    { kind: "noise", target: "talk", what: "Talk", how: "Say a few words (no playing): the games should ignore this." },
+    ...["E2:low E open", "A2:A string open", "D3:D string open", "G3:G string open", "B3:B string open", "E4:high E open",
+        "G2:low E, fret 3", "C3:A string, fret 3", "E3:D string, fret 2", "A3:G string, fret 2", "C4:B string, fret 1", "G4:high E, fret 3"]
+      .map(x => { const [n, how] = x.split(":"); return { kind: "note", target: n, what: n.replace(/\d/, ""), how: "One note, let it ring: " + how }; }),
+    ...["Em", "G", "C", "D", "Am", "F", "A", "E", "Dm", "E7", "A7", "D7"]
+      .map(c => ({ kind: "chord", target: c, what: ({ G: "Easy-G", C: "Easy-C" })[c] || c, how: "Strum it once and let it ring (" + (({ G: "two-finger G", C: "two-finger C", F: "Fmaj7 shape" })[c] || "the shape from your lessons") + ")." })),
+    { kind: "chord", target: "Em", what: "Em", how: "Strum Em four times, steadily, like in a song.", tag: "strums" },
+    { kind: "chord", target: "G", what: "Easy-G", how: "Now strum it a bit out of tune, or with a buzzy string (that's useful too).", tag: "messy" }
+  ],
+  piano: [
+    { kind: "noise", target: "room", what: "Shh", how: "Stay quiet: this records the room on its own." },
+    { kind: "noise", target: "talk", what: "Talk", how: "Say a few words (no playing): the games should ignore this." },
+    ...["C3", "G3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "F#4", "Bb4"].map(n => ({ kind: "note", target: n, what: n.replace(/\d/, ""), how: "One key, hold it down: " + n + (n === "C4" ? " (middle C)" : "") })),
+    ...["C", "G", "F", "Am"].map(c => ({ kind: "chord", target: c, what: "Easy-" + c, how: "Two notes only, root and 3rd, fingers 1 and 2. Hold them down." })),
+    ...["C:3", "G:3", "F:3", "Am:3", "Em", "Dm", "D", "A", "G7"].map(c => ({ kind: "chord", target: c, what: c.replace(":3", ""), how: "The whole chord, right hand (fingers 1-2-4). Hold it down." }))
+  ]
+};
+let inst = "guitar", list = [], cur = 0, ctx = null, src = null, proc = null, an = null, recording = null;
+const clips = {};          // index -> {pcm: Float32Array, sr}
+$("begin").onclick = async () => {
+  inst = $("inst").value; list = PROMPTS[inst];
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === "suspended") await ctx.resume();
+    src = ctx.createMediaStreamSource(stream);
+    an = ctx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+    proc = ctx.createScriptProcessor(4096, 1, 1); src.connect(proc); proc.connect(ctx.destination);   // (the processor outputs silence)
+    proc.onaudioprocess = e => { if(recording) recording.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+    $("setup").hidden = true; $("rec").hidden = false; $("all").hidden = false; show(0); meter();
+  }catch(e){ $("err").hidden = false; $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone was blocked. Allow it and try again." : "Couldn't start: " + (e && e.message || e); }
+};
+function meter(){ const b = new Float32Array(2048); an.getFloatTimeDomainData(b); let s = 0; for(const x of b) s += x * x; $("lvl").style.width = Math.min(100, Math.sqrt(s / b.length) * 500) + "%"; requestAnimationFrame(meter); }
+function show(i){
+  cur = Math.max(0, Math.min(list.length - 1, i)); const p = list[cur];
+  $("kind").textContent = `${cur + 1} of ${list.length} · ${p.kind === "chord" ? "chord" : p.kind === "note" ? "single note" : "no playing"}`;
+  $("what").textContent = p.what; $("how").textContent = p.how; $("count").textContent = "";
+  $("hear").disabled = !clips[cur]; drawList();
+}
+function drawList(){
+  $("list").innerHTML = list.map((p, i) => `<li data-i="${i}" class="${clips[i] ? "done" : ""} ${i === cur ? "on" : ""}">${p.what}${p.tag ? " (" + p.tag + ")" : ""}</li>`).join("");
+  const n = Object.keys(clips).length; $("tally").textContent = `${n} of ${list.length} recorded. Tap one to (re)record it.`;
+}
+$("list").onclick = e => { const li = e.target.closest("li"); if(li) show(Number(li.dataset.i)); };
+$("skip").onclick = () => show(cur + 1);
+$("go").onclick = async () => {
+  $("go").disabled = true; recording = []; const t0 = performance.now();
+  await new Promise(res => { const tick = () => { const left = SECS - (performance.now() - t0) / 1000; $("count").textContent = left > 0 ? "Recording… " + left.toFixed(1) : ""; if(left > 0) requestAnimationFrame(tick); else res(); }; tick(); });
+  const parts = recording; recording = null;
+  const pcm = new Float32Array(parts.reduce((a, b) => a + b.length, 0)); let o = 0; parts.forEach(b => { pcm.set(b, o); o += b.length; });
+  clips[cur] = { pcm, sr: ctx.sampleRate }; $("go").disabled = false; $("count").textContent = "Got it ✓";
+  setTimeout(() => show(cur + 1), 600);
+};
+$("hear").onclick = () => {
+  const c = clips[cur]; if(!c) return;
+  const b = ctx.createBuffer(1, c.pcm.length, c.sr); b.getChannelData(0).set(c.pcm);
+  const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start();
+};
+// one JSON file: the clips as 16-bit audio in base64, with what each one should be
+function b64(int16){ const u8 = new Uint8Array(int16.buffer); let s = ""; for(let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+$("save").onclick = async () => {
+  const out = { kind: "fma-listen-clips", v: 1, made: new Date().toISOString(), device: $("dev").value.trim(), who: $("who").value.trim(), room: $("room").value,
+    inst, ua: navigator.userAgent, clips: [] };
+  Object.keys(clips).sort((a, b) => a - b).forEach(i => {
+    const c = clips[i], p = list[i], q = new Int16Array(c.pcm.length);
+    for(let k = 0; k < q.length; k++) q[k] = Math.max(-32767, Math.min(32767, Math.round(c.pcm[k] * 32767)));
+    out.clips.push({ kind: p.kind, target: p.target, label: p.what + (p.tag ? " (" + p.tag + ")" : ""), sr: c.sr, pcm: b64(q) });
+  });
+  if(!out.clips.length) return;
+  const name = "fma-clips-" + (out.device || "device").replace(/[^a-z0-9]+/gi, "-").toLowerCase() + "-" + inst + "-" + out.made.slice(0, 10) + ".json";
+  const file = new File([JSON.stringify(out)], name, { type: "application/json" });
+  if(navigator.canShare && navigator.canShare({ files: [file] })){ try{ await navigator.share({ files: [file], title: name }); return; }catch(e){ if(e.name === "AbortError") return; } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+};
+</script>
+</body>
+</html>

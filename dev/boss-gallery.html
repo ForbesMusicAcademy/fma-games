@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boss gallery</title>
+<link rel="stylesheet" href="../fma-style.css?v=3">
+<style>
+body{margin:0;background:#FBF8EF;font-family:'Work Sans',system-ui,sans-serif;padding:16px}
+h1{font:900 24px Nunito,system-ui}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.cell{background:#fff;border:1px solid #E8E1D2;border-radius:18px;padding:10px}
+.cell b{font:900 18px Nunito,system-ui}
+.art{width:100%;aspect-ratio:1}
+.row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.row button{font:inherit;font-size:13px;padding:4px 8px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer}
+</style></head>
+<body class="fma">
+<h1>Boss gallery (test page)</h1>
+<p>Every boss, with buttons for each state. <code>?boss=kind</code> shows one. <code>?stage=0..4</code> sets them all (4 = dead).</p>
+<div class="grid" id="g"></div>
+<script src="../boss-anim.js"></script>
+<script>
+// new bosses register themselves from their own files: list them here as they're added
+const EXTRA = ["metronome", "kit", "stompbox", "sournote", "mic", "smoke"];
+const load = f => new Promise(r => { const s = document.createElement("script"); s.src = "../boss-art-" + f + ".js?" + Date.now(); s.onload = r; s.onerror = r; document.head.appendChild(s); });
+(async () => {
+  for(const f of EXTRA) await load(f);
+  const q = new URLSearchParams(location.search), only = q.get("boss"), stage = q.has("stage") ? Number(q.get("stage")) : null;
+  BossArt.kinds.filter(([k]) => !only || k === only).forEach(([k, name]) => {
+    const c = document.createElement("div"); c.className = "cell";
+    c.innerHTML = `<b>${name}</b> <small>${k}</small><div class="art"></div><div class="row"></div>`;
+    document.getElementById("g").append(c);
+    let b = BossArt(c.querySelector(".art"), { kind: k });
+    const acts = { "fresh": () => { b = BossArt(c.querySelector(".art"), { kind: k }); }, "25%": () => b.setDamage(.3), "50%": () => { b.setDamage(.55); b.rage(); },
+      "75%": () => b.setDamage(.8), "hit": () => b.hit(1), "combo": () => b.hit(3), "taunt": () => b.taunt(), "die": () => b.die(),
+      "gold": () => { b = BossArt(c.querySelector(".art"), { kind: k, gold: true }); } };
+    Object.entries(acts).forEach(([n, f]) => { const x = document.createElement("button"); x.textContent = n; x.onclick = f; c.querySelector(".row").append(x); });
+    if(stage !== null){ if(stage >= 4) b.die(); else { b.setDamage([0, .3, .55, .8][stage]); if(stage >= 2) b.rage(); } }
+  });
+})();
+</script>
+</body></html>

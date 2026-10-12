@@ -2,551 +2,1049 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
-<title>Song Practice</title>
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<title>Song Packs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
-/* Home song practice: pick a song, play it note by note, earn stars. Phone first, same look as the chord page.
-   The page listens through the microphone and never records. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--warn:#E5A100;
+/* Song Packs: songs in packs of five, three stars a song, a trophy and a character prize for finishing a pack.
+   Guitar players read scrolling tab; piano players choose coloured notes on a staff or Falling Notes. Phone first.
+   The page listens through the microphone (or a plugged-in keyboard) and never records. */
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:900px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--warn:#E5A100;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
-#app{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
-header h1{margin:0;font-family:var(--head);font-weight:900;font-size:22px}
-header small{color:var(--muted);font-weight:600}
-header a{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff}
+#app{width:100%;max-width:900px;display:flex;flex-direction:column;gap:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
 .card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px}
 .card p{margin:8px 0;color:var(--muted)}
-button{font:inherit;cursor:pointer}
-.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px;color:var(--fg)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+.big{width:100%;min-height:56px;border-radius:16px;border:2px solid var(--fg);background:var(--accent);font-weight:800;font-size:19px}
 .big:disabled{opacity:.5;cursor:default}
-.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--fg)}
+.ghost{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700}
 [hidden]{display:none!important}
-/* song list */
-.song{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:0 14px 40px -30px rgba(35,35,31,.5);color:var(--fg)}
-.song b{font-family:var(--head);font-weight:900;font-size:21px;display:block}
-.song .lv{display:inline-block;margin-top:2px;font-size:13px;font-weight:700;color:var(--muted);background:var(--line);border-radius:999px;padding:1px 10px}
-.song .meta{flex:1}
-.rew{display:flex;align-items:center;gap:3px}
-.rew img{height:30px;width:auto}
+
+/* 1. the packs */
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pack{position:relative;display:flex;flex-direction:column;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:0;overflow:hidden;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.pack .cover{height:118px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:#fff;position:relative;overflow:hidden}
+.pack .cover .emo{font-size:58px;line-height:1;filter:drop-shadow(0 4px 0 rgba(0,0,0,.18))}
+.pack .cover b{font-family:var(--head);font-weight:900;font-size:25px;line-height:1.05;text-shadow:0 2px 0 rgba(0,0,0,.2);max-width:60%}
+.pack .cover .tro{position:absolute;right:10px;top:8px;width:40px;height:40px}
+.pack .body{padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px}
+.pack .body small{color:var(--muted);font-size:14px}
+.bar{height:12px;border-radius:7px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good);border-radius:7px}
+.pack .nums{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;color:var(--muted)}
+.pack .nums img{height:18px;vertical-align:-3px}
+.pack.locked .cover{filter:grayscale(.85) brightness(1.05);opacity:.7}
+.pack.locked .lockline{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;font-weight:700;color:var(--fg);font-size:15px}
+.pack.won{border:3px solid var(--accent)}
+.prize{display:flex;align-items:center;gap:10px;background:#FFF8E1;border-radius:14px;padding:6px 10px;font-size:14px;font-weight:600;color:var(--muted)}
+.prize .pic{width:40px;height:40px;flex:none}
+.prize .pic svg{width:100%;height:100%}
+.prize b{color:var(--fg)}
+
+/* 2. one pack */
+#packHead .cover{border-radius:18px;height:110px;display:flex;align-items:center;gap:14px;padding:0 18px;color:#fff}
+#packHead .cover .emo{font-size:56px}
+#packHead .cover b{font-family:var(--head);font-weight:900;font-size:28px;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.song{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 16px;box-shadow:0 14px 40px -30px rgba(35,35,31,.5)}
+.song b{font-family:var(--head);font-weight:900;font-size:20px;display:block;line-height:1.15}
+.song small{color:var(--muted);font-size:14px;display:block;margin-top:2px}
+.song .meta{flex:1;min-width:0}
+.song.next{border:3px solid var(--accent);box-shadow:0 0 0 4px rgba(255,184,5,.25),0 14px 40px -30px rgba(35,35,31,.5)}
+.song .here{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;font-family:var(--ui)}
+.rew{display:flex;align-items:center;gap:2px;flex:none}
+.rew img{height:26px;width:auto}
 .rew img.off{opacity:.45}
-.rew img.dia{height:34px;margin-left:6px}
-/* player */
+.list{display:flex;flex-direction:column;gap:10px}
+.seg{display:flex;border:2px solid var(--line);border-radius:999px;background:#fff;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:7px 14px;font-weight:700;color:var(--muted);min-height:38px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--fg)}
+.seg button:disabled{opacity:.4}
+.viewpick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-weight:700;font-size:15px}
+
+/* 3. the player */
 #top{display:flex;align-items:center;gap:10px}
-#top h2{flex:1;margin:0;font-family:var(--head);font-weight:900;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:20px}
-#bars{font-weight:700;color:var(--muted);font-size:14px}
-#wrap{position:relative;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:12px;min-height:170px}
-#at{width:100%;max-height:60vh;overflow:auto;scrollbar-width:none;position:relative}
-#at::-webkit-scrollbar{display:none}
-#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);text-align:center;padding:16px;background:#fff}
-#count{position:absolute;right:16px;top:8px;font-family:var(--head);font-size:clamp(40px,12vw,90px);font-weight:900;color:var(--accent);opacity:0;pointer-events:none}
-.at-cursor-bar{background:rgba(255,184,5,.18)}
-.at-cursor-beat{background:var(--accent);width:3px}
-body.wait .at-cursor-bar,body.wait .at-cursor-beat{display:none}   /* learning mode: the tab waits for you, so no moving line */
-#res{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none}
-#res i{position:absolute;border-radius:50%;border:4px solid transparent;transform:translate(-50%,-50%);transition:background .2s,border-color .2s}
-#res i.now{border-color:var(--accent);background:rgba(255,184,5,.2)}
-#res i.hit{border-color:var(--good);background:rgba(62,125,76,.22)}
-#res i.near{border-color:var(--warn);background:rgba(229,161,0,.25)}
-#res i.miss{border-color:var(--bad);background:rgba(192,57,43,.2)}
+#top h2{flex:1;margin:0;font-family:var(--head);font-weight:900;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:19px;white-space:nowrap}
+#stage{position:relative;margin-top:12px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#fff;user-select:none;-webkit-user-select:none}
+#cv{display:block;width:100%;height:270px}
+#count{position:absolute;left:0;right:0;top:18%;text-align:center;font-family:var(--head);font-size:clamp(56px,16vw,110px);font-weight:900;color:var(--accent);-webkit-text-stroke:3px var(--fg);opacity:0;pointer-events:none}
+#combo{position:absolute;right:12px;top:8px;font-family:var(--head);font-weight:900;font-size:20px;opacity:0;transition:opacity .2s;pointer-events:none}
+/* the little piano under the staff (piano players without a keyboard plugged in) */
+#pkeys{position:relative;height:96px;margin-top:10px;touch-action:none}
+#pkeys button{position:absolute;top:0;border:1.5px solid var(--fg);border-radius:0 0 8px 8px;background:#fff;padding:0 0 6px;display:flex;align-items:flex-end;justify-content:center;font:700 12px var(--ui);color:var(--muted)}
+#pkeys button.b{background:var(--fg);height:58%;z-index:2;color:#fff}
+#pkeys button.on{background:#FFD66B}
+#pkeys button.glow{box-shadow:inset 0 -26px 0 rgba(255,184,5,.55)}
 .row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
-#heard{font-weight:700;min-width:8.5em}
-#lvl{flex:1;min-width:60px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.opt{border:2px solid var(--line);border-radius:999px;background:#fff;padding:7px 14px;font-weight:700;min-height:44px}
+.opt[aria-pressed=true]{border-color:var(--fg);background:#FFF4D1}
+#hint{margin:8px 0 0;color:var(--muted);font-size:15px;min-height:1.4em}
+#heard{font-weight:700;color:var(--muted);font-size:15px}
+#lvl{flex:1;min-width:60px;max-width:180px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
 #lvl i{display:block;height:100%;width:0;background:var(--accent)}
-#last{margin-top:8px;min-height:1.4em;color:var(--muted);font-weight:600}
 #latBox{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:15px;font-weight:600}
-#latBox{justify-content:space-between}
 #latBox button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:800}
 #err{color:var(--bad);font-weight:700}
-/* end of run + messages */
+
+/* end of a run, and the pack trophy */
 .pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fade .25s}
-.pop .box{background:#fff;border-radius:26px;padding:22px 24px;text-align:center;max-width:380px;width:100%;animation:rise .35s ease-out}
+.pop .box{background:#fff;border-radius:26px;padding:22px 24px;text-align:center;max-width:380px;width:100%;animation:rise .35s ease-out;max-height:calc(100dvh - 32px);overflow:auto}
 .pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
 .pop .box p{color:var(--muted);margin:8px 0}
 .pop .big{margin-top:10px}
-.pop .pct{font-family:var(--head);font-weight:900;font-size:78px;line-height:1;color:var(--good)}
-.pop .stars img{height:76px;width:auto;margin:0 3px}
+.pop .pct{font-family:var(--head);font-weight:900;font-size:72px;line-height:1;color:var(--good)}
+.pop .stars img{height:66px;width:auto;margin:0 3px}
 .pop .stars img.off{opacity:.45}
-.pop .stars img.dia{height:92px}
+.pop .trophy{width:120px;height:120px;margin:0 auto}
+.pop .prizepic{width:110px;height:110px;margin:4px auto 0}
+.pop .prizepic svg{width:100%;height:100%}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
-<body class="wait">
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Song Packs</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Song Practice</h1><a href="./" class="menu">&larr; All games</a></header>
 
-  <!-- 1. the song list -->
-  <section id="menu">
+  <!-- 1. the packs -->
+  <section id="packsView">
     <div class="card" style="margin-bottom:14px">
-      <h2>Play the tab, note by note</h2>
-      <p>Your device listens through its microphone. Play each note on the tab. It only moves on when you get it right.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
+      <h2>Pick a pack</h2>
+      <p id="introLine">Every song earns up to 3 stars. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens more packs.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, or you can plug in a keyboard.</p>
+      <div id="midiSlot" style="margin-top:6px"></div>
     </div>
-    <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="packs" id="packs"></div>
     <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
   </section>
 
-  <!-- 2. one song -->
+  <!-- 2. one pack -->
+  <section id="packView" hidden>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><button class="ghost" id="toPacks">← All packs</button></div>
+      <div id="packHead"></div>
+      <div class="viewpick" id="viewPick" hidden><span>Piano view:</span><div class="seg" role="group" aria-label="Piano view"><button id="vStaff" aria-pressed="true">Notes on a staff</button><button id="vFall" aria-pressed="false">Falling Notes</button></div></div>
+      <div class="list" id="songList"></div>
+    </div>
+  </section>
+
+  <!-- 3. one song -->
   <section id="player" class="card" hidden>
-    <div id="top"><button class="ghost" id="back">← Songs</button><h2 id="title"></h2><span id="score"></span></div>
-    <div id="wrap"><div id="at"></div><div id="msg">Loading tab…</div><div id="count"></div></div>
-    <div class="row"><span id="heard">Hearing: –</span><span id="lvl"><i></i></span><span id="bars"></span></div>
-    <div id="last"></div>
+    <div id="top"><button class="ghost" id="back">← Pack</button><h2 id="title"></h2><span id="score"></span></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="count"></div><div id="combo"></div></div>
+    <div id="pkeys" hidden></div>
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big" id="go" style="flex:2">Start (allow microphone)</button>
-      <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
+      <button class="big play" id="go" style="flex:2">Start</button>
+      <button class="ghost" id="hear" style="flex:1;min-height:56px;border-radius:16px;white-space:nowrap">▶ Hear it</button>
     </div>
-    <p id="diaHint" style="margin:8px 0 0;font-size:14px;color:var(--muted)"></p>
-    <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span>  <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button> </div>
+    <p id="hint"></p>
+    <div class="row">
+      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn</button><button id="mPlay" aria-pressed="false">Play along</button></div>
+      <div class="seg" id="speeds" role="group" aria-label="Speed"></div>
+    </div>
+    <div class="row">
+      <button class="opt" id="names" aria-pressed="true">Note names</button>
+      <button class="opt" id="backing" aria-pressed="true">Backing music</button>
+      <button class="opt" id="mic" aria-pressed="false" hidden>🎤 Real piano (mic)</button>
+    </div>
+    <div class="row" id="micRow" hidden><span id="heard">Hearing: –</span><span id="lvl"><i></i></span></div>
+    <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span> <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button></div>
     <p id="err" hidden></p>
-    <div id="dbg" hidden style="font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;margin-top:8px"></div>
   </section>
 </div>
 
-<!-- messages -->
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="lib/alphaTab.min.js"></script>
-<script src="player-art.js?v=2"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=33"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 /* ============================================================
-   Song Practice (home). The song list is songs/songs.json (add a song with add-song.py). Progress is kept on this
-   device only (localStorage). Two ways to play a song:
-     LEARN   the tab waits for you: it moves on only when you play the current note right. Judged on pitch only.
-             1 star for finishing, 2 stars for 80% or more of the notes right first time, 3 stars for 100%.
-     DIAMOND the song runs on its own click at the written speed, and notes are judged on pitch AND timing.
-             Earn the diamond with 80% or more of the notes right and on time. Unlocked after 3 stars.
-   Add ?sim to the address to test without a microphone (a synthetic guitar plays, with a couple of mistakes).
+   Song Packs (home). Wave 1 of the games site: projects/games-slow-release-plan.md in Dave's workspace.
+   Every song comes from the one royalty-free song bank (piano-songs.json, the same 48 Falling Notes uses), so guitar and
+   piano share the packs. No lyrics anywhere, ever.
+     GUITAR  the melody becomes single-note tab automatically (lowest sensible frets, first position where it fits) and
+             scrolls past a play line. Played through the microphone (or a MIDI keyboard).
+     PIANO   coloured notes on a staff with the note name in each head, plus a little piano under it; or Falling Notes
+             (keys.html, which keeps the same stars, so both views fill the same packs).
+   LEARN waits for the right note; PLAY ALONG keeps time at Slow / Medium / Full with a count-in and soft backing.
+   Stars per song (as Falling Notes): 1 for finishing Learn, 2 for 80% in Play along, 3 for 90% at Full speed.
+   Only the note NAME has to match (any octave): phone mics jump octaves, and home keyboards are small.
+   Your character hops from note to note on the same canvas; if the device drops frames it stops hopping by itself.
+   A pack at 100% of its stars wins a trophy and a character item (Spooky Season: the pumpkin hat, only won here).
+   The first two packs are open from day one; the rest open as stars are earned, easiest first. Christmas appears in December.
+   Add ?sim to test with no instrument: Start plays the song for you, with a couple of mistakes.
    ============================================================ */
 const $ = id => document.getElementById(id);
-const q = new URLSearchParams(location.search);
-const sim = q.has("sim");
-const TWO_STAR_PCT = 80, DIAMOND_PCT = 80, DIAMOND_NEEDS_STARS = 3;
-const GOOD_MS = 120;               // on time = within this many ms of the beat
-const KEY = fmaKey("fma-home-songs-v1");          // each player on this device has their own stars
+const q = new URLSearchParams(location.search), SIM = q.has("sim");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
+const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
+const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Full", f: 1 }];
+const PLAY_PCT = 80, FULL_PCT = 90, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
+const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
 
-/* ---------- progress, kept on this device ---------- */
-let P = { songs: {}, log: [] };
-try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.songs) P = s; } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
-const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, best: 0, diamond: false, runs: 0 });
-const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
-
-/* ---------- song list ---------- */
-let SONGS = [], cur = null;
-const starImgs = (n, dia) => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("") + (dia ? `<img class="dia" src="diamond.png" alt="diamond">` : "");
-function drawList(){
-  $("list").innerHTML = SONGS.map((s, i) => { const r = rec(s.id);
-    return `<button class="song" data-i="${i}"><span class="meta"><b>${s.title}</b><span class="lv">${s.level || ""}</span></span><span class="rew">${starImgs(r.stars, r.diamond)}</span></button>`; }).join("");
+/* ---------- the catalogue ----------
+   Two separate sections share this page (Dave, 12 Oct):
+     SONG PACKS (songs.html)        ten levels of melody playing, one new skill per pack, each pack mixing in songs from up
+                                    to three levels before it (projects/games-melody-progression.md in Dave's workspace),
+                                    plus the seasonal packs (Spooky Season, Christmas).
+     RIFF LAB   (songs.html?lab)    ten labs of FMA original riffs (riff-lab.json, built by tools/build-riff-lab.py): plain
+                                    notes on the low E first, then palm mutes, slides, hammer-ons, pull-offs, bends, vibrato,
+                                    then the A and D strings, the G and B strings, and the pentatonic box. Guitar only.
+   For guitar, each song in a pack has a layout rule [strings, highest fret, starting strings?]: one string can use frets 0-12
+   (finding every fret comes before changing strings), and the game picks the frets with the least hand movement. A song
+   can appear in more than one pack at different levels; its stars are kept per pack. Riffs carry their own tab. */
+const LAB = q.has("lab");
+const R1e = [1, 12, [0]], R1E = [1, 12, [5]], R2 = [1, 12, [1, 2, 3, 4]], R3 = [2, 12], R4 = [2, 5], R5 = [3, 12];
+// a pack's songs: [id, rule] (rule null = all six strings, first position)
+const SONG_PACKS = [
+  { id: "first", lv: 1, name: "First Notes", emo: "🌱", col: "#3E9A57", col2: "#7CC36B", open: true,
+    skill: "One string: the high E or the low E. Find every fret from 0 to 12.",
+    songs: [["hot-cross-buns", R1e], ["mary-had-a-little-lamb", R1E], ["lightly-row", R1e], ["twinkle-twinkle", R1E], ["this-old-man", R1e]],
+    prize: { part: "acc", value: "party", label: "Party hat" } },
+  { id: "explorer", lv: 2, name: "String Explorer", emo: "🧭", col: "#2E7DA8", col2: "#8ECAE6",
+    skill: "One string at a time, now on the B, G, D and A strings.",
+    songs: [["london-bridge", R2], ["riff-robot-stomp", R2], ["riff-skateboard-sun", R2], ["riff-gravel-road", R2], ["frere-jacques", R2]],
+    prize: { part: "eyewear", value: "round", label: "Round glasses" } },
+  { id: "crossing", lv: 3, name: "Crossing Over", emo: "🌉", col: "#7A4EA8", col2: "#C9A7F0",
+    skill: "Two strings: the tune steps from one string to the next.",
+    songs: [["row-row-row-your-boat", R3], ["when-the-saints", R3], ["pop-goes-the-weasel", R3], ["hot-cross-buns", R2], ["this-old-man", R1E]],
+    prize: { part: "neck", value: "beads", label: "Beads" } },
+  { id: "backforth", lv: 4, name: "Back and Forth", emo: "🏓", col: "#C2501B", col2: "#FFB805",
+    skill: "Two strings, picking back and forth between them.",
+    songs: [["spooky-zombie-march", R3], ["spooky-witchs-cauldron", R3], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
+    prize: { part: "acc", value: "visor", label: "Visor" } },
+  { id: "three", lv: 5, name: "Three Strings", emo: "🔱", col: "#1F7A6B", col2: "#7FD1C2",
+    skill: "Three strings side by side.",
+    songs: [["ode-to-joy", R5], ["amazing-grace", R5], ["drunken-sailor", R5], ["oh-susanna", R4], ["london-bridge", R3], ["twinkle-twinkle", R2]],
+    prize: { part: "acc", value: "bucket", label: "Bucket hat" } },
+  { id: "sharps", lv: 6, name: "Sharp Shooter", emo: "🎯", col: "#B8322C", col2: "#FF8A6B",
+    skill: "Sharps and flats: the notes in between.",
+    songs: [["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
+    prize: { part: "neck", value: "bowtie", label: "Bow tie" } },
+  { id: "neck", lv: 7, name: "Whole Neck", emo: "🎸", col: "#26211F", col2: "#FFB805",
+    skill: "All six strings.",
+    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["fur-elise", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
+    prize: { part: "top", value: "jacket", label: "Jacket" } },
+  { id: "groove", lv: 8, name: "Groove", emo: "🕺", col: "#C23B7A", col2: "#FF9BC8",
+    skill: "Tricky rhythms: dotted notes, swing, 3/4 and 6/8.",
+    songs: [["twelve-bar-shuffle-in-a", null], ["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
+    prize: { part: "acc", value: "phones", label: "Headphones" } },
+  { id: "speed", lv: 9, name: "Speed Run", emo: "⚡", col: "#2D5C9A", col2: "#FFD34D",
+    skill: "Faster notes. Can you do them at Full speed?",
+    songs: [["korobeiniki", null], ["eine-kleine-nachtmusik", null], ["can-can", null], ["toccata-d-minor", null], ["mars-riff", null], ["happy-birthday", null], ["minuet-in-g", null]],
+    prize: { part: "extra", value: "sweatbands", label: "Sweatbands" } },
+  { id: "picking", lv: 10, name: "Picking Patterns", emo: "👑", col: "#8A6A1F", col2: "#FFC42B",
+    skill: "Long picking patterns across all six strings.",
+    songs: [["house-of-the-rising-sun", null], ["bach-prelude-in-c", null], ["canon-in-d", null], ["korobeiniki", null], ["brahms-lullaby", null]],
+    prize: { part: "acc", value: "crown", label: "Crown" } },
+  // seasonal packs, separate from the ladder
+  { id: "spooky", name: "Spooky Season", emo: "🎃", col: "#5B3A8C", col2: "#FF8A1C", open: true, seasonal: true,
+    skill: "One string, then two.",
+    songs: [["spooky-creaky-staircase", [1, 12]], ["spooky-haunted-music-box", [1, 12]], ["spooky-ghost-in-the-hallway", [1, 12]], ["spooky-zombie-march", [2, 12]], ["spooky-witchs-cauldron", [2, 12]]],
+    prize: { part: "acc", value: "pumpkin", label: "Pumpkin hat", only: true } },
+  { id: "christmas", name: "Christmas", emo: "🎄", col: "#1F7A45", col2: "#E8433F", december: true, seasonal: true,
+    skill: "One string, then two and three.",
+    songs: [["jingle-bells", [1, 12]], ["joy-to-the-world", [2, 12]], ["silent-night", [3, 12]], ["deck-the-halls", [3, 12]], ["we-wish-you-a-merry-christmas", [3, 12]]],
+    prize: { part: "acc", value: "santa", label: "Santa hat" } }
+];
+// each lab's look and prize (its riffs and skill line come from riff-lab.json)
+const LAB_LOOK = [
+  { emo: "🎵", col: "#3E9A57", col2: "#7CC36B", prize: { part: "acc", value: "band", label: "Headband" } },
+  { emo: "🔇", col: "#26211F", col2: "#8C8576", prize: { part: "neck", value: "chain", label: "Chain" } },
+  { emo: "🛝", col: "#2E7DA8", col2: "#8ECAE6", prize: { part: "bottom", value: "ripped", label: "Ripped jeans" } },
+  { emo: "🔨", col: "#B8322C", col2: "#FF8A6B", prize: { part: "top", value: "leather", label: "Leather jacket" } },
+  { emo: "🪝", col: "#7A4EA8", col2: "#C9A7F0", prize: { part: "eyewear", value: "shades", label: "Shades" } },
+  { emo: "🌙", col: "#1F7A6B", col2: "#7FD1C2", prize: { part: "hair", value: "mohawk", label: "Mohawk" } },
+  { emo: "〰️", col: "#C23B7A", col2: "#FF9BC8", prize: { part: "shoes", value: "platforms", label: "Platform boots" } },
+  { emo: "⚡", col: "#C2501B", col2: "#FFB805", prize: { part: "gear", value: "bass", label: "Bass guitar" } },
+  { emo: "🔥", col: "#8A1F1F", col2: "#FF6B3D", prize: { part: "gear", value: "flyingv", label: "Flying V guitar" } },
+  { emo: "👑", col: "#8A6A1F", col2: "#FFC42B", prize: { part: "gear", value: "doubleneck", label: "Double-neck guitar" } }
+];
+/* ---------- pace (13 Oct 2026, Dave: early packs have to feel achievable, mainly how many notes and how fast) ----------
+   Each level sets the fastest "Full" speed can be (bpm), how busy a song can be (notes a second on average, nps) and how long
+   it can run (notes). A song over the length plays its opening phrases (whole 4-bar chunks up to the limit), and a song
+   faster than the level allows is slowed to fit (never below 50 bpm, never faster than the song itself). Slow and Medium are
+   still 60% and 80% of that. Each lab lists its riffs easiest first. Levels 9 and 10 are the full songs.
+   Note lengths count too (Dave, 13 Oct): "rate" caps how fast the QUICKEST notes in a song come (notes a second at Full),
+   so a song can't hide a fast run inside a slow average, and nothing shorter than a quaver goes in Levels 1-6, the
+   seasonal packs or Riff Lab (no semiquavers or triplets; checkNoteLengths() warns in the console if one slips in). */
+const PACE = {
+  1: { bpm: 72, nps: 1.4, rate: 2.0, notes: 26 }, 2: { bpm: 76, nps: 1.6, rate: 2.2, notes: 28 }, 3: { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 },
+  4: { bpm: 84, nps: 2.0, rate: 2.6, notes: 36 }, 5: { bpm: 90, nps: 2.2, rate: 2.8, notes: 44 }, 6: { bpm: 96, nps: 2.4, rate: 3.0, notes: 52 },
+  7: { bpm: 100, nps: 2.6, rate: 3.4, notes: 64 }, 8: { bpm: 108, nps: 3.0, rate: 4.0, notes: 80 },
+  9: { bpm: 999, nps: 99, rate: 99, notes: 999 }, 10: { bpm: 999, nps: 99, rate: 99, notes: 999 } };
+const SEASON_PACE = { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 };
+const LAB_PACE = { 1: { bpm: 72, nps: 1.6, rate: 2.0 }, 2: { bpm: 76, nps: 1.8, rate: 2.2 }, 3: { bpm: 80, nps: 2.0, rate: 2.4 }, 4: { bpm: 84, nps: 2.1, rate: 2.6 },
+  5: { bpm: 84, nps: 2.2, rate: 2.6 }, 6: { bpm: 84, nps: 2.2, rate: 2.6 }, 7: { bpm: 88, nps: 2.4, rate: 2.8 }, 8: { bpm: 92, nps: 2.6, rate: 3.0 },
+  9: { bpm: 96, nps: 2.8, rate: 3.2 }, 10: { bpm: 100, nps: 3.0, rate: 3.4 } };
+const paceOf = p => !p ? null : LAB ? LAB_PACE[p.lv] : p.seasonal ? SEASON_PACE : PACE[p.lv];
+const pacedCache = {};
+function paced(s, p){
+  const pc = paceOf(p); if (!pc || !s || !s.notes || !s.notes.length) return s;
+  const ck = p.id + ":" + s.id; if (pacedCache[ck]) return pacedCache[ck];
+  const bb = s.ts[0] * 4 / s.ts[1]; let n = s.notes, bars = s.bars, cut = 0;
+  if (pc.notes && n.length > pc.notes) {
+    let best = 0;
+    for (let b = 4; b < s.bars; b += 4) if (n.filter(x => x.t < b * bb - 1e-6).length <= pc.notes) best = b;
+    if (!best) best = Math.min(4, s.bars);
+    if (best < s.bars) { cut = best * bb; n = n.filter(x => x.t < cut - 1e-6); bars = best; }
+  }
+  const beats = n[n.length - 1].t + n[n.length - 1].d;
+  const gaps = n.slice(1).map((x, i) => x.t - n[i].t).filter(g => g > 1e-6), gap = gaps.length ? Math.min(...gaps) : 1;    // the quickest notes
+  let tempo = Math.min(s.tempo, pc.bpm, pc.nps * 60 * beats / n.length, (pc.rate || 99) * 60 * gap);
+  tempo = Math.round(Math.max(Math.min(s.tempo, 50), tempo));
+  return pacedCache[ck] = Object.assign({}, s, { notes: n, bars, tempo, chords: cut ? (s.chords || []).filter(([b]) => b < cut) : s.chords,
+    paced: { cut: !!cut, bars, of: s.bars, slower: tempo < s.tempo } });
 }
-$("list").onclick = e => { const b = e.target.closest(".song"); if (b) openSong(SONGS[Number(b.dataset.i)]); };
-fetch("songs/songs.json", { cache: "no-store" }).then(r => r.json()).then(j => { SONGS = j; drawList(); })
-  .catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the song list."; });
+// how hard a song is at its pack's pace: busier and longer is harder
+const hardness = (p, id) => { const s = SONGS[id] && paced(SONGS[id], p); if (!s) return 0; const beats = s.notes[s.notes.length - 1].t + s.notes[s.notes.length - 1].d;
+  return (s.notes.length / (beats * 60 / s.tempo)) * Math.sqrt(s.notes.length) * (1 + 0.15 * new Set(s.notes.map(x => x.s === undefined ? 0 : x.s)).size)
+    * (0.6 + 0.1 * new Set(s.notes.map(x => x.m)).size); };      // more different notes to find is harder too (Hot Cross Buns has 3)
+// Riff Lab's riffs go easiest first. Song Packs keep their chosen order (Hot Cross Buns first, new songs before reviews).
+// no note shorter than a quaver below Level 7 (and in the seasonal packs and Riff Lab): a warning for whoever edits the packs
+function checkNoteLengths(){ PACKS.forEach(p => { if (p.lv >= 7 && !LAB) return; p.songs.forEach(([id]) => { const s = SONGS[id];
+  if (s && s.notes.some(x => x.d < 0.5 - 1e-6)) console.warn("Note shorter than a quaver in " + p.name + ": " + id); }); }); }
+function easiestFirst(){ if (!LAB) return; PACKS.forEach(p => { if (p.sorted) return; p.songs = p.songs.slice().sort((a, b) => hardness(p, a[0]) - hardness(p, b[0])); p.sorted = true; }); }
 
-/* ---------- the tab (alphaTab draws it; it is only a drawing library) ---------- */
-let api = null, trackNo = 0, expected = [], songEnd = 0, beatClicks = [], waitMode = true;
-const TPQ = 960;
-function makeApi(){
-  const settings = {
-    core: { fontDirectory: "lib/font/", tracks: [0], useWorkers: false, enableLazyLoading: false },
-    display: { layoutMode: alphaTab.LayoutMode.Horizontal, staveProfile: alphaTab.StaveProfile.Tab,
-      resources: { staffLineColor: "#B9B19C", barSeparatorColor: "#23231F", barNumberColor: "#6B6558", mainGlyphColor: "#23231F", secondaryGlyphColor: "#6B6558" },
-      scale: Math.min(2, Math.max(1.1, $("wrap").clientWidth / 520)) },
-    notation: { rhythmMode: alphaTab.TabRhythmMode.ShowWithBars, rhythmHeight: 38 },
-    player: { playerMode: alphaTab.PlayerMode.EnabledExternalMedia, scrollMode: alphaTab.ScrollMode.Off, enableCursor: true, enableAnimatedBeatCursor: true }
-  };
-  api = new alphaTab.AlphaTabApi($("at"), settings);
-  for (const el of ["ScoreTitle","ScoreSubTitle","ScoreArtist","ScoreAlbum","ScoreWords","ScoreMusic","ScoreWordsAndMusic","ScoreCopyright"])
-    api.settings.notation.elements.set(alphaTab.NotationElement[el], false);
-  api.updateSettings();
-  api.scoreLoaded.on(score => { buildExpected(score); $("msg").style.display = "none"; $("go").disabled = false; });
-  api.error.on(e => { $("msg").style.display = "flex"; $("msg").textContent = "Couldn't load this song."; });
-  api.playedBeatChanged.on(b => { if (!waitMode && b) $("bars").textContent = "Bar " + (b.voice.bar.index + 1) + " / " + api.score.masterBars.length; });
-  api.renderFinished.on(relayout); api.postRenderFinished.on(relayout);
-  api.playerReady.on(() => {
-    out = api.player.output;
-    out.handler = { backingTrackDuration: 0, playbackRate: 1, masterVolume: 0, seekTo(){}, play(){}, pause(){} };
-    ready = true;
+let PACKS = LAB ? [] : SONG_PACKS;
+const NEED = LAB ? 4 : 5;            // stars in the pack before it that open the next one
+const tabRule = (p, id) => { const e = p && p.songs.find(x => x[0] === id); return e ? e[1] : null; };
+const ids = p => p.songs.map(x => x[0]);
+// Christmas: there in December and January, and kept for good by anyone who's earned a star in it. Out of season it's simply
+// not on the shelf (never a greyed "opens in X days" card: the framework's red lines rule out locks by time and countdowns).
+const xmas = p => { const m = new Date().getMonth(); return m === 11 || m === 0 || packStars(p) > 0 ? "open" : "hidden"; };
+
+/* ---------- progress ----------
+   Song Packs on guitar: fma-tabs-v2, stars per pack ("pack:song"), since a song comes back at a higher level laid out a new
+   way. Piano: Falling Notes' own store (fma-keys-v1), per song, so both piano views fill the same packs. Riff Lab:
+   fma-riffs-v1, per riff. Trophies (and the piano view choice) in fma-packs-v1. All via fmaKey, so each player on a device
+   has their own, and they follow the player when tracking is on. */
+const STORE = fmaKey(LAB ? "fma-riffs-v1" : INST === "piano" ? "fma-keys-v1" : "fma-tabs-v2"), PKEY = fmaKey("fma-packs-v1");
+const readJSON = k => { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } };
+const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+let P = Object.assign({ songs: {}, opts: {} }, readJSON(STORE) || {});
+let PK = Object.assign({ won: {}, view: "staff", seen: {} }, readJSON(PKEY) || {});
+// merge into whatever is saved (Falling Notes shares the piano store and keeps its own settings in it)
+const save = () => { const fresh = readJSON(STORE) || {}; fresh.songs = Object.assign(fresh.songs || {}, P.songs); fresh.packOpts = P.packOpts; if (!fresh.opts) fresh.opts = {}; P = fresh; writeJSON(STORE, fresh); };
+const savePK = () => writeJSON(PKEY, PK);
+const rk = (p, id) => LAB || INST === "piano" ? id : p.id + ":" + id;          // where a song's stars are kept
+const rec = key => P.songs[key] || (P.songs[key] = { stars: 0, learn: 0, best: {}, runs: 0 });
+const starsOf = (p, id) => (P.songs[rk(p, id)] || {}).stars || 0;
+const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: INST === "guitar", lat: 0.08, hop: true }, P.packOpts || {});
+if (INST === "guitar") O.mic = true;
+const saveOpts = () => { P.packOpts = O; save(); };
+
+let SONGS = {}, pack = null, cur = null;
+const starImgs = n => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("");
+const packStars = p => ids(p).reduce((b, id) => b + starsOf(p, id), 0);
+const prevPack = p => { const ladder = PACKS.filter(x => !x.seasonal), i = ladder.indexOf(p); return i > 0 ? ladder[i - 1] : null; };
+function packState(p){
+  if (p.december) return xmas(p);
+  const pv = prevPack(p);
+  if (p.open || PK.won[(LAB ? "lab:" : "") + p.id] || !pv || packStars(pv) >= NEED) return "open";
+  return "locked";
+}
+const wonKey = p => (LAB ? "lab:" : "") + p.id;
+// a trophy cup in the pack's colours (gold once won, an outline before)
+function trophy(p, won, size){
+  const s = size || 40, c = won ? "#FFC42B" : "#E8E1D2", ink = won ? "#23231F" : "#B9B1A2";
+  return `<svg viewBox="0 0 48 48" width="${s}" height="${s}" aria-hidden="true"><path d="M14 6h20v10a10 10 0 0 1-20 0z" fill="${c}" stroke="${ink}" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M14 9H8a6 6 0 0 0 7 8M34 9h6a6 6 0 0 1-7 8" fill="none" stroke="${ink}" stroke-width="2.6"/><path d="M21 26h6v7h-6z" fill="${c}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M15 34h18v6H15z" rx="2" fill="${won ? p.col : "#F1EDE4"}" stroke="${ink}" stroke-width="2.6" stroke-linejoin="round"/>${won ? `<path d="M19 10q2-2 4 0" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/>` : ""}</svg>`;
+}
+function prizePic(p){
+  const pz = p.prize, me = Player.get();
+  if (pz.part === "gear") return PlayerArt.gear(pz.value, "#e8433f");
+  if (["top", "bottom", "shoes", "extra", "neck"].includes(pz.part) && PlayerArt.item) return PlayerArt.item(Object.assign({}, me, { [pz.part]: pz.value }), pz.part);
+  return PlayerArt.svg(Object.assign({}, me, { acc: "none", eyewear: "none", neck: "none", gear: "none", [pz.part]: pz.value }), ["acc", "eyewear", "hair"].includes(pz.part) ? "head" : "chest");
+}
+
+/* ---------- 1. the packs ---------- */
+function drawPacks(){
+  // the seasonal packs (Spooky Season, Christmas) sit on top while they're out, then the ladder of levels
+  let html = "", head = t => `<h3 style="grid-column:1/-1;margin:6px 0 -4px;font-family:var(--head);font-weight:900;font-size:20px">${t}</h3>`;
+  const order = PACKS.map((p, i) => i).sort((a, b) => (PACKS[b].seasonal ? 1 : 0) - (PACKS[a].seasonal ? 1 : 0));
+  const anySeason = PACKS.some(p => p.seasonal && packState(p) !== "hidden");
+  order.forEach(i => { const p = PACKS[i];
+    const st = packState(p); if (st === "hidden") return;
+    if (anySeason && p.seasonal && !html.includes("This season")) html += head("This season");
+    if (anySeason && !p.seasonal && !html.includes("Levels")) html += head(LAB ? "Labs" : "Levels");
+    const got = packStars(p), tot = p.songs.length * 3, won = !!PK.won[wonKey(p)], pct = Math.round(100 * got / tot), pv = prevPack(p);
+    const lockLine = st === "locked" ? `<div class="lockline">🔒 Opens at ${NEED} stars in ${esc(pv.name)} <small>(you have ${packStars(pv)})</small></div>` : "";
+    html += `<button class="pack ${st === "open" ? "" : "locked"} ${won ? "won" : ""}" data-i="${i}" ${st === "open" ? "" : 'aria-disabled="true"'}>
+      <div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><b>${p.lv ? `<small style="display:block;font-size:14px;opacity:.85">${LAB ? "Lab" : "Level"} ${p.lv}</small>` : ""}${esc(p.name)}</b><span class="emo">${p.emo}</span><span class="tro">${won ? trophy(p, true) : ""}</span></div>
+      <div class="body">${lockLine || `<div class="bar"><i style="width:${pct}%"></i></div><div class="nums"><span><img src="star-on.png" alt=""> ${got} of ${tot} stars</span><span>${won ? "Trophy won!" : pct + "%"}</span></div>`}
+        ${INST === "guitar" && p.skill ? `<small>${esc(p.skill)}</small>` : ""}
+        <div class="prize"><span class="pic">${prizePic(p)}</span><span>${won ? "You won the" : "Finish it to win the"} <b>${esc(p.prize.label)}</b></span></div></div></button>`;
+  });
+  $("packs").innerHTML = html;
+  checkTrophies();
+}
+$("packs").onclick = e => { const b = e.target.closest(".pack"); if (!b) return; const p = PACKS[Number(b.dataset.i)];
+  if (packState(p) !== "open") { b.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 300 }); return; }
+  openPack(p); };
+// any pack at 100% that hasn't had its trophy yet gets it now (stars can come from Falling Notes too)
+function checkTrophies(){
+  const p = PACKS.find(p => !PK.won[wonKey(p)] && packStars(p) >= p.songs.length * 3);
+  if (!p) return false;
+  PK.won[wonKey(p)] = new Date().toISOString().slice(0, 10); savePK();
+  const g = FMAPicks.grant(p.prize.part, p.prize.value, (LAB ? "lab:" : "pack:") + p.id, "finishing " + p.name, 50) || {};
+  $("popBox").innerHTML = `<div class="trophy">${trophy(p, true, 120)}</div><h3>${esc(p.name)} complete!</h3><p>Every star in the ${LAB ? "lab" : "pack"}. That's the trophy!</p>
+    ${g.picks ? `<p>You already had the ${esc(p.prize.label)}, so here are <b>${g.picks} picks</b> instead.</p>` : `<div class="prizepic">${prizePic(p)}</div><p>You won the <b>${esc(p.prize.label)}</b>. Put it on in the character editor.</p>`}
+    <a class="big" href="./#character" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">Dress up my player</a><button class="ghost" id="pOk" style="margin-top:8px;width:100%">Keep playing</button>`;
+  $("pop").hidden = false; PlayerArt.popIn($("popBox"), "win");
+  $("pOk").onclick = () => { $("pop").hidden = true; drawPacks(); if (pack) drawPack(); };
+  if (!SIM) FMAStudent.send(GAME, { detail: p.name + " trophy", mode: "pack", level: p.id, score: 100, right: 1, total: 1, improved: false });
+  return true;
+}
+const GAME = LAB ? "riff-lab" : "song-packs";
+
+/* ---------- 2. one pack ---------- */
+function openPack(p){
+  pack = p; $("packsView").hidden = true; $("packView").hidden = false; $("player").hidden = true; drawPack(); window.scrollTo(0, 0);
+  history.replaceState(null, "", location.pathname + location.search + "#" + p.id);
+}
+function drawPack(){
+  const p = pack, got = packStars(p), tot = p.songs.length * 3;
+  $("packHead").innerHTML = `<div class="cover" style="background:linear-gradient(135deg,${p.col} 0%,${p.col} 55%,${p.col2} 140%)"><span class="emo">${p.emo}</span><div><b>${esc(p.name)}</b>
+    <div style="font-weight:700;opacity:.9">${p.lv ? (LAB ? "Lab " : "Level ") + p.lv + " · " : ""}${got} of ${tot} stars${PK.won[wonKey(p)] ? " · trophy won" : ""}</div></div><span style="margin-left:auto">${trophy(p, !!PK.won[wonKey(p)], 54)}</span></div>
+    <div class="bar" style="margin-top:10px"><i style="width:${Math.round(100 * got / tot)}%"></i></div>${INST === "guitar" && p.skill ? `<p style="margin:8px 2px 0;color:var(--muted);font-weight:600">${esc(p.skill)}</p>` : ""}`;
+  $("viewPick").hidden = INST !== "piano";
+  $("vStaff").setAttribute("aria-pressed", PK.view !== "falling"); $("vFall").setAttribute("aria-pressed", PK.view === "falling");
+  const list = ids(p), nextId = list.find(id => !starsOf(p, id)) || list.find(id => starsOf(p, id) < 3);
+  $("songList").innerHTML = list.map(id => { const s = SONGS[id]; if (!s) return ""; const st = starsOf(p, id), nx = id === nextId;
+    const lvl = !LAB && p.lv && INST === "guitar" ? levelOf(p, id) : "";
+    const ps = paced(s, p), part = ps && ps.paced && ps.paced.cut ? `<span class="fma-info" style="margin-right:6px">First ${ps.bars} bars</span>` : "";
+    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${part}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
+}
+// a review song's label: which earlier level it comes from (new songs at this pack's own level get "New")
+function levelOf(p, id){
+  const r = tabRule(p, id), key = JSON.stringify(r);
+  const own = JSON.stringify(tabRule(p, ids(p)[0]));
+  if (key === own) return "New";
+  const L = { [JSON.stringify(R1e)]: 1, [JSON.stringify(R1E)]: 1, [JSON.stringify(R2)]: 2, [JSON.stringify(R3)]: 3, [JSON.stringify(R4)]: 4, [JSON.stringify(R5)]: 5 }[key];
+  return L ? "Level " + L + " review" : "Review";
+}
+const cleanTitle = t => t.replace(/ \((Halloween|original riff)\)$/, "");
+$("songList").onclick = e => { const b = e.target.closest(".song"); if (!b) return;
+  if (INST === "piano" && PK.view === "falling") { const ps = paced(SONGS[b.dataset.id], pack);
+    location.href = "keys.html?song=" + encodeURIComponent(b.dataset.id) + "&pack=" + pack.id + (ps && ps.paced ? "&bpm=" + ps.tempo + (ps.paced.cut ? "&bars=" + ps.bars : "") : ""); return; }
+  openSong(paced(SONGS[b.dataset.id], pack)); };
+$("vStaff").onclick = () => { PK.view = "staff"; savePK(); drawPack(); };
+$("vFall").onclick = () => { PK.view = "falling"; savePK(); drawPack(); };
+$("toPacks").onclick = goPacks;
+function goPacks(){ stopRun(); pack = null; $("pop").hidden = true; $("player").hidden = true; $("packView").hidden = true; $("packsView").hidden = false; drawPacks(); history.replaceState(null, "", location.pathname + location.search); window.scrollTo(0, 0); }
+
+if (LAB) {
+  document.title = "Riff Lab"; document.querySelector(".fma-band h1").textContent = "Riff Lab";
+  document.querySelector("#packsView h2").textContent = "Learn the moves of rock guitar";
+  $("introLine").textContent = "Ten labs of riffs, each one teaching a new move: plain notes on the low E first, then palm mutes, slides, hammer-ons, pull-offs, bends and vibrato. Every riff earns up to 3 stars, and every star you need is shown. Finish a lab to win its trophy and a prize for your character.";
+  $("toPacks").textContent = "← All labs"; $("back").textContent = "← Lab";
+}
+if (LAB && INST === "piano") {
+  $("packs").innerHTML = `<div class="card" style="grid-column:1/-1"><h2>Riff Lab is for guitar</h2><p>Every riff here is guitar tab. Piano players: Song Packs has the same songs for you.</p><a class="big" href="songs.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">Go to Song Packs</a></div>`;
+} else fetch(LAB ? "riff-lab.json" : "piano-songs.json", { cache: "no-store" }).then(r => r.json()).then(j => {
+  if (LAB) PACKS = j.labs.map((l, i) => Object.assign({ id: "lab" + l.lab, lv: l.lab, name: l.name, skill: l.skill, open: i === 0,
+    songs: l.riffs.map(r => { SONGS[r.id] = r; return [r.id, null]; }) }, LAB_LOOK[i]));
+  else j.forEach(s => SONGS[s.id] = s);
+  easiestFirst(); checkNoteLengths();
+  drawPacks();
+  const p = PACKS.find(p => p.id === location.hash.slice(1));
+  if (p && packState(p) === "open") openPack(p);
+}).catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the songs. Check your connection and refresh."; });
+if (INST === "piano" && !LAB) $("introLine").textContent = "Every song earns up to 3 stars, in either piano view. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens the next pack.";
+
+/* ---------- melody to guitar tab ----------
+   With a pack rule [strings, highest fret]: try every group of that many neighbouring strings, in every octave (the key
+   never changes, so the backing still fits), and lay the notes out with the least hand movement (a small cost for each fret
+   moved, for changing string, and for high frets). A two- or three-string song has to use all its strings. The group that
+   comes out cheapest wins; on a tie the written octave is kept.
+   With no rule (all six strings): the octave that keeps most notes in first position, each note on its lowest fret. */
+const OPEN = [64, 59, 55, 50, 45, 40];           // high E (top line) to low E (bottom line)
+function toTab(notes, rule){
+  if (rule && rule[0] < 6) { const t = ruledTab(notes, rule[0], rule[1], rule[2]); if (t) return t; }
+  let bestShift = 0, bestScore = -1e9;
+  for (const sh of [-24, -12, 0, 12, 24]) {
+    let sc = 0; for (const n of notes) { const m = n.m + sh; sc += m >= 40 && m <= 68 ? 10 : m >= 40 && m <= 76 ? 3 : -20; }
+    sc += sh * 0.01;
+    if (sc > bestScore) { bestScore = sc; bestShift = sh; }
+  }
+  return notes.map(n => {
+    let m = n.m + bestShift; while (m < 40) m += 12; while (m > 76) m -= 12;
+    let pick = null;
+    OPEN.forEach((o, s) => { const f = m - o; if (f < 0 || f > 12) return;
+      const cost = f <= 4 ? f : 10 + f;
+      if (!pick || cost < pick.cost) pick = { s, f, cost }; });
+    return { s: pick.s, f: pick.f, sounding: m };
   });
 }
-/* the notes the player should play, with their time from the first bar */
-function buildExpected(score){
-  const segs = []; let bpm = score.tempo || 120;
-  for (const mb of score.masterBars) { if (mb.tempoAutomation) bpm = mb.tempoAutomation.value; segs.push({ tick: mb.start, bpm }); }
-  const toSec = tick => { let s = 0; for (let i = 0; i < segs.length; i++) {
-      const a = segs[i].tick, b = i + 1 < segs.length ? segs[i + 1].tick : Infinity;
-      if (tick <= a) break; s += (Math.min(tick, b) - a) / TPQ * 60 / segs[i].bpm; }
-    return s; };
-  expected = []; beatClicks = [];
-  const track = score.tracks[trackNo] || score.tracks[0];
-  for (const bar of track.staves[0].bars) for (const voice of bar.voices) for (const beat of voice.beats) {
-    const notes = beat.notes.filter(n => !n.isDead && !n.isTieDestination);
-    if (!notes.length) continue;
-    expected.push({ t: toSec(beat.absolutePlaybackStart), midi: notes.map(n => n.realValue), beat, res: null, tries: 0 });
-  }
-  expected.sort((a, b) => a.t - b.t);
-  for (const mb of score.masterBars) {
-    const per = 4 * TPQ / mb.timeSignatureDenominator;
-    for (let i = 0; i < mb.timeSignatureNumerator; i++) beatClicks.push({ t: toSec(mb.start + i * per), accent: i === 0 });
-    songEnd = toSec(mb.start + mb.timeSignatureNumerator * per);
-  }
-}
-
-/* ---------- result rings over the fret numbers ---------- */
-let resLayer = null, ringTimer = 0;
-const relayout = () => { clearTimeout(ringTimer); ringTimer = setTimeout(layoutRings, 150); };
-function layoutRings(){
-  if (!api || !expected.length) return;
-  if (!resLayer || !resLayer.isConnected) { resLayer = document.createElement("div"); resLayer.id = "res"; $("at").appendChild(resLayer); }
-  resLayer.innerHTML = "";
-  const sc = $("at"), origin = sc.getBoundingClientRect();
-  const digits = [...sc.querySelectorAll(".at-surface text")].filter(t => /^\d+$/.test(t.textContent)).map(t => {
-    const r = t.getBoundingClientRect();
-    return { x: r.left - origin.left + sc.scrollLeft + r.width / 2, y: r.top - origin.top + sc.scrollTop + r.height / 2, w: r.width, h: r.height };
-  }).sort((a, b) => a.x - b.x || a.y - b.y);
-  const need = expected.reduce((n, e) => n + e.midi.length, 0), lookup = api.renderer && api.renderer.boundsLookup;
-  let k = 0;
-  for (const e of expected) {
-    let x, y, w;
-    if (digits.length === need) {
-      const g = digits.slice(k, k + e.midi.length); k += e.midi.length;
-      const x0 = Math.min(...g.map(d => d.x)), x1 = Math.max(...g.map(d => d.x)), y0 = Math.min(...g.map(d => d.y - d.h / 2)), y1 = Math.max(...g.map(d => d.y + d.h / 2));
-      x = (x0 + x1) / 2; y = (y0 + y1) / 2; w = Math.max(y1 - y0, g[0].w) * 1.7;
-    } else {
-      const bb = lookup && lookup.findBeat(e.beat); if (!bb) { e.ring = null; continue; }
-      const r = bb.realBounds; x = r.x + r.w / 2; y = r.y + r.h / 2; w = r.h * .6;
+// starts: which strings the group may start on (0 = high E ... 5 = low E). When it's given, the song may also move key for
+// guitar (a small cost per move, so its own key wins whenever it fits), because a C-major tune can't sit low on an E string.
+function ruledTab(notes, n, maxF, starts){
+  let best = null;
+  const shifts = [];
+  for (const o of [-36, -24, -12, 0, 12, 24]) for (let k = starts ? -6 : 0; k <= (starts ? 5 : 0); k++) shifts.push(o + k);
+  for (let g = 0; g + n <= 6; g++) {
+    if (starts && !starts.includes(g)) continue;
+    const group = Array.from({ length: n }, (_, k) => g + k);
+    for (const sh of shifts) {
+      const opts = notes.map(nt => group.map(s => ({ s, f: nt.m + sh - OPEN[s] })).filter(o => o.f >= 0 && o.f <= maxF));
+      if (opts.some(o => !o.length)) continue;
+      let prev = opts[0].map(o => ({ o, c: o.f * 0.05, back: null }));
+      for (let i = 1; i < opts.length; i++) {
+        prev = opts[i].map(o => { let bc = 1e9, bb = null;
+          for (const q of prev) { const c = q.c + Math.abs(o.f - q.o.f) * 0.5 + (o.s !== q.o.s ? 0.8 : 0) + o.f * 0.05; if (c < bc) { bc = c; bb = q; } }
+          return { o, c: bc, back: bb }; });
+      }
+      const end = prev.reduce((a, b) => a.c < b.c ? a : b), path = [];
+      for (let e = end; e; e = e.back) path.unshift(e.o);
+      let cost = end.c + Math.abs(sh) * 0.001 + (((sh % 12) + 12) % 12 ? 0.3 : 0);
+      if (new Set(path.map(x => x.s)).size < n) cost += 50;
+      if (!best || cost < best.cost) best = { cost, path };
     }
-    e.cx = x;
-    const i = document.createElement("i");
-    i.style.left = x + "px"; i.style.top = y + "px"; i.style.width = w + "px"; i.style.height = w + "px";
-    if (e.res) i.classList.add(e.res.cls);
-    resLayer.appendChild(i); e.ring = i;
   }
-  markNow(true);
+  return best && best.path.map(x => ({ s: x.s, f: x.f, sounding: OPEN[x.s] + x.f }));
 }
-let nowShown = -1;
-function markNow(force){
-  const n = running && waitMode && !finished ? idx : -1;
-  if (!force && n === nowShown) return; nowShown = n;
-  expected.forEach((e, i) => { if (e.ring) e.ring.classList.toggle("now", i === n); });
-}
-function paint(e, cls){ if (!e.ring) return; e.ring.classList.remove("hit", "near", "miss"); if (cls) e.ring.classList.add(cls); }
 
-/* ---------- clocks ---------- */
-let ctx = null, t0 = 0, countIn = 0, running = false, finished = false, finishing = false;
-let ready = false, out = null, fed = -1, apiPlaying = false;
-const songTime = () => ctx ? ctx.currentTime - t0 - countIn : -99;
-function feed(sec){ if (!ready) return; const ms = Math.max(0, sec * 1000); if (Math.abs(ms - fed) < 1) return; fed = ms; out.updatePosition(ms); }
-function setApiPlaying(on){ if (!ready || on === apiPlaying) return; apiPlaying = on; if (on) api.play(); else api.pause(); }
-
-/* ---------- listening: pitch (YIN) and note starts ---------- */
-const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-const toMidi = f => 69 + 12 * Math.log2(f / 440);
-function yin(buf, sr){
-  const half = buf.length >> 1, d = new Float32Array(half), minTau = Math.floor(sr / 1400);
-  for (let tau = 1; tau < half; tau++) { let s = 0; for (let i = 0; i < half; i++) { const x = buf[i] - buf[i + tau]; s += x * x; } d[tau] = s; }
-  let run = 0; d[0] = 1;
-  for (let tau = 1; tau < half; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
-  let tau = -1;
-  for (let t = minTau; t < half - 1; t++) { if (d[t] < 0.15) { while (t + 1 < half - 1 && d[t + 1] < d[t]) t++; tau = t; break; } }
-  if (tau < 0) return null;
-  const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c, tp = den ? tau + (a - c) / (2 * den) : tau;
-  return { freq: sr / tp, clarity: 1 - b };
-}
-const frames = [], pending = [], onsets = [];
-let lastOnsetT = -9, rmsMinWin = [], recentV = [], stableMidi = null, analyser = null, tbuf = null, lastHeardAt = 0, floorRms = 0.01;
-function listenFrame(){
-  if (!analyser) return;
-  analyser.getFloatTimeDomainData(tbuf);
-  const now = songTime(), sr = ctx.sampleRate;
-  let s = 0; for (let i = tbuf.length - 512; i < tbuf.length; i++) s += tbuf[i] * tbuf[i];
-  const rms = Math.sqrt(s / 512);
-  $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%";
-  rmsMinWin.push({ t: now, rms }); while (rmsMinWin.length && rmsMinWin[0].t < now - 2) rmsMinWin.shift();
-  floorRms = Math.min(0.02, Math.max(0.006, Math.min(...rmsMinWin.map(r => r.rms)) * 3));   // capped so a long run of playing can't raise it
-  let midi = null;
-  if (rms > floorRms) { const p = yin(tbuf, sr); if (p && p.clarity > 0.85) midi = toMidi(p.freq); }
-  frames.push({ t: now, rms, midi }); while (frames.length && frames[0].t < now - 3) frames.shift();
-  if (midi != null) { const c = Math.round((midi - Math.round(midi)) * 100); $("heard").textContent = "Hearing: " + noteName(midi) + " (" + (c >= 0 ? "+" : "") + c + "¢)"; lastHeardAt = performance.now(); }
-  else if (performance.now() - lastHeardAt > 600) $("heard").textContent = "Hearing: –";
-  /* a note start = the level jumps well above what it was a moment ago */
-  let prevMin = Infinity; for (const f of frames) if (f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
-  if (prevMin < Infinity && rms > floorRms && rms > prevMin * 1.5 + 0.004 && now - lastOnsetT > 0.11) { lastOnsetT = now; pending.push({ t: now, src: "energy", ratio: rms / (prevMin + 1e-4) }); }
-  /* or the pitch moves to a new, steady note (catches soft plucks) */
-  if (midi != null) {
-    recentV.push({ t: now, midi }); if (recentV.length > 4) recentV.shift();
-    const last3 = recentV.slice(-3), mid = last3[last3.length - 1].midi, steady = last3.length === 3 && last3.every(v => Math.abs(v.midi - mid) < 0.4);
-    if (steady && stableMidi != null && Math.abs(mid - stableMidi) > 0.7 && now - 0.065 - lastOnsetT > 0.11) { lastOnsetT = now - 0.065; pending.push({ t: lastOnsetT, src: "pitch" }); }
-    if (steady) stableMidi = mid;
-  } else if (now - (recentV.length ? recentV[recentV.length - 1].t : -9) > 0.3) { stableMidi = null; recentV.length = 0; }
-  /* read the pitch once the analysis window sits entirely after the pluck */
-  for (let k = pending.length - 1; k >= 0; k--) {
-    const o = pending[k]; if (now < o.t + 0.14) continue;
-    const ms = frames.filter(f => f.midi != null && f.t >= o.t + 0.05 && f.t <= o.t + 0.14).map(f => f.midi).sort((a, b) => a - b);
-    onsets.push({ t: o.t, midi: ms.length >= 2 ? ms[ms.length >> 1] : null, n: ms.length, src: o.src, ratio: o.ratio || 0, used: false });
-    pending.splice(k, 1);
+/* ---------- melody to the staff ---------- */
+const LETTER = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];          // C C# D D# E F F# G G# A A# B -> C D E F G A B
+const SHARP = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0];
+const dia = m => Math.floor(m / 12) * 7 + LETTER[((m % 12) + 12) % 12];
+const E4 = dia(64), F5 = dia(77);                              // bottom and top lines of the treble staff
+function staffShift(notes){
+  let best = 0, bestSc = -1e9;
+  for (const sh of [-12, 0, 12, 24, 36]) {
+    let sc = 0; for (const n of notes) { const d = dia(n.m + sh); sc -= d < E4 - 2 ? (E4 - 2 - d) : d > F5 + 2 ? (d - F5 - 2) : 0; }
+    sc -= Math.abs(sh) * 0.001;
+    if (sc > bestSc) { bestSc = sc; best = sh; }
   }
-  if (running) waitMode ? waitJudge() : judge(now);
+  return best;
+}
+// note-name colours, the same seven everywhere on the staff
+const NCOL = { C: "#E8433F", D: "#FF8A1C", E: "#FFC42B", F: "#6FBF4A", G: "#3FBFA8", A: "#5470F0", B: "#A070E8" };
+const NINK = { C: "#fff", D: "#23231F", E: "#23231F", F: "#23231F", G: "#23231F", A: "#fff", B: "#fff" };
+
+/* ---------- sound: a soft synth for "Hear it", the backing and the screen piano ---------- */
+let ac = null, out = null;
+function audio(){
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = 0.5; out.connect(ac.destination); }
+  if (ac.state === "suspended") ac.resume().catch(() => {});
+  return ac;
+}
+const scheduled = [];
+// fx (optional): { from: a pitch to glide up or down from (slides, bends), glide: seconds, vib: true for vibrato }
+function tone(m, when, len, vol, type, fx){
+  const c = audio(), f = 440 * Math.pow(2, (m - 69) / 12), t = Math.max(when || c.currentTime, c.currentTime), g = c.createGain(), peak = vol || 0.3;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.3, len || 1.2));
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = Math.min(9000, f * 6 + 600);
+  const o1 = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain();
+  o1.type = type || "triangle"; o1.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.25;
+  o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(out);
+  const end = t + Math.max(0.3, len || 1.2) + 0.05; o1.start(t); o2.start(t); o1.stop(end); o2.stop(end);
+  if (fx && fx.from != null) { const f0 = 440 * Math.pow(2, (fx.from - 69) / 12);
+    o1.frequency.setValueAtTime(f0, t); o1.frequency.linearRampToValueAtTime(f, t + fx.glide); o2.frequency.setValueAtTime(f0 * 2, t); o2.frequency.linearRampToValueAtTime(f * 2, t + fx.glide); }
+  if (fx && fx.vib) { const lfo = c.createOscillator(), lg = c.createGain(), lg2 = c.createGain(); lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lg2.gain.value = f * 0.024;
+    lfo.connect(lg); lfo.connect(lg2); lg.connect(o1.frequency); lg2.connect(o2.frequency); lfo.start(t + 0.12); lfo.stop(end); scheduled.push(lfo); }
+  scheduled.push(o1, o2);
+}
+function click(when, accent){
+  const c = audio(), o = c.createOscillator(), g = c.createGain();
+  o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(accent ? 0.22 : 0.14, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
+  o.connect(g); g.connect(out); o.start(when); o.stop(when + 0.06); scheduled.push(o);
+}
+function hush(){ const t = ac ? ac.currentTime : 0; scheduled.splice(0).forEach(o => { try { o.stop(t); } catch (e) {} }); }
+const PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function chordTones(name){
+  const m = /^([A-G])(#|b)?(m(?!aj))?(7|5|dim)?/.exec(name); if (!m) return [];
+  let r = (PCS[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12; r += 48; if (r > 52) r -= 12;
+  if (m[4] === "5") return [r, r + 7];
+  return [r, r + (m[4] === "dim" || m[3] ? 3 : 4) + 12, r + (m[4] === "dim" ? 6 : 7)];
 }
 
-/* ---------- judging ---------- */
-const PLUCK_RATIO = 1.8, REFRACTORY = 0.25, WAIT_CENTS = 40;   // tuning knobs for learn mode
-let lastAcceptedT = -9;
-const DEBUG = q.has("debug"), dlog = [];
-function dbg(o, why){ if (!DEBUG) return; dlog.unshift((o.t).toFixed(2) + "s " + (o.midi == null ? "?" : noteName(o.midi) + "/" + o.midi.toFixed(1)) + " ratio " + o.ratio.toFixed(1) + " " + o.src + " → " + why); dlog.length = Math.min(dlog.length, 8); const d = document.getElementById("dbg"); if (d) { d.hidden = false; d.textContent = dlog.join("\n"); } }
-let idx = 0, dispT = 0, lat = Number(localStorage.getItem("tabListenLatency") || 0.06);
-const stats = { hit: 0, near: 0, miss: 0, done: 0 };
-const pctNow = () => Math.round(100 * stats.hit / Math.max(1, expected.length));
-function showBar(){ const e = expected[Math.min(idx, expected.length - 1)]; if (e && api.score) $("bars").textContent = "Bar " + (e.beat.voice.bar.index + 1) + " / " + api.score.masterBars.length; }
-/* LEARN: the tab waits. Only a clearly wrong note counts against you; stray starts, ring-out and overtones are ignored. */
-function waitJudge(){
-  for (const o of onsets) {
-    if (o.used || idx >= expected.length) continue;
-    o.used = true;
-    const e = expected[idx], m = o.midi, name = e.midi.map(noteName).join("+");
-    /* Only a real new pluck counts: a sharp attack, well after the last note was accepted. This stops one pluck ticking off two notes
-       (a second 'start' read off its ring) and the previous note's ring-out leaking into the next. */
-    if (o.src !== "energy" || o.ratio < PLUCK_RATIO) { dbg(o, "ignored: not a sharp pluck"); continue; }
-    if (o.t < lastAcceptedT + REFRACTORY) { dbg(o, "ignored: too soon after the last note"); continue; }
-    if (m == null) { dbg(o, "ignored: pitch unclear"); continue; }
-    const cents = e.midi.map(t => (m - t) * 100).reduce((a, b) => Math.abs(a) < Math.abs(b) ? a : b);
-    if (Math.abs(cents) <= WAIT_CENTS) {
-      lastAcceptedT = o.t; dbg(o, "ACCEPTED " + name);
-      paint(e, "hit"); $("last").textContent = name + " ✓";
-      e.res = { cls: e.tries ? "near" : "hit" };
-      stats[e.res.cls]++; stats.done++; idx++; markNow(); showBar();
-      $("score").textContent = "✔ " + stats.done + " / " + expected.length;
-      continue;
-    }
-    if (o.n < 3) { dbg(o, "ignored: not sure enough it was wrong"); continue; }
-    const d = Math.round(m) - e.midi.reduce((a, b) => Math.abs(m - a) < Math.abs(m - b) ? a : b);
-    if (d % 12 === 0 || d === 19 || d === 28) { paint(e, "near"); $("last").textContent = "Heard " + noteName(m) + " (an octave or overtone of " + name + "), try again"; continue; }
-    dbg(o, "WRONG " + noteName(m)); e.tries = (e.tries || 0) + 1; paint(e, "miss"); $("last").textContent = "Heard " + noteName(m) + ", wanted " + name;
-  }
-  if (!finished && !finishing && idx >= expected.length) { finishing = true; setTimeout(finish, 500); }
+/* ---------- the canvas ---------- */
+const cv = $("cv"), g2 = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1, PXB = 90, PLAYX = 100, TOP = 100, GAP = 22, shift = 0;
+let clefOK = false;
+function layout(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  const isTab = INST === "guitar";
+  cv.style.height = (isTab ? 250 : 270) + "px";
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  GAP = isTab ? 24 : 20;
+  TOP = isTab ? 92 : 108;                     // room above for the character's hops
+  PLAYX = Math.max(80, Math.min(170, W * 0.24));
+  // tight enough to see what's coming, wide enough that the shortest notes don't crowd
+  const minD = cur ? Math.min(...cur.notes.slice(1).map((n, i) => n.t - cur.notes[i].t).filter(d => d > 0)) : 1;
+  PXB = Math.max(34 / Math.max(0.25, minD), Math.min(130, W / 7));
+  g2.font = "64px serif"; const a = g2.measureText("\u{1D11E}").width, b = g2.measureText("\u{1D127}").width; clefOK = a > 8 && Math.abs(a - b) > 1;
 }
-/* DIAMOND: judged against the beat as well. */
-let buddy = null, buddyRun = 0;          // your character beside the Start button, and notes right in a row
-function mark(e, cls, text){
-  e.res = { cls, text }; paint(e, cls); stats[cls]++; stats.done++;
-  buddyRun = cls === "hit" ? buddyRun + 1 : 0;
-  if (buddy && buddyRun && buddyRun % 8 === 0) buddy.moment("streak", 1200);
-  $("score").textContent = "✔ " + stats.hit + " / " + expected.length; $("last").textContent = text;
-}
-function judge(now){
-  for (let i = 0; i < expected.length; i++) {
-    const e = expected[i]; if (e.res) continue;
-    const gapPrev = i ? e.t - expected[i - 1].t : 9, gapNext = i + 1 < expected.length ? expected[i + 1].t - e.t : 9;
-    const win = Math.max(0.1, Math.min(0.25, 0.48 * Math.min(gapPrev, gapNext)));
-    if (now < e.t + win + 0.2) continue;
-    let best = null;
-    for (const o of onsets) { if (o.used) continue; const dt = o.t - lat - e.t; if (Math.abs(dt) <= win && (!best || Math.abs(dt) < Math.abs(best.dt))) best = { o, dt }; }
-    if (!best) { mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); continue; }
-    best.o.used = true;
-    const m = best.o.midi, ms = Math.round(best.dt * 1000), timing = Math.abs(ms) <= GOOD_MS ? "" : (ms < 0 ? "early " : "late ") + Math.abs(ms) + " ms";
-    if (m == null) { mark(e, "near", "Couldn't tell the pitch (" + noteName(e.midi[0]) + ")"); continue; }
-    const cents = e.midi.map(t => (m - t) * 100).reduce((a, b) => Math.abs(a) < Math.abs(b) ? a : b);
-    const octave = e.midi.some(t => Math.abs(Math.round(m) - t) % 12 === 0 && Math.round(m) !== t);
-    if (Math.abs(cents) <= 50) timing ? mark(e, "near", noteName(e.midi[0]) + " ok but " + timing) : mark(e, "hit", noteName(e.midi[0]) + " ✓");
-    else if (octave) mark(e, "near", "Right note, wrong octave");
-    else mark(e, "miss", "Heard " + noteName(m) + ", wanted " + e.midi.map(noteName).join("+"));
-  }
-  if (!finished && stats.done >= expected.length) finish();
+addEventListener("resize", () => { if (cur) layout(); });
+
+/* the character, drawn onto the canvas from its own SVG (no extra layers on top of the notes) */
+let charImg = null, charAspect = 0.8;
+function makeChar(){
+  // give the SVG a real size from its viewBox, or browsers treat it as 300x150 and squash the aspect
+  let svg = PlayerArt.svg(Player.get(), "fig");
+  const vb = /viewBox="([-\d.]+) ([-\d.]+) ([\d.]+) ([\d.]+)"/.exec(svg), vw = vb ? +vb[3] : 300, vh = vb ? +vb[4] : 300;
+  svg = svg.replace("<svg ", `<svg width="${Math.round(vw)}" height="${Math.round(vh)}" `);
+  const img = new Image();
+  img.onload = () => { charImg = img; charAspect = vw / vh; };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
-/* ---------- end of a run: stars and the diamond ---------- */
-function finish(){
-  if (finished) return;
-  finished = true; running = false; setApiPlaying(false); markNow(true);
-  $("go").textContent = "Start"; $("latBox").hidden = true;
-  const total = expected.length, pct = pctNow(), r = rec(cur.id), before = { stars: r.stars, diamond: r.diamond };
-  let html;
-  if (waitMode) {
-    const stars = pct >= 100 ? 3 : pct >= TWO_STAR_PCT ? 2 : 1;      // finishing at all earns one
-    r.runs++; r.best = Math.max(r.best, pct); r.stars = Math.max(r.stars, stars);
-    P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "learn", pct, stars });
-    const msg = stars === 3 ? "Perfect! Every note first time." : stars === 2 ? "Nice playing! Get every note first time for the third star." : "Finished! Aim for " + TWO_STAR_PCT + "% or more of the notes first time for two stars.";
-    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(stars, false)}</div>
-      <h3>${stars > before.stars ? "New: " + stars + " star" + (stars > 1 ? "s" : "") + "!" : "Run finished"}</h3>
-      <p>${stats.hit} of ${total} notes first time · ${stats.near} took another go</p><p>${msg}</p>
-      <button class="big" id="again">Play again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
-  } else {
-    const won = pct >= DIAMOND_PCT;
-    r.runs++; if (won) r.diamond = true;
-    P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "diamond", pct, diamond: won });
-    html = won
-      ? `<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>${before.diamond ? "Diamond again!" : "Diamond earned!"}</h3><div class="pct">${pct}%</div><p>${stats.hit} of ${total} notes right and on time.</p>
-         <button class="big" id="songs">All songs</button>`
-      : `<div class="pct" style="color:var(--warn)">${pct}%</div><h3>Not this time</h3><p>${stats.hit} of ${total} notes right and on time. You need ${DIAMOND_PCT}%.</p>
-         <p>Playing at home isn't always as accurate as in your lesson, so don't get discouraged. Try again, or nudge the timing delay if everything shows as late.</p>
-         <button class="big" id="again">Try again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
-  }
-  save(); drawList(); refreshButtons();
-  showPop(html);
-  const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
-  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
-  if (!sim && FMAStudent.active()) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
-    : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1, improved: pct >= DIAMOND_PCT && !before.diamond });
-  const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
-  const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
-}
-function showPop(html){ $("popBox").innerHTML = html; $("pop").hidden = false; }
-function hidePop(){ $("pop").hidden = true; }
-
-/* ---------- audio set-up, click track and the test simulator ---------- */
-async function openInput(){
-  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === "suspended") await ctx.resume();
-  if (analyser) return;
-  analyser = ctx.createAnalyser(); analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0; tbuf = new Float32Array(2048);
-  if (sim) return;
-  // echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-  ctx.createMediaStreamSource(stream).connect(analyser);
-}
-function scheduleClicks(){
-  const beatLen = beatClicks.length > 1 ? beatClicks[1].t - beatClicks[0].t : 0.6, nPer = api.score.masterBars[0].timeSignatureNumerator || 4;
-  countIn = beatLen * nPer; t0 = ctx.currentTime + 0.4;
-  const click = (when, accent) => { const o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.25, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
-    o.connect(g); g.connect(ctx.destination); o.start(when); o.stop(when + 0.06); };
-  for (let i = 0; i < nPer; i++) click(t0 + i * beatLen, i === 0);
-  for (const c of beatClicks) click(t0 + countIn + c.t, c.accent);
-}
-function pluck(freq, secs){
-  const sr = ctx.sampleRate, n = Math.floor(sr * secs), N = Math.max(2, Math.round(sr / freq)), b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0), line = new Float32Array(N);
-  for (let i = 0; i < N; i++) line[i] = Math.random() * 2 - 1;
-  for (let pass = 0; pass < 3; pass++) for (let i = 0; i < N; i++) line[i] = (line[i] + line[(i + 1) % N]) / 2;
-  let pk = 0; for (let i = 0; i < N; i++) pk = Math.max(pk, Math.abs(line[i])); for (let i = 0; i < N; i++) line[i] /= pk || 1;
-  let p = 0; for (let i = 0; i < n; i++) { const v = line[p], nx = line[(p + 1) % N]; d[i] = v * 0.5; line[p] = (v + nx) * 0.5 * 0.9985; p = (p + 1) % N; }
-  for (let i = 0, na = Math.floor(sr * 0.006); i < na; i++) d[i] += (Math.random() * 2 - 1) * 0.9 * (1 - i / na);   // the pick's attack
-  return b;
-}
-let simTimer = 0;
-function startSimWait(){          // plays what the tab waits for, but fumbles two notes first
-  const seq = []; expected.forEach((e, i) => { const m = e.midi[0]; if (i === 3) seq.push(m + 2); if (i === 5) seq.push(m + 12); seq.push(m); });
-  let k = 0, prev = null;
-  simTimer = setInterval(() => {
-    if (k >= seq.length) { clearInterval(simTimer); return; }
-    const now = ctx.currentTime, s = ctx.createBufferSource(), g = ctx.createGain();
-    s.buffer = pluck(440 * Math.pow(2, (seq[k++] - 69) / 12), 0.9);
-    if (prev) { prev.g.gain.setValueAtTime(1, now - 0.01); prev.g.gain.linearRampToValueAtTime(0, now); }
-    s.connect(g); g.connect(analyser); s.start(now); prev = { g };
-  }, 800);
-}
-function startSimTimed(){          // plays along in time, with one miss and one wrong note
-  const plan = expected.map((e, i) => i === 3 ? null : { m: e.midi[0] + (i === 5 ? 2 : 0), dt: (Math.random() - .5) * 0.06 });
-  const plucks = plan.map((p, i) => p && { start: t0 + countIn + expected[i].t + p.dt + lat, m: p.m }).filter(Boolean).sort((a, b) => a.start - b.start);
-  plucks.forEach((p, k) => { const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = pluck(440 * Math.pow(2, (p.m - 69) / 12), 0.9);
-    const stop = k + 1 < plucks.length ? plucks[k + 1].start : p.start + 0.9;
-    g.gain.setValueAtTime(1, Math.max(p.start, stop - 0.01)); g.gain.linearRampToValueAtTime(0, stop); s.connect(g); g.connect(analyser); s.start(p.start); });
-}
-
-/* ---------- start / stop / navigation ---------- */
+/* ---------- a run ---------- */
+let mode = O.mode, speed = O.speed, running = false, demo = false, finished = false;
+let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, countUnit = 1, endBeat = 0, lastFrame = 0;
+let hopFrom = -1, hopTo = 0, hopAt = 0, trans = 0, LEG = false;
+const LEGATO = ["hammer", "pull", "slide", "slidedown"];      // learn mode: the character's last hop (note indices)
+const pops = [];
+const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
+const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
 function resetRun(){
-  clearInterval(simTimer);
-  for (const e of expected) { e.res = null; e.tries = 0; paint(e, ""); }
-  idx = 0; dispT = 0; finishing = false; finished = false; running = false; lastAcceptedT = -9;
-  stats.hit = stats.near = stats.miss = stats.done = 0; onsets.length = 0; pending.length = 0;
-  $("score").textContent = ""; $("last").textContent = ""; $("go").textContent = "Start"; $("count").style.opacity = 0;
-  setApiPlaying(false); fed = -1; feed(0); showBar(); markNow(true);
+  hush(); clearTimeout(simT); simTs.forEach(clearTimeout); simTs.length = 0;
+  running = false; demo = false; finished = false; idx = 0;
+  if (cur) {
+    const tab = INST !== "guitar" ? null : cur.notes[0].s !== undefined ? cur.notes.map(n => ({ s: n.s, f: n.f, sounding: n.m })) : toTab(cur.notes, tabRule(pack, cur.id));
+    shift = INST === "piano" ? staffShift(cur.notes) : 0;
+    notes = cur.notes.map((n, i) => ({ i, t: n.t, d: n.d, m: tab ? tab[i].sounding : n.m, res: null, tries: 0, tab: tab && tab[i], tech: n.tech || [], bend: n.bend || 0 }));
+    LEG = notes.some(n => n.bend || n.tech.some(x => LEGATO.includes(x)));
+    trans = tab && tab.length ? (((tab[0].sounding - cur.notes[0].m) % 12) + 12) % 12 : 0;      // a key change for guitar, in semitones
+  } else notes = [];
+  endBeat = notes.length ? notes[notes.length - 1].t + notes[notes.length - 1].d : 0;
+  pos = mode === "learn" ? -1.5 : -countBeats;
+  hopFrom = -1; hopTo = -1; hopAt = 0;
+  Object.assign(stats, { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 });
+  pops.length = 0;
+  $("go").textContent = INST === "guitar" && !micOn && !SIM ? "Start (allow microphone)" : "Start"; $("hear").textContent = "▶ Hear it"; $("score").textContent = ""; $("count").style.opacity = 0; $("combo").style.opacity = 0;
+  $("latBox").hidden = !(O.mic && mode === "play");
+  hint(); glowKey();
 }
-async function startRun(learn){
-  $("err").hidden = true;
-  if (!ready || !expected.length) { $("last").textContent = "The song is still loading…"; return; }
-  try { await openInput(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone: " + (e && e.message || e); return; }
-  waitMode = learn; document.body.classList.toggle("wait", learn); $("latBox").hidden = learn;
-  resetRun(); running = true; $("go").textContent = "Stop"; markNow(true); buddyRun = 0;
-  if (buddy) buddy.moment("start", 1500);
-  if (learn) { setApiPlaying(true); if (sim) startSimWait(); }
-  else { scheduleClicks(); if (sim) startSimTimed(); }
-}
-function stopRun(){ resetRun(); $("latBox").hidden = true; }
-$("go").onclick = () => { if (running) stopRun(); else startRun(true); };
-$("dia").onclick = () => {
-  const r = rec(cur.id); if (r.stars < DIAMOND_NEEDS_STARS || running) return;
-  showPop(`<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>Go for the diamond</h3>
-    <p>You'll play the whole song to a click, at the proper speed, and notes need to be right <b>and on time</b>. You need ${DIAMOND_PCT}%.</p>
-    <p>Playing at home might not be as accurate as in your lesson, because phones and speakers add small delays. So don't get discouraged if it doesn't go your way first time.</p>
-    <p>Wear headphones if you can, so the click doesn't leak into the microphone.</p>
-    <button class="big" id="dgo">Start the click</button><button class="ghost" id="dno" style="margin-top:8px;width:100%">Not now</button>`);
-  $("dgo").onclick = () => { hidePop(); startRun(false); };
-  $("dno").onclick = hidePop;
-};
-function refreshButtons(){
+function hint(text){
+  if (text !== undefined) { $("hint").textContent = text; return; }
   if (!cur) return;
-  const r = rec(cur.id);
-  const open = r.stars >= DIAMOND_NEEDS_STARS;
-  $("dia").textContent = (open ? "💎 " : "🔒 ") + "Diamond";
-  $("diaHint").textContent = r.diamond ? "You've earned the diamond for this song. Play it again any time." : open ? "Ready? Play the whole song to a click for the diamond." : "Get " + DIAMOND_NEEDS_STARS + " stars to unlock the diamond challenge.";
-  $("dia").disabled = r.stars < DIAMOND_NEEDS_STARS;
-  $("dia").style.opacity = r.stars < DIAMOND_NEEDS_STARS ? .5 : 1;
+  const r = rec(rk(pack, cur.id));
+  $("hint").textContent = mode === "learn"
+    ? (techTip(notes[0]) || (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Finish the song for your first star." : "The notes wait for you. Finish the song for your first star."))
+    : r.stars >= 3 ? "Three stars! Play it again any time." : r.stars >= 2 ? `Get ${FULL_PCT}% at Full speed for the third star.` : `Get ${PLAY_PCT}% at any speed for the second star.`;
 }
-$("lm").onclick = () => setLat(lat - 0.01); $("lp").onclick = () => setLat(lat + 0.01);
-function setLat(v){ lat = Math.max(0, Math.min(0.4, v)); $("lat").textContent = Math.round(lat * 1000) + " ms"; try { localStorage.setItem("tabListenLatency", lat); } catch (e) {} }
-setLat(lat);
-
-function goMenu(){ stopRun(); $("player").hidden = true; $("menu").hidden = false; drawList(); window.scrollTo(0, 0); }
-$("back").onclick = goMenu;
-function openSong(s){
-  cur = s; trackNo = s.track || 0; expected = []; ready = ready && !!api;
-  $("menu").hidden = true; $("player").hidden = false; $("title").textContent = s.title;
-  if (!buddy) buddy = PlayerArt.buddy($("buddy"));
-  $("msg").style.display = "flex"; $("msg").textContent = "Loading tab…"; $("go").disabled = true;
-  waitMode = true; document.body.classList.add("wait"); $("latBox").hidden = true; stopRun(); refreshButtons();
-  const url = "songs/" + encodeURIComponent(s.file);
-  if (!api) { makeApi(); }
-  api.settings.display.scale = Math.min(2, Math.max(1.1, $("wrap").clientWidth / 520));
-  api.load(url, [trackNo]);
-}
-
-/* ---------- main loop ---------- */
-setInterval(listenFrame, 12);
-const scroller = $("at");
-function fixWidth(){
-  const surface = scroller.querySelector(".at-surface"), cursors = scroller.querySelector(".at-cursors");
-  if (!surface) return;
-  let w = 0; for (const c of surface.children) w = Math.max(w, (parseFloat(c.style.left) || 0) + (parseFloat(c.style.width) || 0));
-  if (w > 0 && Math.abs(parseFloat(surface.style.width) - w) > 1) { surface.style.width = w + "px"; if (cursors) cursors.style.width = w + "px"; }
-}
-function follow(){
-  fixWidth();
-  let x;
-  if (waitMode) { const e = expected[Math.min(idx, expected.length - 1)]; if (!e || e.cx == null) return; x = e.cx; }
-  else { const cur = scroller.querySelector(".at-cursor-beat"); if (!cur) return; x = cur.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft; }
-  const target = Math.max(0, x - scroller.clientWidth * 0.25), d = target - scroller.scrollLeft;
-  scroller.scrollLeft = Math.abs(d) > scroller.clientWidth ? target : Math.abs(d) < 2 ? target : scroller.scrollLeft + d * 0.15;
-}
-(function frame(){
-  const t = songTime();
-  if (running && waitMode) {
-    const target = idx < expected.length ? expected[idx].t : songEnd;
-    dispT += (target - dispT) * 0.25; feed(dispT); $("count").style.opacity = 0;
-  } else if (running) {
-    if (t >= -0.02 && !finished) setApiPlaying(true);
-    feed(t);
-    if (t < 0) { const left = Math.ceil(-t / (countIn / 4 || 1)); $("count").textContent = left > 0 && left <= 8 ? left : ""; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
-    if (!finished && t > songEnd + 1.2) { for (const e of expected) if (!e.res) mark(e, "miss", "Missed " + e.midi.map(noteName).join("+")); }
+async function startRun(asDemo){
+  $("err").hidden = true;
+  if (!cur) return;
+  audio();
+  if (O.mic && !asDemo && !SIM && !(window.FMAMidi && FMAMidi.active())) {
+    try { await openMic(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone."; return; }
   }
-  if (!$("player").hidden) follow();
+  resetRun(); running = true; demo = !!asDemo;
+  spb = 60 / (cur.tempo * (mode === "learn" && !demo ? LEARN_F : speedF()));
+  if (demo) spb = 60 / (cur.tempo * (mode === "play" ? speedF() : 1));
+  countIn();
+  $("go").textContent = demo ? "Start" : "Stop"; if (demo) $("hear").textContent = "■ Stop";
+  if (buddy && !demo) buddy.moment("start", 1500);
+  lastFrame = performance.now(); fps.length = 0;
+  const sr = $("stage").getBoundingClientRect(); if (sr.top < 0 || sr.bottom > innerHeight) $("stage").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (mode === "play" || demo) {
+    t0 = ac.currentTime + 0.3 + countBeats * spb;
+    for (let b = 0; b < countBeats - 1e-6; b += countUnit) click(t0 - (countBeats - b) * spb, b === 0);
+    if (demo) notes.forEach((n, i) => {
+      const when = t0 + n.t * spb, prev = notes[i - 1], pm = n.tech.includes("pm");
+      let fx = null, vol = 0.3, len = n.d * spb + 0.2;
+      if (n.bend) fx = { from: soundOf(n) - n.bend, glide: Math.min(0.18, n.d * spb * 0.45) };
+      else if (prev && (n.tech.includes("slide") || n.tech.includes("slidedown"))) fx = { from: soundOf(prev), glide: 0.07 };
+      if (n.tech.includes("hammer") || n.tech.includes("pull")) vol = 0.2;
+      if (n.tech.includes("vib")) fx = Object.assign(fx || {}, { vib: true });
+      if (pm) { vol = 0.22; len = 0.14; }
+      tone(soundOf(n), when, len, vol, INST === "guitar" ? "sawtooth" : null, fx);
+    });
+    if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
+      const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
+      chordTones(name).forEach((m, k) => { m += trans > 6 ? trans - 12 : trans; tone(m, t0 + b * spb, len, k ? 0.07 : 0.11, "sine"); });
+    });
+  }
+  if (SIM && !demo) sim();
+}
+const soundOf = n => n.tab ? n.tab.sounding : n.m + shift;
+function stopRun(){ resetRun(); }
+/* one bar of count-in, counted up in the song's own beat (1 2 3 4 in 4/4, 1 2 3 in 3/4, 1 2 3 4 5 in 5/4) */
+function countIn(){
+  const [n, d] = cur.ts;
+  if (d === 8 && n % 3 === 0 && 0.5 * spb < 0.25) { countUnit = 1.5; countBeats = Math.max(2, n / 3) * 1.5; }
+  else { countUnit = 4 / d; countBeats = n * countUnit; }
+  pos = mode === "learn" && !demo ? -1.5 : -countBeats;
+}
+function songPos(){
+  if (!running) return pos;
+  if (mode === "play" || demo) return (ac.currentTime - t0) / spb;
+  return pos;
+}
+
+/* ---------- playing a note (from any input) ---------- */
+// legato: the note came from a pitch change while the string was still ringing (a hammer-on, pull-off, slide or bend), not
+// a new pick. Those only ever count when they're right: the notes a slide or bend passes through on the way are ignored.
+const preBend = (n, pc) => { for (let k = 1; k <= n.bend; k++) if ((((n.m - k) % 12) + 12) % 12 === pc) return true; return false; };
+function press(m, when, legato){
+  if (!running || demo) return;
+  const pc = ((m % 12) + 12) % 12;
+  if (mode === "learn") learnPress(pc, legato); else playPress(pc, when, legato);
+}
+const TECH_TIP = {
+  pm: n => "Palm mute: rest the edge of your picking hand on the string, right by the bridge, for a tight chug.",
+  slide: n => `Slide: keep the string pressed down and slide your finger up to fret ${n.tab.f}. Don't pick again.`,
+  slidedown: n => `Slide down: keep pressing and slide your finger down to fret ${n.tab.f}. Don't pick again.`,
+  hammer: n => `Hammer-on: don't pick. Tap a finger down hard on fret ${n.tab.f} so it sounds.`,
+  pull: n => `Pull-off: flick your finger off the string sideways so fret ${n.tab.f} (or the open string) rings.`,
+  vib: n => "Vibrato: while the note rings, wobble the string gently up and down so it sings."
+};
+function techTip(n){
+  if (!n || !n.tab) return "";
+  if (n.bend) return `Bend: pick fret ${n.tab.f}, then push the string sideways until it sounds like fret ${n.tab.f + n.bend}.`;
+  const t = n.tech.find(x => TECH_TIP[x]); return t ? TECH_TIP[t](n) : "";
+}
+function learnPress(pc, legato){
+  const n = notes[idx]; if (!n) return;
+  if (n.m % 12 !== pc && (legato || preBend(n, pc))) return;
+  if (n.m % 12 === pc) {
+    n.res = n.tries ? "late" : "hit"; stats.hit++; if (!n.tries) stats.first++;
+    stats.combo = n.tries ? 0 : stats.combo + 1; stats.maxCombo = Math.max(stats.maxCombo, stats.combo);
+    hopFrom = idx - 1; hopTo = idx; hopAt = performance.now();
+    idx++;
+    if (n.t > pos) pos = Math.max(pos, n.t - 0.25);
+    if (buddy && stats.combo && stats.combo % 10 === 0) buddy.moment("streak", 1200);
+    score(); glowKey();
+    const tip = techTip(notes[idx]); if (tip) hint(tip);
+    if (idx >= notes.length) setTimeout(finish, 450);
+  } else {
+    n.tries++; stats.combo = 0; n.wrong = performance.now();
+    hint("That was " + NAMES[pc] + ". " + (n.tab ? `Look for fret ${n.tab.f} on the ${["high E", "B", "G", "D", "A", "low E"][n.tab.s]} string: that's ${noteName(n.m)}.` : `Look for the glowing note: ${noteName(n.m)}.`));
+  }
+}
+function playPress(pc, when, legato){
+  const at = when != null ? (when - t0) / spb : songPos();
+  let best = null;
+  for (const n of notes) {
+    if (n.res) continue;
+    const dt = (at - n.t) * spb;
+    if (dt < -GOOD) break;
+    if (Math.abs(dt) <= GOOD && n.m % 12 === pc && (!best || Math.abs(dt) < Math.abs(best.dt))) best = { n, dt };
+  }
+  if (best) {
+    const n = best.n, perfect = Math.abs(best.dt) <= PERFECT;
+    n.res = "hit"; stats.hit++; if (perfect) stats.perfect++;
+    stats.combo++; stats.maxCombo = Math.max(stats.maxCombo, stats.combo);
+    pops.push({ n, text: perfect ? "Perfect!" : best.dt < 0 ? "Early" : "Late", born: performance.now() });
+    if (buddy && stats.combo % 15 === 0) buddy.moment("streak", 1200);
+    score();
+  } else {
+    const due = notes.find(n => !n.res && Math.abs((at - n.t) * spb) <= GOOD);
+    if (due && !legato && !preBend(due, pc)) { stats.combo = 0; due.wrong = performance.now(); score(); }
+  }
+}
+function score(){
+  $("score").textContent = "✔ " + stats.hit + " / " + notes.length;
+  const c = $("combo"); c.textContent = stats.combo >= 5 ? stats.combo + " in a row!" : ""; c.style.opacity = stats.combo >= 5 ? 1 : 0;
+}
+
+/* ---------- inputs: a MIDI keyboard, the mic, the screen piano, a computer keyboard ---------- */
+if (window.FMAMidi) FMAMidi.onNote(ev => { if (ev.on && FMAMidi.active() && !$("player").hidden) { press(ev.note, null); flashKey(ev.note); } });
+
+// the little piano for piano players: the keys the song needs (in the octave the staff shows), at least an octave and a half
+let pkLo = 60, pkHi = 76;
+function drawPianoKeys(){
+  const box = $("pkeys"); box.hidden = INST !== "piano"; if (box.hidden || !cur) return;
+  pkLo = cur.lo + shift; pkHi = cur.hi + shift;
+  while (pkLo % 12 !== 0 && pkLo % 12 !== 5) pkLo--;
+  while (pkHi % 12 !== 4 && pkHi % 12 !== 11) pkHi++;
+  const whites = []; for (let m = pkLo; m <= pkHi; m++) if (!isBlack(m)) whites.push(m);
+  while (whites.length < 10) { pkHi++; if (!isBlack(pkHi)) whites.push(pkHi); }
+  const ww = 100 / whites.length; let html = "";
+  whites.forEach((m, i) => { html += `<button data-m="${m}" style="left:${i * ww}%;width:${ww}%;height:100%">${O.names ? noteName(m) : ""}</button>`; });
+  for (let m = pkLo; m <= pkHi; m++) if (isBlack(m)) { const i = whites.indexOf(m - 1); if (i < 0) continue; html += `<button class="b" data-m="${m}" style="left:${(i + 1) * ww - ww * 0.3}%;width:${ww * 0.6}%"></button>`; }
+  box.innerHTML = html;
+}
+$("pkeys").addEventListener("pointerdown", e => { const b = e.target.closest("button[data-m]"); if (!b) return; e.preventDefault(); audio();
+  const m = Number(b.dataset.m); tone(m, null, 1.2, 0.3); press(m, null); flashKey(m); });
+function flashKey(m){ const b = $("pkeys").querySelector(`button[data-m="${m}"]`) || [...$("pkeys").querySelectorAll("button[data-m]")].find(x => Number(x.dataset.m) % 12 === m % 12);
+  if (b) { b.classList.add("on"); setTimeout(() => b.classList.remove("on"), 200); } }
+function glowKey(){ $("pkeys").querySelectorAll(".glow").forEach(b => b.classList.remove("glow"));
+  const n = mode === "learn" && running && !demo ? notes[idx] : null; if (!n) return;
+  const b = $("pkeys").querySelector(`button[data-m="${n.m + shift}"]`); if (b) b.classList.add("glow"); }
+const KB = "awsedftgyhujkolp;'";
+const kbDown = new Set();
+addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || $("player").hidden) return;
+  if (e.key === " " && !e.repeat) { e.preventDefault(); $("go").click(); return; }
+  if (INST !== "piano") return;
+  const i = KB.indexOf(e.key.toLowerCase()); if (i < 0 || e.repeat || kbDown.has(i)) return;
+  kbDown.add(i); e.preventDefault();
+  const m = pkLo + i; tone(m, null, 1.2, 0.3); press(m, null); flashKey(m);
+});
+addEventListener("keyup", e => kbDown.delete(KB.indexOf(e.key.toLowerCase())));
+
+/* The microphone: a note starts when the level jumps, and its pitch is read just after (the same listener as Falling Notes). */
+let det = null, tracker = null, micOn = false, heardAt = 0;      // the shared listener (fma-listen.js)
+async function openMic(){
+  if (micOn) return;
+  audio();
+  det = FMAListen.create(); await det.start({ ctx: ac });
+  tracker = FMAListen.notes(det, { legato: () => LEG,
+    onLevel: rms => { $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%"; },
+    onHeard: m => { if (m != null) { $("heard").textContent = "Hearing: " + noteName(m); heardAt = performance.now(); } else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –"; },
+    onNote: (m, t, leg) => { press(m, mode === "play" ? t - O.lat : null, leg); flashKey(m); } });
+  micOn = true; $("micRow").hidden = false;
+}
+function listen(){
+  if (!tracker || !O.mic || $("player").hidden) return;
+  if (window.FMAMidi && FMAMidi.active()) return;
+  tracker.step();
+}
+setInterval(listen, 12);
+
+/* ---------- the test player (?sim) ---------- */
+let simT = 0; const simTs = [];
+function sim(){
+  if (mode === "learn") {
+    let k = 0; const step = () => { if (!running || idx >= notes.length) return; const n = notes[idx]; press(k === 3 ? n.m + 2 : n.m, null); k++; simT = setTimeout(step, 380); };
+    simT = setTimeout(step, 900);
+  } else notes.forEach((n, i) => { if (i === 3) return; simTs.push(setTimeout(() => press(i === 5 ? n.m + 2 : n.m, null), (t0 - ac.currentTime + n.t * spb) * 1000 + (Math.random() - .5) * 60)); });
+}
+
+/* ---------- drawing ---------- */
+function rr(x, y, w, h, r){ g2.beginPath(); g2.roundRect ? g2.roundRect(x, y, w, h, r) : g2.rect(x, y, w, h); }
+const noteX = (t, p) => PLAYX + (t - p) * PXB;
+// where a note sits (its centre), and the top of its glyph, for the character to land on
+function noteY(n){
+  if (INST === "guitar") return TOP + n.tab.s * GAP;
+  return TOP + 4 * GAP - (dia(n.m + shift) - E4) * GAP / 2;
+}
+/* technique marks, drawn round a tab note: h / p arcs from the note before, slide lines, a bend arrow, vibrato, PM */
+function drawTech(c, n, x, y, w, p){
+  if (!n.tech.length && !n.bend) return;
+  const prev = notes[n.i - 1], px = prev ? noteX(prev.t, p) : x - 40;
+  c.save(); c.strokeStyle = "#23231F"; c.fillStyle = "#23231F"; c.lineWidth = 2; c.font = "900 13px Nunito, system-ui, sans-serif";
+  for (const t of n.tech) {
+    if (t === "hammer" || t === "pull") {
+      c.beginPath(); c.moveTo(px + 8, y - 15); c.quadraticCurveTo((px + x) / 2, y - 36, x - 8, y - 15); c.stroke();
+      c.fillText(t === "hammer" ? "h" : "p", (px + x) / 2, y - 33);
+    } else if (t === "slide" || t === "slidedown") {
+      const up = t === "slide"; c.beginPath(); c.moveTo(px + 15, y + (up ? 7 : -7)); c.lineTo(x - w / 2 - 3, y + (up ? -7 : 7)); c.stroke();
+    } else if (t === "vib") {
+      c.beginPath(); for (let k = 0; k <= 24; k++) { const xx = x - 12 + k, yy = y - 22 + Math.sin(k / 24 * Math.PI * 4) * 3; k ? c.lineTo(xx, yy) : c.moveTo(xx, yy); } c.stroke();
+    } else if (t === "pm") {
+      c.fillStyle = "#6B6558"; c.font = "800 11px Nunito, system-ui, sans-serif"; c.fillText("PM", x, y - 21); c.fillStyle = "#23231F";
+    }
+  }
+  if (n.bend) {
+    const bx = x + w / 2 + 2;
+    c.beginPath(); c.moveTo(bx - 2, y - 4); c.quadraticCurveTo(bx + 12, y - 8, bx + 12, y - 30); c.stroke();
+    c.beginPath(); c.moveTo(bx + 7, y - 25); c.lineTo(bx + 12, y - 32); c.lineTo(bx + 17, y - 25); c.stroke();
+    c.fillText(n.bend === 2 ? "full" : "½", bx + 12, y - 41);
+  }
+  c.restore();
+}
+const headR = () => INST === "guitar" ? 13 : GAP * 0.78;
+function draw(now){
+  const c = g2; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, W, H);
+  const p = songPos(), guitar = INST === "guitar";
+  c.fillStyle = "#fff"; c.fillRect(0, 0, W, H);
+  // the lines: six strings or five staff lines
+  const nLines = guitar ? 6 : 5;
+  // on tab, the strings this song uses are drawn darker, so a one-string song shows its one string clearly
+  const used = guitar ? new Set(notes.map(n => n.tab.s)) : null;
+  for (let i = 0; i < nLines; i++) { const y = Math.round(TOP + i * GAP) + .5;
+    c.strokeStyle = guitar ? (used.has(i) ? "#6B6558" : "#E2DCCF") : "#8C8576"; c.lineWidth = guitar ? (used.has(i) ? 1.6 : 1) + i * 0.35 : 1.4;
+    c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  c.textAlign = "center"; c.textBaseline = "middle";
+  if (guitar) { c.font = "900 15px Nunito, system-ui, sans-serif"; c.fillStyle = "rgba(255,255,255,.92)"; c.fillRect(0, TOP - 12, 30, 5 * GAP + 24);
+    ["e", "B", "G", "D", "A", "E"].forEach((ch, i) => { c.fillStyle = used.has(i) ? "#23231F" : "#C9C1B2"; c.fillText(ch, 14, TOP + GAP * i); }); }
+  else if (clefOK) { c.fillStyle = "#23231F"; c.font = Math.round(GAP * 6.4) + "px serif"; c.textBaseline = "alphabetic"; c.fillText("\u{1D11E}", 26, TOP + 4 * GAP + GAP * 1.05); c.textBaseline = "middle"; }
+  // bar lines
+  const bb = cur.ts[0] * 4 / cur.ts[1];
+  c.strokeStyle = "rgba(35,35,31,.18)"; c.lineWidth = 1.5;
+  for (let b = Math.max(0, Math.ceil((p - PLAYX / PXB) / bb) * bb); noteX(b, p) < W; b += bb) { const x = Math.round(noteX(b, p)) + .5; if (x < 40) continue; c.beginPath(); c.moveTo(x, TOP); c.lineTo(x, TOP + (nLines - 1) * GAP); c.stroke(); }
+  // the play line
+  c.fillStyle = "rgba(255,184,5,.22)"; c.fillRect(PLAYX - 16, TOP - 26, 32, (nLines - 1) * GAP + 52);
+  c.fillStyle = "#FFB805"; c.fillRect(PLAYX - 1.5, TOP - 26, 3, (nLines - 1) * GAP + 52);
+  // the notes
+  const next = mode === "learn" && running && !demo ? notes[idx] : null, R = headR();
+  for (const n of notes) {
+    const x = noteX(n.t, p); if (x < -60 || x > W + 60) continue;
+    const y = noteY(n), len = Math.max(0, n.d * PXB - R * 2 - 4);
+    const done = n.res === "hit" || n.res === "late" || (demo && n.t <= p), miss = n.res === "miss";
+    const wrong = n.wrong && now - n.wrong < 350, letter = noteName(n.m)[0];
+    c.globalAlpha = done ? 0.45 : miss ? 0.5 : 1;
+    // a soft tail for how long the note lasts
+    if (len > 6) { c.fillStyle = guitar ? "rgba(255,184,5,.35)" : NCOL[letter] + "55"; rr(x + R - 2, y - 4, len, 8, 4); c.fill(); }
+    if (!guitar) {   // ledger lines
+      const d = dia(n.m + shift); c.strokeStyle = "#23231F"; c.lineWidth = 2;
+      for (let L = E4 - 2; L >= d; L -= 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - R - 9, ly); c.lineTo(x + R + 9, ly); c.stroke(); }
+      for (let L = F5 + 2; L <= d; L += 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - R - 9, ly); c.lineTo(x + R + 9, ly); c.stroke(); }
+    }
+    if (guitar) {
+      const label = String(n.tab.f), w = Math.max(26, 12 + label.length * 10);
+      rr(x - w / 2, y - 13, w, 26, 9); c.fillStyle = miss ? "#F6DCD6" : done ? "#CFE9D4" : wrong ? "#F2B8AE" : "#fff"; c.fill();
+      c.lineWidth = 2.4; c.strokeStyle = miss ? "#C0392B" : done ? "#3E7D4C" : "#23231F"; c.stroke();
+      c.fillStyle = "#23231F"; c.font = "900 18px Nunito, system-ui, sans-serif"; c.fillText(label, x, y + 1);
+      drawTech(c, n, x, y, w, p);
+      if (O.names) { c.font = "800 12px Nunito, system-ui, sans-serif"; c.fillStyle = "#6B6558"; c.fillText(noteName(n.m).replace("#", "♯"), x, TOP + 5 * GAP + 22); }
+    } else {
+      c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2);
+      c.fillStyle = miss ? "#E7D8D3" : wrong ? "#F2B8AE" : NCOL[letter]; c.fill();
+      c.lineWidth = 2.4; c.strokeStyle = miss ? "#C0392B" : done ? "#3E7D4C" : "#23231F"; c.stroke();
+      if (O.names) { const nm = noteName(n.m).replace("#", "♯"); c.fillStyle = miss ? "#6B6558" : NINK[letter]; c.font = "900 " + (nm.length > 1 ? Math.round(R * 0.82) : Math.round(R * 1.05)) + "px Nunito, system-ui, sans-serif"; c.fillText(nm, x, y + 1); }
+      else if (SHARP[((n.m % 12) + 12) % 12]) { c.fillStyle = "#23231F"; c.font = "900 " + Math.round(R) + "px Nunito, system-ui, sans-serif"; c.fillText("♯", x - R - 9, y); }
+    }
+    if (n === next) { c.globalAlpha = 0.5 + 0.4 * Math.sin(now / 160); c.lineWidth = 4; c.strokeStyle = "#FFB805"; c.beginPath(); c.arc(x, y, R + 7, 0, Math.PI * 2); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  // "Perfect!" words
+  c.font = "900 16px Nunito, system-ui, sans-serif";
+  for (let i = pops.length - 1; i >= 0; i--) { const w = pops[i], age = (now - w.born) / 600; if (age > 1) { pops.splice(i, 1); continue; }
+    c.globalAlpha = 1 - age; c.fillStyle = w.text === "Perfect!" ? "#3E7D4C" : "#6B6558"; c.fillText(w.text, Math.max(40, noteX(w.n.t, p)), noteY(w.n) + 34 + age * 16); }
+  c.globalAlpha = 1;
+  drawChar(now, p);
+}
+/* The character leaps from note to note: a short arc that lands on each note as it's played. */
+function drawChar(now, p){
+  if (!charImg || !notes.length) return;
+  const ch = INST === "guitar" ? 66 : 62, cw = ch * charAspect;
+  const R = headR();
+  const at = i => { const n = notes[Math.max(0, Math.min(notes.length - 1, i))]; return { x: noteX(n.t, p), y: noteY(n) - R - 2 }; };
+  let x, y;
+  if (!O.hop) { const a = at(Math.max(0, idx)); x = PLAYX - cw * 0.9; y = Math.min(a.y, TOP - 8); }
+  else if (running && (mode === "play" || demo)) {
+    let j = -1; while (j + 1 < notes.length && notes[j + 1].t <= p) j++;
+    if (j < 0) { const a = at(0); x = a.x - 30; y = a.y; }
+    else if (j >= notes.length - 1) { const a = at(notes.length - 1); x = a.x; y = a.y; }
+    else { const a = at(j), b = at(j + 1), u = Math.max(0, Math.min(1, (p - notes[j].t) / (notes[j + 1].t - notes[j].t)));
+      const hh = Math.min(46, 16 + Math.abs(b.x - a.x) * 0.25 + Math.abs(b.y - a.y) * 0.3);
+      x = a.x + (b.x - a.x) * u; y = a.y + (b.y - a.y) * u - hh * Math.sin(Math.PI * u); }
+  } else {
+    // learn: stands on the last note played; hops onto each new one as you play it
+    if (hopTo < 0) { const a = at(0); x = a.x - 34; y = a.y; }
+    else { const b = at(hopTo), a = hopFrom >= 0 ? at(hopFrom) : { x: b.x - 34, y: b.y }, u = Math.min(1, (now - hopAt) / 260);
+      x = a.x + (b.x - a.x) * u; y = a.y + (b.y - a.y) * u - 30 * Math.sin(Math.PI * u); }
+  }
+  g2.drawImage(charImg, x - cw / 2, y - ch, cw, ch);
+}
+/* frame watch: if the device can't keep up (under ~30 frames a second for a couple of seconds), the hopping stops by itself */
+const fps = [];
+function frame(now){
+  const dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
+  if (running && O.hop) { fps.push(dt); if (fps.length > 120) { const avg = fps.reduce((a, b) => a + b, 0) / fps.length; fps.length = 0; if (avg > 0.034) { O.hop = false; slowDevice = true; } } }
+  if (running && mode === "learn" && !demo) {
+    const n = notes[idx], stopAt = n ? n.t : endBeat + 1;
+    pos = Math.min(stopAt, pos + dt / spb);
+  }
+  if (running && (mode === "play" || demo)) {
+    const p = songPos();
+    const cn = Math.floor((p + countBeats) / countUnit + 1e-6) + 1;
+    if (p < 0 && cn >= 1) { $("count").textContent = cn; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
+    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > GOOD) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
+    if (p > endBeat + 1) { if (demo) resetRun(); else finish(); }
+  }
+  if (!$("player").hidden && W && cur) draw(now);
   requestAnimationFrame(frame);
-})();
-window.__songs = { get P(){ return P; }, get expected(){ return expected; }, stats };
+}
+let slowDevice = false;
+requestAnimationFrame(frame);
+
+/* ---------- end of a run: stars ---------- */
+function finish(){
+  if (finished || !running || demo) return;
+  finished = true; running = false; hush();
+  const r = rec(rk(pack, cur.id)), before = r.stars, total = notes.length;
+  let html, pct, improved = false, mom = "done";
+  r.runs++;
+  if (mode === "learn") {
+    pct = Math.round(100 * stats.first / Math.max(1, total));
+    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
+    r.stars = Math.max(r.stars, 1);
+    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
+      <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
+      <p>${stats.first} of ${total} notes right first time.</p>
+      <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
+      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+    mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
+  } else {
+    pct = Math.round(100 * stats.hit / Math.max(1, total));
+    const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
+    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, 2);
+    if (pct >= FULL_PCT && speed === "full") r.stars = 3;
+    r.stars = Math.max(r.stars, 1);
+    const sp = SPEEDS.find(s => s.k === speed).n;
+    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT && speed !== "full" ? `Now try <b>Full</b> speed: ${FULL_PCT}% there wins the third star.`
+      : pct >= PLAY_PCT ? `So close: ${FULL_PCT}% at Full speed wins the third star.` : `${PLAY_PCT}% wins the next star. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
+    html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
+      <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
+      <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
+      <button class="big play" id="pAgain">Play again</button>`;
+    mom = r.stars > before ? "win" : improved ? "best" : "done";
+  }
+  const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
+  html += (nextSong && r.stars >= 1 ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(cleanTitle(nextSong.title))}</button>` : "")
+    + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">Back to ${esc(pack.name)}</button>`
+    + (slowDevice ? `<p style="font-size:13px">This device was working hard, so your player stopped hopping to keep the notes smooth.</p>` : "");
+  save(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
+  $("popBox").innerHTML = html; $("pop").hidden = false;
+  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
+  if (!SIM) FMAStudent.send(GAME, { detail: cleanTitle(cur.title), mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved, instrument: INST });
+  const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
+  on("pAgain", () => { resetRun(); startRun(); });
+  on("pPlay", () => setMode("play"));
+  on("pNext", () => openSong(paced(nextSong, pack)));
+  on("pSongs", backToPack);
+}
+
+/* ---------- controls ---------- */
+let buddy = null;
+function setMode(m){
+  mode = m; O.mode = m; saveOpts();
+  $("mLearn").setAttribute("aria-pressed", m === "learn"); $("mPlay").setAttribute("aria-pressed", m === "play");
+  $("speeds").querySelectorAll("button").forEach(b => b.disabled = m === "learn");
+  $("backing").hidden = m === "learn";
+  resetRun();
+}
+$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}</button>`).join("");
+$("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return; speed = b.dataset.k; O.speed = speed; saveOpts();
+  $("speeds").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); resetRun(); };
+$("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");
+const toggle = (id, k, after) => { const b = $(id); b.setAttribute("aria-pressed", O[k]); b.onclick = () => { O[k] = !O[k]; saveOpts(); b.setAttribute("aria-pressed", O[k]); if (after) after(); }; };
+toggle("names", "names", () => drawPianoKeys()); toggle("backing", "backing");
+if (INST === "piano") { $("mic").hidden = false;
+  toggle("mic", "mic", () => { $("micRow").hidden = !(O.mic && micOn); $("latBox").hidden = !(O.mic && mode === "play"); if (O.mic) openMic().catch(() => { $("err").hidden = false; $("err").textContent = "The microphone was blocked. Allow it in your browser settings, then try again."; }); }); }
+$("lm").onclick = () => setLat(O.lat - 0.01); $("lp").onclick = () => setLat(O.lat + 0.01);
+function setLat(v){ O.lat = Math.max(0, Math.min(0.4, Math.round(v * 100) / 100)); $("lat").textContent = Math.round(O.lat * 1000) + " ms"; saveOpts(); }
+setLat(O.lat);
+$("go").onclick = () => { if (running && !demo) stopRun(); else startRun(false); };
+$("hear").onclick = () => { if (running && demo) stopRun(); else { if (running) stopRun(); startRun(true); } };
+$("back").onclick = backToPack;
+function backToPack(){ stopRun(); $("pop").hidden = true; $("player").hidden = true; $("packView").hidden = false; cur = null; checkTrophies(); drawPack(); window.scrollTo(0, 0); }
+function openSong(s){
+  cur = s; $("pop").hidden = true; $("packView").hidden = true; $("player").hidden = false; $("title").textContent = cleanTitle(s.title);
+  if (!buddy) buddy = PlayerArt.buddy($("buddy"));
+  if (!charImg) makeChar();
+  O.hop = !slowDevice;
+  layout(); setMode(mode); drawPianoKeys(); glowKey(); window.scrollTo(0, 0);
+}
+if (window.FMAMidi) FMAMidi.mount($("midiSlot"));
+window.__packs = { get notes(){ return notes; }, get PACKS(){ return PACKS; }, openPack, openSong, stats, press, tabRule, ruledTab, get pos(){ return songPos(); }, get P(){ return P; }, get PK(){ return PK; }, toTab, staffShift, SONGS, checkTrophies, drawPacks };
 </script>
 </body>
 </html>

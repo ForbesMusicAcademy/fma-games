@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Adventure's menu icon: a quest hexagon with Rust Row's factory skyline and a parkour arc -->
+  <defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bff7ef"/><stop offset="1" stop-color="#2fb3a3"/></linearGradient></defs>
+  <polygon points="32,3 57,17.5 57,46.5 32,61 7,46.5 7,17.5" fill="url(#h)" stroke="#26211f" stroke-width="3.5" stroke-linejoin="round"/>
+  <polygon points="32,9 52,20.5 52,43.5 32,55 12,43.5 12,20.5" fill="none" stroke="#fff" stroke-width="1.6" opacity=".5"/>
+  <path d="M14 44 V33 L20 29 V33 L26 29 V33 L32 29 V44 Z" fill="#7a3a6a" stroke="#26211f" stroke-width="2.4" stroke-linejoin="round"/>
+  <rect x="36" y="22" width="6" height="22" fill="#c9483b" stroke="#26211f" stroke-width="2.4"/>
+  <path d="M36 27 h6" stroke="#fff" stroke-width="2.4"/>
+  <path d="M12 44 H52" stroke="#26211f" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18 26 Q30 8 46 18" fill="none" stroke="#ffc42b" stroke-width="2.6" stroke-dasharray="3 3.5" stroke-linecap="round"/>
+  <circle cx="47" cy="17" r="4.5" fill="#ffc42b" stroke="#26211f" stroke-width="2.2"/>
+</svg>

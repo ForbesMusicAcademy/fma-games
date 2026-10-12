@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EFEAD9">
-<title>Tuning Race</title>
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<title>Tune Up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=3">
 <style>
-/* Tuning Race: one column, phone first, same look as the chord game. Listens through the microphone, never records.
+/* Tune Up: one column, phone first, same look as the chord game. Listens through the microphone, never records.
    Layout: header, the six strings as chips, the big note, a cents needle, a status line, the clock. */
-:root{color-scheme:light;--bg:#EFEAD9;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:520px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
@@ -83,17 +84,17 @@ label.set input[type=range]{width:100%}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
-<body>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Tune Up</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
-  <header><h1>Tuning Race</h1><a href="./" class="menu">&larr; All games</a></header>
 
   <section class="card" id="intro">
     <h2>Tune up before you play</h2>
-    <p>Tune all six strings as fast as you can, starting with the thick low E. Each string locks in when it's right, then the next one lights up. The clock starts when you pluck your first string.</p>
-    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
+    <p>Tune your guitar one string at a time, starting with the thick low E. Each string turns green when it's in tune, then the next one lights up. The clock starts when you pluck your first string, so you can try to beat your own best time.</p>
+    <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
     <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
     <p id="best"></p>
-    <button class="big" id="start">Start (allow microphone)</button>
+    <button class="big play" id="start">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
   </section>
 
@@ -124,16 +125,20 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=4"></script>
-<script src="player-art.js?v=2"></script>
+<script src="fma-student.js?v=8"></script>
+<script src="fma-listen.js?v=2"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=33"></script>
+<script src="fma-picks.js?v=10"></script>
 <script>
 /* ============================================================
-   Tuning Race (home). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
-   Progress (best time, practice streak) is kept on this device only.
+   Tune Up (home; was the Tuning Race, which stays in the classroom rig). One file, no libraries. Pitch comes from YIN autocorrelation on the microphone signal.
+   Best time and practice streak are kept under fmaKey, so they follow the player when tracking is on.
+   Coming from the menu's "Tune up first?" (?first) the finish card offers a straight path to the games.
    ============================================================ */
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
-const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
+const DEBUG = q.has("debug"), SELFTEST = q.has("selftest"), FIRST = q.has("first");
 
 /* ---------- The strings, low to high (standard tuning) ---------- */
 const STRINGS = [
@@ -149,50 +154,11 @@ const cents = (f, ref) => 1200 * Math.log2(f / ref);
 /* ---------- Pitch detection (YIN) ----------
    Works on 4096 samples (about 85 ms). Searches 60-420 Hz, which covers every open string with room to be a long way out. */
 const BUF = 4096, W = 2048, FMIN = 60, FMAX = 420, YIN_T = 0.15;
-const pitch = {
-  ctx: null, an: null, td: new Float32Array(BUF), d: null, testGain: null, ready: false,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = BUF; this.an.smoothingTimeConstant = 0;
-    if(SELFTEST){
-      this.testGain = this.ctx.createGain(); this.testGain.connect(this.an);    // test tones go straight in, never to the speaker
-    }else{
-      // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-      const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-      this.ctx.createMediaStreamSource(stream).connect(this.an);
-    }
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){   // loudness in dB (0 = full scale)
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < BUF; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / BUF) + 1e-9);
-  },
-  // Returns {f, clarity} for the latest block, or null when there isn't a clear pitch.
-  read(){
-    const x = this.td, sr = this.ctx.sampleRate;
-    const tMin = Math.floor(sr / FMAX), tMax = Math.min(Math.ceil(sr / FMIN), BUF - W - 1);
-    if(!this.d || this.d.length !== tMax + 2) this.d = new Float32Array(tMax + 2);
-    const d = this.d;
-    for(let t = 1; t <= tMax; t++){
-      let s = 0; for(let j = 0; j < W; j++){ const e = x[j] - x[j + t]; s += e * e; }
-      d[t] = s;
-    }
-    // cumulative mean normalised difference
-    let run = 0; d[0] = 1;
-    for(let t = 1; t <= tMax; t++){ run += d[t]; d[t] = d[t] * t / (run || 1); }
-    let t = tMin;
-    while(t < tMax){
-      if(d[t] < YIN_T){ while(t + 1 < tMax && d[t + 1] < d[t]) t++; break; }
-      t++;
-    }
-    if(t >= tMax) return null;
-    const a = d[t - 1], b = d[t], c = d[t + 1], den = a - 2 * b + c;
-    const tau = t + (den ? 0.5 * (a - c) / den : 0);
-    return {f: sr / tau, clarity: 1 - b};
-  }
-};
+// the shared listener every game uses (fma-listen.js), reading pitch with a long window over the guitar's range
+const pitch = FMAListen.create(), sharedRead = pitch.read;
+pitch.read = function(){ return sharedRead.call(this, { fmin: FMIN, fmax: FMAX, window: W, threshold: YIN_T }); };
+// a MIDI keyboard, when one is plugged in, plays straight into the tune-up (fma-midi.js): the right note name in any octave locks the string in
+if(window.FMAMidi) FMAMidi.useFor(pitch, () => STRINGS[race.cur] && STRINGS[race.cur].hz);
 
 /* ---------- Progress (this device only) ---------- */
 const KEY = fmaKey("fma-tuner-v1");          // each player on this device has their own best time
@@ -204,7 +170,7 @@ function load(){
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
 const dayStr = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-function streak(){   // consecutive days (ending today or yesterday) with a finished race
+function streak(){   // consecutive days (ending today or yesterday) with a finished tune-up
   const set = new Set(P.days); let n = 0; const d = new Date();
   if(!set.has(dayStr(d))) d.setDate(d.getDate() - 1);
   while(set.has(dayStr(d))){ n++; d.setDate(d.getDate() - 1); }
@@ -213,7 +179,7 @@ function streak(){   // consecutive days (ending today or yesterday) with a fini
 const fmt = ms => { const s = ms / 1000, m = Math.floor(s / 60); return m + ":" + (s - m * 60).toFixed(1).padStart(4, "0"); };
 function starsFor(ms){ return ms <= 75000 ? 3 : ms <= 150000 ? 2 : 1; }   // under 1:15 = 3 stars, under 2:30 = 2, finished = 1
 
-/* ---------- The race ---------- */
+/* ---------- The tune-up ---------- */
 const HOLD_MS = 700, SETTLE_MS = 250;
 let buddy = null;          // your character, beside the big note
 const race = {
@@ -301,7 +267,7 @@ const race = {
     $("clock").textContent = fmt(total);
     const stars = starsFor(total), prevBest = P.best, isBest = prevBest === null || total < prevBest;
     const mom = stars === 3 ? "win" : isBest ? "best" : "done";
-    if(!SELFTEST && FMAStudent.active()) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3, improved:isBest});
+    if(!SELFTEST) FMAStudent.send("tuning-race", {score:Math.round(total / 1000), right:stars, total:3, improved:isBest});
     if(buddy) buddy.moment(mom, 0);
     if(isBest) P.best = total;
     const today = dayStr(new Date()); if(!P.days.includes(today)) P.days.push(today);
@@ -315,7 +281,7 @@ const race = {
         <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
         <div class="splits">${sp}</div>
         <p style="font-size:14px">Seconds per string. Give all six a final strum: tuning one string can nudge the others.</p>
-        <button class="big" id="again">Race again</button>`;
+        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big play" id="again">Tune again</button>`}`;
       PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };
@@ -339,12 +305,12 @@ async function calibrate(){
 function showBest(){
   $("best").textContent = P.best ? "Your best so far: " + fmt(P.best) + (streak() ? "  ·  " + streak() + " day streak" : "") : "";
   $("pb").textContent = P.best ? "Best " + fmt(P.best) : "";
-  $("streak").textContent = streak() ? streak() + " day streak" : "Today's race";
+  $("streak").textContent = streak() ? streak() + " day streak" : "Today's tune-up";
 }
 $("start").onclick = async () => {
   $("err").hidden = true; $("start").disabled = true;
   try{
-    await pitch.start();
+    await pitch.start(SELFTEST ? { test: true } : {});
     $("intro").hidden = true; $("game").hidden = false;
     $("status").textContent = "Shh… listening to the room"; $("chips").innerHTML = "";
     await calibrate();
@@ -360,6 +326,8 @@ $("start").onclick = async () => {
 $("restart").onclick = () => race.begin();
 $("tol").oninput = e => { race.tol = Number(e.target.value); $("tolV").textContent = e.target.value; };
 load(); showBest();
+// the games menu stops asking "Tune up first?" once you've been here today
+try{ localStorage.setItem(fmaKey("fma-tuneup-day"), dayStr(new Date())); }catch(e){}
 if(SELFTEST) $("testbox").hidden = false;
 if(DEBUG) $("dbg").hidden = false;
 
