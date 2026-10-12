@@ -174,15 +174,18 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
   <a class="game" href="chords.html"><img src="star-on.png" alt=""><div><b>Chord Practice</b><span>Play the chord you see. Earn stars as you learn new ones.</span></div></a>
   <a class="game" href="tuner.html"><img src="characters/fret.png" alt=""><div><b>Tuning Race</b><span>Tune all six strings as fast as you can.</span></div></a>
   <a class="game" href="songs.html"><img src="diamond.png" alt=""><div><b>Song Practice</b><span>Play a tab note by note. The tab waits for you.</span></div></a>
+  <a class="game" href="league.html" id="leagueLink" hidden><img src="star-on.png" alt=""><div><b>Band League</b><span>Every class is a band. See which band is playing best this week, and help yours climb by practising.</span></div></a>
   <small class="foot">Forbes Music Academy</small>
 </main>
 
-<script src="fma-student.js?v=5"></script>
+<script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=31"></script>
 <script src="fma-picks.js?v=6"></script>
 <script>
 const $ = id => document.getElementById(id);
+// the Band League link only shows once the league is running (tracking on)
+if(window.FMAStudent && FMAStudent.league) FMAStudent.league().then(r => { if(r && r.teams && r.teams.length) document.getElementById("leagueLink").hidden = false; }).catch(() => {});
 let cfg = Player.get();
 const O = PlayerArt.options;
 const TOUCHED = fmaKey("fma-player-touched");
