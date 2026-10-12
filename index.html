@@ -215,7 +215,7 @@ small.foot{color:var(--muted);text-align:center;margin-top:4px}
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=32"></script>
-<script src="fma-picks.js?v=7"></script>
+<script src="fma-picks.js?v=8"></script>
 <script>
 const $ = id => document.getElementById(id);
 // the Band League link only shows once the league is running (tracking on)
@@ -276,7 +276,7 @@ function drawPanel(){
   const keep = $("epanel").scrollTop;          // picking an option redraws the list: stay where you were
   $("epanel").innerHTML = t.sections.map(sec => {
     if(sec[0] === "grid"){
-      const [, key, list, view, title, named] = sec;
+      const [, key, all, view, title, named] = sec, list = all.filter(([v]) => !FMAPicks.hidden(key, v));      // Adventure gear stays hidden while Adventure is off
       // everything you can use first, in one unbroken run; then the locked ones from cheapest to dearest; Adventure gear (padlock) last
       const cost = v => { const lk = FMAPicks.lock(key, v); return lk.quest || lk.pack ? 1e6 : lk.price; }, have = FMAPicks.balance();
       const sorted = list.filter(([v]) => FMAPicks.isOpen(key, v)).concat(list.filter(([v]) => !FMAPicks.isOpen(key, v)).sort((a, b) => cost(a[0]) - cost(b[0])));

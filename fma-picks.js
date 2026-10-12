@@ -105,6 +105,10 @@
   const isOpen = (part, v, w) => { const q = questItem(part, v); if(q) return adventureOwned().has(q.id);
     if(packItem(part, v)) return (w || load()).unlocked.includes(id(part, v));
     return price(part, v) === 0 || (w || load()).unlocked.includes(id(part, v)); };
+  // Adventure is off the menu for now (Wave 1), so its gear is hidden from the editor unless you've already got it.
+  // Set to true when Adventure comes back.
+  const ADVENTURE_LIVE = false;
+  const hidden = (part, v) => !ADVENTURE_LIVE && !!questItem(part, v) && !isOpen(part, v);
   // why something is locked: { price } to buy with picks, or { quest } found in Adventure; null when it's open
   const lockOf = (part, v) => { if(isOpen(part, v)) return null; const q = questItem(part, v); if(q) return { quest: q };
     const pk = packItem(part, v); return pk ? { pack: pk.pack } : { price: price(part, v) }; };
@@ -200,5 +204,5 @@
     return got;
   }
 
-  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, unlock, grant, round, milestone, adventureOwned, icon: ICON };
+  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, adventureOwned, icon: ICON };
 })();
