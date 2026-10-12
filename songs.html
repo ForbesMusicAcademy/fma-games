@@ -226,7 +226,7 @@ const SONG_PACKS = [
     prize: { part: "neck", value: "beads", label: "Beads" } },
   { id: "backforth", lv: 4, name: "Back and Forth", emo: "🏓", col: "#C2501B", col2: "#FFB805",
     skill: "Two strings, picking back and forth between them.",
-    songs: [["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
+    songs: [["spooky-zombie-march", R3], ["spooky-witchs-cauldron", R3], ["old-macdonald", R4], ["frere-jacques", R3], ["mary-had-a-little-lamb", R2], ["lightly-row", R1E]],
     prize: { part: "acc", value: "visor", label: "Visor" } },
   { id: "three", lv: 5, name: "Three Strings", emo: "🔱", col: "#1F7A6B", col2: "#7FD1C2",
     skill: "Three strings side by side.",
@@ -234,15 +234,15 @@ const SONG_PACKS = [
     prize: { part: "acc", value: "bucket", label: "Bucket hat" } },
   { id: "sharps", lv: 6, name: "Sharp Shooter", emo: "🎯", col: "#B8322C", col2: "#FF8A6B",
     skill: "Sharps and flats: the notes in between.",
-    songs: [["fur-elise", R5], ["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
+    songs: [["greensleeves", R5], ["spring-vivaldi", R5], ["yankee-doodle", R5], ["when-the-saints", R4], ["mary-had-a-little-lamb", R3]],
     prize: { part: "neck", value: "bowtie", label: "Bow tie" } },
   { id: "neck", lv: 7, name: "Whole Neck", emo: "🎸", col: "#26211F", col2: "#FFB805",
     skill: "All six strings.",
-    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
+    songs: [["beethoven-5-riff", null], ["minuet-in-g", null], ["hall-of-the-mountain-king", null], ["fur-elise", null], ["frere-jacques", R5], ["twinkle-twinkle", R4]],
     prize: { part: "top", value: "jacket", label: "Jacket" } },
   { id: "groove", lv: 8, name: "Groove", emo: "🕺", col: "#C23B7A", col2: "#FF9BC8",
     skill: "Tricky rhythms: dotted notes, swing, 3/4 and 6/8.",
-    songs: [["twelve-bar-shuffle-in-a", null], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
+    songs: [["twelve-bar-shuffle-in-a", null], ["riff-space-gallop", R4], ["riff-thunder-chug", R4], ["brahms-lullaby", null], ["happy-birthday", null], ["yankee-doodle", null], ["greensleeves", R5], ["drunken-sailor", R5]],
     prize: { part: "acc", value: "phones", label: "Headphones" } },
   { id: "speed", lv: 9, name: "Speed Run", emo: "⚡", col: "#2D5C9A", col2: "#FFD34D",
     skill: "Faster notes. Can you do them at Full speed?",
@@ -279,14 +279,19 @@ const LAB_LOOK = [
    Each level sets the fastest "Full" speed can be (bpm), how busy a song can be (notes a second on average, nps) and how long
    it can run (notes). A song over the length plays its opening phrases (whole 4-bar chunks up to the limit), and a song
    faster than the level allows is slowed to fit (never below 50 bpm, never faster than the song itself). Slow and Medium are
-   still 60% and 80% of that. Each lab lists its riffs easiest first. Levels 9 and 10 are the full songs. */
+   still 60% and 80% of that. Each lab lists its riffs easiest first. Levels 9 and 10 are the full songs.
+   Note lengths count too (Dave, 13 Oct): "rate" caps how fast the QUICKEST notes in a song come (notes a second at Full),
+   so a song can't hide a fast run inside a slow average, and nothing shorter than a quaver goes in Levels 1-6, the
+   seasonal packs or Riff Lab (no semiquavers or triplets; checkNoteLengths() warns in the console if one slips in). */
 const PACE = {
-  1: { bpm: 72, nps: 1.4, notes: 26 }, 2: { bpm: 76, nps: 1.6, notes: 28 }, 3: { bpm: 80, nps: 1.8, notes: 32 }, 4: { bpm: 84, nps: 2.0, notes: 36 },
-  5: { bpm: 90, nps: 2.2, notes: 44 }, 6: { bpm: 96, nps: 2.4, notes: 52 }, 7: { bpm: 100, nps: 2.6, notes: 64 }, 8: { bpm: 108, nps: 3.0, notes: 80 },
-  9: { bpm: 999, nps: 99, notes: 999 }, 10: { bpm: 999, nps: 99, notes: 999 } };
-const SEASON_PACE = { bpm: 80, nps: 1.8, notes: 32 };
-const LAB_PACE = { 1: { bpm: 72, nps: 1.6 }, 2: { bpm: 76, nps: 1.8 }, 3: { bpm: 80, nps: 2.0 }, 4: { bpm: 84, nps: 2.1 }, 5: { bpm: 84, nps: 2.2 },
-  6: { bpm: 84, nps: 2.2 }, 7: { bpm: 88, nps: 2.4 }, 8: { bpm: 92, nps: 2.6 }, 9: { bpm: 96, nps: 2.8 }, 10: { bpm: 100, nps: 3.0 } };
+  1: { bpm: 72, nps: 1.4, rate: 2.0, notes: 26 }, 2: { bpm: 76, nps: 1.6, rate: 2.2, notes: 28 }, 3: { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 },
+  4: { bpm: 84, nps: 2.0, rate: 2.6, notes: 36 }, 5: { bpm: 90, nps: 2.2, rate: 2.8, notes: 44 }, 6: { bpm: 96, nps: 2.4, rate: 3.0, notes: 52 },
+  7: { bpm: 100, nps: 2.6, rate: 3.4, notes: 64 }, 8: { bpm: 108, nps: 3.0, rate: 4.0, notes: 80 },
+  9: { bpm: 999, nps: 99, rate: 99, notes: 999 }, 10: { bpm: 999, nps: 99, rate: 99, notes: 999 } };
+const SEASON_PACE = { bpm: 80, nps: 1.8, rate: 2.4, notes: 32 };
+const LAB_PACE = { 1: { bpm: 72, nps: 1.6, rate: 2.0 }, 2: { bpm: 76, nps: 1.8, rate: 2.2 }, 3: { bpm: 80, nps: 2.0, rate: 2.4 }, 4: { bpm: 84, nps: 2.1, rate: 2.6 },
+  5: { bpm: 84, nps: 2.2, rate: 2.6 }, 6: { bpm: 84, nps: 2.2, rate: 2.6 }, 7: { bpm: 88, nps: 2.4, rate: 2.8 }, 8: { bpm: 92, nps: 2.6, rate: 3.0 },
+  9: { bpm: 96, nps: 2.8, rate: 3.2 }, 10: { bpm: 100, nps: 3.0, rate: 3.4 } };
 const paceOf = p => !p ? null : LAB ? LAB_PACE[p.lv] : p.seasonal ? SEASON_PACE : PACE[p.lv];
 const pacedCache = {};
 function paced(s, p){
@@ -300,7 +305,8 @@ function paced(s, p){
     if (best < s.bars) { cut = best * bb; n = n.filter(x => x.t < cut - 1e-6); bars = best; }
   }
   const beats = n[n.length - 1].t + n[n.length - 1].d;
-  let tempo = Math.min(s.tempo, pc.bpm, pc.nps * 60 * beats / n.length);
+  const gaps = n.slice(1).map((x, i) => x.t - n[i].t).filter(g => g > 1e-6), gap = gaps.length ? Math.min(...gaps) : 1;    // the quickest notes
+  let tempo = Math.min(s.tempo, pc.bpm, pc.nps * 60 * beats / n.length, (pc.rate || 99) * 60 * gap);
   tempo = Math.round(Math.max(Math.min(s.tempo, 50), tempo));
   return pacedCache[ck] = Object.assign({}, s, { notes: n, bars, tempo, chords: cut ? (s.chords || []).filter(([b]) => b < cut) : s.chords,
     paced: { cut: !!cut, bars, of: s.bars, slower: tempo < s.tempo } });
@@ -310,6 +316,9 @@ const hardness = (p, id) => { const s = SONGS[id] && paced(SONGS[id], p); if (!s
   return (s.notes.length / (beats * 60 / s.tempo)) * Math.sqrt(s.notes.length) * (1 + 0.15 * new Set(s.notes.map(x => x.s === undefined ? 0 : x.s)).size)
     * (0.6 + 0.1 * new Set(s.notes.map(x => x.m)).size); };      // more different notes to find is harder too (Hot Cross Buns has 3)
 // Riff Lab's riffs go easiest first. Song Packs keep their chosen order (Hot Cross Buns first, new songs before reviews).
+// no note shorter than a quaver below Level 7 (and in the seasonal packs and Riff Lab): a warning for whoever edits the packs
+function checkNoteLengths(){ PACKS.forEach(p => { if (p.lv >= 7 && !LAB) return; p.songs.forEach(([id]) => { const s = SONGS[id];
+  if (s && s.notes.some(x => x.d < 0.5 - 1e-6)) console.warn("Note shorter than a quaver in " + p.name + ": " + id); }); }); }
 function easiestFirst(){ if (!LAB) return; PACKS.forEach(p => { if (p.sorted) return; p.songs = p.songs.slice().sort((a, b) => hardness(p, a[0]) - hardness(p, b[0])); p.sorted = true; }); }
 
 let PACKS = LAB ? [] : SONG_PACKS;
@@ -453,7 +462,7 @@ if (LAB && INST === "piano") {
   if (LAB) PACKS = j.labs.map((l, i) => Object.assign({ id: "lab" + l.lab, lv: l.lab, name: l.name, skill: l.skill, open: i === 0,
     songs: l.riffs.map(r => { SONGS[r.id] = r; return [r.id, null]; }) }, LAB_LOOK[i]));
   else j.forEach(s => SONGS[s.id] = s);
-  easiestFirst();
+  easiestFirst(); checkNoteLengths();
   drawPacks();
   const p = PACKS.find(p => p.id === location.hash.slice(1));
   if (p && packState(p) === "open") openPack(p);

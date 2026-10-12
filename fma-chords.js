@@ -11,8 +11,11 @@
    FMAChords.inst            -> "guitar" or "piano": which ladder, diagrams and progress this page uses
    FMAChords.storeKey        -> the Chord Quest progress key for that instrument (guitar and piano are kept apart)
 
-   PIANO (13 Oct 2026): a piano player gets the ladder's pianoTiers (white-key chords first), listens for the plain chord
-   type, and sees a keyboard diagram (right hand, root position, note names on the keys) instead of a guitar shape.
+   PIANO (13 Oct 2026): a piano player gets the ladder's pianoTiers, listens for the plain chord type, and sees a keyboard
+   diagram (right hand, root position, note names and fingers on the keys) instead of a guitar shape. The first four
+   (pianoEasy) are two-note chords, root and 3rd, labelled Easy-C etc.; playing the whole chord still counts (c.allow).
+   "C:3" on the ladder is the full C, won later; songs and Boss Battle use it once it's unlocked (FMAChords.forSong).
+   Fingers: two notes 1-2, three notes 1-2-4 (easier than 1-3-5 for little hands), four notes 1-2-3-5.
 
    On guitar a chord listens for exactly the notes its shape sounds: the two-finger G (320000) rings an open E, so that E
    is part of "G" here. A chord without a shape falls back to its plain chord type. */
@@ -38,7 +41,7 @@
     (PIANO && ladder.pianoTiers ? ladder.pianoTiers : ladder.tiers).forEach((t, ti) => {
       const first = list.length;
       t.chords.forEach(name => {
-        const p = parse(name), ivs = p && ladder.qualities[p.q];
+        const base = name.replace(/:3$/, ""), p = parse(base), ivs = p && ladder.qualities[p.q];
         if(!ivs) return;
         const spell = p.flat ? FLAT : SHARP, shape = shapes[name] || null;
         let pcs = ivs.map(iv => (p.root + iv) % 12);
@@ -46,7 +49,10 @@
           const heard = new Set(shape.map(cell).map((c, i) => c && (OPEN[i] + c.fret) % 12).filter(x => x !== null && x !== undefined && x !== false));
           pcs = pcs.filter(pc => heard.has(pc)).concat([...heard].filter(pc => !pcs.includes(pc)));
         }
-        const c = { name, root: p.root, pcs, tones: pcs.map(pc => spell[pc]), mask: pcs.reduce((a, pc) => a | (1 << pc), 0), tier: ti, shape };
+        const full = pcs.reduce((a, pc) => a | (1 << pc), 0);
+        if(PIANO && name === base && (ladder.pianoEasy || []).includes(name)) pcs = [p.root, (p.root + ivs[1]) % 12];     // two-note chord: root and 3rd
+        const c = { name, base, root: p.root, pcs, tones: pcs.map(pc => spell[pc]), mask: pcs.reduce((a, pc) => a | (1 << pc), 0), allow: full, tier: ti, shape,
+          easy: PIANO && pcs.length === 2 };
         list.push(c); byName[name] = c;
       });
       tiers.push({ name: t.name, first, last: list.length - 1 });
@@ -57,12 +63,12 @@
   // piano: a keyboard from the C at or below the root, with the chord's keys (root position, right hand) coloured and named
   function keys(name){
     const c = byName[name]; if(!c) return "";
-    const p = parse(name), ivs = p && ladder.qualities[p.q]; if(!ivs) return "";
-    let last = -1; const semis = ivs.map(iv => { let s = p.root + iv; while(s <= last) s += 12; last = s; return s; });
+    const p = parse(c.base);
+    let last = -1; const semis = c.pcs.map(pc => { let s = pc; while(s <= last) s += 12; last = s; return s; });
     const WHITE = [0, 2, 4, 5, 7, 9, 11], spell = p.flat ? FLAT : SHARP, top = Math.max(...semis);
     const octs = top >= 24 ? 3 : 2, ww = 26, wh = 108, bw = 16, bh = 66, W = octs * 7 * ww + 4, H = wh + 30;
     const on = new Set(semis), out = [`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${name} chord on piano">`];
-    const fingers = semis.length >= 4 ? [1, 2, 3, 5] : [1, 3, 5];
+    const fingers = semis.length >= 4 ? [1, 2, 3, 5] : semis.length === 3 ? [1, 2, 4] : [1, 2];
     const label = (x, y, s, dark) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="Nunito,ui-rounded,system-ui,sans-serif" font-weight="900" font-size="${dark ? 11 : 13}" fill="${dark ? "#fff" : "#23231F"}">${spell[s % 12]}</text>`;
     const fing = (x, s) => `<g><circle cx="${x}" cy="${wh + 15}" r="10" fill="#23231F"/><text x="${x}" y="${wh + 19.5}" text-anchor="middle" font-family="Work Sans,system-ui,sans-serif" font-weight="700" font-size="12" fill="#FFB805">${fingers[semis.indexOf(s)]}</text></g>`;
     for(let o = 0; o < octs; o++) WHITE.forEach((w, k) => {
@@ -112,14 +118,22 @@
   function unlocked(){
     let n = START_POOL;
     try{ const P = JSON.parse(localStorage.getItem(window.fmaKey ? fmaKey(STORE) : STORE)); if(P && P.unlocked) n = P.unlocked; }catch(e){}
-    return new Set(list.slice(0, n).map(c => c.name));
+    const out = new Set(); list.slice(0, n).forEach(c => { out.add(c.name); out.add(c.base); });      // "C:3" also opens songs that use C
+    return out;
+  }
+  // the chord a song's "C" means for this player: on piano, the full chord once it's unlocked, else the easy two-note one
+  function forSong(name, open){
+    const full = byName[name + ":3"];
+    if(full && (open || unlocked()).has(full.name)) return full;
+    return byName[name] || null;
   }
 
   window.FMAChords = {
     load(){ return loading || (loading = fetch("chord-ladder.json", {cache: "no-cache"}).then(r => r.json()).then(j => { ladder = j; build(); return list; })); },
     get list(){ return list; }, get tiers(){ return tiers; },
     info: name => byName[name] || null,
-    label: name => (!PIANO && ladder && ladder.labels && ladder.labels[name]) || name,
-    diagram, unlocked, START_POOL, inst: INST, storeKey: STORE
+    label: name => { const c = byName[name]; if(PIANO) return c && c.easy ? "Easy-" + c.base : (c ? c.base : name);
+      return (ladder && ladder.labels && ladder.labels[name]) || name; },
+    diagram, unlocked, forSong, START_POOL, inst: INST, storeKey: STORE
   };
 })();

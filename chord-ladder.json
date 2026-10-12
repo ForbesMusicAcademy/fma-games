@@ -723,15 +723,24 @@
    ]
   }
  ],
- "_piano_readme": "Piano players climb their own ladder (Chord Quest and Boss Battle on piano): white-key chords first, then chords with one black key, sevenths, sus/add chords, the black-key majors and the colour chords. Piano listens for the plain chord type (no shapes) and shows a keyboard diagram, right hand, root position. Same chord names as guitar, so the same songs open up.",
+ "_piano_readme": "Piano players climb their own ladder (Chord Quest and Boss Battle on piano). Like guitar's Easy-G and Easy-C, the first four chords are simpler: TWO-NOTE chords (pianoEasy: the root and the 3rd, so C is C+E and Am is A+C), labelled Easy-C etc. Playing the full chord still counts. The next shelf is the same four as full chords (C:3 = full C), then the rest. Full chords show fingers 1-2-4 (Dave, 13 Oct: 1-3-5 is too much of a stretch for little hands); four-note chords 1-2-3-5. Same chord names as guitar, so the same songs open up; once a full chord is won, songs use it.",
  "pianoTiers": [
   {
-   "name": "White-key chords",
+   "name": "Two-note chords",
    "chords": [
     "C",
     "G",
     "F",
-    "Am",
+    "Am"
+   ]
+  },
+  {
+   "name": "Full chords",
+   "chords": [
+    "C:3",
+    "G:3",
+    "F:3",
+    "Am:3",
     "Em",
     "Dm"
    ]
@@ -830,5 +839,11 @@
     "Fmaj7#11"
    ]
   }
+ ],
+ "pianoEasy": [
+  "C",
+  "G",
+  "F",
+  "Am"
  ]
 }

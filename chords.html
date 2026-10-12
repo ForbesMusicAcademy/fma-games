@@ -197,7 +197,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=10"></script>
-<script src="fma-chords.js?v=2"></script>
+<script src="fma-chords.js?v=3"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -407,7 +407,7 @@ const game = {
       this.onFor[i] = this.latched[i] ? this.onFor[i] + 1 : 0;
       if(this.onFor[i] >= 2 && inChord) this.heard |= 1 << i;   // a chip lights only after two readings in a row
       if(inChord && !this.latched[i]) missing++;
-      if(!inChord && this.latched[i]) strays++;
+      if(!inChord && !((c.allow >> i) & 1) && this.latched[i]) strays++;     // the rest of the chord is fine on an easy two-note chord
     }
     c.pcs.forEach(pc => { if((this.heard >> pc) & 1){ const el = $("chips").children[c.pcs.indexOf(pc)]; if(el) el.classList.add("on"); } });
     this.run = (missing === 0 && strays <= this.strays) ? this.run + 1 : 0;
@@ -539,7 +539,7 @@ function drawHome(){
   drawBossLink();
 }
 /* ---------- Boss Battle: the songs your chords open (they used to be listed here; they live in Boss Battle now) ---------- */
-const openSet = n => new Set(CHORDS.slice(0, n).map(c => c.name));
+const openSet = n => new Set(CHORDS.slice(0, n).flatMap(c => [c.name, c.base]));
 function newBossSongs(){         // songs the newest unlock just opened, and a boss they bring that wasn't guarding anything open before
   const now = openSet(P.unlocked), before = openSet(P.unlocked - 1);
   const was = FMABoss.openNow(before), songs = FMABoss.openNow(now).filter(x => !was.includes(x));

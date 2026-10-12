@@ -246,7 +246,7 @@ body.piano #diag{width:100%;max-width:380px}
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=10"></script>
-<script src="fma-chords.js?v=2"></script>
+<script src="fma-chords.js?v=3"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -258,25 +258,33 @@ const QUAL = {"":[0,4,7], m:[0,3,7], "7":[0,4,7,10], m7:[0,3,7,10], maj7:[0,4,7,
 const PIANO = FMAChords.inst === "piano", INST = FMAChords.inst;
 if(PIANO) document.body.classList.add("piano");
 function chordInfo(name){
-  const L = FMAChords.info(name);
-  if(L) return { name, root:L.root, pcs:L.pcs, mask:L.mask, tones:L.tones };     // the ladder's shape on guitar (e.g. the two-finger G)
+  const L = FMAChords.forSong(name, openSet());      // piano: the full chord once it's won, else the easy two-note one
+  if(L) return { name:L.name, root:L.root, pcs:L.pcs, mask:L.mask, allow:L.allow, tones:L.tones };     // the ladder's shape on guitar (e.g. the two-finger G)
   const m = /^([A-G][#b]?)(.*)$/.exec(name), iv = m && QUAL[m[2]]; if(!iv) return null;
   const r = PCS[m[1]], pcs = iv.map(i => (r + i) % 12);
   return { name, root:r, pcs, mask:pcs.reduce((a, p) => a | (1 << p), 0), tones:pcs.map(p => NOTE_NAMES[p]) };
 }
-const SONGS = FMABossSongs, L = n => FMAChords.label(n);
+const SONGS = FMABossSongs, L = n => { const c = FMAChords.forSong(n, openSet()); return FMAChords.label(c ? c.name : n); };
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
 const MODES = [{k:"root", n:PIANO ? "One key" : "Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
 /* The rules, set once.
-   16 bars a song (whole loops). Chords in a row make a combo: hits do 1 damage, 3 in a row 3 damage, 6 in a row 5 damage
-   (the classroom rig's rule). The boss has BOSS_HP damage per 16 bars: hitting about 6 bars in 10 with a few short combos
-   beats it about half the time (checked by simulation), a long combo beats it early. You're knocked out on your KO_MISSES-th
+   16 bars a song (whole loops). Chords in a row make a combo: hits do 1 damage, 3 in a row 3 damage, 6 in a row 5 damage.
+   Boss health is the classroom rig's own formula (bossHP in classroom.html) for a class of one: the average damage of 400
+   pretend players who land each chord 6 times in 10 (17 for 16 bars). With one player a single combo is the whole attack,
+   so a perfect run still beats the boss by about bar 7 (bigger health would make it unwinnable for an average player);
+   the encore is what keeps a strong player playing the whole song. You're knocked out on your KO_MISSES-th
    miss. Once the boss is down the song plays on as an ENCORE: every hit still counts towards your damage, the score to beat
    next time, so a strong player still practises the whole song. Nothing carries over between fights (framework: loss only
    inside one round). */
-const BARS = 16, BOSS_HP = 15, KO_MISSES = 9, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
+const BARS = 16, WIN_RATE = 0.6, KO_MISSES = 9, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
 const dmgOf = streak => streak >= 6 ? 5 : streak >= 3 ? 3 : 1;
+// the classroom's bossHP() with one player: seeded, so a song length always gives the same number
+function bossHP(T){
+  let seed = 7919 + T * 104729 + 1, sum = 0; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for(let r = 0; r < 400; r++){ let st = 0; for(let s = 0; s < T; s++){ if(rnd() < WIN_RATE){ st++; sum += dmgOf(st); } else st = 0; } }
+  return Math.max(1, Math.round(sum / 400));
+}
 const KEY = fmaKey(PIANO ? "fma-boss-piano-v1" : "fma-boss-v1");          // each player (and instrument) has their own stars and bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
 const S = Object.assign({ song:"em-g-stomp", speed:"slow", mode:"root", back:"drums" }, store.get().sel || {});
@@ -445,13 +453,13 @@ const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 
 
 /* ---------- The fight ---------- */
 const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false,
-  chords:[], bars:BARS, misses:0, ko:false, bossHp:BOSS_HP, maxHp:BOSS_HP, streak:0, bestStreak:0, dmg:0, raged:false, gold:false, down:false };
+  chords:[], bars:BARS, misses:0, ko:false, bossHp:17, maxHp:17, streak:0, bestStreak:0, dmg:0, raged:false, gold:false, down:false };
 let song, boss, art, pArt, me, lastTaunt = 0;
 function buildFight(){
   song = FMABoss.byId(S.song); boss = FMABoss.bossOf(song);
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
-  G.bars = n; G.maxHp = Math.round(BOSS_HP * n / BARS);
+  G.bars = n; G.maxHp = bossHP(n);
 }
 function setHp(){
   const youPct = 100 * (1 - G.misses / KO_MISSES);
@@ -569,7 +577,7 @@ function tick(){
       G.latched[i] = x >= 0.40 || (G.latched[i] && x >= 0.30);
       G.onFor[i] = G.latched[i] ? G.onFor[i] + 1 : 0;
       if(inC && !G.latched[i]) missing++;
-      if(!inC && G.latched[i]) strays++;
+      if(!inC && !(((c.allow || c.mask) >> i) & 1) && G.latched[i]) strays++;
     }
     G.run = (missing === 0 && strays === 0) ? G.run + 1 : 0;
     hit = G.run >= 3;
