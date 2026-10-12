@@ -36,6 +36,14 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 .song small{display:block;color:var(--muted);font-weight:600;font-size:12px}
 .song span{display:block;font-family:var(--head);font-weight:800;font-size:14px;margin-top:2px}
 .song.on{border-color:var(--fg);background:#FFF1C7}
+.song:disabled{opacity:.45;cursor:default}
+.lvl{grid-column:1/-1;font-family:var(--head);font-weight:900;font-size:15px;margin:8px 0 0 2px}
+.lvl small{display:block;font-family:var(--ui);font-weight:600;font-size:13px;color:var(--muted)}
+.lvl.locked{color:var(--muted)}
+.chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
+#diag{width:clamp(110px,32vw,170px);flex:none}
+#diag:empty{display:none}
+#diag svg{display:block;width:100%;height:auto}
 .chips{display:flex;gap:8px}
 .chips button{flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;line-height:1.15;padding:4px}
 .chips button b{display:block;font-family:var(--head);font-weight:900;font-size:16px}
@@ -119,7 +127,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
     <button class="big" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
     <div class="best" id="bests"></div>
-    <p style="font-size:14px"><span data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are the main loop of each song, simplified.</p>
+    <p style="font-size:14px"><span data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are the main loop of each song, simplified. New songs open up as you unlock chords in Chord Practice.</p>
   </section>
 
   <section class="card" id="play" hidden>
@@ -130,7 +138,7 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
       </div>
       <div class="combo" id="combo"></div>
       <div class="call" id="call"></div>
-      <div id="chord">–</div>
+      <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="ctones" id="tones"></div>
       <div class="next" id="next"></div>
       <div class="beats" id="beats"></div>
@@ -155,8 +163,9 @@ h3{margin:16px 0 6px;font-family:var(--head);font-weight:900;font-size:16px;colo
 <script src="fma-student.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js"></script>
-<script src="player-art.js?v=31"></script>
-<script src="fma-picks.js?v=6"></script>
+<script src="player-art.js?v=32"></script>
+<script src="fma-picks.js?v=7"></script>
+<script src="fma-chords.js?v=1"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -165,30 +174,47 @@ const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const PCS = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
 const QUAL = {"":[0,4,7], m:[0,3,7], "7":[0,4,7,10], m7:[0,3,7,10], maj7:[0,4,7,11], sus4:[0,5,7], sus2:[0,2,7]};
 function chordInfo(name){
+  const L = window.FMAChords && FMAChords.info(name);
+  if(L) return { name, root:L.root, pcs:L.pcs, mask:L.mask, tones:L.tones };     // the ladder's shape (e.g. the two-finger G)
   const m = /^([A-G][#b]?)(.*)$/.exec(name), iv = m && QUAL[m[2]]; if(!iv) return null;
   const r = PCS[m[1]], pcs = iv.map(i => (r + i) % 12);
   return { name, root:r, pcs, mask:pcs.reduce((a, p) => a | (1 << p), 0), tones:pcs.map(p => NOTE_NAMES[p]) };
 }
-/* Ten songs, each as its main chord loop (one chord per bar), and which boss guards it (BossArt kinds: amp, cables). Chord loops are simplified and can differ between versions. */
+/* The songs, each as its main chord loop (one chord per bar), and which boss guards it (BossArt kinds: amp, cables).
+   A song unlocks once the player has unlocked every chord in it in Chord Practice (the Band Skills Ladder order, from
+   fma-chords.js), so the song list grows with their chords. ?teacher opens them all (for class). Chord loops are simplified
+   and can differ between versions: check them against how each song is taught. Keep each id for good: bests are saved by it. */
 const SONGS = [
-  {b:"amp", t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
-  {b:"cables", t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
-  {b:"amp", t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]},
-  {b:"cables", t:"Stand By Me", a:"Ben E. King", c:["A","F#m","D","E"]},
-  {b:"amp", t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
-  {b:"cables", t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
-  {b:"amp", t:"Someone Like You", a:"Adele", c:["A","E","F#m","D"]},
-  {b:"cables", t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
-  {b:"amp", t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
-  {b:"cables", t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]}
+  {id:"em-g-stomp", b:"amp", t:"Em–G Stomp", a:"FMA warm-up", c:["Em","Em","G","G"]},
+  {id:"g-em-groove", b:"cables", t:"G–Em Groove", a:"FMA warm-up", c:["G","Em","G","Em"]},
+  {id:"three-chord-trick", b:"amp", t:"Three-Chord Trick", a:"FMA warm-up", c:["G","C","Em","C"]},
+  {id:"zombie", b:"amp", t:"Zombie", a:"The Cranberries", c:["Em","C","G","D"]},
+  {id:"wagon-wheel", b:"cables", t:"Wagon Wheel", a:"Old Crow Medicine Show", c:["G","D","Em","C"]},
+  {id:"brown-eyed-girl", b:"cables", t:"Brown Eyed Girl", a:"Van Morrison", c:["G","C","G","D"]},
+  {id:"sweet-home-alabama", b:"amp", t:"Sweet Home Alabama", a:"Lynyrd Skynyrd", c:["D","C","G","G"]},
+  {id:"perfect", b:"cables", t:"Perfect", a:"Ed Sheeran", c:["G","Em","C","D"]},
+  {id:"riptide", b:"amp", t:"Riptide", a:"Vance Joy", c:["Am","G","C","C"]},
+  {id:"shake-it-off", b:"cables", t:"Shake It Off", a:"Taylor Swift", c:["Am","C","G","G"]},
+  {id:"let-it-be", b:"amp", t:"Let It Be", a:"The Beatles", c:["C","G","Am","F"]},
+  {id:"little-talks", b:"cables", t:"Little Talks", a:"Of Monsters and Men", c:["Am","F","C","G"]},
+  {id:"la-bamba", b:"amp", t:"La Bamba", a:"Ritchie Valens", c:["C","F","G","G"]},
+  {id:"dreams", b:"cables", t:"Dreams", a:"Fleetwood Mac", c:["F","G","F","G"]},
+  {id:"born-in-the-usa", b:"amp", t:"Born in the U.S.A.", a:"Bruce Springsteen", c:["A","A","D","D"]},
+  {id:"wild-thing", b:"cables", t:"Wild Thing", a:"The Troggs", c:["A","D","E","D"]}
 ];
+const TEACHER = q.has("teacher");
+// where a song sits on the ladder: the position of its hardest chord
+const ladderPos = s => Math.max(...s.c.map(n => FMAChords.list.findIndex(c => c.name === n)));
+const isOpen = (s, open) => TEACHER || s.c.every(n => open.has(n));
+const songById = id => SONGS.find(s => s.id === id);
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
 const MODES = [{k:"root", n:"Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
 const BARS = 16, WIN = 0.6;       // each song plays 16 bars (whole loops); you win with 60% of them landed
 const KEY = fmaKey("fma-boss-v1");          // each player on this device has their own bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
-const S = Object.assign({ song:1, speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
+const S = Object.assign({ song:"zombie", speed:"med", mode:"root", back:"drums" }, store.get().sel || {});
+const songNo = () => SONGS.indexOf(songById(S.song));       // 0-based, for the boss colour
 
 const FFT = 16384, TONAL_MIN = 0.30;
 const det = {
@@ -330,7 +356,7 @@ const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 
 const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false, need:1, chords:[], hp:100, dmgPer:15, ko:false, bossHp:100, streak:0, bestStreak:0 };
 let song, info, art, pArt, me;
 function buildFight(){
-  song = SONGS[S.song - 1];
+  song = songById(S.song);
   const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
   G.bars = n; G.need = Math.max(1, Math.round(n * WIN));
@@ -353,7 +379,7 @@ function startFight(){
   buildFight();
   Object.assign(G, { on:true, idx:-9, hit:false, hits:0, outcomes:[], run:0, done:false, hp:100, ko:false, bossHp:100, streak:0, bestStreak:0 });
   G.latched.fill(false); G.onFor.fill(0);
-  art = BossArt($("bimg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 });
+  art = BossArt($("bimg"), { kind:song.b, hue:songNo() * 36 });
   me = Player.get();
   pArt = PlayerArt($("pimg"), me);
   setTimeout(() => pArt.pose(PlayerArt.MOMENTS.start, 1800), 300);
@@ -372,6 +398,7 @@ function setChord(i){
   $("chord").textContent = root ? NOTE_NAMES[c.root] : c.name;
   $("chord").classList.remove("pop"); void $("chord").offsetWidth; $("chord").classList.add("pop");
   $("tones").innerHTML = root ? "" : c.tones.map(t => `<span>${t}</span>`).join("");
+  $("diag").innerHTML = root ? "" : FMAChords.diagram(c.name);
   const nx = G.chords[i + 1];
   $("next").innerHTML = nx ? "Next: <b>" + (root ? NOTE_NAMES[nx.root] : nx.name) + "</b>" : "Last bar!";
   $("call").textContent = root ? "Play the note" : "Play the chord";
@@ -381,7 +408,7 @@ function frame(){
   requestAnimationFrame(frame);
   const bp = barPos(), beat = Math.floor(((bp + 1) % 1 + 1) % 1 * 4);
   [...$("beats").children].forEach((el, i) => el.className = i === beat ? "on" : "");
-  if(bp < 0){ $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
+  if(bp < 0){ $("diag").innerHTML = ""; $("call").textContent = "Get ready…"; $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
   const idx = Math.floor(bp);
   if(idx >= G.bars){ return finish(); }
   if(idx !== G.idx){
@@ -444,9 +471,9 @@ function finish(){
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
   const win = G.bossHp <= 0, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.best || {})[key] || 0, isBest = G.hits > best;
   if(isBest){ st.best = st.best || {}; st.best[key] = G.hits; store.set(Object.assign(st, {})); }
-  const endArt = BossArt($("endImg"), { kind:SONGS[S.song - 1].b, hue:(S.song - 1) * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
+  const endArt = BossArt($("endImg"), { kind:song.b, hue:songNo() * 36 }); endArt.setDamage(1 - G.bossHp / 100); if(win) endArt.die();
   const endP = PlayerArt($("endPlayer"), me); endP.setDamage(1 - G.hp / 100); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.hits > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
-  if(!SIM) FMAStudent.send("boss-battle", {detail:SONGS[S.song - 1].t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.hits > 0});
+  if(!SIM) FMAStudent.send("boss-battle", {detail:song.t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.hits > 0});
   $("endTitle").textContent = win ? "Boss defeated!" : G.ko ? "You were knocked out!" : "The boss got away…";
   $("endHits").textContent = G.hits + " / " + G.bars; $("endAcc").textContent = Math.round(100 * G.hits / G.bars) + "%"; $("endStreak").textContent = G.bestStreak;
   $("endBest").innerHTML = isBest && G.hits > 0 ? `<span style="background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800">New best for this song and speed!</span>` : `<p style="color:var(--muted)">Best here: ${Math.max(best, G.hits)} hits</p>`;
@@ -461,8 +488,19 @@ function chips(el, list, key, sub){
 }
 function saveSel(){ const st = store.get(); st.sel = S; store.set(st); }
 function draw(){
-  $("songs").innerHTML = SONGS.map((s, i) => `<button class="song ${S.song === i + 1 ? "on" : ""}" data-i="${i + 1}"><b>${esc(s.t)}</b><small>${esc(s.a)}</small><span>${s.c.join(" ")}</span></button>`).join("");
-  $("songs").querySelectorAll("button").forEach(b => b.onclick = () => { S.song = Number(b.dataset.i); saveSel(); draw(); });
+  const open = FMAChords.unlocked(), L = FMAChords.list, groups = [];
+  SONGS.slice().sort((a, b) => ladderPos(a) - ladderPos(b)).forEach(s => {
+    const pos = Math.max(1, ladderPos(s)), g = groups[groups.length - 1];
+    if(g && g.pos === pos) g.songs.push(s); else groups.push({ pos, songs: [s] });
+  });
+  if(!songById(S.song) || !isOpen(songById(S.song), open)) S.song = (SONGS.find(s => isOpen(s, open)) || SONGS[0]).id;
+  $("songs").innerHTML = groups.map(g => {
+    const head = g.pos === 1 ? L[0].name + " and " + L[1].name : "With " + L[g.pos].name;
+    const locked = !TEACHER && !open.has(L[g.pos].name);
+    return `<div class="lvl${locked ? " locked" : ""}">${locked ? "🔒 " : ""}${esc(head)}${locked ? `<small>Unlock ${esc(L[g.pos].name)} in Chord Practice</small>` : ""}</div>` +
+      g.songs.map(s => `<button class="song ${S.song === s.id ? "on" : ""}" data-id="${s.id}" ${isOpen(s, open) ? "" : "disabled"}><b>${esc(s.t)}</b><small>${esc(s.a)}</small><span>${s.c.join(" ")}</span></button>`).join("");
+  }).join("");
+  $("songs").querySelectorAll("button").forEach(b => b.onclick = () => { S.song = b.dataset.id; saveSel(); draw(); });
   chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
@@ -489,7 +527,7 @@ async function begin(){
 $("go").onclick = begin;
 $("again").onclick = () => begin();
 $("other").onclick = () => { draw(); show("start"); };
-draw();
+FMAChords.load().then(draw, () => { $("songs").textContent = "Couldn't load the song list. Check your connection and reload."; });
 setInterval(tick, 90);
 
 /* ---------- No-microphone test mode: ?sim (note buttons / keys C D E F G A B, hold Space for "I'm playing the whole chord") ---------- */

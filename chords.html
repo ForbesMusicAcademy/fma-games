@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFB805">
 <meta name="color-scheme" content="light">
-<title>Chord Practice</title>
+<title>Chord Quest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -33,7 +33,10 @@ button{font:inherit;cursor:pointer}
 .tier{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--muted);font-size:14px}
 .bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;flex:1}
 .bar i{display:block;height:100%;background:var(--fg);width:0}
-#chord{font-family:var(--head);font-weight:900;font-size:clamp(88px,34vw,170px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+#chord{font-family:var(--head);font-weight:900;font-size:clamp(72px,24vw,150px);line-height:1;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+.chordrow{display:flex;align-items:center;justify-content:center;gap:10px}
+#diag{width:clamp(130px,38vw,200px);flex:none}
+#diag svg{display:block;width:100%;height:auto}
 .chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:54px}
 .chip{min-width:58px;padding:6px 14px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:26px;text-align:center;transition:background .2s,color .2s}
 .chip.on{background:var(--good);color:#fff}
@@ -61,21 +64,75 @@ label.set input[type=range]{width:100%}
 .test{display:flex;flex-wrap:wrap;gap:8px}
 .test button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- Chord Quest home: the count, the trophy cabinet, the songs they open ---------- */
+.quest{display:flex;align-items:center;gap:14px}
+.quest .n{font-family:var(--head);font-weight:900;font-size:54px;line-height:1;white-space:nowrap;flex:none}
+.quest .n small{font-size:20px;color:var(--muted)}
+.quest p{margin:2px 0 0}
+.hint{margin-top:12px;padding:10px 12px;border-radius:14px;background:#FFF6DB;border:1px solid #F2DFA6;font-weight:600;font-size:15px}
+.shelf{margin-top:16px}
+.shelf h3{margin:0 0 8px;font-family:var(--head);font-weight:900;font-size:16px;display:flex;justify-content:space-between;gap:8px}
+.shelf h3 span{color:var(--muted);font-weight:800;font-size:14px}
+.trophies{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px 6px;padding:8px 6px 10px;border-bottom:8px solid #C9A46A;border-radius:6px;background:linear-gradient(#FBF3E2,#F4E6CB)}
+.tro{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border:0;background:none;border-radius:12px;color:var(--fg);min-height:92px}
+.tro svg.cup{width:44px;height:44px}
+.tro b{font-family:var(--head);font-weight:900;font-size:16px;line-height:1.1;text-align:center}
+.tro .st{font-size:11px;letter-spacing:1px;color:#C98F00;min-height:14px}
+.tro.learning .st{color:var(--muted)}
+.tro.next{outline:3px dashed var(--accent);outline-offset:-3px;background:#FFF6DB;animation:glow 1.6s ease-in-out infinite}
+.tro.locked{color:#B9B1A0;cursor:default}
+.tro.locked b{font-size:14px}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,184,5,.0)}50%{box-shadow:0 0 0 6px rgba(255,184,5,.35)}}
+.more{margin:12px 0 0;color:var(--muted);font-weight:700;font-size:14px;text-align:center}
+.songs{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column}
+.songs li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.songs li:first-child{border-top:0}
+.songs .t{font-weight:700}
+.songs .a{color:var(--muted);font-size:14px}
+.pills{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:45%}
+.pill{font-family:var(--head);font-weight:900;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--line)}
+.pill.need{background:#fff;border:2px dashed var(--accent)}
+.soonlist .t{color:var(--muted)}
+.chordpop{position:fixed;inset:0;z-index:30;background:rgba(35,35,31,.45);display:grid;place-items:center;padding:16px}
+.chordpop .in{background:#fff;border-radius:24px;padding:18px 22px;max-width:320px;width:100%;text-align:center}
+.chordpop .in b{display:block;font-family:var(--head);font-weight:900;font-size:40px;line-height:1}
+.chordpop .in .d{width:170px;margin:6px auto}
+.chordpop .in p{color:var(--muted);margin:4px 0 12px}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
 <body class="fma">
-<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Chord Practice</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Chord Quest</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
 <div id="app">
 
-  <section class="card" id="intro">
-    <h2>Play the chord you see</h2>
-    <p>Your device listens through its microphone and lights up each note it hears. Hit every note of the chord to score.</p>
-    <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away.</p>
-    <p>Tip: find a quiet spot, tune your guitar first, and don't play music or videos through the speaker while you practise.</p>
-    <button class="big" id="start">Start (allow microphone)</button>
-    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
-  </section>
+  <div id="home">
+    <section class="card">
+      <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div><h2 style="margin:0">How many chords can you unlock?</h2><p id="qSub">Every chord you learn opens up more songs.</p></div></div>
+      <div class="hint" id="qHint" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2>Your trophy cabinet</h2>
+      <p>Tap a trophy to practise that chord.</p>
+      <div id="cabinet"></div>
+    </section>
+
+    <section class="card">
+      <h2 id="sgHead">Songs you can play</h2>
+      <p id="sgSub"></p>
+      <ul class="songs" id="sgList"></ul>
+      <div id="sgSoon"></div>
+    </section>
+
+    <section class="card" id="intro">
+      <h2>Ready to play?</h2>
+      <p>Your device listens through its microphone and lights up each note it hears. Hit every note of the chord to score.</p>
+      <p><b data-tracked="No sound is recorded, and only your scores are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away.</p>
+      <p>Tip: find a quiet spot, tune your guitar first, and don't play music or videos through the speaker while you practise.</p>
+      <button class="big" id="start">Start the quest (allow microphone)</button>
+      <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    </section>
+  </div>
 
   <section class="card" id="cal" hidden>
     <h2>Shh… listening to the room</h2>
@@ -86,13 +143,13 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section id="game" hidden>
     <div class="card">
       <div class="tier"><span id="tierName"></span><div class="bar"><i id="prog"></i></div><span id="progTxt"></span></div>
-      <div id="chord">–</div>
+      <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="chips" id="chips"></div>
       <div id="status">Play it!</div>
       <div id="timer"><i id="timerBar"></i></div>
       <div class="meter"><i id="lvl"></i></div>
       <div class="sub"><span id="tune"></span><span id="today"></span></div>
-      <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button></div>
+      <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button><button class="ghost" id="toHome">🏆 Trophies</button></div>
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
       <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
@@ -108,13 +165,14 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=7"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=31"></script>
-<script src="fma-picks.js?v=6"></script>
+<script src="player-art.js?v=32"></script>
+<script src="fma-picks.js?v=7"></script>
+<script src="fma-chords.js?v=1"></script>
 <script>
 /* ============================================================
-   Chord Practice (home). One file. The chord list comes from chord-ladder.json, the same file the
+   Chord Quest (home; was Chord Practice). One file. The chord list comes from chord-ladder.json, the same file the
    classroom rig reads, so the two can't drift apart. Progress is kept on this device only.
    ============================================================ */
 const $ = id => document.getElementById(id);
@@ -122,25 +180,9 @@ const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
 
 /* ---------- Chord list (built from the shared ladder file) ---------- */
-const PCV = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-const SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"], FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+// fma-chords.js builds it: the ladder order, and the notes each chord's guitar shape actually sounds
 let CHORDS = [], TIERS = [];
-function buildChords(ladder){
-  CHORDS = []; TIERS = [];
-  ladder.tiers.forEach((t, ti) => {
-    const first = CHORDS.length;
-    t.chords.forEach(name => {
-      const m = /^([A-G][#b]?)(.*)$/.exec(name), ivs = m && ladder.qualities[m[2]];
-      if(!ivs) return;
-      const rpc = (PCV[m[1][0]] + (m[1][1] === "#" ? 1 : m[1][1] === "b" ? -1 : 0) + 12) % 12;
-      const spell = (m[1].includes("b") || m[1] === "F") ? FLAT : SHARP;
-      let mask = 0; const tones = [];
-      ivs.forEach(iv => { const pc = (rpc + iv) % 12; mask |= 1 << pc; tones.push(spell[pc]); });
-      CHORDS.push({name, tones, mask, pcs: ivs.map(iv => (rpc + iv) % 12), tier: ti});
-    });
-    TIERS.push({name: t.name, first, last: CHORDS.length - 1});
-  });
-}
+function buildChords(){ CHORDS = FMAChords.list; TIERS = FMAChords.tiers; }
 
 /* ---------- Spaced repetition (the same rules as the classroom rig, with practice DAYS as the lessons) ----------
    A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (star 1). It is then due for review
@@ -167,6 +209,7 @@ function starsOf(c){ if(!c) return 0; return c.grad ? Math.min(MAX_STARS, c.k + 
 function applyResult(name, hit, sess){
   const c = cardOf(name);
   if(c.grad && !isDue(c, sess)) return;                    // extra practice: schedule unchanged
+  c.t = Date.now();                                         // when this chord last changed: class and home merge by it
   if(hit){
     c.miss = 0;
     if(c.grad){ c.k++; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
@@ -196,7 +239,10 @@ function score(idx, hit){
   save();
   return {stars: starsOf(P.cards[name]), starsBefore: before, unlocked: P.unlocked > ub ? CHORDS[P.unlocked - 1].name : null};
 }
+let focus = null;                       // a chord picked from the trophy cabinet comes up first
 function pickChord(){
+  if(focus !== null && focus < P.unlocked){ const c = focus; focus = null; P.last = c; save(); return c; }
+  focus = null;
   const sess = sessionNow();
   maybeUnlock(sess);
   if(P.fresh !== null){ const c = P.fresh; P.fresh = null; P.last = c; save(); return c; }
@@ -280,13 +326,14 @@ const det = {
 if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
-let buddy = null, streak = 0;          // your character beside the Skip button, and chords in a row
+let buddy = null, streak = 0, paused = false, running = false;          // your character beside the Skip button, and chords in a row
 const game = {
   idx: 0, run: 0, latched: new Array(12).fill(false), onFor: new Array(12).fill(0), heard: 0, started: 0, over: false, thr: 0.40, strays: 0,
   begin(idx){
     this.idx = idx; this.run = 0; this.latched.fill(false); this.onFor.fill(0); this.heard = 0; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
-    $("chord").textContent = c.name;
+    $("chord").textContent = FMAChords.label(c.name);
+    $("diag").innerHTML = FMAChords.diagram(c.name);
     if(!buddy) buddy = PlayerArt.buddy($("buddy"));
     $("chips").innerHTML = c.tones.map(t => `<span class="chip">${t}</span>`).join("");
     $("status").textContent = "Play it!"; $("status").className = "";
@@ -297,7 +344,7 @@ const game = {
   },
   // Called about 11 times a second with the latest reading.
   step(){
-    if(this.over) return;
+    if(this.over || paused) return;
     const db = det.level();
     $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
     const secs = (performance.now() - this.started) / 1000;
@@ -348,8 +395,8 @@ const game = {
     $("today").textContent = "";
     let delay = hit ? 1300 : 1500;
     const queue = [];
-    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${CHORDS[this.idx].name}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
-    if(r.unlocked) queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${r.unlocked}</b></span>`);
+    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${FMAChords.label(CHORDS[this.idx].name)}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
+    if(r.unlocked) queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${FMAChords.label(r.unlocked)}</b></span>`);
     const next = () => { game.begin(pickChord()); };
     if(queue.length){ setTimeout(() => popQueue(queue, next), 900); } else setTimeout(next, delay);
   }
@@ -382,20 +429,106 @@ async function calibrate(){
 $("start").onclick = async () => {
   $("err").hidden = true; $("start").disabled = true;
   try{
-    const ladder = await (await fetch("chord-ladder.json", {cache: "no-store"})).json();
-    buildChords(ladder); load();
     await det.start();
-    $("intro").hidden = true;
-    await calibrate();
-    $("today").textContent = "";
-    game.begin(pickChord());
-    setInterval(() => game.step(), 90);
+    await enterGame();
     if(SELFTEST) setupSelfTest();
   }catch(e){
     $("start").disabled = false; $("err").hidden = false;
     $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start: " + (e && e.message || e);
   }
 };
+// from the cabinet into the game (the microphone stays on while they look at their trophies, so coming back is instant)
+async function enterGame(){
+  $("home").hidden = true; paused = false; scrollTo(0, 0);
+  if(!running){ await calibrate(); running = true; setInterval(() => game.step(), 90); }
+  else $("game").hidden = false;
+  $("today").textContent = "";
+  game.begin(pickChord());
+}
+$("toHome").onclick = () => { paused = true; game.over = true; $("game").hidden = true; drawHome(); $("home").hidden = false; scrollTo(0, 0); };
+
+/* ---------- Chord Quest home: how many unlocked, the trophy cabinet, and the songs they open ---------- */
+let SONGS = [];
+const CUP = (fill, stroke) => `<svg class="cup" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h20v10c0 7-4.5 12-10 12s-10-5-10-12z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 10H8c0 6 3 9 7 9M34 10h6c0 6-3 9-7 9" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/><path d="M21 28h6v7h-6z" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/><path d="M15 41h18v-4c0-1-1-2-2-2H17c-1 0-2 1-2 2z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+const esc = t => String(t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
+function nextUnlockWhen(){        // when the weekly limit on new chords lifts, or null if it isn't what's holding them back
+  let introduced = 0, earliest = Infinity;
+  for(let k = START_POOL + 1; k <= P.unlocked; k++) if(P.intro[k] !== undefined && dayNum() - P.intro[k] < 7){ introduced++; earliest = Math.min(earliest, P.intro[k]); }
+  if(introduced < NEW_PER_WEEK) return null;
+  const d = new Date((earliest + 7) * 86400000);
+  return d.toLocaleDateString("en-AU", {weekday: "long", timeZone: "UTC"});
+}
+function drawHome(){
+  const L = n => FMAChords.label(n);
+  const open = CHORDS.slice(0, P.unlocked), grads = open.filter(c => P.cards[c.name] && P.cards[c.name].grad).length;
+  $("qCount").innerHTML = P.unlocked + `<small> / ${CHORDS.length}</small>`;
+  $("qSub").textContent = grads + (grads === 1 ? " trophy" : " trophies") + " won so far. Every chord you learn opens up more songs.";
+  // the glowing next step
+  const newest = CHORDS[P.unlocked - 1], next = CHORDS[P.unlocked], nc = newest && P.cards[newest.name];
+  let hint = "";
+  if(!next) hint = "You've unlocked every chord on the ladder. Keep them all shining!";
+  else if(!(nc && nc.grad)) hint = `Next: play <b>${L(newest.name)}</b> right ${LEARN_STREAK} times in a row to win its trophy and unlock <b>${L(next.name)}</b>.`;
+  else { const when = nextUnlockWhen(); hint = when ? `<b>${L(next.name)}</b> unlocks on ${when}. New chords open two a week, so keep your trophies shining until then.` : `<b>${L(next.name)}</b> unlocks as soon as you play your next round.`; }
+  $("qHint").innerHTML = hint; $("qHint").hidden = !hint;
+  // the cabinet: every shelf up to the one you're on, plus the next one, so the road ahead is visible but not overwhelming
+  const curTier = (CHORDS[Math.min(P.unlocked, CHORDS.length - 1)] || {}).tier || 0;
+  const showTo = Math.min(TIERS.length - 1, curTier + 1);
+  let html = "";
+  for(let ti = 0; ti <= showTo; ti++){
+    const t = TIERS[ti], here = CHORDS.slice(t.first, t.last + 1);
+    const got = here.filter(c => P.cards[c.name] && P.cards[c.name].grad).length;
+    html += `<div class="shelf"><h3>${esc(t.name)}<span>${got} / ${here.length}</span></h3><div class="trophies">`;
+    here.forEach((c, k) => {
+      const i = t.first + k, card = P.cards[c.name], st = starsOf(card);
+      if(i < P.unlocked){
+        const won = card && card.grad;
+        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${st} stars">${won ? CUP("#FFC93C", "#9A6B00") : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st">${won ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) : "learning"}</span></button>`;
+      }else{
+        html += `<div class="tro locked" aria-label="${esc(L(c.name))}, locked">${CUP("#EFEAE0", "#CFC7B6")}<b>${esc(L(c.name))}</b><span class="st">🔒</span></div>`;
+      }
+    });
+    html += `</div></div>`;
+  }
+  const hidden = TIERS.length - 1 - showTo;
+  if(hidden > 0) html += `<p class="more">${hidden} more shelves to discover</p>`;
+  $("cabinet").innerHTML = html;
+  // songs: playable now, and the ones the next chord opens
+  // a song counts once every chord in it has its trophy (graduated), not just unlocked
+  const have = new Set(open.filter(c => P.cards[c.name] && P.cards[c.name].grad).map(c => c.name));
+  const target = open.find(c => !have.has(c.name)) || next;          // the next chord to win: one still being learned, else the next locked one
+  const can = SONGS.filter(sg => sg.chords.every(c => have.has(c)));
+  const pills = (sg, need) => `<span class="pills">${sg.chords.map(c => `<span class="pill ${need && need === c ? "need" : ""}">${esc(L(c))}</span>`).join("")}</span>`;
+  const row = (sg, need) => `<li><span><span class="t">${esc(sg.title)}</span>${sg.artist ? ` <span class="a">${esc(sg.artist)}</span>` : ""}</span>${pills(sg, need)}</li>`;
+  $("sgHead").textContent = can.length ? `You can play ${can.length} song${can.length === 1 ? "" : "s"}` : "Songs you can play";
+  $("sgList").innerHTML = can.map(sg => row(sg)).join("");
+  let soon = "";
+  if(target){
+    const opens = SONGS.filter(sg => !sg.chords.every(c => have.has(c)) && sg.chords.every(c => have.has(c) || c === target.name));
+    const verb = target === next ? "Unlock" : "Win the";
+    const what = target === next ? L(target.name) : L(target.name) + " trophy";
+    $("sgSub").textContent = can.length ? "Ask your teacher to show you how any of these go." : `${verb} ${what} and your first songs open up.`;
+    if(opens.length) soon = `<h3 style="margin:16px 0 0;font-family:var(--head);font-weight:900">${verb} ${esc(what)} for ${opens.length} more</h3><ul class="songs soonlist">${opens.map(sg => row(sg, target.name)).join("")}</ul>`;
+  }else $("sgSub").textContent = "Ask your teacher to show you how any of these go.";
+  $("sgSoon").innerHTML = soon;
+}
+$("cabinet").onclick = ev => {
+  const b = ev.target.closest("button.tro[data-i]"); if(!b) return;
+  const i = Number(b.dataset.i), c = CHORDS[i], card = P.cards[c.name], st = starsOf(card);
+  const w = document.createElement("div"); w.className = "chordpop";
+  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) + " Keep it shining." : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
+  const [go, close] = w.querySelectorAll("button");
+  close.onclick = () => w.remove();
+  w.onclick = e => { if(e.target === w) w.remove(); };
+  go.onclick = async () => { w.remove(); focus = i; if(det.ready) enterGame(); else $("start").click(); };
+  document.body.append(w);
+};
+(async function initHome(){
+  try{
+    await FMAChords.load(); buildChords(); load();
+    try{ SONGS = (await (await fetch("chord-songs.json", {cache: "no-cache"})).json()).songs || []; }catch(e){ SONGS = []; }
+    drawHome();
+  }catch(e){ $("cabinet").innerHTML = `<p>Couldn't load the chords. Check the internet connection and refresh.</p>`; }
+})();
 $("skip").onclick = () => game.begin(pickChord());
 $("recal").onclick = () => calibrate();
 $("stray").oninput = e => { game.strays = Number(e.target.value); $("strayV").textContent = e.target.value; };

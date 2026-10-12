@@ -99,11 +99,11 @@ LEVELS.push((() => {
   const nodes = [
     { id: "c1", x: 200, g: G, hx: 200, hy: 280, icon: "🎚️", name: "Soundcheck", url: "tuner.html", lane: "Notes", game: "Tuning Race", spot: "the loading bay", loot: ["laminate"], prop: "cart" },
     { id: "k1", x: 700, g: G, hx: 700, hy: 300, icon: "🛋️", name: "Green Room Warm-up", url: "chords.html", lane: "Chords", game: "Chords · A, D and E", spot: "the green room", loot: ["towel"], choice: "k", prop: "cart" },
-    { id: "k2", x: 976, g: 540, hx: 976, hy: 230, icon: "🧳", name: "Road Case Riff", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a riff on two strings", spot: "the road cases", loot: ["headset"], choice: "k" },
+    { id: "k2", x: 976, g: 540, hx: 976, hy: 230, icon: "🧳", name: "Road Case Riff", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a riff on two strings", spot: "the road cases", loot: ["headset"], choice: "k" },
     { id: "k3", x: 1230, g: G, hx: 1230, hy: 320, icon: "👕", name: "Merch Stand", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2", spot: "the merch stand", loot: ["starshades"], choice: "k", prop: "cart" },
     { id: "c2", x: 2470, g: ST, hx: 2470, hy: 232, icon: "🎤", name: "Side of Stage", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 2 · 10 questions", spot: "stage right", loot: [], prop: "cart" },
     { id: "t1", x: 2050, g: 420, hx: 2050, hy: 170, icon: "🥁", name: "Drum Riser", url: "chords.html", lane: "Chords", game: "Chords · Am, C, G and F", spot: "the drum riser", loot: ["lightup"], choice: "t" },
-    { id: "t2", x: 2330, g: TRUSS, hx: 2330, hy: 92, icon: "💡", name: "Lighting Rig", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a longer riff", spot: "the lighting truss", loot: ["glowchain"], choice: "t" },
+    { id: "t2", x: 2330, g: TRUSS, hx: 2330, hy: 92, icon: "💡", name: "Lighting Rig", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a longer riff", spot: "the lighting truss", loot: ["glowchain"], choice: "t" },
     { id: "boss", x: 3480, g: G, hx: 3720, hy: 190, icon: "🔈", name: "The Feedback Beast", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Stand By Me · medium · root notes", spot: "front of house", loot: ["glitter"], boss: true }
   ];
   /* ---- routes ---- */

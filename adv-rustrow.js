@@ -131,7 +131,7 @@ LEVELS.push((() => {
   nodes: [
   { id: "q1", x: 250, g: 540, hx: 250, hy: 292, icon: "🎛️", name: "Tune Up!", url: "tuner.html", lane: "Notes", game: "Tuning Race", spot: "Loading Dock 3", loot: ["hat"] },
   { id: "q2", x: 1060, g: 420, hx: 1070, hy: 160, icon: "🎯", name: "Six Strings, Six Names", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 5 questions", spot: "the container yard", loot: ["vest"] },
-  { id: "q3", x: 1600, g: 360, hx: 1600, hy: 122, icon: "📜", name: "First Riff", url: "songs.html", lane: "Riffs & TAB", game: "Songs · a Beginner riff", spot: "the high catwalk", loot: ["goggles"] },
+  { id: "q3", x: 1600, g: 360, hx: 1600, hy: 122, icon: "📜", name: "First Riff", url: "tabs.html", lane: "Riffs & TAB", game: "Songs · a Beginner riff", spot: "the high catwalk", loot: ["goggles"] },
   { id: "q4", x: 2300, g: 620, hx: 2300, hy: 340, icon: "🎸", name: "Two-Chord Friends", url: "chords.html", lane: "Chords", game: "Chords · Em + Am", spot: "the stinky sewer grate", loot: ["mask", "strap"], choice: "r" },
   { id: "q5", x: 2640, g: 300, hx: 2640, hy: 72, icon: "⚡", name: "Open String Speed Round", url: "quiz.html", lane: "Notes", game: "Note Quiz · level 1 · 10 questions", spot: "the factory rooftop", loot: ["gloves"], choice: "r" },
   { id: "q6", x: 3030, g: 620, hx: 3180, hy: 290, icon: "🔊", name: "The Grumpy Amp", url: "boss.html", lane: "Gate boss", game: "Boss Battle · Zombie (Em C G D) · slow · root notes", spot: "the factory gate", loot: ["rust"], boss: true }
