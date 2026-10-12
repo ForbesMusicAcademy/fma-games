@@ -177,11 +177,13 @@
 .ba.cables.dead .ba-hitg{animation:none;transform:none}
 `;
   const KINDS = { amp: () => SVG, cables: () => CABLES };
+  const NAMES = { amp: "The Amp", cables: "The Tangle" };
   const WORDS = ["POW", "BAM", "WHAM", "ZAP", "BOOM", "THWACK"];
   window.BossArt = function(el, opt){
     injectCss();
     opt = opt || {};
     const kind = KINDS[opt.kind] ? opt.kind : "amp";
+    if(opt.gold) el.classList.add("ba-gold"); else el.classList.remove("ba-gold");
     el.innerHTML = KINDS[kind]();
     const svg = el.querySelector("svg"), fx = svg.querySelector(".ba-fx");
     let stage = 0, dead = false, combo = 0, comboAt = 0, dir = 1, hueDeg = opt.hue || 0;
@@ -217,6 +219,7 @@
         for(let i = 0; i < bursts; i++) setTimeout(() => { if(fx.children.length < 3) pow(0.55 + Math.min(0.3, combo * 0.04)); }, i * 110);
       },
       taunt(){ if(!dead) flick("taunt", 920); },
+      rage(on){ if(!dead) svg.classList.toggle("rage", on !== false); },      // the boss's second phase (half its health gone)
       die(){
         if(dead) return;
         dead = true; stage = 3;
@@ -224,9 +227,22 @@
       },
       reset(){
         dead = false; stage = 0; combo = 0;
-        svg.classList.remove("st1", "st2", "st3", "dead", "hit", "taunt"); wrapFilter();
+        svg.classList.remove("st1", "st2", "st3", "dead", "hit", "taunt", "rage"); wrapFilter();
       }
     };
   };
-  window.BossArt.kinds = [["amp", "The Amp"], ["cables", "The Tangle"]];
+  Object.defineProperty(window.BossArt, "kinds", { get: () => Object.keys(KINDS).map(k => [k, NAMES[k]]) });
+  /* More bosses live in their own files (boss-art-*.js, loaded after this one) and add themselves here:
+       BossArt.register("metronome", { name: "Tick-Tock", svg: () => `<svg class="ba metronome" ...>`, css: `...` });
+     The SVG follows the same rules as the two above: a 400x400 viewBox, an outer <g class="ba-hitg"><g class="ba-all">,
+     the shared classes (.ba-eye/.ba-pup/.ba-brow/.ba-flash/.d1/.d2/.d3/.dd), and a <g class="ba-fx"> last. The classes set on
+     the <svg>: st1 st2 st3 (damage, cumulative), hit, taunt (the boss's own attack when a player misses), rage (half its
+     health gone, stays on) and dead. */
+  window.BossArt.register = (kind, def) => {
+    KINDS[kind] = def.svg; NAMES[kind] = def.name || kind;
+    if(def.css){ const s = document.createElement("style"); s.textContent = def.css; document.head.appendChild(s); }
+  };
+  window.BossArt.name = kind => NAMES[kind] || NAMES.amp;
+  // the rare golden boss (a surprise, worth more picks): a warm gold sheen over the whole boss
+  { const s = document.createElement("style"); s.textContent = `.ba-gold .ba{filter:sepia(.55) saturate(2.2) hue-rotate(-12deg) brightness(1.08) drop-shadow(0 0 14px rgba(255,200,40,.85))}`; document.head.appendChild(s); }
 })();

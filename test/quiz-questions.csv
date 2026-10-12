@@ -1,26 +1,417 @@
-question,correct,wrong1,wrong2,wrong3,category
-What is the capital of Australia?,Canberra,Sydney,Melbourne,Perth,Geography
-Which animal is a marsupial?,Kangaroo,Dog,Horse,Rabbit,Animals
-How many legs does a spider have?,8,6,10,4,Science
-What colour do you get from mixing blue and yellow?,Green,Purple,Orange,Brown,Colours
-Which planet is closest to the sun?,Mercury,Venus,Mars,Earth,Space
-What is 7 x 6?,42,36,48,49,Maths
-Which one is a fruit?,Banana,Carrot,Potato,Onion,Food
-What do bees make?,Honey,Milk,Bread,Silk,Animals
-Which season comes after summer?,Autumn,Winter,Spring,Monsoon,Seasons
-What is the biggest animal in the ocean?,Blue whale,Shark,Octopus,Dolphin,Animals
-How many days are in a week?,7,5,6,8,Maths
-What is frozen water called?,Ice,Steam,Fog,Mud,Science
-Which one can fly?,Eagle,Penguin,Emu,Cow,Animals
-What do we call a baby kangaroo?,Joey,Cub,Calf,Pup,Animals
-How many strings does a standard guitar have?,6,4,5,8,Music
-What is 10 + 15?,25,35,20,30,Maths
-Which one is a mammal?,Dolphin,Shark,Trout,Squid,Animals
-What do you use to see?,Eyes,Ears,Nose,Elbow,Body
-What is the opposite of hot?,Cold,Warm,Wet,Loud,Words
-Which is the largest country by area?,Russia,Australia,Brazil,India,Geography
-What gas do plants breathe in?,Carbon dioxide,Oxygen,Helium,Smoke,Science
-Which shape has three sides?,Triangle,Square,Circle,Pentagon,Maths
-What colour is a ripe tomato?,Red,Blue,Purple,Black,Colours
-Which one is a musical instrument?,Drum,Spoon,Brick,Pillow,Music
-Which ocean is the biggest?,Pacific,Atlantic,Indian,Arctic,Geography
+question,correct,wrong1,wrong2,wrong3,category,level
+How many strings does a standard guitar have?,6,4,5,8,Music,1
+How many lines are on a music staff?,5,4,6,3,Music,1
+Which instrument has black and white keys?,Piano,Drums,Violin,Flute,Music,1
+What do drummers usually play with?,Sticks,Bows,Picks,Keys,Music,1
+Which instrument do you blow into?,Trumpet,Piano,Guitar,Drums,Music,1
+What do you call the small piece of plastic used to strum a guitar?,Pick,Peg,Fret,Bridge,Music,1
+How many strings does a ukulele usually have?,4,6,5,3,Music,1
+Which family is the violin in?,Strings,Brass,Percussion,Woodwind,Music,1
+What do we call a group of people who sing together?,Choir,Team,Crew,Club,Music,1
+How many beats is a crotchet (quarter note) in 4/4?,1 beat,2 beats,4 beats,Half a beat,Music,1
+Which note comes after G in the musical alphabet?,A,H,B,F,Music,1
+How many letters are in the musical alphabet?,7,26,8,12,Music,1
+What is the thickest string on a guitar?,Low E,High E,B,G,Music,1
+What do you turn to tune a guitar?,Tuning pegs,Frets,Pickups,The bridge,Music,1
+Which is the biggest instrument in the string family?,Double bass,Violin,Viola,Cello,Music,1
+What is a xylophone played with?,Mallets,A bow,A pick,Your breath,Music,1
+What do we call a piece of music with no singing?,Instrumental,Chorus,Verse,Lyric,Music,1
+What is the part of a song that repeats with the same words?,Chorus,Verse,Intro,Outro,Music,1
+Which instrument usually keeps the beat in a band?,Drums,Flute,Violin,Harp,Music,1
+What does a metronome help you keep steady?,The beat,The key,The volume,The tuning,Music,1
+Which of these is a brass instrument?,Trombone,Clarinet,Cello,Harp,Music,1
+Which of these is a woodwind instrument?,Flute,Trumpet,Drum,Guitar,Music,1
+What are the metal strips on a guitar's neck called?,Frets,Pegs,Bars,Keys,Music,1
+How many sides does the instrument called a triangle have?,3,4,2,5,Music,1
+Which instrument comes from Aboriginal Australia?,Didgeridoo,Bagpipes,Banjo,Sitar,Music,1
+What do you call the words of a song?,Lyrics,Notes,Chords,Beats,Music,1
+How many keys does a full-size piano have?,88,76,61,100,Music,2
+What does 'forte' mean in music?,Loud,Soft,Fast,Slow,Music,2
+What does 'piano' mean as a music direction?,Soft,Loud,Fast,Short,Music,2
+How many semitones are in an octave?,12,8,7,10,Music,2
+What note is the open 5th string on a guitar?,A,D,E,G,Music,2
+What note is the open 4th string on a guitar?,D,G,A,B,Music,2
+Which notes make a C major chord?,C E G,C D E,C F A,C E A,Music,2
+What does 'tempo' mean?,Speed,Volume,Pitch,Key,Music,2
+How many beats are in a bar of 3/4?,3,4,2,6,Music,2
+Which clef is used for higher notes?,Treble clef,Bass clef,Low clef,Deep clef,Music,2
+How many beats is a minim worth in 4/4?,2 beats,1 beat,4 beats,3 beats,Music,2
+How many beats is a semibreve worth in 4/4?,4 beats,2 beats,1 beat,3 beats,Music,2
+Who composed the 'Ode to Joy' melody?,Beethoven,Mozart,Bach,Vivaldi,Music,2
+Who composed 'The Four Seasons'?,Vivaldi,Bach,Handel,Haydn,Music,2
+A sharp sign raises a note by...,A semitone,A tone,An octave,A fifth,Music,2
+What is the distance from one C up to the next C called?,An octave,A fifth,A third,A sixth,Music,2
+What does 'crescendo' mean?,Get louder,Get softer,Speed up,Slow down,Music,2
+What is the relative minor of C major?,A minor,E minor,D minor,G minor,Music,2
+How many sharps are in the key of G major?,1,0,2,3,Music,2
+What do we call three or more notes played together?,A chord,A scale,A riff,A rest,Music,2
+"Notes going up or down in steps, in order, make a...",Scale,Chord,Strum,Beat,Music,2
+What is the 5th note of the C major scale?,G,F,A,E,Music,2
+Which symbol tells you to be silent for a beat?,A rest,A tie,A slur,A sharp,Music,2
+"Which instrument has pedals, keys and pipes?",Organ,Harp,Tuba,Cello,Music,2
+What do we call a group of four musicians?,Quartet,Trio,Duet,Quintet,Music,2
+"In 4/4, how many quavers make one beat?",2,4,1,3,Music,2
+What is the capital city of Australia?,Canberra,Sydney,Melbourne,Perth,Australia,1
+Which bird is on Australia's coat of arms?,Emu,Kookaburra,Galah,Magpie,Australia,1
+What do koalas mostly eat?,Gum leaves,Grass,Bamboo,Fish,Australia,1
+What is the big red rock in central Australia called?,Uluru,Kosciuszko,Kakadu,Bondi,Australia,1
+How many states does Australia have?,6,5,7,8,Australia,1
+Which state is Forbes in?,NSW,Victoria,Queensland,Tasmania,Australia,1
+Which city has the famous Opera House?,Sydney,Melbourne,Brisbane,Adelaide,Australia,1
+Which Australian state is an island?,Tasmania,Victoria,Queensland,NSW,Australia,1
+What colour is the background of the Australian flag?,Blue,Red,Green,White,Australia,1
+Which Australian bird sounds like it's laughing?,Kookaburra,Emu,Galah,Magpie,Australia,1
+What is the giant coral reef off Queensland called?,Great Barrier Reef,Bondi Reef,Murray Reef,Ningaloo Reef,Australia,1
+What are Australia's sporting colours?,Green and gold,Red and white,Blue and white,Black and yellow,Australia,1
+What is a baby kangaroo called?,Joey,Kid,Cub,Pup,Australia,1
+Which Australian animal lays eggs and has a bill like a duck?,Platypus,Wombat,Possum,Dingo,Australia,1
+Which wild dog lives in Australia?,Dingo,Wolf,Coyote,Hyena,Australia,1
+Which ocean is off Australia's east coast?,Pacific,Atlantic,Indian,Arctic,Australia,1
+What is the capital of Queensland?,Brisbane,Cairns,Gold Coast,Townsville,Australia,1
+What is the capital of Victoria?,Melbourne,Geelong,Ballarat,Bendigo,Australia,1
+What is the capital of Western Australia?,Perth,Broome,Darwin,Albany,Australia,1
+What is the capital of the Northern Territory?,Darwin,Alice Springs,Katherine,Perth,Australia,1
+Which Australian animal can sleep for about 20 hours a day?,Koala,Kangaroo,Emu,Dingo,Australia,1
+"In Aussie slang, what is a 'barbie'?",A barbecue,A hat,A beach,A car,Australia,1
+"In Aussie slang, what is the 'arvo'?",The afternoon,The morning,Breakfast,A holiday,Australia,1
+"In Australia, what are 'thongs'?",Sandals,Hats,Shorts,Sunglasses,Australia,1
+Which Australian bird can't fly?,Emu,Kookaburra,Cockatoo,Galah,Australia,1
+What is NSW short for?,New South Wales,North South Wales,New Sydney Wales,New South West,Australia,1
+What is the highest mountain on mainland Australia?,Mt Kosciuszko,Mt Wellington,Mt Buller,Mt Hotham,Australia,2
+What is Australia's longest river?,Murray River,Yarra River,Swan River,Brisbane River,Australia,2
+Which river runs through Forbes?,Lachlan River,Murray River,Darling River,Macquarie River,Australia,2
+In what year did Australia become one nation (Federation)?,1901,1788,1851,1945,Australia,2
+In what year did the First Fleet arrive in Sydney?,1788,1770,1901,1851,Australia,2
+Who sailed up Australia's east coast in 1770?,James Cook,Abel Tasman,Matthew Flinders,Arthur Phillip,Australia,2
+Who was the first governor of New South Wales?,Arthur Phillip,James Cook,Lachlan Macquarie,John Batman,Australia,2
+Which bushranger was shot near Forbes in 1865?,Ben Hall,Ned Kelly,Captain Moonlite,Dan Morgan,Australia,2
+Which bushranger made his last stand at Glenrowan?,Ned Kelly,Ben Hall,Captain Thunderbolt,Frank Gardiner,Australia,2
+What is Australia's largest state?,Western Australia,Queensland,NSW,South Australia,Australia,2
+What is Australia's smallest state?,Tasmania,Victoria,South Australia,NSW,Australia,2
+What is the largest desert in Australia?,Great Victoria,Simpson,Tanami,Gibson,Australia,2
+What is the name of Australia's national anthem?,Advance Australia Fair,Waltzing Matilda,Down Under,Land Down Under,Australia,2
+Who wrote the words to 'Waltzing Matilda'?,Banjo Paterson,Henry Lawson,Dorothea Mackellar,C. J. Dennis,Australia,2
+Who wrote the poem that begins 'I love a sunburnt country'?,Dorothea Mackellar,Banjo Paterson,Henry Lawson,Judith Wright,Australia,2
+Which Australian city hosted the 2000 Olympics?,Sydney,Melbourne,Brisbane,Perth,Australia,2
+In which year will Brisbane host the Olympics?,2032,2028,2036,2030,Australia,2
+Which stretch of water separates Tasmania from the mainland?,Bass Strait,Torres Strait,Cook Strait,Coral Sea,Australia,2
+Which stretch of water lies between Australia and Papua New Guinea?,Torres Strait,Bass Strait,Cook Strait,Tasman Sea,Australia,2
+What is the capital of South Australia?,Adelaide,Port Augusta,Mount Gambier,Whyalla,Australia,2
+What is the capital of Tasmania?,Hobart,Launceston,Devonport,Burnie,Australia,2
+What is Australia's national flower?,Golden wattle,Waratah,Banksia,Kangaroo paw,Australia,2
+What is the floral emblem of NSW?,Waratah,Golden wattle,Kangaroo paw,Blue gum,Australia,2
+About how many people live in Australia?,About 27 million,About 5 million,About 100 million,About 300 million,Australia,2
+Which day do we remember on 25 April?,Anzac Day,Australia Day,Labour Day,Boxing Day,Australia,2
+Which NSW town near Forbes has a famous radio telescope?,Parkes,Dubbo,Orange,Cowra,Australia,2
+How many legs does a spider have?,8,6,10,4,Animals,1
+How many legs does an insect have?,6,8,4,10,Animals,1
+What is the biggest animal that has ever lived?,Blue whale,Elephant,Giraffe,Great white shark,Animals,1
+What is the tallest animal?,Giraffe,Elephant,Camel,Horse,Animals,1
+What is the fastest land animal?,Cheetah,Lion,Horse,Kangaroo,Animals,1
+What is a baby cat called?,Kitten,Cub,Pup,Calf,Animals,1
+What is a baby dog called?,Puppy,Kitten,Foal,Joey,Animals,1
+What is a baby horse called?,Foal,Calf,Lamb,Kid,Animals,1
+What is a baby cow called?,Calf,Foal,Lamb,Piglet,Animals,1
+What can a caterpillar turn into?,Butterfly,Ladybird,Bee,Spider,Animals,1
+Which animal has a trunk?,Elephant,Rhino,Hippo,Giraffe,Animals,1
+Which animal is called the king of the jungle?,Lion,Tiger,Gorilla,Elephant,Animals,1
+Which bird is a symbol of peace?,Dove,Crow,Eagle,Parrot,Animals,1
+What do bees make that we eat?,Honey,Milk,Silk,Jam,Animals,1
+Which animal has black and white stripes?,Zebra,Tiger,Leopard,Giraffe,Animals,1
+What do fish use to breathe?,Gills,Lungs,Fins,Scales,Animals,1
+What is a baby frog called?,Tadpole,Cub,Chick,Kit,Animals,1
+What is the largest bird in the world?,Ostrich,Emu,Eagle,Penguin,Animals,1
+Which animal can change colour to blend in?,Chameleon,Hippo,Zebra,Dog,Animals,1
+How many legs does a cow have?,4,2,6,8,Animals,1
+Which animal says 'moo'?,Cow,Sheep,Goat,Pig,Animals,1
+Which insect lives in a hive?,Bee,Spider,Butterfly,Snail,Animals,1
+What do pandas mainly eat?,Bamboo,Gum leaves,Fish,Grass,Animals,1
+Which of these animals is a mammal?,Dolphin,Shark,Salmon,Octopus,Animals,1
+Which animal carries a shell on its back?,Turtle,Rabbit,Frog,Lizard,Animals,1
+Which sea animal has eight arms?,Octopus,Starfish,Jellyfish,Crab,Animals,1
+What do we call animals that eat only plants?,Herbivores,Carnivores,Omnivores,Insectivores,Animals,2
+What do we call animals that eat only meat?,Carnivores,Herbivores,Omnivores,Vegetarians,Animals,2
+What do we call animals that eat plants and meat?,Omnivores,Herbivores,Carnivores,Producers,Animals,2
+How many hearts does an octopus have?,3,1,2,8,Animals,2
+What is a group of lions called?,A pride,A pack,A herd,A school,Animals,2
+What is a group of fish called?,A school,A pride,A flock,A gaggle,Animals,2
+What is a group of wolves called?,A pack,A pride,A school,A swarm,Animals,2
+"Which mammal can really fly, not just glide?",Bat,Sugar glider,Flying fish,Penguin,Animals,2
+What is the largest land animal alive today?,African elephant,Hippo,Rhino,Giraffe,Animals,2
+Which egg-laying Australian mammal is covered in spines?,Echidna,Wombat,Possum,Bilby,Animals,2
+What is a baby swan called?,Cygnet,Duckling,Gosling,Chick,Animals,2
+What is a baby goose called?,Gosling,Cygnet,Duckling,Kit,Animals,2
+What is a male duck called?,Drake,Gander,Cob,Rooster,Animals,2
+What word describes animals that are active at night?,Nocturnal,Diurnal,Migratory,Dormant,Animals,2
+What is a long winter sleep called?,Hibernation,Migration,Evolution,Camouflage,Animals,2
+What is it called when birds fly somewhere warmer for winter?,Migration,Hibernation,Pollination,Erosion,Animals,2
+What is it called when an animal blends in to hide?,Camouflage,Migration,Hibernation,Echolocation,Animals,2
+Which of these is NOT an insect?,Spider,Ant,Beetle,Butterfly,Animals,2
+What are animals without a backbone called?,Invertebrates,Vertebrates,Mammals,Reptiles,Animals,2
+"Snakes, lizards and crocodiles are all...",Reptiles,Amphibians,Mammals,Fish,Animals,2
+Frogs belong to which animal group?,Amphibians,Reptiles,Mammals,Insects,Animals,2
+What do whales breathe through?,A blowhole,Gills,Their fins,Their tail,Animals,2
+Which bird is the fastest when it dives?,Peregrine falcon,Eagle,Ostrich,Emu,Animals,2
+How do bats find their way in the dark?,Echolocation,Night vision,Smell,Magnets,Animals,2
+Which animal is the closest relative of humans?,Chimpanzee,Dog,Dolphin,Koala,Animals,2
+What are baby kangaroos about the size of when born?,A jelly bean,A football,A cat,A loaf of bread,Animals,2
+At what temperature does water freeze?,0°C,10°C,50°C,100°C,Science,1
+At what temperature does water boil?,100°C,50°C,0°C,200°C,Science,1
+What do plants use to make their food?,Sunlight,Sand,Snow,Smoke,Science,1
+Which gas do we need to breathe in to live?,Oxygen,Carbon dioxide,Helium,Hydrogen,Science,1
+What do we call frozen water?,Ice,Steam,Fog,Rain,Science,1
+What do we call water when it turns into a hot gas?,Steam,Ice,Snow,Hail,Science,1
+How many colours are in a rainbow?,7,5,6,9,Science,1
+Which of these does a magnet pull?,Iron,Wood,Plastic,Glass,Science,1
+Which part of a plant grows under the ground?,Roots,Leaves,Petals,Flowers,Science,1
+Which organ pumps blood around your body?,Heart,Lungs,Brain,Stomach,Science,1
+What do we use our lungs for?,Breathing,Eating,Thinking,Hearing,Science,1
+Which of these is the hardest natural material?,Diamond,Gold,Glass,Iron,Science,1
+Which season comes after summer?,Autumn,Winter,Spring,Wet season,Science,1
+"In Australia, which months are summer?",Dec to Feb,Jun to Aug,Mar to May,Sep to Nov,Science,1
+What do you use your nose for?,Smelling,Hearing,Seeing,Tasting,Science,1
+What are clouds made of?,Tiny water drops,Smoke,Cotton,Sugar,Science,1
+What do we see before we hear thunder?,Lightning,A rainbow,Snow,Fog,Science,1
+"When water turns into ice, it is...",Freezing,Melting,Boiling,Evaporating,Science,1
+Which material can you see through?,Glass,Wood,Brick,Metal,Science,1
+Which of these is a liquid?,Milk,Ice,Rock,Wood,Science,1
+Which of these is a gas?,Steam,Ice,Sand,Butter,Science,1
+What does a seed grow into?,A plant,A rock,A cloud,A fish,Science,1
+Where does rain fall from?,Clouds,Trees,Mountains,The Sun,Science,1
+Which force pulls things down to the ground?,Gravity,Magnetism,Friction,Wind,Science,1
+What do we call the air all around the Earth?,The atmosphere,The ocean,The crust,The core,Science,1
+Which part of your body do you think with?,Brain,Heart,Stomach,Knees,Science,1
+What is the chemical formula for water?,H2O,CO2,O2,NaCl,Science,2
+What is the chemical symbol for gold?,Au,Ag,Go,Gd,Science,2
+What is the chemical symbol for oxygen?,O,Ox,Oy,Os,Science,2
+Which gas do plants take in from the air?,Carbon dioxide,Oxygen,Nitrogen,Helium,Science,2
+How do plants make food from sunlight?,Photosynthesis,Evaporation,Digestion,Pollination,Science,2
+How many bones are in an adult human body?,206,106,306,150,Science,2
+What is the largest organ of the human body?,Skin,Liver,Heart,Brain,Science,2
+Which part of a cell holds its instructions (DNA)?,Nucleus,Membrane,Cytoplasm,Vacuole,Science,2
+Water turning into vapour is called...,Evaporation,Condensation,Precipitation,Erosion,Science,2
+Water vapour turning back into drops is called...,Condensation,Evaporation,Precipitation,Melting,Science,2
+"Rain, hail and snow falling are all called...",Precipitation,Condensation,Evaporation,Erosion,Science,2
+Which travels faster?,Light,Sound,They're equal,Wind,Science,2
+Which gas makes up most of the air?,Nitrogen,Oxygen,Carbon dioxide,Hydrogen,Science,2
+What is the unit used to measure force?,Newton,Watt,Joule,Volt,Science,2
+What is the unit used to measure electrical power?,Watt,Newton,Metre,Litre,Science,2
+What is the pH of pure water?,7,0,1,14,Science,2
+What do we call living things changing over many generations?,Evolution,Erosion,Migration,Germination,Science,2
+Which blood cells fight infection?,White blood cells,Red blood cells,Platelets,Plasma,Science,2
+Which part of the eye controls how much light gets in?,Iris,Retina,Lens,Cornea,Science,2
+Which metal is a liquid at room temperature?,Mercury,Iron,Lead,Copper,Science,2
+What type of rock forms when lava cools?,Igneous,Sedimentary,Metamorphic,Limestone,Science,2
+Which scientist is famous for the apple and gravity story?,Isaac Newton,Albert Einstein,Galileo,Charles Darwin,Science,2
+What is sound made of?,Vibrations,Light,Sparks,Magnetism,Science,2
+Which vitamin does your skin make from sunlight?,Vitamin D,Vitamin A,Vitamin C,Vitamin B12,Science,2
+At what temperature does water boil in Fahrenheit?,212°F,100°F,180°F,32°F,Science,2
+What is the centre of an atom called?,Nucleus,Electron,Molecule,Proton cloud,Science,2
+What is the closest star to Earth?,The Sun,The Moon,Mars,Sirius,Space,1
+How many planets are in our solar system?,8,9,7,10,Space,1
+Which planet do we live on?,Earth,Mars,Venus,Jupiter,Space,1
+Which planet is called the Red Planet?,Mars,Venus,Jupiter,Saturn,Space,1
+What is the biggest planet in our solar system?,Jupiter,Saturn,Earth,Neptune,Space,1
+Which planet is famous for its big rings?,Saturn,Mars,Mercury,Venus,Space,1
+What travels around the Earth about once a month?,The Moon,The Sun,Mars,Jupiter,Space,1
+Who was the first person to walk on the Moon?,Neil Armstrong,Buzz Aldrin,Yuri Gagarin,John Glenn,Space,1
+What do astronauts wear outside their spaceship?,A spacesuit,A raincoat,A wetsuit,A tracksuit,Space,1
+Which planet is closest to the Sun?,Mercury,Venus,Earth,Mars,Space,1
+How long does Earth take to go around the Sun?,1 year,1 day,1 month,1 week,Space,1
+How long does Earth take to spin around once?,1 day,1 year,1 hour,1 week,Space,1
+What shape is the Earth?,A sphere,A cube,A flat disc,A cone,Space,1
+What do we call a group of stars that makes a pattern?,Constellation,Galaxy,Comet,Planet,Space,1
+What is our galaxy called?,The Milky Way,Andromeda,The Solar Way,The Star Road,Space,1
+Which group of stars is on the Australian flag?,Southern Cross,Big Dipper,Orion,Leo,Space,1
+What is a 'shooting star' really?,A meteor,A moon,A planet,A satellite,Space,1
+What is the Sun?,A star,A planet,A moon,A comet,Space,1
+What do we call the Moon when it looks like a whole circle?,Full moon,New moon,Half moon,Crescent,Space,1
+What do telescopes help us do?,See far away,Hear space,Fly,Measure heat,Space,1
+Earth is which planet from the Sun?,3rd,1st,2nd,4th,Space,1
+What is Pluto called now?,A dwarf planet,A star,A moon,A comet,Space,1
+What do we call a person who travels into space?,Astronaut,Archaeologist,Architect,Acrobat,Space,1
+What makes the Moon light up at night?,The Sun,Its own fire,Street lights,Volcanoes,Space,1
+What do rockets burn to blast into space?,Fuel,Sails,Wood,Wind,Space,1
+What is the name for a planet's path around the Sun?,Orbit,Circle line,Track,Lap,Space,1
+Which planet is the hottest?,Venus,Mercury,Mars,Jupiter,Space,2
+Which planet has the Great Red Spot storm?,Jupiter,Mars,Saturn,Neptune,Space,2
+Where is the main asteroid belt?,Mars and Jupiter,Earth and Mars,Jupiter and Saturn,Venus and Earth,Space,2
+Who was the first person in space?,Yuri Gagarin,Neil Armstrong,Buzz Aldrin,John Glenn,Space,2
+Who was the first woman in space?,Valentina Tereshkova,Sally Ride,Mae Jemison,Peggy Whitson,Space,2
+In what year did people first land on the Moon?,1969,1959,1979,1965,Space,2
+Which planet spins on its side?,Uranus,Neptune,Saturn,Mars,Space,2
+About how long does sunlight take to reach Earth?,8 minutes,8 seconds,8 hours,8 days,Space,2
+How many moons does Mars have?,2,0,1,4,Space,2
+What is Saturn's largest moon?,Titan,Europa,Ganymede,Phobos,Space,2
+A light-year measures...,Distance,Time,Speed,Weight,Space,2
+Which space agency belongs to the USA?,NASA,ESA,JAXA,ISRO,Space,2
+What does ISS stand for?,Intl Space Station,Inner Solar System,Indian Space Ship,Intl Star Search,Space,2
+What is at the centre of our galaxy?,A black hole,The Sun,Earth,A comet,Space,2
+Which planet is farthest from the Sun?,Neptune,Uranus,Saturn,Jupiter,Space,2
+What gas is the Sun mostly made of?,Hydrogen,Oxygen,Iron,Carbon,Space,2
+What type of star is our Sun?,Yellow dwarf,Red giant,White dwarf,Neutron star,Space,2
+Which way does a comet's tail point?,Away from the Sun,Toward the Sun,Toward Earth,Straight down,Space,2
+About how many Earths could fit inside the Sun?,1.3 million,100,"1,000",1 billion,Space,2
+On which planet is a day longer than a year?,Venus,Mercury,Mars,Neptune,Space,2
+What did Galileo use to find Jupiter's moons?,A telescope,A rocket,A microscope,A compass,Space,2
+Which giant space telescope launched in 2021?,James Webb,Hubble,Kepler,Galileo,Space,2
+What is the Moon phase called when we can't see it?,New moon,Full moon,Gibbous,First quarter,Space,2
+What causes the ocean tides?,The Moon's gravity,The wind,Whales,Earthquakes,Space,2
+What do we call a star exploding?,Supernova,Black hole,Nebula,Eclipse,Space,2
+What happens when the Moon blocks the Sun?,Solar eclipse,Lunar eclipse,Meteor shower,Supernova,Space,2
+What is the largest ocean on Earth?,Pacific,Atlantic,Indian,Arctic,World,1
+How many continents are there?,7,5,6,8,World,1
+Which continent is Egypt in?,Africa,Asia,Europe,South America,World,1
+What is the capital of England?,London,Paris,Rome,Dublin,World,1
+In which city is the Eiffel Tower?,Paris,London,Rome,Berlin,World,1
+What is the coldest continent?,Antarctica,Europe,Asia,Africa,World,1
+Which country is shaped like a boot?,Italy,Spain,France,Greece,World,1
+In which country are the Pyramids of Giza?,Egypt,Mexico,Peru,India,World,1
+What is the capital of New Zealand?,Wellington,Auckland,Christchurch,Queenstown,World,1
+Which country built the Great Wall?,China,Japan,India,Egypt,World,1
+In which city is the Statue of Liberty?,New York,Los Angeles,Washington,Chicago,World,1
+Which continent is Brazil in?,South America,Africa,Asia,Europe,World,1
+Which country has a maple leaf on its flag?,Canada,USA,England,Japan,World,1
+What language do people speak in Spain?,Spanish,French,Italian,German,World,1
+Which continent is the Sahara Desert in?,Africa,Australia,Asia,South America,World,1
+Which country is home to the Taj Mahal?,India,China,Egypt,Thailand,World,1
+What is the capital of Japan?,Tokyo,Kyoto,Osaka,Beijing,World,1
+In which city is the clock tower Big Ben?,London,Paris,New York,Sydney,World,1
+Which ocean lies between Australia and Africa?,Indian,Pacific,Atlantic,Arctic,World,1
+In which mountains is Mount Everest?,Himalayas,Alps,Andes,Rockies,World,1
+What do we call land with water all around it?,An island,A valley,A desert,A hill,World,1
+What do we call a mountain that can erupt?,A volcano,A glacier,A canyon,A cliff,World,1
+What colours are on Japan's flag?,Red and white,Blue and white,Green and red,Black and yellow,World,1
+Which country do pizza and spaghetti come from?,Italy,France,Mexico,Greece,World,1
+Which country is across the Tasman Sea from Australia?,New Zealand,Fiji,Indonesia,Japan,World,1
+Which is the biggest continent?,Asia,Africa,Australia,Europe,World,1
+What is the largest country by area?,Russia,Canada,China,USA,World,2
+Which country has the most people?,India,China,USA,Indonesia,World,2
+What is the largest hot desert in the world?,Sahara,Gobi,Kalahari,Simpson,World,2
+What is the capital of Canada?,Ottawa,Toronto,Vancouver,Montreal,World,2
+What is the capital of the USA?,Washington DC,New York,Los Angeles,Chicago,World,2
+What is the capital of Germany?,Berlin,Munich,Frankfurt,Hamburg,World,2
+What is the capital of Italy?,Rome,Milan,Venice,Naples,World,2
+What is the capital of Spain?,Madrid,Barcelona,Seville,Lisbon,World,2
+What is the capital of China?,Beijing,Shanghai,Hong Kong,Tokyo,World,2
+What is the capital of Fiji?,Suva,Nadi,Apia,Port Moresby,World,2
+What is the capital of Papua New Guinea?,Port Moresby,Lae,Suva,Honiara,World,2
+What is the highest mountain in the world?,Mount Everest,K2,Kilimanjaro,Mont Blanc,World,2
+What is the highest mountain in Africa?,Kilimanjaro,Everest,Mont Blanc,Mount Kenya,World,2
+Which river flows through Egypt?,Nile,Amazon,Thames,Danube,World,2
+Which imaginary line splits Earth into north and south?,The equator,Prime meridian,Date line,Tropic of Cancer,World,2
+Which continent has the most countries?,Africa,Europe,Asia,South America,World,2
+What is the smallest country in the world?,Vatican City,Monaco,Malta,San Marino,World,2
+What is the largest rainforest in the world?,Amazon,Daintree,Congo,Borneo,World,2
+Which mountain range runs down South America?,Andes,Alps,Himalayas,Rockies,World,2
+Which sea is so salty you float easily?,Dead Sea,Red Sea,Black Sea,Coral Sea,World,2
+In which country is Machu Picchu?,Peru,Mexico,Chile,Brazil,World,2
+What is the main language of Brazil?,Portuguese,Spanish,Brazilian,French,World,2
+In which country is Mount Fuji?,Japan,China,Korea,Nepal,World,2
+What is the smallest ocean?,Arctic,Indian,Southern,Atlantic,World,2
+Cairo is the capital of which country?,Egypt,Morocco,Turkey,Iraq,World,2
+Which country has the most time zones?,France,USA,China,Australia,World,2
+What is 2 + 3?,5,4,6,7,Maths,1
+What is 7 + 8?,15,14,16,13,Maths,1
+What is 10 − 4?,6,5,7,4,Maths,1
+What is 3 × 4?,12,7,10,14,Maths,1
+How many sides does a triangle have?,3,4,5,6,Maths,1
+How many sides does a square have?,4,3,5,6,Maths,1
+How many sides does a hexagon have?,6,5,8,7,Maths,1
+What is half of 10?,5,2,4,20,Maths,1
+What is double 6?,12,8,10,3,Maths,1
+How many minutes are in an hour?,60,100,30,24,Maths,1
+How many days are in a week?,7,5,6,10,Maths,1
+How many months are in a year?,12,10,11,13,Maths,1
+What number comes after 99?,100,98,101,1000,Maths,1
+What is 5 × 5?,25,10,20,30,Maths,1
+What is 20 − 9?,11,9,12,13,Maths,1
+How many cents are in a dollar?,100,10,50,1000,Maths,1
+Which number is the biggest?,87,78,69,59,Maths,1
+How many hours are in a day?,24,12,60,100,Maths,1
+What shape is a ball?,Sphere,Cube,Cone,Cylinder,Maths,1
+What is 6 + 6 + 6?,18,16,12,24,Maths,1
+What is 100 − 1?,99,90,101,10,Maths,1
+How many legs do 2 dogs have altogether?,8,4,6,10,Maths,1
+Which number is even?,8,3,5,7,Maths,1
+Which number is odd?,9,2,4,6,Maths,1
+How many corners does a rectangle have?,4,3,5,6,Maths,1
+What is 10 + 10 + 10?,30,20,40,100,Maths,1
+What is 7 × 8?,56,54,48,64,Maths,2
+What is 9 × 6?,54,56,45,63,Maths,2
+What is 12 × 12?,144,124,132,156,Maths,2
+What is 81 ÷ 9?,9,8,7,11,Maths,2
+What is the square root of 64?,8,6,16,32,Maths,2
+What is 25% of 100?,25,50,75,4,Maths,2
+What is half of 3/4?,3/8,1/4,3/2,1/2,Maths,2
+What is 1/2 + 1/4?,3/4,2/6,1/6,2/4,Maths,2
+What is 0.5 as a fraction?,1/2,1/5,5/1,1/50,Maths,2
+How many degrees are in a right angle?,90,45,180,360,Maths,2
+The angles in a triangle add up to...,180°,90°,360°,270°,Maths,2
+How many degrees are in a full circle?,360,180,90,100,Maths,2
+Which of these is a prime number?,7,9,15,21,Maths,2
+What is 3 squared?,9,6,5,12,Maths,2
+How many sides does an octagon have?,8,6,10,7,Maths,2
+What is the perimeter of a square with 5 cm sides?,20 cm,25 cm,10 cm,15 cm,Maths,2
+What is the area of a 4 cm by 3 cm rectangle?,12 cm²,7 cm²,14 cm²,24 cm²,Maths,2
+How many metres are in a kilometre?,1000,100,10,"10,000",Maths,2
+How many millilitres are in a litre?,1000,100,500,10,Maths,2
+What is 15 × 4?,60,45,54,65,Maths,2
+What is 47 rounded to the nearest ten?,50,40,45,47,Maths,2
+"What comes next: 2, 4, 8, 16, ...?",32,24,20,18,Maths,2
+"What comes next: 3, 6, 9, 12, ...?",15,14,16,18,Maths,2
+What is 1000 − 250?,750,850,650,700,Maths,2
+How many seconds are in 2 minutes?,120,100,200,60,Maths,2
+What is 0.25 as a percentage?,25%,2.5%,0.25%,250%,Maths,2
+Which word rhymes with 'cat'?,Hat,Dog,Cup,Pig,Words,1
+Which word rhymes with 'song'?,Long,Sing,Sun,Sock,Words,1
+What is the opposite of 'hot'?,Cold,Warm,Wet,Big,Words,1
+What is the opposite of 'big'?,Small,Tall,Huge,Wide,Words,1
+What is the opposite of 'up'?,Down,Over,In,Top,Words,1
+What is the opposite of 'happy'?,Sad,Glad,Funny,Kind,Words,1
+Which word is a colour?,Purple,Table,Run,Happy,Words,1
+How many letters are in the alphabet?,26,24,25,28,Words,1
+Which letter is a vowel?,E,B,T,K,Words,1
+Which is spelled correctly?,Because,Becuase,Becos,Bicause,Words,1
+Which is spelled correctly?,Friend,Freind,Frend,Freend,Words,1
+Which is spelled correctly?,Colour,Culler,Colur,Kolour,Words,1
+What is more than one mouse?,Mice,Mouses,Meese,Mousen,Words,1
+What is more than one child?,Children,Childs,Childes,Childrens,Words,1
+Which word means 'very big'?,Huge,Tiny,Slow,Quiet,Words,1
+Which word is a doing word (verb)?,Jump,Chair,Green,Happy,Words,1
+What is the first letter of the alphabet?,A,B,Z,E,Words,1
+What is the last letter of the alphabet?,Z,Y,X,A,Words,1
+How many vowels are in the alphabet?,5,3,6,7,Words,1
+Which word starts with the same sound as 'guitar'?,Goat,Jelly,Cat,Sun,Words,1
+Which word rhymes with 'drum'?,Thumb,Drip,Dream,Dime,Words,1
+Which word rhymes with 'note'?,Boat,Net,Nut,Knit,Words,1
+What is the opposite of 'loud'?,Quiet,Noisy,Fast,High,Words,1
+What is the opposite of 'fast'?,Slow,Quick,Short,Light,Words,1
+Which is spelled correctly?,Music,Musik,Muzic,Mewsic,Words,1
+Which word is a naming word (noun)?,Dog,Run,Blue,Quickly,Words,1
+Which word means the same as 'happy'?,Joyful,Gloomy,Angry,Tired,Words,2
+Which word means the same as 'fast'?,Rapid,Sluggish,Heavy,Calm,Words,2
+What is the opposite of 'ancient'?,Modern,Old,Antique,Historic,Words,2
+Which is spelled correctly?,Necessary,Neccessary,Necesary,Neccesary,Words,2
+Which is spelled correctly?,Rhythm,Rythm,Rhythym,Rhythem,Words,2
+Which is spelled correctly?,Separate,Seperate,Separete,Seperete,Words,2
+Which is spelled correctly?,Definitely,Definately,Definitly,Defenitely,Words,2
+Which word is a noun?,Guitar,Quickly,Bright,Sing,Words,2
+Which word is an adjective (describing word)?,Shiny,Run,Slowly,Table,Words,2
+Which word is an adverb?,Quietly,Happy,Table,Jump,Words,2
+A word that sounds like another but means something else is a...,Homophone,Synonym,Antonym,Acronym,Words,2
+Which pair are homophones?,Night / knight,Cat / cap,Sun / moon,Big / large,Words,2
+What does biology study?,Living things,Rocks,Stars,Numbers,Words,2
+"What does 'tri' mean, as in 'triangle'?",Three,Two,Four,Many,Words,2
+"What does 'bi' mean, as in 'bicycle'?",Two,One,Three,Wheel,Words,2
+"What does 'octo' mean, as in 'octopus'?",Eight,Six,Ten,Arms,Words,2
+What is more than one tooth?,Teeth,Tooths,Toothes,Teeths,Words,2
+What is the past tense of 'sing'?,Sang,Singed,Singing,Songed,Words,2
+What is the past tense of 'go'?,Went,Goed,Goes,Going,Words,2
+A word that means the opposite of another is a...,Antonym,Synonym,Homophone,Pronoun,Words,2
+What is the short form of 'as soon as possible'?,ASAP,ASP,AASP,SAP,Words,2
+What punctuation mark ends a question?,Question mark,Full stop,Comma,Apostrophe,Words,2
+Which word is a pronoun?,She,Song,Sing,Sweet,Words,2
+What does 'ecstatic' mean?,Very happy,Very sad,Very tired,Very angry,Words,2
+What does 'enormous' mean?,Very big,Very small,Very old,Very fast,Words,2
+Which word means the same as 'begin'?,Start,Finish,Stop,Pause,Words,2

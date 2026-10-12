@@ -281,8 +281,56 @@
     window.addEventListener("pagehide", () => push(true));
   }
 
+  /* ---------- practice time and where players stop (13 Oct 2026) ----------
+     Practice minutes: every finished round carries secs, how long this page was open AND on screen since the last finished
+     round (or since it opened), capped per game so a page left open on the bench doesn't count. Where players stop: a few
+     plain events go to the portal's "Game Events" tab: "open" (a page opened), "mic-ok" / "mic-blocked" (the microphone
+     question), "left" (the page closed before a round was finished, with how long it was open). Only for a named player with
+     tracking on. Never any sound, never what was played. */
+  const PAGE = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index";
+  const CAPS = { chords: 40, "boss-battle": 150, "tuning-race": 300, "note-quiz": 300 };      // the most one round can count, in seconds (others 240)
+  let shownAt = document.visibilityState === "visible" ? performance.now() : null, banked = 0, rounds = 0, opened = performance.now();
+  const onScreen = () => banked + (shownAt !== null ? performance.now() - shownAt : 0);
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "hidden"){ if(shownAt !== null){ banked += performance.now() - shownAt; shownAt = null; } }
+    else if(shownAt === null) shownAt = performance.now();
+  });
+  function takeSecs(game){
+    const s = onScreen() / 1000; banked = 0; shownAt = document.visibilityState === "visible" ? performance.now() : null;
+    return Math.round(Math.min(s, CAPS[game] || 240));
+  }
+  const evq = []; let evTimer = null;
+  function flushEvents(closing){
+    const p = prof(); if(!ON || !p || !evq.length) return;
+    const body = JSON.stringify({ action: "event", token: p.token, ev: evq.splice(0, 20) });
+    try{ fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body, keepalive: !!closing }).catch(() => {}); }catch(e){}
+  }
+  function event(name, extra){
+    if(!ON || !prof()) return;
+    evq.push(Object.assign({ e: name, page: PAGE, at: Date.now() }, extra || {}));
+    clearTimeout(evTimer); evTimer = setTimeout(flushEvents, 1500);
+  }
+  if(ON){
+    event("open");
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){      // the microphone question, answered once per page
+      const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); let asked = false;
+      navigator.mediaDevices.getUserMedia = c => gum(c).then(st => { if(!asked){ asked = true; event("mic-ok"); } return st; },
+        e => { if(!asked){ asked = true; event("mic-blocked", { why: e && e.name || "" }); } throw e; });
+    }
+    window.addEventListener("pagehide", () => {
+      if(!rounds && PAGE !== "index") event("left", { secs: Math.round((performance.now() - opened) / 1000) });
+      flushEvents(true);
+    });
+  }
+
   window.FMAStudent = {
     active: () => ON && !!prof(),
+    event,
+    // the studio's practice challenge this week (minutes so far, the goal, the prize), or null when tracking is off
+    async challenge(){
+      if(!ON) return null;
+      try{ const p = prof(), r = await post({ action: "challenge", token: p ? p.token : "" }); return r.ok ? r : null; }catch(e){ return null; }
+    },
     // Fill el with who's playing and buttons to switch between this device's players. Empty when tracking is off.
     async mount(el){
       el.textContent = "";
@@ -317,6 +365,7 @@
     // Called after every finished round. Picks (fma-picks.js) are earned on this device whether or not tracking is on.
     // Returns true if the round was saved, false if tracking is off, nobody is playing, or the save failed.
     async send(game, data){
+      data = Object.assign({}, data, { secs: takeSecs(game) }); rounds++;
       try{ if(window.FMAPicks) FMAPicks.round(game, data); }catch(e){}
       const p = prof();
       if(!ON || !p) return false;

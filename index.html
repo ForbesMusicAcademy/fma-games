@@ -158,6 +158,17 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
 .hello .btns{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px}
 .hello .btns button{min-height:52px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:18px}
 .hello .btns button.go{background:var(--accent);min-height:58px;font-size:20px}
+.studio{background:linear-gradient(135deg,#FFF6DB,#fff 70%);border:1px solid var(--line);border-radius:22px;padding:14px 16px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.st-top{display:flex;align-items:center;gap:12px}
+.st-emo{font-size:34px;line-height:1}
+.st-top b{display:block;font-family:var(--head);font-weight:900;font-size:20px;line-height:1.15}
+.st-top span{color:var(--muted);font-size:14px}
+.st-bar{height:16px;border-radius:9px;background:var(--line);overflow:hidden;margin:12px 0 4px}
+.st-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#FFC93C,#FFB805);border-radius:9px;transition:width .8s ease-out}
+.st-nums{display:flex;justify-content:space-between;font-family:var(--head);font-weight:900;font-size:15px}
+.st-nums span:last-child{color:var(--muted)}
+.st-prize{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.studio.done .st-bar i{background:linear-gradient(90deg,#5fae6f,#3E7D4C)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -205,7 +216,14 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
     <div><b>Tune up first?</b><span>A guitar in tune makes every game work better. It only takes a minute.</span>
       <div class="tfrow"><a class="go fma-go small play" href="tuner.html?first">Tune up</a><button id="tuneSkip" type="button">Skip for today</button></div></div>
   </section>
-  <p class="lead">Play on your phone, tablet or computer. Your device listens to your <span class="inst">guitar</span> through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores are saved to your progress so your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
+  <!-- the studio challenge: everyone's practice minutes this week added together (no names), towards one shared goal -->
+  <section class="studio" id="studio" hidden>
+    <div class="st-top"><span class="st-emo">🎸</span><div><b id="stTitle">Studio challenge</b><span id="stSub"></span></div></div>
+    <div class="st-bar"><i id="stBar"></i></div>
+    <div class="st-nums"><span id="stNow"></span><span id="stGoal"></span></div>
+    <p class="st-prize" id="stPrize"></p>
+  </section>
+  <p class="lead">Play on your phone, tablet or computer. Your device listens to your <span class="inst">guitar</span> through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores, practice time and which games you open are saved to your progress so you and your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <div id="midiSlot"></div>
   <!-- Wave 1 menu (12 Oct 2026, projects/games-slow-release-plan.md): Adventure and Note Quiz are held back (their pages
        still exist, they're just not on the menu). Wave 2 (13 Oct): Boss Battle is back, for guitar and piano, and Chord Quest
@@ -219,7 +237,7 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
   <small class="foot">Forbes Music Academy</small>
 </main>
 
-<script src="fma-student.js?v=6"></script>
+<script src="fma-student.js?v=8"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=10"></script>
@@ -419,6 +437,19 @@ function hello(){
 drawInstrument();
 drawTuneFirst();
 BossArt($("menuBoss"), { kind: "amp" });
+/* ---------- the studio challenge (practice-games-framework: a shared team goal, weekly, no names, nothing lost) ---------- */
+if(window.FMAStudent && FMAStudent.challenge) FMAStudent.challenge().then(c => {
+  if(!c || !c.goal) return;
+  const n = x => Math.round(x).toLocaleString("en-AU"), pct = Math.min(100, 100 * c.minutes / c.goal), done = c.minutes >= c.goal;
+  $("studio").hidden = false; $("studio").classList.toggle("done", done);
+  $("stTitle").textContent = c.title || "Studio challenge";
+  $("stSub").textContent = done ? "We did it! The whole studio hit the goal this week." : "Every minute anyone practises this week counts.";
+  $("stNow").textContent = n(c.minutes) + " minutes"; $("stGoal").textContent = "goal " + n(c.goal);
+  setTimeout(() => { $("stBar").style.width = pct + "%"; }, 200);
+  $("stPrize").textContent = c.prize ? (done ? "Prize: " : "If we make it: ") + c.prize + (c.mine ? ` You've added ${n(c.mine)} minute${Math.round(c.mine) === 1 ? "" : "s"}.` : "") : "";
+  // everyone who practised that week gets the picks once the studio makes it
+  if(done && c.mine > 0 && c.picks && window.FMAPicks) FMAPicks.milestone("studio:" + c.week, c.picks, "the studio challenge");
+});
 if(!fmaInstrument.get()) askInstrument();
 else if(!touched() && location.hash !== "#character") hello();
 if(location.hash === "#character") openEditor();
