@@ -29,7 +29,7 @@
     shoes: ["sneakers", "hightops"],
     neck: ["none", "scarf"],
     extra: ["none", "backpack"],
-    acc: ["none", "cap", "beanie", "bow"],
+    acc: ["none", "cap", "fmacap", "beanie", "bow"],
     gear: ["none", "acoustic", "guitar"]
   };
   // what everything else costs: the more of a novelty, the more picks (hair colours are never locked). Anything new that
@@ -96,19 +96,21 @@
   const values = part => (options()[LISTS[part]] || []).map(o => Array.isArray(o) ? o[0] : o);
   const id = (part, v) => part + ":" + v;
 
+  // Adventure is off the menu for now (Wave 1). Set to true when it comes back and its gear returns.
+  const ADVENTURE_LIVE = false;
+  // while it's off, anyone in the old free hard hat gets the FMA cap instead
+  const SWAP = { acc: { hardhat: "fmacap" } };
   const questItem = (part, v) => ADVENTURE.find(a => a.part === part && a.value === v);
   const packItem = (part, v) => PACK_ONLY.find(a => a.part === part && a.value === v);
   function price(part, v){
     if(questItem(part, v) || packItem(part, v) || !OPEN[part] || OPEN[part].includes(v)) return 0;
     return (PRICES[part] || {})[v] || 60;
   }
-  const isOpen = (part, v, w) => { const q = questItem(part, v); if(q) return adventureOwned().has(q.id);
+  const isOpen = (part, v, w) => { const q = questItem(part, v); if(q) return ADVENTURE_LIVE && adventureOwned().has(q.id);
     if(packItem(part, v)) return (w || load()).unlocked.includes(id(part, v));
     return price(part, v) === 0 || (w || load()).unlocked.includes(id(part, v)); };
-  // Adventure is off the menu for now (Wave 1), so its gear is hidden from the editor unless you've already got it.
-  // Set to true when Adventure comes back.
-  const ADVENTURE_LIVE = false;
-  const hidden = (part, v) => !ADVENTURE_LIVE && !!questItem(part, v) && !isOpen(part, v);
+  // Adventure gear is hidden from the editor (and taken off anyone wearing it) while Adventure is off the menu
+  const hidden = (part, v) => !ADVENTURE_LIVE && !!questItem(part, v);
   // why something is locked: { price } to buy with picks, or { quest } found in Adventure; null when it's open
   const lockOf = (part, v) => { if(isOpen(part, v)) return null; const q = questItem(part, v); if(q) return { quest: q };
     const pk = packItem(part, v); return pk ? { pack: pk.pack } : { price: price(part, v) }; };
@@ -119,7 +121,8 @@
     Object.keys(OPEN).forEach(part => {
       if(c[part] === undefined || isOpen(part, c[part], w)) return;
       const open = values(part).filter(v => isOpen(part, v, w));
-      c[part] = random ? open[Math.floor(Math.random() * open.length)] : OPEN[part][0];
+      const swap = (SWAP[part] || {})[c[part]];
+      c[part] = swap && !random ? swap : random ? open[Math.floor(Math.random() * open.length)] : OPEN[part][0];
       changed = true;
     });
     return { cfg: c, changed };

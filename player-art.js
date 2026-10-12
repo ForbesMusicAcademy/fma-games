@@ -52,7 +52,7 @@
       ["leggings", "Leggings"], ["flares", "Flares"], ["stage", "Stripe pants"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
     shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"], ["skate", "Skate shoes"], ["lightup", "Light-up sneakers"], ["spark", "Spark high-tops"]],
     neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"], ["bandana", "Bandana"], ["laminate", "AAA laminate"], ["glowchain", "Glow necklace"], ["pickpendant", "Pick pendant"]],
-    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"], ["pumpkin", "Pumpkin hat"]],
+    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["fmacap", "FMA cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"], ["pumpkin", "Pumpkin hat"]],
     // "guitar" is the Strat (older saves called it just "Guitar")
     gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"], ["glitter", "Glitter"], ["lightning", "Thunderbolt"]],
     extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"], ["towel", "Roadie towel"], ["cablecoil", "Patch cable"]],
@@ -121,9 +121,9 @@
   // hats that cover the crown: the lower edge of each hat (head units, before the hat's lift). All hair above that edge is hidden,
   // right across, so nothing sticks up out of the crown or puffs out over the sides; hair below the edge (fringes, curls round
   // the ears, long hair) still shows, the way hair comes out from under a hat. (Oct 2026: puffs and spikes used to poke through.)
-  const HAT_BASE = { pumpkin: -0.46, beanie: -0.12, cap: -0.2, sidecap: -0.2, bucket: -0.1, santa: -0.12, elf: -0.14, pirate: -0.22, hardhat: -0.24, skatehelmet: -0.22 };
-  const HAT_HALF = { pumpkin: 1.16, beanie: 1.16, cap: 1.1, sidecap: 1.1, bucket: 1.34, santa: 1.18, elf: 1.16, pirate: 1.4, hardhat: 1.32, skatehelmet: 1.16 };     // half the hat's width at that edge
-  const HAT_LIFT = ["pumpkin", "beanie", "cap", "sidecap", "visor", "bucket", "santa", "elf", "pirate", "band"];
+  const HAT_BASE = { pumpkin: -0.46, beanie: -0.12, cap: -0.2, fmacap: -0.2, sidecap: -0.2, bucket: -0.1, santa: -0.12, elf: -0.14, pirate: -0.22, hardhat: -0.24, skatehelmet: -0.22 };
+  const HAT_HALF = { pumpkin: 1.16, beanie: 1.16, cap: 1.1, fmacap: 1.1, sidecap: 1.1, bucket: 1.34, santa: 1.18, elf: 1.16, pirate: 1.4, hardhat: 1.32, skatehelmet: 1.16 };     // half the hat's width at that edge
+  const HAT_LIFT = ["pumpkin", "beanie", "cap", "fmacap", "sidecap", "visor", "bucket", "santa", "elf", "pirate", "band"];
   const SKULL = "M-0.97 -0.12 C-1.0 -0.72 -0.58 -1.0 0 -1.0 C0.58 -1.0 1.0 -0.72 0.97 -0.12 C0.8 -0.42 0.48 -0.56 0 -0.56 C-0.48 -0.56 -0.8 -0.42 -0.97 -0.12Z";
   function hairSvg(style, color, g, hat){
     const h = hairShapes(style, color, g), base = HAT_BASE[hat];
@@ -313,6 +313,12 @@
       case "party": return U(`<g transform="rotate(10)"><path d="M-0.62 -0.86 L0.1 -2.0 L0.66 -0.8 Q0 -0.55 -0.62 -0.86Z" fill="${c}"/><path d="M-0.4 -1.14 Q0.05 -0.98 0.45 -1.12 M-0.2 -1.5 Q0.1 -1.4 0.3 -1.5" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${W(5)}"/><circle cx="0.1" cy="-2.02" r="0.16" fill="#ffc42b"/></g>`);
       case "beanie": return U(`<path d="${dome(-1.5, -0.3)}" fill="${c}"/><rect x="-1.16" y="-0.58" width="2.32" height="0.46" rx="0.16" fill="${c}"/><path d="M-0.84 -0.54 V-0.16 M-0.56 -0.54 V-0.16 M-0.28 -0.54 V-0.16 M0 -0.54 V-0.16 M0.28 -0.54 V-0.16 M0.56 -0.54 V-0.16 M0.84 -0.54 V-0.16" fill="none" stroke-opacity=".28" stroke-width="${W(3)}"/><circle cx="0" cy="-1.58" r="0.24" fill="#fff"/>`);
       case "cap": return U(`<path d="${dome(-1.38, -0.16)}" fill="${c}"/><path d="M0 -1.34 V-0.2" fill="none" stroke-opacity=".25" stroke-width="${W(3)}"/><circle cx="0" cy="-1.38" r="0.07" fill="${dk}"/><path d="M-0.98 -0.2 C-0.5 0.16 0.5 0.16 0.98 -0.2 C0.5 -0.4 -0.5 -0.4 -0.98 -0.2Z" fill="${dk}"/>`);
+      // the academy's own cap: chunky FMA letters on the front in the logo's colours (mustard F, white M, pink A), outlined in black
+      case "fmacap": { const L = "M-0.5 -0.6 V-1.0 H-0.26 M-0.5 -0.81 H-0.3 M-0.16 -0.6 V-1.0 L-0.01 -0.8 L0.14 -1.0 V-0.6 M0.24 -0.6 L0.38 -1.0 L0.52 -0.6 M0.3 -0.74 H0.46";
+        const one = (d, col) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${W(6)}"/>`;
+        return U(`<path d="${dome(-1.38, -0.16)}" fill="${c}"/><circle cx="0" cy="-1.38" r="0.07" fill="${dk}"/>`
+          + `<path d="${L}" fill="none" stroke-width="${W(14)}"/>` + one("M-0.5 -0.6 V-1.0 H-0.26 M-0.5 -0.81 H-0.3", "#f5a800") + one("M-0.16 -0.6 V-1.0 L-0.01 -0.8 L0.14 -1.0 V-0.6", "#fff") + one("M0.24 -0.6 L0.38 -1.0 L0.52 -0.6 M0.3 -0.74 H0.46", "#d94aa6")
+          + `<path d="M-0.98 -0.2 C-0.5 0.16 0.5 0.16 0.98 -0.2 C0.5 -0.4 -0.5 -0.4 -0.98 -0.2Z" fill="${dk}"/>`); }
       // worn sideways: the brim sticks out over one ear
       case "sidecap": return U(`<path d="${dome(-1.38, -0.16)}" fill="${c}"/><path d="M0.2 -1.34 Q0.5 -0.8 0.6 -0.2" fill="none" stroke-opacity=".25" stroke-width="${W(3)}"/><circle cx="0" cy="-1.38" r="0.07" fill="${dk}"/><path d="M0.82 -0.44 C1.22 -0.66 1.74 -0.5 1.76 -0.26 C1.56 -0.1 1.12 -0.12 0.9 -0.18Z" fill="${dk}"/>`);
       case "visor": return U(`<path d="M-1.06 -0.44 Q0 -0.86 1.06 -0.44 L1.06 -0.18 Q0 -0.6 -1.06 -0.18Z" fill="${c}"/><path d="M-0.86 -0.4 C-1.26 -0.64 -1.78 -0.48 -1.8 -0.24 C-1.6 -0.08 -1.14 -0.1 -0.92 -0.16Z" fill="${dk}"/>`);
