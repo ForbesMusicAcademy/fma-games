@@ -157,7 +157,7 @@
   }
 
   function chordMatch(chord, opts){
-    const o = Object.assign({ thr: 0.40, strays: 0, need: 3 }, opts || {});
+    const o = Object.assign({ thr: 0.25, strays: 0, need: 3 }, opts || {});   // 25% (was 40%, 13 Oct 2026): phone mics hear quiet low strings weakly
     const latched = new Array(12).fill(false), onFor = new Array(12).fill(0);
     let run = 0, heard = 0;
     return {
