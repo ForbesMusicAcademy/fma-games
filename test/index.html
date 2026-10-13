@@ -447,7 +447,7 @@ if(window.FMAStudent && FMAStudent.challenge) FMAStudent.challenge().then(c => {
   $("stSub").textContent = done ? "We did it! The whole studio hit the goal this week." : "Every minute anyone practises this week counts.";
   $("stNow").textContent = n(c.minutes) + " minutes"; $("stGoal").textContent = "goal " + n(c.goal);
   setTimeout(() => { $("stBar").style.width = pct + "%"; }, 200);
-  $("stPrize").textContent = c.prize ? (done ? "Prize: " : "If we make it: ") + c.prize + (c.mine ? ` You've added ${n(c.mine)} minute${Math.round(c.mine) === 1 ? "" : "s"}.` : "") : "";
+  $("stPrize").textContent = c.prize ? (done ? "Prize: " : "If we make it: ") + c.prize + (/[.!?]$/.test(c.prize) ? "" : ".") + (c.mine ? ` You've added ${n(c.mine)} minute${Math.round(c.mine) === 1 ? "" : "s"}.` : "") : "";
   // everyone who practised that week gets the picks once the studio makes it
   if(done && c.mine > 0 && c.picks && window.FMAPicks) FMAPicks.milestone("studio:" + c.week, c.picks, "the studio challenge");
 });
