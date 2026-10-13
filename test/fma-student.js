@@ -66,10 +66,13 @@
   const post = body => fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) }).then(r => r.json());
   async function names(){
     for(const p of S.profiles.slice()){
-      if(p.name) continue;
+      if(p.name && p.pt) continue;
       try{
         const r = await post({ action: "whoami", token: p.token });
         if(r.ok) p.name = r.firstName;
+        // a device that saved the student's PortalToken (the parents' Snapshot key) swaps it for their practice token: the
+        // games and "My practice" only need that, and it can't open the Snapshot (prices, payments, parent details)
+        if(r.ok && r.practiceToken){ if(r.practiceToken !== p.token){ if(S.active === p.token) S.active = r.practiceToken; p.token = r.practiceToken; } p.pt = 1; }
         else if(r.error === "bad-token"){ S.profiles = S.profiles.filter(x => x !== p); if(S.active === p.token) S.active = null; }
       }catch(e){}
     }
@@ -326,6 +329,8 @@
   window.FMAStudent = {
     active: () => ON && !!prof(),
     event,
+    // the player's own "My practice" page in the portal (practice token only), or "" when nobody's playing / tracking is off
+    practiceUrl(){ const p = prof(); return ON && p && p.pt ? ENDPOINT + "?p=" + encodeURIComponent(p.token) : ""; },
     // the studio's practice challenge this week (minutes so far, the goal, the prize), or null when tracking is off
     async challenge(){
       if(!ON) return null;

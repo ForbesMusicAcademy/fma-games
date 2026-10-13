@@ -185,6 +185,7 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
         <div class="wallet" id="ywallet"></div>
         <button id="yedit" class="fma-go small">Customise</button>
         <div id="playingAs" style="font-size:14px;color:var(--muted);margin-top:8px;text-align:center"></div>
+        <a id="myPractice" class="ghost" hidden style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;margin-top:8px;text-decoration:none;font-size:15px" target="_blank" rel="noopener">📈 My practice</a>
       </div>
       <div class="yeditor" id="yeditor" hidden>
         <div class="ecols">
@@ -237,7 +238,7 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
   <small class="foot">Forbes Music Academy</small>
 </main>
 
-<script src="fma-student.js?v=8"></script>
+<script src="fma-student.js?v=9"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=11"></script>
@@ -387,7 +388,7 @@ function showOff(now){
 }
 setInterval(() => showOff(false), 5500);
 drawYou(true);
-FMAStudent.mount($("playingAs"));
+FMAStudent.mount($("playingAs")).then(() => { const u = FMAStudent.practiceUrl && FMAStudent.practiceUrl(); if(u){ $("myPractice").href = u; $("myPractice").hidden = false; } });
 if(window.FMAMidi) FMAMidi.mount($("midiSlot"));      // "Got a keyboard?": connecting here covers every game
 
 /* ---------- guitar or piano: asked once (saved with the player's progress), changed from the corner button ---------- */
