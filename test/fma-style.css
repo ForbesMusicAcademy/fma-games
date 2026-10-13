@@ -37,24 +37,3 @@ body.fma-flat .fma-band{margin:0 0 14px}
 /* supporting info: level tags, notes, "how it works" */
 .fma-info{background:var(--sky-bg);color:var(--sky-ink);border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px}
 @media (max-width:420px){ .fma-logo img{height:34px} .fma-band h1{font-size:19px} .fma-back{padding:5px 11px;font-size:14px} }
-
-/* ---------- Buttons (Wave 2, 13 Oct 2026) ----------
-   (border, shape, colour and font are !important: several pages style their own buttons more specifically than this file can) 
-   Every game's main button (.big, or .fma-go on anything else) is the same mustard pill: no ink outline, a darker mustard
-   lip underneath that presses down when tapped, Nunito 900. Add .play to a button that starts a game for the round play
-   icon. .ghost is the quiet second choice beside it. These win over any page's own .big / .ghost rules, so the whole site
-   matches without editing each page's styles. */
-body.fma .big,body.fma .fma-go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;padding:0 22px;
-  border:0!important;border-radius:999px!important;background:linear-gradient(180deg,#FFCB45 0%,var(--mustard) 60%)!important;color:var(--ink)!important;text-decoration:none;
-  font-family:var(--font-display)!important;font-weight:900!important;font-size:20px;line-height:1.1;letter-spacing:.005em;text-align:center;cursor:pointer;
-  box-shadow:0 5px 0 var(--mustard-dark),0 14px 24px -14px rgba(150,100,0,.7);transition:transform .08s ease,box-shadow .08s ease,filter .15s}
-body.fma .big:hover,body.fma .fma-go:hover{filter:brightness(1.04)}
-body.fma .big:active,body.fma .fma-go:active{transform:translateY(4px);box-shadow:0 1px 0 var(--mustard-dark),0 6px 12px -10px rgba(150,100,0,.7)}
-body.fma .big:disabled,body.fma .fma-go:disabled{opacity:.5;cursor:default;transform:none}
-body.fma .big.play::before,body.fma .fma-go.play::before{content:"";flex:none;width:30px;height:30px;border-radius:50%;
-  background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M12 9.5v11l9-5.5z' fill='%23FFB805' stroke='%23FFB805' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
-body.fma .fma-go.small{min-height:46px;font-size:17px;padding:0 18px;box-shadow:0 4px 0 var(--mustard-dark),0 10px 18px -12px rgba(150,100,0,.7)}
-body.fma .ghost{border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);font-family:var(--font-body);font-weight:700;cursor:pointer;
-  transition:border-color .15s,background .15s}
-body.fma .ghost:hover{border-color:#D6CCB6;background:#FFFCF4}
-@media (prefers-reduced-motion:reduce){body.fma .big,body.fma .fma-go{transition:none}}
