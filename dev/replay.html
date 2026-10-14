@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <title>Listening Replay</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../fma-style.css?v=3">
+<link rel="stylesheet" href="../fma-style.css?v=5">
 <style>
 /* Runs the games' own listener (fma-listen.js, the same file every game loads) over clips made with dev/recorder.html,
    and reports what it heard: does each chord light up in Chord Quest / Boss Battle (and in root-note mode), does any
@@ -52,8 +52,8 @@ const Q = new URLSearchParams(location.search), INST = Q.get("inst") === "piano"
 window.fmaInstrument = { get: () => INST, set(){}, word: () => INST };       // the chord list follows this page's instrument
 window.fmaKey = k => k;
 </script>
-<script src="../test/fma-listen.js?v=2"></script>
-<script src="../test/fma-chords.js?v=4"></script>
+<script src="../test/fma-listen.js?v=9"></script>
+<script src="../test/fma-chords.js?v=6"></script>
 <script>
 const $ = id => document.getElementById(id);
 $("instName").textContent = INST;
@@ -77,7 +77,7 @@ async function render(clip, step, read, gateDb){
 async function roomGate(pack){
   const room = pack.clips.find(c => c.kind === "noise" && c.target === "room"); if(!room) return -50;
   const lv = (await render(room, 0.06, d => d.level(), -50)).sort((a, b) => a - b);
-  return Math.max(-75, Math.min(-38, lv[Math.floor(lv.length * 0.8)] + 9));
+  return Math.max(-75, Math.min(-30, lv[Math.floor(lv.length * 0.8)] + 3));      // the same as fma-listen.js calibrate()
 }
 const candidates = () => FMAChords.list.slice(0, 20);
 async function chordPass(clip, gate){
@@ -89,7 +89,7 @@ async function chordPass(clip, gate){
     res[c.name] = at;
   }
   let rootAt = {}, run = {};
-  frames.forEach((sc, i) => { const s = FMAListen.strongest(sc, 0.25); for(let pc = 0; pc < 12; pc++){ run[pc] = s === pc ? (run[pc] || 0) + 1 : 0; if(run[pc] >= 3 && rootAt[pc] === undefined) rootAt[pc] = (i + 1) * CHORD_STEP; } });
+  frames.forEach((sc, i) => { const s = FMAListen.strongest(sc, 0.18); for(let pc = 0; pc < 12; pc++){ run[pc] = s === pc ? (run[pc] || 0) + 1 : 0; if(run[pc] >= 3 && rootAt[pc] === undefined) rootAt[pc] = (i + 1) * CHORD_STEP; } });
   return { res, rootAt, musical: frames.filter(Boolean).length / Math.max(1, frames.length) };
 }
 async function notePass(clip, gate){
