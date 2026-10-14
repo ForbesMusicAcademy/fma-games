@@ -154,7 +154,9 @@
         // a phone mic barely hears a low string's own note, so its overtones (an octave, or an octave and a fifth, above) can
         // pass the test first: the low E reads as B. If 3 or 2 times this period fits clearly better, that's the real note.
         // (A real B's period fits about as well at 3 times, so it stays a B.) (14 Oct 2026)
-        if(d[t] > 0.03) for(const k of [3, 2]){
+        // (from 0.012 up, 14 Oct 2026: a piano's octave-and-a-fifth overtone is strong enough to fit almost cleanly, and the
+        // 0.03 floor let it through as G when C was played)
+        if(d[t] > 0.012) for(const k of [3, 2]){
           const c0 = Math.round(k * t); if(c0 + 3 >= tMax) continue;
           let bt = c0; for(let u = c0 - 3; u <= c0 + 3; u++) if(d[u] < d[bt]) bt = u;
           if(d[bt] < 0.5 * d[t]){ t = bt; break; }
@@ -167,11 +169,16 @@
     return det;
   }
 
+  // The one note being played. Each note gets credit for its own overtones (a fifth and a third above), so when C's
+  // overtone G rings louder than C itself (pianos, phone mics), C still wins; play a real G and G wins, since D and B are
+  // quiet (14 Oct 2026). It must clearly beat both neighbouring semitones.
   function strongest(sc, margin){
     if(!sc) return -1;
-    let b = 0; sc.forEach((v, i) => { if(v > sc[b]) b = i; });
-    const nb = Math.max(sc[(b + 1) % 12], sc[(b + 11) % 12]);
-    return sc[b] - nb >= (margin === undefined ? 0.25 : margin) ? b : -1;
+    const h = sc.map((v, i) => v + 0.6 * sc[(i + 7) % 12] + 0.25 * sc[(i + 4) % 12]);
+    let b = 0; h.forEach((v, i) => { if(v > h[b]) b = i; });
+    if(sc[b] < 0.15) return -1;                                   // its own note must actually be sounding
+    const nb = Math.max(h[(b + 1) % 12], h[(b + 11) % 12]);
+    return h[b] - nb >= (margin === undefined ? 0.25 : margin) ? b : -1;
   }
 
   function chordMatch(chord, opts){
