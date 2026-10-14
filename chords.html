@@ -131,6 +131,10 @@ body.piano #chord{font-size:clamp(64px,20vw,120px)}
 body.piano .tips .gtr{display:none}
 .chordpop .in .d.keys{width:100%}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+.lens{display:flex;gap:8px;margin:4px 0 14px}
+.lens button{flex:1;min-height:46px;border-radius:999px;border:2px solid var(--line);background:#fff;font-family:var(--head);font-weight:900;font-size:17px;color:var(--fg)}
+.lens button[aria-pressed="true"]{border-color:var(--fg);background:#FFF6DB}
+#left{font-weight:800;color:var(--fg)}
 </style>
 </head>
 <body class="fma">
@@ -144,6 +148,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
         <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div class="qlbl">chords unlocked<small id="qSub">Every chord you learn opens up songs in Boss Battle.</small></div></div>
       </div>
       <div class="hint" id="qHint" hidden></div>
+      <div class="lens" id="lens" role="group" aria-label="How long to play"><button data-m="2">2 min</button><button data-m="5">5 min</button><button data-m="10">10 min</button></div>
       <button class="big play" id="start">Play Chord Quest</button>
       <p class="fine"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away.</p>
       <p id="err" style="color:var(--bad);font-weight:700;margin:0" hidden></p>
@@ -176,7 +181,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
       <div id="status">Play it!</div>
       <div id="timer"><i id="timerBar"></i></div>
       <div class="meter"><i id="lvl"></i></div>
-      <div class="sub"><span id="tune"></span><span id="today"></span></div>
+      <div class="sub"><span id="tune"></span><span id="today"></span><span id="left"></span></div>
       <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button><button class="ghost" id="toHome">🏆 Trophies</button></div>
       <div id="newSongs"></div>
     </div>
@@ -195,11 +200,11 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=3"></script>
+<script src="fma-listen.js?v=4"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=11"></script>
-<script src="fma-chords.js?v=4"></script>
+<script src="fma-chords.js?v=5"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -303,6 +308,28 @@ if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plu
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
 let buddy = null, streak = 0, paused = false, running = false;          // your character beside the Skip button, and chords in a row
+/* A session is 2, 5 or 10 minutes (Dave, 14 Oct 2026). The clock only runs while the game is on screen; when it runs out, the
+   chord being played finishes and the session ends with a summary. */
+const LENS_KEY = "fma-cq-minutes";
+let lens = 5; try{ lens = Number(localStorage.getItem(LENS_KEY)) || 5; }catch(e){}
+const sess = { left: 0, hits: 0, tries: 0, last: 0, on: false };
+function drawLens(){ $("lens").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", Number(b.dataset.m) === lens)); }
+$("lens").onclick = e => { const b = e.target.closest("button"); if(!b) return; lens = Number(b.dataset.m); try{ localStorage.setItem(LENS_KEY, lens); }catch(e){} drawLens(); };
+drawLens();
+function newSession(){ Object.assign(sess, { left: lens * 60000, hits: 0, tries: 0, last: performance.now(), on: true }); }
+function sessionTick(){
+  const now = performance.now(); if(sess.on && !paused) sess.left -= now - sess.last; sess.last = now;
+  const s = Math.max(0, Math.ceil(sess.left / 1000)); $("left").textContent = sess.on ? "⏱ " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : "";
+}
+function sessionDone(){
+  sess.on = false; paused = true; game.over = true; $("left").textContent = "";
+  const mins = lens, pct = sess.tries ? Math.round(100 * sess.hits / sess.tries) : 0;
+  $("popBox").innerHTML = `<span><b>Time's up!</b></span><p style="margin:6px 0 2px">${mins} minutes of chords: <b>${sess.hits}</b> right out of ${sess.tries}${sess.tries ? ` (${pct}%)` : ""}.</p>
+    <button class="big play" id="sAgain" style="margin-top:12px">Play again</button><button class="ghost" id="sHome" style="margin-top:8px;width:100%">🏆 Trophies</button>`;
+  $("pop").hidden = false; PlayerArt.popIn($("popBox"), sess.hits ? "win" : "done");
+  $("sAgain").onclick = () => { $("pop").hidden = true; newSession(); paused = false; game.begin(pickChord()); };
+  $("sHome").onclick = () => { $("pop").hidden = true; $("toHome").onclick(); };
+}
 const game = {
   idx: 0, match: null, started: 0, over: false, thr: 0.25, strays: 0,
   begin(idx){
@@ -322,6 +349,7 @@ const game = {
   },
   // Called about 11 times a second with the latest reading.
   step(){
+    sessionTick();
     if(this.over || paused) return;
     const db = det.level();
     $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
@@ -347,7 +375,7 @@ const game = {
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
     $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
-    streak = hit ? streak + 1 : 0;
+    streak = hit ? streak + 1 : 0; sess.tries++; if(hit) sess.hits++;
     if(!SELFTEST) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked, graduated:r.starsBefore === 0 && r.stars >= 1});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
     $("status").className = hit ? "ok" : "";
@@ -364,7 +392,7 @@ const game = {
         $("newSongs").innerHTML = `<a class="newsongs" href="boss.html?song=${ns.songs[0].id}">🎸 <span>New in Boss Battle: <b>${names}</b></span><span class="go">Play ›</span></a>`;
       }
     }
-    const next = () => { game.begin(pickChord()); };
+    const next = () => { if(sess.on && sess.left <= 0) sessionDone(); else game.begin(pickChord()); };
     if(queue.length){ setTimeout(() => popQueue(queue, next), 900); } else setTimeout(next, delay);
   }
 };
@@ -402,6 +430,8 @@ async function enterGame(){
   if(!running){ await calibrate(); running = true; setInterval(() => game.step(), 90); }
   else $("game").hidden = false;
   $("today").textContent = "";
+  if(!sess.on || sess.left <= 0) newSession();
+  sess.last = performance.now();
   game.begin(pickChord());
 }
 $("toHome").onclick = () => { paused = true; game.over = true; $("game").hidden = true; drawHome(); $("home").hidden = false; scrollTo(0, 0); };

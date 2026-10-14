@@ -176,8 +176,10 @@ body.piano #diag{width:100%;max-width:380px}
 .sim button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:800;user-select:none;touch-action:none}
 .sim button.on{background:var(--accent)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.meter{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin-top:12px}
-.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+
+.hpq{margin:12px 0;padding:14px;border-radius:16px;background:var(--sky-bg,#EAF4FA);color:var(--sky-ink,#1C3A4A);border:2px solid var(--sky,#8ECAE6)}
+.hpq b{font-family:var(--head);font-size:18px}.hpq p{margin:6px 0 12px}.hpq .ghost{width:100%;margin-top:10px;min-height:46px}
+#cal .meter{height:12px;border-radius:7px;margin-top:12px}
 </style>
 </head>
 <body class="fma">
@@ -211,6 +213,7 @@ body.piano #diag{width:100%;max-width:380px}
     <h3>What do you play?</h3><div class="chips" id="modes"></div>
     <h3>Backing</h3><div class="chips" id="backs"></div>
     <p class="tip" id="tip">Use headphones so the game doesn't hear its own drums.</p>
+    <div class="hpq" id="hpq" hidden><b id="hpqTitle"></b><p id="hpqText"></p><button class="big" id="hpqYes"></button><button class="ghost" id="hpqNo"></button></div>
     <button class="big play" id="go">Fight!</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
     <button class="ghost back" id="toMap">All bosses</button>
@@ -222,7 +225,7 @@ body.piano #diag{width:100%;max-width:380px}
         <div class="fighter" id="pf"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
         <div class="fighter" id="bf"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname" id="bname">Boss</div></div>
       </div>
-      <div class="combo" id="combo"><div class="lbl" id="cLbl">COMBO <b>0</b></div><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="tier" id="cTier">1 damage</div></div>
+      <div class="combo" id="combo"><div class="lbl" id="cLbl">COMBO <b>0</b></div><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="tier" id="cTier">3 in a row for a combo</div></div>
       <div class="call" id="call"></div>
       <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="ctones" id="tones"></div>
@@ -240,7 +243,7 @@ body.piano #diag{width:100%;max-width:380px}
     <h2 id="endTitle"></h2>
     <div class="bigstars" id="endStars"></div>
     <p class="goalnote" id="endGoal"></p>
-    <div class="rows"><div><b id="endHits">0</b>chords hit</div><div><b id="endStreak">0</b>best combo</div><div><b id="endDmg">0</b>damage</div></div>
+    <div class="rows"><div><b id="endHits">0</b>chords hit</div><div><b id="endStreak">0</b>best combo</div><div><b id="endDmg">0</b>landed</div></div>
     <div id="endBest"></div>
     <div class="btns"><button class="big play" id="again">Fight again</button><button class="ghost" id="nextSong" hidden></button><button class="ghost" id="other">All bosses</button></div>
   </section>
@@ -250,14 +253,14 @@ body.piano #diag{width:100%;max-width:380px}
 </div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=3"></script>
+<script src="fma-listen.js?v=4"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=11"></script>
-<script src="fma-chords.js?v=4"></script>
+<script src="fma-chords.js?v=5"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -279,26 +282,20 @@ const SONGS = FMABossSongs, L = n => { const c = FMAChords.forSong(n, openSet())
 const SPEEDS = [{k:"slow", n:"Slow", bpm:60}, {k:"med", n:"Medium", bpm:80}, {k:"fast", n:"Fast", bpm:100}];
 const MODES = [{k:"root", n:PIANO ? "One key" : "Root note", s:"Just the chord's name note"}, {k:"chord", n:"Whole chord", s:"Every note of the chord"}];
 const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"Metronome only"}];
-/* The rules, set once.
-   16 bars a song (whole loops). Chords in a row make a combo: hits do 1 damage, 3 in a row 3 damage, 6 in a row 5 damage.
-   Boss health is the classroom rig's own formula (bossHP in classroom.html) for a class of one: the average damage of 400
-   pretend players who land each chord 6 times in 10 (17 for 16 bars). With one player a single combo is the whole attack,
-   so a perfect run still beats the boss by about bar 7 (bigger health would make it unwinnable for an average player);
-   the encore is what keeps a strong player playing the whole song. You're knocked out on your KO_MISSES-th
-   miss. Once the boss is down the song plays on as an ENCORE: every hit still counts towards your damage, the score to beat
-   next time, so a strong player still practises the whole song. Nothing carries over between fights (framework: loss only
-   inside one round). */
-const BARS = 16, WIN_RATE = 0.6, KO_MISSES = 9, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
-const dmgOf = streak => streak >= 6 ? 5 : streak >= 3 ? 3 : 1;
-// the classroom's bossHP() with one player: seeded, so a song length always gives the same number
-function bossHP(T){
-  let seed = 7919 + T * 104729 + 1, sum = 0; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for(let r = 0; r < 400; r++){ let st = 0; for(let s = 0; s < T; s++){ if(rnd() < WIN_RATE){ st++; sum += dmgOf(st); } else st = 0; } }
-  return Math.max(1, Math.round(sum / 400));
-}
+/* The rules (Dave, 14 Oct 2026).
+   A fight is at least a minute of chords: the boss's health is the number of bars in 60 seconds at the chosen speed, and every
+   chord you land does 1 damage, so even a perfect player plays for a full minute. The song runs long enough that you can
+   still win landing WIN_RATE of the chords (60% at Slow, 70% at Medium, 80% at Fast); your hearts are the misses you can
+   afford on top of that. Miss one more and the boss wins. Combos are for glory (shouts, shakes, your best combo), not extra
+   damage, or a strong player would be done in 20 seconds. The fight ends the moment the boss falls: no encore, so no
+   practice time is counted after a win. Nothing carries over between fights (framework: loss only inside one round). */
+const FIGHT_SECS = 60, WIN_RATE = { slow: 0.6, med: 0.7, fast: 0.8 }, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
+const dmgOf = () => 1;
 const KEY = fmaKey(PIANO ? "fma-boss-piano-v1" : "fma-boss-v1");          // each player (and instrument) has their own stars and bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
-const S = Object.assign({ song:"em-g-stomp", speed:"slow", mode:"root", back:"drums" }, store.get().sel || {});
+const S = Object.assign({ song:"em-g-stomp", speed:"slow", mode:"root", back:"click" }, store.get().sel || {});
+// drums are off unless chosen (Dave, 14 Oct 2026): without headphones the game hears its own drums. Older saves start on click.
+if(!(store.get().sel || {}).drumsOk) S.back = "click";
 function saveSel(){ const st = store.get(); st.sel = S; store.set(st); }
 
 /* ---------- stars: 1 for beating the boss, 2 for beating it with whole chords, 3 for whole chords at Fast ---------- */
@@ -402,18 +399,19 @@ const barPos = () => (snd.ctx.currentTime - snd.t0) / barDur() - 1;       // <0 
 
 /* ---------- The fight ---------- */
 const G = { on:false, idx:-9, hit:false, hits:0, outcomes:[], run:0, latched:new Array(12).fill(false), onFor:new Array(12).fill(0), settle:0, rootRun:0, done:false,
-  chords:[], bars:BARS, misses:0, ko:false, bossHp:17, maxHp:17, streak:0, bestStreak:0, dmg:0, raged:false, gold:false, down:false };
+  chords:[], bars:16, spare:6, misses:0, ko:false, bossHp:15, maxHp:15, streak:0, bestStreak:0, dmg:0, raged:false, gold:false, down:false };
 let song, boss, art, pArt, me, lastTaunt = 0;
 function buildFight(){
   song = FMABoss.byId(S.song); boss = FMABoss.bossOf(song);
-  const loop = song.c.map(chordInfo), n = Math.max(BARS, Math.ceil(BARS / loop.length) * loop.length);
+  const loop = song.c.map(chordInfo), bpm = SPEEDS.find(x => x.k === S.speed).bpm;
+  const hp = Math.ceil(FIGHT_SECS / (4 * 60 / bpm)), n = Math.ceil(hp / WIN_RATE[S.speed]);     // Slow: 15 health, 25 bars
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
-  G.bars = n; G.maxHp = bossHP(n);
+  G.bars = n; G.maxHp = hp; G.spare = n - hp;
 }
 function setHp(){
-  const youPct = 100 * (1 - G.misses / KO_MISSES);
-  $("phpbar").style.width = Math.max(0, youPct) + "%"; $("phptxt").textContent = Math.max(0, KO_MISSES - G.misses) + " ♥"; $("phpw").classList.toggle("low", youPct <= 35);
-  $("hpbar").style.width = (100 * G.bossHp / G.maxHp) + "%"; $("hptxt").textContent = G.bossHp > 0 ? G.bossHp + " / " + G.maxHp : "DEFEATED! Encore!";
+  const left = Math.max(0, G.spare - G.misses), youPct = 100 * left / Math.max(1, G.spare);
+  $("phpbar").style.width = youPct + "%"; $("phptxt").textContent = left + " ♥"; $("phpw").classList.toggle("low", youPct <= 35);
+  $("hpbar").style.width = (100 * G.bossHp / G.maxHp) + "%"; $("hptxt").textContent = G.bossHp > 0 ? G.bossHp + " / " + G.maxHp : "DEFEATED!";
 }
 function floatNum(host, text, cls){ const d = document.createElement("div"); d.className = "dnum " + (cls || ""); d.textContent = text; host.appendChild(d); setTimeout(() => d.remove(), 1000); }
 function shout(text, cls){ const d = document.createElement("div"); d.className = "shout " + cls; d.textContent = text; $("stage").appendChild(d); setTimeout(() => d.remove(), 1100); }
@@ -422,7 +420,7 @@ function comboUI(pop){
   el.className = "combo " + (n >= 6 ? "c2" : n >= 3 ? "c1" : "");
   $("cLbl").innerHTML = `COMBO <b>${n}</b>`;
   [...$("pips").children].forEach((p, i) => p.className = i < Math.min(n, 6) ? (i >= 3 ? "on t2" : "on") : "");
-  $("cTier").textContent = n >= 6 ? "5 damage!" : n >= 3 ? "3 damage!" : `${3 - n} more for x3`;
+  $("cTier").textContent = n >= 6 ? "Super combo!" : n >= 3 ? "Combo!" : `${3 - n} more for a combo`;
   $("pf").classList.toggle("hot", n >= 3 && n < 6); $("pf").classList.toggle("super", n >= 6);
   if(pop){ el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
 }
@@ -463,10 +461,15 @@ function frame(){
   const bp = barPos(), beat = Math.floor(((bp + 1) % 1 + 1) % 1 * 4);
   [...$("beats").children].forEach((el, i) => el.className = i === beat ? "on" : "");
   if(bp < 0){ $("diag").innerHTML = ""; $("tones").innerHTML = ""; $("next").innerHTML = ""; $("call").textContent = "Get ready…"; $("chord").classList.remove("long"); $("chord").textContent = Math.min(4, Math.max(1, 1 + Math.floor((bp + 1) * 4))); return; }   // counts up with the clicks: 1 2 3 4
+  if(G.done) return;
   const idx = Math.floor(bp);
   if(idx >= G.bars){ return finish(); }
   if(idx !== G.idx){
     if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
+    // drums on and almost nothing heard in 6 bars: probably no headphones. Stop (not a loss) and ask.
+    if(G.idx === 5 && S.back === "drums" && !hpTrusted && !SIM && !PIANO_KEYS() && G.hits <= 1 && !G.done){
+      G.on = false; G.done = true; sndStop(); show("setup"); drawSetup(); askHeadphones("check"); return;
+    }
     if(G.done) return;
     G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx]); G.settle = performance.now() + 250;
     setChord(idx);
@@ -477,34 +480,32 @@ function frame(){
 function miss(){
   if(G.done) return;
   const lost = G.streak; G.streak = 0; G.misses++;
-  setHp(); pArt.hurt(); pArt.setDamage(G.misses / KO_MISSES); art.taunt();
+  setHp(); pArt.hurt(); pArt.setDamage(Math.min(1, G.misses / (G.spare + 1))); art.taunt();
   floatNum($("pimg"), "-1 ♥");
   comboUI(false);
   $("status").textContent = lost >= 3 ? "Combo dropped! Start a new one." : "Missed that one. Next chord!"; $("status").style.color = "var(--bad)";
   if(performance.now() - lastTaunt > 4000){ lastTaunt = performance.now(); say(pickLine(boss, "taunt"), 1500); }
-  if(G.down) $("status").textContent = "Encore! Keep going for a bigger score.";
-  if(G.misses >= KO_MISSES && !G.down){ G.done = true; G.ko = true; pArt.ko(); setTimeout(() => finish(), 1200); }
+  if(G.misses > G.spare && !G.down){ G.done = true; G.ko = true; pArt.ko(); sndStop(); setTimeout(() => finish(), 1200); }
 }
 function landHit(){
   G.hit = true; G.hits++; G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
   const d = dmgOf(G.streak); G.dmg += d;
   G.bossHp = Math.max(0, G.bossHp - d);
-  setHp(); if(!G.down){ art.setDamage(1 - G.bossHp / G.maxHp); art.hit(d >= 5 ? 3 : d >= 3 ? 2 : 1); }
+  setHp(); if(!G.down){ art.setDamage(1 - G.bossHp / G.maxHp); art.hit(G.streak >= 6 ? 3 : G.streak >= 3 ? 2 : 1); }
   pArt.pose([3, 6, 10].includes(G.streak) ? PlayerArt.MOMENTS.streak : PlayerArt.MOMENTS.hit, 1100); pArt.attack(1);
-  floatNum($("bimg"), "-" + d, d >= 5 ? "c2" : d >= 3 ? "c1" : "");
+  floatNum($("bimg"), "-" + d, G.streak >= 6 ? "c2" : G.streak >= 3 ? "c1" : "");
   comboUI(true);
   if(G.streak === 3) shout("COMBO!", "s1");
   else if(G.streak === 6){ shout("SUPER COMBO!", "s2"); $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
   else if(G.streak === 10 || G.streak === 16) shout(G.streak === 16 ? "PERFECT!" : "UNSTOPPABLE!", "s3");
-  else if(d >= 5){ $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
-  $("status").textContent = d > 1 ? `Hit! ${d} damage` : "Hit!"; $("status").style.color = "var(--good)";
+  $("status").textContent = G.streak >= 3 ? `Hit! ${G.streak} in a row` : "Hit!"; $("status").style.color = "var(--good)";
   if(!G.raged && G.bossHp > 0 && G.bossHp <= G.maxHp / 2){ G.raged = true; art.rage(); setTimeout(() => { if(!G.down) say(pickLine(boss, "rage"), 1700); }, 450); }
-  if(G.down) $("status").textContent = `Encore! ${G.dmg} damage`;
   if(G.bossHp <= 0 && !G.down){
-    G.down = true; art.die(); say(pickLine(boss, "lose"), 1600);
+    // boss down: the fight (and the practice clock) stops here
+    G.down = true; G.done = true; G.outcomes[G.idx] = true; sndStop(); art.die(); say(pickLine(boss, "lose"), 1600);
     setTimeout(() => { pArt.pose(PlayerArt.MOMENTS.win, 1500); pArt.cheer(); shout("BOSS DOWN!", "s1"); }, 500);
-    setTimeout(() => { if(G.on && G.idx < G.bars - 1) shout("ENCORE!", "s3"); }, 1800);
-    $("hptxt").textContent = "DEFEATED! Encore!";
+    $("hptxt").textContent = "DEFEATED!";
+    setTimeout(() => finish(), 2300);
   }
 }
 function tick(){
@@ -529,9 +530,10 @@ function finish(quit){
   G.on = false; sndStop();
   if(quit){ drawMap(); show("map"); return; }
   if(G.idx >= 0 && G.outcomes[G.idx] === undefined) G.outcomes[G.idx] = G.hit;
-  // the score to beat is damage (combos and the encore count), per song, speed and mode
-  const win = G.down, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.dmgBest || {})[key] || 0, isBest = G.dmg > best;
-  if(isBest){ st.dmgBest = st.dmgBest || {}; st.dmgBest[key] = G.dmg; }
+  // the score to beat is your best combo, per song, speed and mode
+  const win = G.down, st = store.get(), key = S.song + "-" + S.speed + "-" + S.mode, best = (st.comboBest || {})[key] || 0, isBest = G.bestStreak > best;
+  if(isBest){ st.comboBest = st.comboBest || {}; st.comboBest[key] = G.bestStreak; }
+  delete st.dmgBest;       // the old damage scores (before 14 Oct 2026, when damage stopped being the score)
   delete st.best;          // the old hits-per-song list (before damage became the score): dropped to keep the cloud save small
   const before = starsOf(song.id);
   if(win){
@@ -541,17 +543,19 @@ function finish(quit){
   store.set(st);
   const after = starsOf(song.id), name = (G.gold ? "the golden " : "") + FMABoss.name(boss);
   const endArt = BossArt($("endImg"), { kind:boss, gold:G.gold }); endArt.setDamage(1 - G.bossHp / G.maxHp); if(win) endArt.die(); else setTimeout(() => endArt.taunt(), 500);
-  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(G.misses / KO_MISSES); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest && G.dmg > 0 ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
-  if(!SIM) FMAStudent.send("boss-battle", {detail:song.t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest && G.dmg > 0, instrument:INST});
+  const endP = PlayerArt($("endPlayer"), me); endP.setDamage(Math.min(1, G.misses / (G.spare + 1))); if(G.ko) endP.ko(); else setTimeout(() => { endP.pose(win ? PlayerArt.MOMENTS.win : isBest ? PlayerArt.MOMENTS.best : PlayerArt.MOMENTS.done, 0); if(win) endP.cheer(); }, 300);
+  if(!SIM) FMAStudent.send("boss-battle", {detail:song.t, mode:S.mode, level:S.speed, score:G.hits, right:win ? 1 : 0, total:G.bars, improved:isBest, instrument:INST});
   if(win && G.gold && window.FMAPicks && FMAPicks.bonus) FMAPicks.bonus(GOLD_PICKS, "beating a golden boss");
-  $("endTitle").textContent = win ? (G.gold ? "Golden boss beaten!" : `You beat ${FMABoss.name(boss)}!`) : G.ko ? "You were knocked out!" : `${FMABoss.name(boss)} got away…`;
+  $("endTitle").textContent = win ? (G.gold ? "Golden boss beaten!" : `You beat ${FMABoss.name(boss)}!`) : `${FMABoss.name(boss)} won this time!`;
   $("endStars").innerHTML = [1, 2, 3].map(i => `<span class="${i <= after ? "got" : ""} ${i > before && i <= after ? "new" : ""}" style="animation-delay:${(i - before - 1) * 0.25}s">★</span>`).join("");
   const goals = GOALS(FMABoss.name(boss)), nextGoal = goals[after];
   $("endGoal").innerHTML = after > before ? `New star! ${after === 3 ? "All three stars for this song." : "Next star: " + esc(nextGoal[1].toLowerCase()) + "."}`
     : after < 3 ? `Next star: ${esc(nextGoal[1].toLowerCase())}.` : "All three stars. Can you set a new best combo?";
-  $("endHits").textContent = G.hits + " / " + G.bars; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = G.dmg;
+  const played = G.outcomes.filter(x => x !== undefined).length;
+  $("endHits").textContent = G.hits + " / " + played; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = Math.round(100 * G.hits / Math.max(1, played)) + "%";
   $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks for the golden boss!</span></p>` : "") +
-    (isBest && G.dmg > 0 ? `<p><span class="gold" style="background:var(--pick-bg)">New best: ${G.dmg} damage!</span></p>` : best ? `<p style="color:var(--muted)">Your best at this speed: ${best} damage</p>` : "");
+    (isBest && best ? `<p><span class="gold" style="background:var(--pick-bg)">New best combo: ${G.bestStreak} in a row!</span></p>` : best ? `<p style="color:var(--muted)">Your best combo at this speed: ${best} in a row</p>` : "") +
+    (!win ? `<p class="goalnote">To win at ${SPEEDS.find(x => x.k === S.speed).n} speed, land ${Math.round(100 * WIN_RATE[S.speed])}% of the chords. ${S.speed !== "slow" ? "Slow needs 60%." : "Every go makes it easier."}</p>` : "");
   const nx = nextSong();
   $("nextSong").hidden = !nx; if(nx) $("nextSong").textContent = `Next: ${nx.t} (vs ${FMABoss.name(FMABoss.bossOf(nx))})`;
   $("nextSong").onclick = () => { if(nx){ S.song = nx.id; saveSel(); openSetup(); } };
@@ -606,7 +610,26 @@ $("lairs").onclick = e => {
 /* ---------- Getting ready for one song ---------- */
 function chips(el, list, key, sub){
   $(el).innerHTML = list.map(o => `<button data-k="${o.k}" class="${S[key] === o.k ? "on" : ""}"><b>${o.n}</b><small>${sub(o)}</small></button>`).join("");
-  $(el).querySelectorAll("button").forEach(b => b.onclick = () => { S[key] = b.dataset.k; saveSel(); drawSetup(); });
+  $(el).querySelectorAll("button").forEach(b => b.onclick = () => {
+    if(key === "back" && b.dataset.k === "drums" && S.back !== "drums" && !PIANO_KEYS()) return askHeadphones("choose");
+    S[key] = b.dataset.k; saveSel(); drawSetup();
+  });
+}
+/* Drums need headphones, or the game hears its own drums instead of you (Dave, 14 Oct 2026). Choosing them asks first, and
+   if a drums fight hears almost nothing for its first 6 bars, it stops and asks again. A MIDI keyboard doesn't need asking. */
+const PIANO_KEYS = () => !!det.keysOnly;
+let hpTrusted = false;          // said "I'm wearing headphones" after a check: don't stop them again this visit
+function askHeadphones(why){
+  const box = $("hpq");
+  $("hpqTitle").textContent = why === "check" ? "We can't hear your chords" : "Drums need headphones";
+  $("hpqText").textContent = why === "check"
+    ? "Are you wearing headphones? Without them the game hears its own drums instead of your guitar, so your chords don't count."
+    : "Without headphones the game hears its own drums instead of you, and your chords won't count. Are you wearing headphones?";
+  $("hpqYes").textContent = why === "check" ? "I'm wearing headphones: fight again" : "Yes: drums on";
+  $("hpqNo").textContent = why === "check" ? "Turn the drums off and fight again" : "No: keep the click";
+  $("hpqYes").onclick = () => { box.hidden = true; S.back = "drums"; S.drumsOk = 1; saveSel(); drawSetup(); if(why === "check"){ hpTrusted = true; begin(); } };
+  $("hpqNo").onclick = () => { box.hidden = true; S.back = "click"; saveSel(); drawSetup(); if(why === "check") begin(); };
+  box.hidden = false; box.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 function openSetup(){ drawSetup(); show("setup"); }
 function drawSetup(){
@@ -615,7 +638,7 @@ function drawSetup(){
   const ba = BossArt($("suBoss"), { kind: b }); setTimeout(() => ba.taunt(), 500);
   const pa = PlayerArt($("suMe"), Player.get()); setTimeout(() => pa.pose(PlayerArt.MOMENTS.start, 1800), 300);
   $("goals").innerHTML = GOALS(FMABoss.name(b)).map(([k, t]) => `<li class="${w[k] ? "done" : ""}"><span class="s">★</span>${esc(t)}</li>`).join("");
-  chips("speeds", SPEEDS, "speed", o => o.bpm + " bpm");
+  chips("speeds", SPEEDS, "speed", o => Math.round(100 * WIN_RATE[o.k]) + "% to win");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
   $("tip").textContent = PIANO ? "Use headphones so the game doesn't hear its own drums." : "Use headphones so the game doesn't hear its own drums. Tune up first.";

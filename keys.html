@@ -78,6 +78,7 @@ h3.lvl{align-self:flex-start;display:inline-block;margin:10px 0 0;font-family:va
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;padding:0 6px}
+.spst{display:block;font-size:11px;line-height:1;color:#B07D00;letter-spacing:1px;margin-top:2px}.spst.nost{color:var(--muted);letter-spacing:0;font-weight:600}
 </style>
 </head>
 <body class="fma">
@@ -108,7 +109,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
     </div>
     <p id="hint"></p>
     <div class="row">
-      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn</button><button id="mPlay" aria-pressed="false">Play along</button></div>
+      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn<small class="spst nost">no stars</small></button><button id="mPlay" aria-pressed="false">Play along</button></div>
       <div class="seg" id="speeds" role="group" aria-label="Speed"></div>
     </div>
     <div class="row">
@@ -125,7 +126,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=3"></script>
+<script src="fma-listen.js?v=4"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=11"></script>
@@ -144,8 +145,8 @@ const q = new URLSearchParams(location.search), SIM = q.has("sim");
 const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
-const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Full", f: 1 }];
-const PLAY_PCT = 80, FULL_PCT = 90;
+const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
+const PLAY_PCT = 80;
 const PERFECT = 0.09, GOOD = 0.2;              // seconds either side of the beat
 const LEARN_F = 0.7;                           // Learn mode falls at 70% of the song's speed (then waits anyway)
 const FALL_SECS = 2.6;                         // how long a note takes to fall from the top to the keys
@@ -248,6 +249,7 @@ let notes = [], idx = 0, pos = -4, t0 = 0, spb = 0.6, countBeats = 4, countUnit 
 const lit = new Map();                          // midi on screen -> {until, cls}
 const pops = [];                                // little "Perfect!" words
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
+const SPEED_STARS = { slow: 1, med: 2, full: 3 };      // Play along at PLAY_PCT% or better wins that speed's star; Learn wins none (Dave, 14 Oct 2026)
 const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
 function resetRun(){
   hush(); clearTimeout(simT);
@@ -266,8 +268,8 @@ function hint(text){
   if (!cur) return;
   const r = rec(cur.id);
   $("hint").textContent = mode === "learn"
-    ? (r.stars ? "Learn it again, or try Play along for the next star." : "The notes wait for you. Finish the song for your first star.")
-    : r.stars >= 3 ? "Three stars! Play it again any time." : r.stars >= 2 ? `Get ${FULL_PCT}% at Full speed for the third star.` : `Get ${PLAY_PCT}% at any speed for the second star.`;
+    ? (r.stars ? "Learn it again, or try Play along for more stars." : "The notes wait for you. Learn mode is for practice: stars are won in Play along.")
+    : r.stars >= 3 ? "Three stars! Play it again any time." : `Get ${PLAY_PCT}% at ${["Slow", "Medium", "Fast"][r.stars]} speed for ${r.stars ? "star " + (r.stars + 1) : "your first star"}.`;
 }
 async function startRun(asDemo){
   $("err").hidden = true;
@@ -497,22 +499,20 @@ function finish(){
   if (mode === "learn") {
     pct = Math.round(100 * stats.first / Math.max(1, total));
     improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
-    r.stars = Math.max(r.stars, 1);
     html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
+      <h3>${pct >= 100 ? "Every note first time!" : "Song learnt!"}</h3>
       <p>${stats.first} of ${total} notes right first time.</p>
-      <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
+      <p>Stars are won in <b>Play along</b>: ${PLAY_PCT}% at Slow for one star, Medium for two, Fast for three.</p>
       <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
-    mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
+    mom = pct >= 100 ? "win" : improved ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
     const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
-    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, 2);
-    if (pct >= FULL_PCT && speed === "full") r.stars = 3;
-    r.stars = Math.max(r.stars, 1);
+    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, SPEED_STARS[speed] || 1);
     const sp = SPEEDS.find(s => s.k === speed).n;
-    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT && speed !== "full" ? `Now try <b>Full</b> speed: ${FULL_PCT}% there wins the third star.`
-      : pct >= PLAY_PCT ? `So close: ${FULL_PCT}% at Full speed wins the third star.` : `${PLAY_PCT}% wins the next star. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
+    const nextSp = ["Slow", "Medium", "Fast"][r.stars];
+    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT ? `Now try <b>${nextSp}</b>: ${PLAY_PCT}% there wins ${r.stars + 1} stars.`
+      : `${PLAY_PCT}% at ${sp} wins ${SPEED_STARS[speed] > r.stars ? (SPEED_STARS[speed] === 1 ? "a star" : SPEED_STARS[speed] + " stars") : "a new best"}. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
     html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
       <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
       <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
@@ -520,7 +520,7 @@ function finish(){
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
   const nextSong = SONGS[SONGS.indexOf(cur) + 1];
-  html += (nextSong && r.stars >= 2 && !FROM_PACK ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(nextSong.title)}</button>` : "")
+  html += (nextSong && !FROM_PACK ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(nextSong.title)}</button>` : "")
     + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">${FROM_PACK ? "Back to the pack" : "All songs"}</button>`;
   save(); drawList(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
   $("popBox").innerHTML = html; $("pop").hidden = false;
@@ -542,7 +542,7 @@ function setMode(m){
   $("backing").hidden = m === "learn";
   resetRun();
 }
-$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}</button>`).join("");
+$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}<small class="spst">${"★".repeat(SPEED_STARS[s.k])}</small></button>`).join("");
 $("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return; speed = b.dataset.k; O.speed = speed; saveOpts();
   $("speeds").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); resetRun(); };
 $("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");
