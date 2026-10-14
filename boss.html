@@ -253,7 +253,7 @@ body.piano #diag{width:100%;max-width:380px}
 </div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=6"></script>
+<script src="fma-listen.js?v=7"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -346,7 +346,7 @@ function readScores(){
   return sc;
 }
 // Root mode: the chord's root must be the clearly strongest note (it has to beat both neighbouring semitones by 25%).
-const strongest = sc => FMAListen.strongest(sc, 0.25);
+const strongest = sc => FMAListen.strongest(sc, 0.18);      // was 0.25 (14 Oct 2026)
 
 /* ---------- The beat: drums made on the device ---------- */
 const snd = { ctx:null, out:null, noise:null, next:0, beat:0, timer:null, t0:0, bpm:80, mode:"drums", bars:0 };

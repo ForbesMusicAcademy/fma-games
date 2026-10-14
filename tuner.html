@@ -127,7 +127,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=6"></script>
+<script src="fma-listen.js?v=7"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=12"></script>
@@ -301,7 +301,7 @@ async function calibrate(){
   const samples = [], t0 = performance.now();
   await new Promise(res => { const tick = () => { samples.push(pitch.level()); if(performance.now() - t0 >= 1200) res(); else setTimeout(tick, 60); }; tick(); });
   samples.sort((a, b) => a - b);
-  race.gate = Math.max(-70, Math.min(-42, samples[Math.floor(samples.length * 0.8)] + 9));
+  race.gate = Math.max(-72, Math.min(-48, samples[Math.floor(samples.length * 0.8)] + 5));      // was +9, max -42 (14 Oct 2026)
 }
 function showBest(){
   $("best").textContent = P.best ? "Your best so far: " + fmt(P.best) + (streak() ? "  ·  " + streak() + " day streak" : "") : "";
