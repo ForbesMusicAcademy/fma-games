@@ -258,8 +258,8 @@ body.piano #diag{width:100%;max-width:380px}
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
-<script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=11"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
 <script src="fma-chords.js?v=5"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
@@ -555,7 +555,7 @@ function finish(quit){
   $("endHits").textContent = G.hits + " / " + played; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = Math.round(100 * G.hits / Math.max(1, played)) + "%";
   $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks for the golden boss!</span></p>` : "") +
     (isBest && best ? `<p><span class="gold" style="background:var(--pick-bg)">New best combo: ${G.bestStreak} in a row!</span></p>` : best ? `<p style="color:var(--muted)">Your best combo at this speed: ${best} in a row</p>` : "") +
-    (!win ? `<p class="goalnote">To win at ${SPEEDS.find(x => x.k === S.speed).n} speed, land ${Math.round(100 * WIN_RATE[S.speed])}% of the chords. ${S.speed !== "slow" ? "Slow needs 60%." : "Every go makes it easier."}</p>` : "");
+    (!win ? `<p class="goalnote">To win at ${SPEEDS.find(x => x.k === S.speed).n} speed, land ${Math.round(100 * WIN_RATE[S.speed])}% of the chords. ${S.speed !== "slow" ? "Slow needs 60%." : "Practise the tricky chords in Chord Quest, then come back."}</p>` : "");
   const nx = nextSong();
   $("nextSong").hidden = !nx; if(nx) $("nextSong").textContent = `Next: ${nx.t} (vs ${FMABoss.name(FMABoss.bossOf(nx))})`;
   $("nextSong").onclick = () => { if(nx){ S.song = nx.id; saveSel(); openSetup(); } };

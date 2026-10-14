@@ -59,6 +59,10 @@ body.fma .yview button.fma-go{width:auto;min-height:42px;padding:0 18px;font-siz
 .epanel{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:2px 2px 48px}
 .ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
 .opt{position:relative;border:2px solid var(--line);background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;align-items:center;min-width:0}
+/* Legendary items (2000 picks and up): a gold frame and tag, locked or owned, so everyone can see they're special */
+.opt.legend{border-color:#ffc42b;background:linear-gradient(160deg,#fff8dc,#fff 60%);box-shadow:0 0 0 2px #fff3c4,0 6px 16px -8px rgba(176,125,0,.7)}
+.opt.legend.locked{background:linear-gradient(160deg,#f6ecd0,#f1ede4 60%)}
+.opt .lgd{position:absolute;left:5px;bottom:5px;background:linear-gradient(90deg,#ffc42b,#ffe37a);color:#26211f;border-radius:999px;padding:1px 8px;font:900 11px var(--head);letter-spacing:.04em;text-transform:uppercase}
 /* locked items (unlock with picks): greyed out, with their price on a tag */
 .opt.locked{background:#f1ede4}
 .opt.locked svg{filter:grayscale(1);opacity:.42}
@@ -159,14 +163,15 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
 .hello .btns{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px}
 .hello .btns button{min-height:52px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-weight:800;font-size:18px}
 .hello .btns button.go{background:var(--accent);min-height:58px;font-size:20px}
-.studio{background:linear-gradient(135deg,#FFF6DB,#fff 70%);border:1px solid var(--line);border-radius:22px;padding:14px 16px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.studio{background:linear-gradient(135deg,#FFE9A8,#FFF6DB 45%,#fff 90%);border:2px solid var(--mustard);border-radius:24px;padding:18px 18px 16px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
 .st-top{display:flex;align-items:center;gap:12px}
-.st-emo{font-size:34px;line-height:1}
-.st-top b{display:block;font-family:var(--head);font-weight:900;font-size:20px;line-height:1.15}
+.st-emo{font-size:46px;line-height:1}
+.st-top b{display:block;font-family:var(--head);font-weight:900;font-size:25px;line-height:1.1}
 .st-top span{color:var(--muted);font-size:14px}
-.st-bar{height:16px;border-radius:9px;background:var(--line);overflow:hidden;margin:12px 0 4px}
+.st-bar{height:22px;border-radius:12px;background:var(--line);overflow:hidden;margin:12px 0 4px}
 .st-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#FFC93C,#FFB805);border-radius:9px;transition:width .8s ease-out}
-.st-nums{display:flex;justify-content:space-between;font-family:var(--head);font-weight:900;font-size:15px}
+.st-nums{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--head);font-weight:900;font-size:22px}
+.st-nums small{font-size:15px;color:var(--muted)}
 .st-nums span:last-child{color:var(--muted)}
 .st-prize{margin:6px 0 0;font-size:14px;color:var(--muted)}
 .studio.done .st-bar i{background:linear-gradient(90deg,#5fae6f,#3E7D4C)}
@@ -218,9 +223,9 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
     <div><b>Tune up first?</b><span>A guitar in tune makes every game work better. It only takes a minute.</span>
       <div class="tfrow"><a class="go fma-go small play" href="tuner.html?first">Tune up</a><button id="tuneSkip" type="button">Skip for today</button></div></div>
   </section>
-  <!-- the studio challenge: everyone's practice minutes this week added together (no names), towards one shared goal -->
+  <!-- the Academy Challenge (was "studio challenge", renamed 14 Oct 2026): everyone's practice minutes this week added together (no names), towards one shared goal -->
   <section class="studio" id="studio" hidden>
-    <div class="st-top"><span class="st-emo">🎸</span><div><b id="stTitle">Studio challenge</b><span id="stSub"></span></div></div>
+    <div class="st-top"><span class="st-emo">🎸</span><div><b id="stTitle">Academy Challenge</b><span id="stSub"></span></div></div>
     <div class="st-bar"><i id="stBar"></i></div>
     <div class="st-nums"><span id="stNow"></span><span id="stGoal"></span></div>
     <p class="st-prize" id="stPrize"></p>
@@ -242,8 +247,8 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
 
 <script src="fma-student.js?v=9"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=11"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
 <script src="boss-anim.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -314,7 +319,8 @@ function drawPanel(){
         // gold when you can afford it, light grey when you can't yet; Adventure gear always shows a grey padlock
         const tag = !lk ? "" : lk.quest || lk.pack ? `<span class="lock quest">${PADLOCK}</span>`
           : lk.price <= have ? `<span class="lock">${FMAPicks.icon(16)}${lk.price}</span>` : `<span class="lock cant">${FMAPicks.icon(16, "#d6d0c4")}${lk.price}</span>`;
-        return `<button class="opt ${cfg[key] === v ? "on" : ""} ${lk ? "locked" : ""}" data-k="${key}" data-v="${v}" data-l="${label}" aria-label="${label}${!lk ? "" : lk.quest ? ", locked, found in Adventure" : lk.pack ? ", locked, won by finishing the " + lk.pack + " song pack" : ", locked, " + lk.price + " picks"}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}${tag}</button>`; }).join("") + `</div>`;
+        const legend = FMAPicks.LEGEND && FMAPicks.price(key, v) >= FMAPicks.LEGEND;
+        return `<button class="opt ${cfg[key] === v ? "on" : ""} ${lk ? "locked" : ""} ${legend ? "legend" : ""}" data-k="${key}" data-v="${v}" data-l="${label}" aria-label="${label}${!lk ? "" : lk.quest ? ", locked, found in Adventure" : lk.pack ? ", locked, won by finishing the " + lk.pack + " song pack" : ", locked, " + lk.price + " picks"}">${thumb(key, v, view)}${named ? `<span>${label}</span>` : ""}${tag}${legend ? `<span class="lgd">Legendary</span>` : ""}</button>`; }).join("") + `</div>`;
     }
     const [, label, key, colours] = sec;
     const sortedC = colours.filter(c => FMAPicks.isOpen(key, c)).concat(colours.filter(c => !FMAPicks.isOpen(key, c)));
@@ -445,13 +451,14 @@ if(window.FMAStudent && FMAStudent.challenge) FMAStudent.challenge().then(c => {
   if(!c || !c.goal) return;
   const n = x => Math.round(x).toLocaleString("en-AU"), pct = Math.min(100, 100 * c.minutes / c.goal), done = c.minutes >= c.goal;
   $("studio").hidden = false; $("studio").classList.toggle("done", done);
-  $("stTitle").textContent = c.title || "Studio challenge";
-  $("stSub").textContent = done ? "We did it! The whole studio hit the goal this week." : "Every minute anyone practises this week counts.";
-  $("stNow").textContent = n(c.minutes) + " minutes"; $("stGoal").textContent = "goal " + n(c.goal);
+  // the sheet's old default title still says "Studio": show the new name until that row is renamed
+  $("stTitle").textContent = !c.title || /studio/i.test(c.title) ? "Academy Challenge" : c.title;
+  $("stSub").textContent = done ? "We did it! The whole academy hit the goal this week." : "Everyone's practice this week, added together. Every minute counts.";
+  $("stNow").innerHTML = n(c.minutes) + ` <small>of ${n(c.goal)} minutes</small>`; $("stGoal").innerHTML = `<small>${Math.floor(pct)}%</small>`;
   setTimeout(() => { $("stBar").style.width = pct + "%"; }, 200);
   $("stPrize").textContent = c.prize ? (done ? "Prize: " : "If we make it: ") + c.prize + (/[.!?]$/.test(c.prize) ? "" : ".") + (c.mine ? ` You've added ${n(c.mine)} minute${Math.round(c.mine) === 1 ? "" : "s"}.` : "") : "";
   // everyone who practised that week gets the picks once the studio makes it
-  if(done && c.mine > 0 && c.picks && window.FMAPicks) FMAPicks.milestone("studio:" + c.week, c.picks, "the studio challenge");
+  if(done && c.mine > 0 && c.picks && window.FMAPicks) FMAPicks.milestone("studio:" + c.week, c.picks, "the Academy Challenge");
 });
 if(!fmaInstrument.get()) askInstrument();
 else if(!touched() && location.hash !== "#character") hello();
