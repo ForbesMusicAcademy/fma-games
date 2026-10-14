@@ -80,7 +80,7 @@
         await new Promise(res => { const tick = () => { samples.push(this.level()); if(performance.now() - t0 >= ms) res(); else setTimeout(tick, 60); }; tick(); });
         samples.sort((a, b) => a - b);
         const quiet = samples[Math.floor(samples.length * 0.8)];
-        this.gateDb = Math.max(-75, Math.min(-45, quiet + 5));      // a note has to be above the room's own noise (5 dB, was 9: Dave, 14 Oct 2026, phone mics)
+        this.gateDb = Math.max(-75, Math.min(-30, quiet + 3));      // just above the room's own noise (3 dB, was 9; tuned on Dave's recordings, 14 Oct 2026)
         return this.gateDb;
       },
       chroma(){
@@ -154,9 +154,10 @@
         // a phone mic barely hears a low string's own note, so its overtones (an octave, or an octave and a fifth, above) can
         // pass the test first: the low E reads as B. If 3 or 2 times this period fits clearly better, that's the real note.
         // (A real B's period fits about as well at 3 times, so it stays a B.) (14 Oct 2026)
-        // (from 0.012 up, 14 Oct 2026: a piano's octave-and-a-fifth overtone is strong enough to fit almost cleanly, and the
-        // 0.03 floor let it through as G when C was played)
-        if(d[t] > 0.012) for(const k of [3, 2]){
+        // Only the octave-and-a-fifth slip (3x), and only for readings under 340 Hz (low E read as B, A read as E): Dave's
+        // recordings (14 Oct 2026) showed it pulling real G4s and C4s down to C3 otherwise. An octave slip (2x) doesn't
+        // change the note's name, which is all any game checks, so it's left alone.
+        if(d[t] > 0.012 && sr / t < 340) for(const k of [3]){
           const c0 = Math.round(k * t); if(c0 + 3 >= tMax) continue;
           let bt = c0; for(let u = c0 - 3; u <= c0 + 3; u++) if(d[u] < d[bt]) bt = u;
           if(d[bt] < 0.5 * d[t]){ t = bt; break; }
@@ -192,7 +193,7 @@
       reset(){ latched.fill(false); onFor.fill(0); run = 0; heard = 0; },
       step(sc){
         if(!sc){ latched.fill(false); onFor.fill(0); run = 0; return { hit: false, latched, heard }; }
-        const allow = chord.allow || chord.mask; let missing = 0, strays = 0;
+        const allow = chord.allow || chord.mask; let missing = 0, strays = 0, extra = 0;
         for(let i = 0; i < 12; i++) latched[i] = sc[i] >= o.thr || (latched[i] && sc[i] >= o.thr * 0.6);   // once counted, a note stays counted until it drops a little
         for(let i = 0; i < 12; i++){
           const need = (chord.mask >> i) & 1;
@@ -203,9 +204,12 @@
           // the classroom rig's GG Chord Check)
           const j = (i + 5) % 12, ov = ((chord.mask >> j) & 1) && latched[j];
           if(!need && !((allow >> i) & 1) && latched[i] && !ov) strays++;
+          else if(!need && latched[i] && !ov) extra++;
         }
         const total = [...Array(12).keys()].filter(i => (chord.mask >> i) & 1).length;
-        const ok = missing === 0 || (missing <= o.miss && total - missing >= 2 && (o.root < 0 || latched[o.root]));
+        // a note short (while a chord is new): the root must be there, and nothing else may ring, not even a note the shape
+        // allows (an Em is G B + E: it mustn't pass as an easy G missing its D)
+        const ok = missing === 0 || (missing <= o.miss && total - missing >= 2 && (o.root < 0 || latched[o.root]) && extra === 0 && strays === 0);
         run = (ok && strays <= o.strays) ? run + 1 : 0;
         return { hit: run >= o.need, latched, heard };
       }
