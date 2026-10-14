@@ -175,7 +175,7 @@
   }
 
   function chordMatch(chord, opts){
-    const o = Object.assign({ thr: 0.25, strays: 0, need: 3 }, opts || {});   // 25% (was 40%, 13 Oct 2026): phone mics hear quiet low strings weakly
+    const o = Object.assign({ thr: 0.15, strays: 0, need: 3 }, opts || {});   // 15% (Dave, 14 Oct 2026, after trying it; was 25%, and 40% before 13 Oct): phone mics hear quiet low strings weakly
     const latched = new Array(12).fill(false), onFor = new Array(12).fill(0);
     let run = 0, heard = 0;
     return {
@@ -184,7 +184,7 @@
       step(sc){
         if(!sc){ latched.fill(false); onFor.fill(0); run = 0; return { hit: false, latched, heard }; }
         const allow = chord.allow || chord.mask; let missing = 0, strays = 0;
-        for(let i = 0; i < 12; i++) latched[i] = sc[i] >= o.thr || (latched[i] && sc[i] >= o.thr - 0.10);   // once counted, a note stays counted until it drops a little
+        for(let i = 0; i < 12; i++) latched[i] = sc[i] >= o.thr || (latched[i] && sc[i] >= o.thr * 0.6);   // once counted, a note stays counted until it drops a little
         for(let i = 0; i < 12; i++){
           const need = (chord.mask >> i) & 1;
           onFor[i] = latched[i] ? onFor[i] + 1 : 0;
