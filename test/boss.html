@@ -225,7 +225,7 @@ body.piano #diag{width:100%;max-width:380px}
         <div class="fighter" id="pf"><div class="fart" id="pimg"></div><div class="fhp you" id="phpw"><i id="phpbar"></i><span id="phptxt"></span></div><div class="fname" id="pname"></div></div>
         <div class="fighter" id="bf"><div class="fart" id="bimg"></div><div class="fhp boss"><i id="hpbar"></i><span id="hptxt"></span></div><div class="fname" id="bname">Boss</div></div>
       </div>
-      <div class="combo" id="combo"><div class="lbl" id="cLbl">COMBO <b>0</b></div><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="tier" id="cTier">3 in a row for a combo</div></div>
+      <div class="combo" id="combo"><div class="lbl" id="cLbl">COMBO <b>0</b></div><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="tier" id="cTier">1 damage</div></div>
       <div class="call" id="call"></div>
       <div class="chordrow"><div id="chord">–</div><div id="diag"></div></div>
       <div class="ctones" id="tones"></div>
@@ -286,11 +286,19 @@ const BACKS = [{k:"drums", n:"Drums", s:"Rock beat"}, {k:"click", n:"Click", s:"
    A fight is at least a minute of chords: the boss's health is the number of bars in 60 seconds at the chosen speed, and every
    chord you land does 1 damage, so even a perfect player plays for a full minute. The song runs long enough that you can
    still win landing WIN_RATE of the chords (60% at Slow, 70% at Medium, 80% at Fast); your hearts are the misses you can
-   afford on top of that. Miss one more and the boss wins. Combos are for glory (shouts, shakes, your best combo), not extra
-   damage, or a strong player would be done in 20 seconds. The fight ends the moment the boss falls: no encore, so no
+   afford on top of that. Miss one more and the boss wins. Combos hit harder (3 in a row = 3 damage, 6 in a row = 5), so a
+   strong player wins sooner; Dave (14 Oct): that's fine, later bosses bring harder chords. Boss health is the classroom
+   formula (bossHP in classroom.html): 90% of the average damage of 400 pretend players landing WIN_RATE of the song's
+   chords, so a player at the win rate beats it near the end. The fight ends the moment the boss falls: no encore, so no
    practice time is counted after a win. Nothing carries over between fights (framework: loss only inside one round). */
 const FIGHT_SECS = 60, WIN_RATE = { slow: 0.6, med: 0.7, fast: 0.8 }, GOLD_CHANCE = 0.1, GOLD_PICKS = 25;
-const dmgOf = () => 1;
+const dmgOf = streak => streak >= 6 ? 5 : streak >= 3 ? 3 : 1;
+// seeded, so a song length and speed always give the same number
+function bossHP(T, rate){
+  let seed = 7919 + T * 104729 + Math.round(rate * 100), sum = 0; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for(let r = 0; r < 400; r++){ let st = 0; for(let s = 0; s < T; s++){ if(rnd() < rate){ st++; sum += dmgOf(st); } else st = 0; } }
+  return Math.max(1, Math.round(0.9 * sum / 400));
+}
 const KEY = fmaKey(PIANO ? "fma-boss-piano-v1" : "fma-boss-v1");          // each player (and instrument) has their own stars and bests
 const store = { get(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }, set(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} } };
 const S = Object.assign({ song:"em-g-stomp", speed:"slow", mode:"root", back:"click" }, store.get().sel || {});
@@ -406,7 +414,7 @@ function buildFight(){
   const loop = song.c.map(chordInfo), bpm = SPEEDS.find(x => x.k === S.speed).bpm;
   const hp = Math.ceil(FIGHT_SECS / (4 * 60 / bpm)), n = Math.ceil(hp / WIN_RATE[S.speed]);     // Slow: 15 health, 25 bars
   G.chords = Array.from({length:n}, (_, i) => loop[i % loop.length]);
-  G.bars = n; G.maxHp = hp; G.spare = n - hp;
+  G.bars = n; G.maxHp = bossHP(n, WIN_RATE[S.speed]); G.spare = n - hp;
 }
 function setHp(){
   const left = Math.max(0, G.spare - G.misses), youPct = 100 * left / Math.max(1, G.spare);
@@ -420,7 +428,7 @@ function comboUI(pop){
   el.className = "combo " + (n >= 6 ? "c2" : n >= 3 ? "c1" : "");
   $("cLbl").innerHTML = `COMBO <b>${n}</b>`;
   [...$("pips").children].forEach((p, i) => p.className = i < Math.min(n, 6) ? (i >= 3 ? "on t2" : "on") : "");
-  $("cTier").textContent = n >= 6 ? "Super combo!" : n >= 3 ? "Combo!" : `${3 - n} more for a combo`;
+  $("cTier").textContent = n >= 6 ? "5 damage!" : n >= 3 ? "3 damage!" : `${3 - n} more for x3`;
   $("pf").classList.toggle("hot", n >= 3 && n < 6); $("pf").classList.toggle("super", n >= 6);
   if(pop){ el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
 }
@@ -498,7 +506,8 @@ function landHit(){
   if(G.streak === 3) shout("COMBO!", "s1");
   else if(G.streak === 6){ shout("SUPER COMBO!", "s2"); $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
   else if(G.streak === 10 || G.streak === 16) shout(G.streak === 16 ? "PERFECT!" : "UNSTOPPABLE!", "s3");
-  $("status").textContent = G.streak >= 3 ? `Hit! ${G.streak} in a row` : "Hit!"; $("status").style.color = "var(--good)";
+  else if(d >= 5){ $("stage").classList.remove("shake"); void $("stage").offsetWidth; $("stage").classList.add("shake"); }
+  $("status").textContent = d > 1 ? `Hit! ${d} damage` : "Hit!"; $("status").style.color = "var(--good)";
   if(!G.raged && G.bossHp > 0 && G.bossHp <= G.maxHp / 2){ G.raged = true; art.rage(); setTimeout(() => { if(!G.down) say(pickLine(boss, "rage"), 1700); }, 450); }
   if(G.bossHp <= 0 && !G.down){
     // boss down: the fight (and the practice clock) stops here
