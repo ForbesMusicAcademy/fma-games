@@ -179,13 +179,12 @@ const CHARS = {
   4:{name:"Shredder", img:"characters/shredder.png"}, 9:{name:"Clang", img:"characters/clang.png"}, 2:{name:"Fret", img:"characters/fret.png"},
   7:{name:"Plucky", img:"characters/plucky.png"}, 11:{name:"Scales", img:"characters/scales.png"}, 0:{name:"Callus", img:"characters/callus.png"}
 };
-// Naturals only for now (Oct 2026): guitarists work out where the notes are on the fretboard by playing; piano students
-// can use note stickers on their keys. Sharps and flats (all 12 notes) come back as a Level 3 later:
-//   {n:3, name:"Level 3", sub:"All 12 notes", pool:[0,1,2,3,4,5,6,7,8,9,10,11]}
+// Level 3 (all 12 notes, sharps and flats too) added 14 Oct 2026 (Dave), the same as the classroom quiz's Level 3.
 const PIANO = !!(window.fmaInstrument && fmaInstrument.get() === "piano");
 const LEVELS = [
   PIANO ? {n:1, name:"Level 1", sub:"C D E F G", pool:[0,2,4,5,7]} : {n:1, name:"Level 1", sub:"Open strings", pool:[4,9,2,7,11]},
-  {n:2, name:"Level 2", sub:"All the natural notes", pool:[0,2,4,5,7,9,11]}
+  {n:2, name:"Level 2", sub:"All the natural notes", pool:[0,2,4,5,7,9,11]},
+  {n:3, name:"Level 3", sub:"All 12 notes", pool:[0,1,2,3,4,5,6,7,8,9,10,11]}
 ];
 const Q_SECS = 30, HOLD_MS = 1000, DROP_MS = 350, MAX_PTS = 1000, REVEAL_MS = 3800;   // an instant answer = 1000, a last-second one = 500
 const Q_COUNT = Math.max(3, Math.min(40, Number(q.get("n")) || 10));
