@@ -253,14 +253,14 @@ body.piano #diag{width:100%;max-width:380px}
 </div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=5"></script>
+<script src="fma-listen.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=12"></script>
-<script src="fma-chords.js?v=5"></script>
+<script src="fma-chords.js?v=6"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -479,7 +479,7 @@ function frame(){
       G.on = false; G.done = true; sndStop(); show("setup"); drawSetup(); askHeadphones("check"); return;
     }
     if(G.done) return;
-    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx]); G.settle = performance.now() + 250;
+    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx], { miss: FMAChords.missFor(G.chords[idx].name), root: G.chords[idx].root }); G.settle = performance.now() + 250;
     setChord(idx);
     [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
     if(idx > 0 && G.outcomes[idx - 1]) $("status").textContent = "";

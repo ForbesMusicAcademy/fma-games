@@ -135,6 +135,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 .lens button{flex:1;min-height:46px;border-radius:999px;border:2px solid var(--line);background:#fff;font-family:var(--head);font-weight:900;font-size:17px;color:var(--fg)}
 .lens button[aria-pressed="true"]{border-color:var(--fg);background:#FFF6DB}
 #left{font-weight:800;color:var(--fg)}
+.set.dbgonly{display:none}body.debug .set.dbgonly{display:flex}
 </style>
 </head>
 <body class="fma">
@@ -186,8 +187,9 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
       <div id="newSongs"></div>
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
-      <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
-      <label class="set">How loud a note must be: <b id="thrV">15</b>%<input type="range" id="thr" min="10" max="70" step="5" value="15"></label>
+      <!-- the two detector sliders only show with ?debug (Dave, 14 Oct 2026): strictness comes from the chord's stars -->
+      <label class="set dbgonly">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
+      <label class="set dbgonly">How loud a note must be: <b id="thrV">15</b>%<input type="range" id="thr" min="10" max="70" step="5" value="15"></label>
       <button class="ghost" id="recal">Listen to the room again</button>
       <div id="dbg" hidden></div>
     </details>
@@ -200,11 +202,11 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=5"></script>
+<script src="fma-listen.js?v=6"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=12"></script>
-<script src="fma-chords.js?v=5"></script>
+<script src="fma-chords.js?v=6"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -217,6 +219,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
+if(DEBUG) document.body.classList.add("debug");
 
 /* ---------- Chord list (built from the shared ladder file) ---------- */
 // fma-chords.js builds it: the ladder order, and the notes each chord's guitar shape actually sounds
@@ -336,7 +339,7 @@ const game = {
   begin(idx){
     this.idx = idx; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
-    this.match = FMAListen.chordMatch(c, { thr: this.thr, strays: this.strays });
+    this.match = FMAListen.chordMatch(c, { thr: this.thr, strays: this.strays, miss: FMAChords.missFor(c.name), root: c.root });
     const lab = FMAChords.label(c.name);
     $("chord").textContent = lab; $("chord").classList.toggle("long", lab.length > 3 && lab.length <= 6); $("chord").classList.toggle("longer", lab.length > 6);
     $("diag").innerHTML = FMAChords.diagram(c.name);
