@@ -80,7 +80,7 @@
         await new Promise(res => { const tick = () => { samples.push(this.level()); if(performance.now() - t0 >= ms) res(); else setTimeout(tick, 60); }; tick(); });
         samples.sort((a, b) => a - b);
         const quiet = samples[Math.floor(samples.length * 0.8)];
-        this.gateDb = Math.max(-75, Math.min(-38, quiet + 9));      // a note has to be well above the room's own noise
+        this.gateDb = Math.max(-75, Math.min(-45, quiet + 5));      // a note has to be above the room's own noise (5 dB, was 9: Dave, 14 Oct 2026, phone mics)
         return this.gateDb;
       },
       chroma(){
@@ -216,7 +216,7 @@
         const now = det.ctx.currentTime, rms = det.rms();
         if(h.onLevel) h.onLevel(rms);
         rmsWin.push({ t: now, rms }); while(rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
-        const floor = Math.min(0.02, Math.max(0.006, Math.min(...rmsWin.map(r => r.rms)) * 3));
+        const floor = Math.min(0.012, Math.max(0.004, Math.min(...rmsWin.map(r => r.rms)) * 2));      // quieter notes count (was 0.006-0.02, x3; 14 Oct 2026)
         let midi = null;
         if(rms > floor){ const p = det.read(); if(p && p.clarity > 0.8 && p.f > 70 && p.f < 1400) midi = 69 + 12 * Math.log2(p.f / 440); }
         frames.push({ t: now, rms, midi }); while(frames.length && frames[0].t < now - 2) frames.shift();
