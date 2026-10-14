@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=3">
+<link rel="stylesheet" href="fma-style.css?v=5">
 <style>
 /* Home Note Quiz: one player, one column, phone first. A question appears with four answers, each on a note.
    Play the note of the answer you think is right on your guitar and hold it to lock in. Quicker = more points.
@@ -165,9 +165,10 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
 </div>
 
 <script src="fma-student.js?v=9"></script>
+<script src="fma-listen.js?v=4"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=11"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
 <script>
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search), DEBUG = q.has("debug"), SIM = q.has("sim");
@@ -253,60 +254,8 @@ function makeQuestions(n, pool){
   });
 }
 
-/* ---------- The listener (same as chord practice): sound in, "which of the 12 notes?" out ---------- */
-const FFT = 16384, TONAL_MIN = 0.30;
-const det = {
-  ctx: null, an: null, src: null, buf: null, td: null, tune: 0, tonal: 0, gateDb: -50, ready: false,
-  async start(){
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.an = this.ctx.createAnalyser(); this.an.fftSize = FFT; this.an.smoothingTimeConstant = 0;
-    this.buf = new Float32Array(this.an.frequencyBinCount); this.td = new Float32Array(4096);
-    // Echo cancelling, noise suppression and auto-gain are made for voices and wreck a guitar, so they're off.
-    const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}});
-    this.src = this.ctx.createMediaStreamSource(stream); this.src.connect(this.an);
-    if(this.ctx.state === "suspended") await this.ctx.resume();
-    this.ready = true;
-  },
-  level(){
-    this.an.getFloatTimeDomainData(this.td);
-    let s = 0; for(let i = 0; i < this.td.length; i++) s += this.td[i] * this.td[i];
-    return 20 * Math.log10(Math.sqrt(s / this.td.length) + 1e-9);
-  },
-  chroma(){
-    this.an.getFloatFrequencyData(this.buf);
-    const hz = this.ctx.sampleRate / FFT, k0 = Math.ceil(70 / hz), k1 = Math.floor(1100 / hz), n = k1 - k0;
-    const mag = new Float32Array(n); let mx = 0;
-    for(let i = 0; i < n; i++){ mag[i] = Math.pow(10, this.buf[k0 + i] / 20); if(mag[i] > mx) mx = mag[i]; }
-    // Is this sound tonal at all? Notes are sharp spectral peaks; a cough, a rustle or room hiss is energy spread over everything.
-    { let tot = 0, pk = 0; const W = 15;
-      for(let i = 0; i < n; i++){
-        const e = mag[i] * mag[i]; tot += e;
-        if((i === 0 || mag[i] >= mag[i - 1]) && (i === n - 1 || mag[i] >= mag[i + 1])){
-          const seg = Array.from(mag.subarray(Math.max(0, i - W), Math.min(n, i + W + 1))).sort((a, b) => a - b);
-          if(mag[i] >= 3 * seg[seg.length >> 1]){ pk += e; if(i > 0) pk += mag[i - 1] * mag[i - 1]; if(i < n - 1) pk += mag[i + 1] * mag[i + 1]; }
-        }
-      }
-      this.tonal = pk / (tot + 1e-30);
-    }
-    if(this.tonal < TONAL_MIN) return null;
-    // tuning: where do the strong peaks sit relative to the nearest semitone? (so a slightly flat guitar still reads right)
-    let sx = 0, sy = 0;
-    for(let i = 1; i < n - 1; i++){
-      if(mag[i] > 0.25 * mx && mag[i] >= mag[i - 1] && mag[i] > mag[i + 1]){
-        const a = this.buf[k0 + i - 1], b = this.buf[k0 + i], c = this.buf[k0 + i + 1], d = 0.5 * (a - c) / (a - 2 * b + c || 1);
-        const f = (k0 + i + d) * hz, m = 69 + 12 * Math.log2(f / 440), frac = m - Math.round(m);
-        sx += mag[i] * Math.cos(2 * Math.PI * frac); sy += mag[i] * Math.sin(2 * Math.PI * frac);
-      }
-    }
-    if(sx || sy){ const est = Math.atan2(sy, sx) / (2 * Math.PI); this.tune = this.tune * 0.8 + est * 0.2; }
-    const ch = new Float32Array(12);
-    for(let i = 0; i < n; i++){
-      const f = (k0 + i) * hz, m = 69 + 12 * Math.log2(f / 440) - this.tune, pc = ((Math.round(m) % 12) + 12) % 12;
-      ch[pc] += Math.sqrt(mag[i]);
-    }
-    return ch;
-  }
-};
+/* ---------- The listener: the shared one every game uses (fma-listen.js, 14 Oct 2026) ---------- */
+const det = FMAListen.create(), TONAL_MIN = FMAListen.TONAL_MIN;
 if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plugged in, plays straight into the game (fma-midi.js)
 // One reading -> the single strongest note (0-11) or -1. Needs the same note on two readings in a row.
 let simNote = -1, lastTop = -1, topRun = 0, dbgText = "";
@@ -316,17 +265,13 @@ function readNote(){
   else if(det.ready){
     const db = det.level();
     $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
-    if(db > det.gateDb){
-      const ch = det.chroma();
-      if(ch){
-        const sorted = Array.from(ch).sort((a, b) => a - b), floor = (sorted[5] + sorted[6]) / 2, span = sorted[11] - floor + 1e-9;
-        const raw = Array.from(ch, v => Math.max(v - floor, 0) / span), sc = raw.map((v, i) => Math.max(0, v - 0.25 * raw[(i + 5) % 12] - 0.10 * raw[(i + 8) % 12]));
-        let best = 0; sc.forEach((v, i) => { if(v > sc[best]) best = i; });
-        // overtones are taken off (a played E doesn't also read as B), and the note must clearly beat both neighbouring semitones
-        if(sc[best] > 0.5 && sc[best] - Math.max(sc[(best + 1) % 12], sc[(best + 11) % 12]) >= 0.25) top = best;
-        if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + "  tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
-      }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB  tonal " + det.tonal.toFixed(2) + " (needs " + TONAL_MIN + "): not musical";
-    }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB: below the gate (" + det.gateDb + ")";
+    const sc = det.scores();         // null below the gate, or not musical
+    if(sc){
+      const best = FMAListen.strongest(sc, 0.25);
+      // overtones are taken off (a played E doesn't also read as B), and the note must clearly beat both neighbouring semitones
+      if(best >= 0 && sc[best] > 0.5) top = best;
+      if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + ")  tonal " + det.tonal.toFixed(2) + "  tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
+    }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + "): below the gate or not musical";
   }
   if(top === lastTop) topRun++; else { lastTop = top; topRun = 1; }
   if(DEBUG){ $("dbgBox").hidden = false; $("dbg").textContent = (SIM ? "sim note " + simNote : dbgText) + "\nstable note " + (topRun >= 2 && top >= 0 ? NOTE_NAMES[top] : "-"); }
@@ -483,7 +428,7 @@ async function begin(){
   $("go").disabled = true; $("err").hidden = true;
   try{
     if(!(await loadBank())) throw new Error("Couldn't load the question list (quiz-questions.csv).");
-    if(!SIM) await det.start();
+    if(!SIM && !det.ready){ await det.start(); if(!det.keysOnly){ const t = $("go").textContent; $("go").textContent = "Shh… listening to the room"; await det.calibrate(1500); $("go").textContent = t; } }
     startGame();
   }catch(e){
     $("err").textContent = e && e.name === "NotAllowedError" ? "The microphone is blocked. Allow it for this page (the address-bar icon) and try again."

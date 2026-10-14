@@ -69,20 +69,25 @@
     const teams = (data && data.teams) || [], live = [];
     const wk = WEEKS[((weekIndex(data && data.week) % WEEKS.length) + WEEKS.length) % WEEKS.length];
     const top = Math.max(1, ...teams.map(t => t.perMember || 0));
+    // ties share a place (Dave, 14 Oct 2026): equal points = the same place, shown "=1"; every band tied at the top leads
+    const pts = t => Math.round((t.perMember || 0) * 10);
+    const place = teams.map((t, i) => { let k = i; while(k > 0 && pts(teams[k - 1]) === pts(t)) k--; return k + 1; });
+    const tied = i => teams.some((u, j) => j !== i && pts(u) === pts(teams[i]));
+    const leads = i => place[i] === 1 && (teams[i].perMember || 0) > 0;
     const lead = teams.length && teams[0].perMember > 0 ? 0 : -1;
     const cols = opts.size !== "big" ? 1 : teams.length > 6 ? 3 : teams.length > 2 ? 2 : 1;   // the classroom TV fits them all on one screen
     el.innerHTML = `<div class="fmab ${opts.size === "big" ? "big" : ""}" style="--fmab-cols:repeat(${cols},1fr)">` +
       `<div class="wk"><span>This week's scene: <b>${esc(wk.name)}</b></span>${data && data.lastWinner ? `<span>Last week's winners: <b>${esc(data.lastWinner)}</b></span>` : ""}</div>` +
       `<div class="cols">` + teams.map((t, i) =>
-        `<div class="band ${i === lead ? "lead" : ""}" data-i="${i}"><div class="rk">${i === lead ? "🏆" : i + 1}</div>` +
-        `<div class="nm"><span>${esc(t.name)}</span><small>${t.perMember} pts each</small></div>` +
+        `<div class="band ${leads(i) ? "lead" : ""}" data-i="${i}"><div class="rk">${leads(i) ? "🏆" : (tied(i) ? "=" : "") + place[i]}</div>` +
+        `<div class="nm"><span>${esc(t.name)}</span><small>${t.perMember} pts each${leads(i) && tied(i) ? " · equal 1st" : ""}</small></div>` +
         `<div class="stage"></div><div class="bar"><i style="width:${Math.max(2, 100 * (t.perMember || 0) / top).toFixed(0)}%"></i></div>` +
         `<div class="sub">${t.practised} of ${t.members} practised at home${t.practised === t.members && t.members ? " · whole-band bonus!" : ""}` +
           `${t.cls ? " · " + t.cls + " from class games" : ""}</div></div>`).join("") + `</div></div>`;
     teams.forEach((t, i) => {
       const stage = el.querySelector(`.band[data-i="${i}"] .stage`); if(!stage) return;
       const looks = (t.looks && t.looks.length ? t.looks : Array.from({ length:t.members || 0 }, () => null));
-      const animate = opts.animate === "all" || i === lead;
+      const animate = opts.animate === "all" || leads(i);
       looks.forEach((cfg, k) => {
         const mine = !!cfg, c = cfg || standIn(t.name + "#" + k), pose = wk.poses[k % wk.poses.length];
         const d = document.createElement("div"); d.className = "who" + (mine ? "" : " new"); stage.appendChild(d);
