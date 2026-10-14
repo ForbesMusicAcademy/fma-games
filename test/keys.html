@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="fma-style.css?v=5">
 <style>
 /* Falling Notes: the piano game. Notes fall down onto a keyboard; play each one as it lands. Phone first, same look as
-   the other games. Plays with a MIDI keyboard, the on-screen keys, a computer keyboard, or a real piano through the mic. */
+   the other games. Plays with a real piano through the mic, or a MIDI keyboard. */
 :root{color-scheme:light;--bg:#FBF8EF;--fma-width:900px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--warn:#E5A100;--sky:#CFE6F2;
   --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -90,7 +90,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
     <div class="card" style="margin-bottom:14px">
       <h2>Catch the notes on the keys</h2>
       <p>Notes fall down onto the keyboard. Play each one as it reaches the keys. Start with <b>Learn</b> (the notes wait for you), then try <b>Play along</b> with the music.</p>
-      <p>Play on a <b>keyboard plugged into this device</b>, a <b>real piano</b> (the microphone listens), the keys on the screen, or a computer keyboard (<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd>… are the white keys).</p>
+      <p>Play on your <b>real piano</b> (the microphone listens), or a <b>keyboard plugged into this device</b>. Tap a key on the screen to hear how it sounds.</p>
       <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b></p>
       <div id="midiSlot" style="margin-top:6px"></div>
     </div>
@@ -115,7 +115,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
     <div class="row">
       <button class="opt" id="names" aria-pressed="true">Note names</button>
       <button class="opt" id="backing" aria-pressed="true">Backing music</button>
-      <button class="opt" id="mic" aria-pressed="false">🎤 Real piano (mic)</button>
+      <button class="opt" id="mic" aria-pressed="true" hidden>🎤 Real piano (mic)</button>
     </div>
     <div class="row" id="micRow" hidden><span id="heard">Hearing: –</span><span id="lvl"><i></i></span></div>
     <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span> <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button></div>
@@ -158,7 +158,8 @@ let P = { songs: {}, opts: {} };
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.songs) P = Object.assign(P, s); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
 const rec = id => P.songs[id] || (P.songs[id] = { stars: 0, learn: 0, best: {}, runs: 0 });
-const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: false, lat: 0.08 }, P.opts);
+const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: true, lat: 0.08 }, P.opts);
+O.mic = true;      // the real instrument only: the mic, or a MIDI keyboard when one is plugged in (Dave, 14 Oct 2026)
 const saveOpts = () => { P.opts = O; save(); };
 
 /* ---------- song list ---------- */
@@ -275,7 +276,7 @@ async function startRun(asDemo){
   $("err").hidden = true;
   if (!cur) return;
   audio();
-  if (O.mic && !asDemo && !SIM) { try { await openMic(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone."; return; } }
+  if (O.mic && !asDemo && !SIM && !(window.FMAMidi && FMAMidi.active())) { try { await openMic(); } catch (e) { $("err").hidden = false; $("err").textContent = (e && e.name === "NotAllowedError") ? "The microphone was blocked. Allow it in your browser settings, then try again." : "Couldn't start the microphone."; return; } }
   resetRun(); running = true; demo = !!asDemo;
   spb = 60 / (cur.tempo * (mode === "learn" && !demo ? LEARN_F : speedF()));
   if (demo) spb = 60 / (cur.tempo * (mode === "play" ? speedF() : 1));      // "Hear it": the real speed, or the speed picked for Play along
@@ -367,24 +368,18 @@ function score(){
   const c = $("combo"); c.textContent = stats.combo >= 5 ? stats.combo + " in a row!" : ""; c.style.opacity = stats.combo >= 5 ? 1 : 0;
 }
 
-/* ---------- inputs: the screen, a computer keyboard, a MIDI keyboard, the mic ---------- */
+/* ---------- inputs: the mic or a MIDI keyboard (tapping the screen keys only plays their sound) ---------- */
 const touches = new Map();
 cv.addEventListener("pointerdown", e => {
   e.preventDefault(); audio();
   const r = cv.getBoundingClientRect(), k = keyAt(e.clientX - r.left, e.clientY - r.top); if (!k) return;
-  touches.set(e.pointerId, k.m); tone(k.m, null, 1.2, 0.3); press(k.m, null, true);
+  touches.set(e.pointerId, k.m); tone(k.m, null, 1.2, 0.3);      // a tap only plays the key's sound: it never counts as playing
 });
 ["pointerup", "pointercancel", "pointerleave"].forEach(ev => cv.addEventListener(ev, e => touches.delete(e.pointerId)));
-const KB = "awsedftgyhujkolp;'";                    // A = the lowest C on screen, W = C#, S = D ...
-const kbDown = new Set();
-addEventListener("keydown", e => {
+addEventListener("keydown", e => {      // Space starts and stops (computer-keyboard playing removed 14 Oct 2026)
   if (e.metaKey || e.ctrlKey || e.altKey || $("player").hidden) return;
-  if (e.key === " " && !e.repeat) { e.preventDefault(); $("go").click(); return; }
-  const i = KB.indexOf(e.key.toLowerCase()); if (i < 0 || e.repeat || kbDown.has(i)) return;
-  kbDown.add(i); e.preventDefault();
-  const m = lo + i; tone(m, null, 1.2, 0.3); press(m, null, true);
+  if (e.key === " " && !e.repeat) { e.preventDefault(); $("go").click(); }
 });
-addEventListener("keyup", e => kbDown.delete(KB.indexOf(e.key.toLowerCase())));
 if (window.FMAMidi) FMAMidi.onNote(ev => { if (ev.on && FMAMidi.active() && !$("player").hidden) press(ev.note, null, false); });   // fma-midi.js plays its own sound
 
 /* The microphone, for a real piano: a note starts when the level jumps, and its pitch is read just after. */
@@ -548,7 +543,7 @@ $("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.d
 $("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");
 const toggle = (id, k, after) => { const b = $(id); b.setAttribute("aria-pressed", O[k]); b.onclick = () => { O[k] = !O[k]; saveOpts(); b.setAttribute("aria-pressed", O[k]); if (after) after(); }; };
 toggle("names", "names"); toggle("backing", "backing");
-toggle("mic", "mic", () => { $("micRow").hidden = !(O.mic && micOn); $("latBox").hidden = !(O.mic && mode === "play"); if (O.mic) openMic().catch(() => { $("err").hidden = false; $("err").textContent = "The microphone was blocked. Allow it in your browser settings, then try again."; }); });
+if (false) toggle("mic", "mic", () => { $("micRow").hidden = !(O.mic && micOn); $("latBox").hidden = !(O.mic && mode === "play"); if (O.mic) openMic().catch(() => { $("err").hidden = false; $("err").textContent = "The microphone was blocked. Allow it in your browser settings, then try again."; }); });
 $("lm").onclick = () => setLat(O.lat - 0.01); $("lp").onclick = () => setLat(O.lat + 0.01);
 function setLat(v){ O.lat = Math.max(0, Math.min(0.4, Math.round(v * 100) / 100)); $("lat").textContent = Math.round(O.lat * 1000) + " ms"; saveOpts(); }
 setLat(O.lat);

@@ -349,7 +349,7 @@ const rk = (p, id) => LAB || INST === "piano" ? id : p.id + ":" + id;          /
 const rec = key => P.songs[key] || (P.songs[key] = { stars: 0, learn: 0, best: {}, runs: 0 });
 const starsOf = (p, id) => (P.songs[rk(p, id)] || {}).stars || 0;
 const O = Object.assign({ mode: "learn", speed: "slow", names: true, backing: true, mic: INST === "guitar", lat: 0.08, hop: true }, P.packOpts || {});
-if (INST === "guitar") O.mic = true;
+O.mic = true;      // the real instrument only: the mic, or a MIDI keyboard when one is plugged in (Dave, 14 Oct 2026)
 const saveOpts = () => { P.packOpts = O; save(); };
 
 let SONGS = {}, pack = null, cur = null;
@@ -810,7 +810,7 @@ function score(){
   const c = $("combo"); c.textContent = stats.combo >= 5 ? stats.combo + " in a row!" : ""; c.style.opacity = stats.combo >= 5 ? 1 : 0;
 }
 
-/* ---------- inputs: a MIDI keyboard, the mic, the screen piano, a computer keyboard ---------- */
+/* ---------- inputs: the mic or a MIDI keyboard (the screen piano only plays a key's sound) ---------- */
 if (window.FMAMidi) FMAMidi.onNote(ev => { if (ev.on && FMAMidi.active() && !$("player").hidden) { press(ev.note, null); flashKey(ev.note); } });
 
 // the little piano for piano players: the keys the song needs (in the octave the staff shows), at least an octave and a half
@@ -828,23 +828,16 @@ function drawPianoKeys(){
   box.innerHTML = html;
 }
 $("pkeys").addEventListener("pointerdown", e => { const b = e.target.closest("button[data-m]"); if (!b) return; e.preventDefault(); audio();
-  const m = Number(b.dataset.m); tone(m, null, 1.2, 0.3); press(m, null); flashKey(m); });
+  const m = Number(b.dataset.m); tone(m, null, 1.2, 0.3); flashKey(m); });      // tapping a key only plays its sound: it never counts as playing
 function flashKey(m){ const b = $("pkeys").querySelector(`button[data-m="${m}"]`) || [...$("pkeys").querySelectorAll("button[data-m]")].find(x => Number(x.dataset.m) % 12 === m % 12);
   if (b) { b.classList.add("on"); setTimeout(() => b.classList.remove("on"), 200); } }
 function glowKey(){ $("pkeys").querySelectorAll(".glow").forEach(b => b.classList.remove("glow"));
   const n = mode === "learn" && running && !demo ? notes[idx] : null; if (!n) return;
   const b = $("pkeys").querySelector(`button[data-m="${n.m + shift}"]`); if (b) b.classList.add("glow"); }
-const KB = "awsedftgyhujkolp;'";
-const kbDown = new Set();
 addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey || $("player").hidden) return;
   if (e.key === " " && !e.repeat) { e.preventDefault(); $("go").click(); return; }
-  if (INST !== "piano") return;
-  const i = KB.indexOf(e.key.toLowerCase()); if (i < 0 || e.repeat || kbDown.has(i)) return;
-  kbDown.add(i); e.preventDefault();
-  const m = pkLo + i; tone(m, null, 1.2, 0.3); press(m, null); flashKey(m);
-});
-addEventListener("keyup", e => kbDown.delete(KB.indexOf(e.key.toLowerCase())));
+});      // (computer-keyboard playing removed 14 Oct 2026: the real instrument only)
 
 /* The microphone: a note starts when the level jumps, and its pitch is read just after (the same listener as Falling Notes). */
 let det = null, tracker = null, micOn = false, heardAt = 0;      // the shared listener (fma-listen.js)
@@ -1074,8 +1067,6 @@ $("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.d
 $("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");
 const toggle = (id, k, after) => { const b = $(id); b.setAttribute("aria-pressed", O[k]); b.onclick = () => { O[k] = !O[k]; saveOpts(); b.setAttribute("aria-pressed", O[k]); if (after) after(); }; };
 toggle("names", "names", () => drawPianoKeys()); toggle("backing", "backing");
-if (INST === "piano") { $("mic").hidden = false;
-  toggle("mic", "mic", () => { $("micRow").hidden = !(O.mic && micOn); $("latBox").hidden = !(O.mic && mode === "play"); if (O.mic) openMic().catch(() => { $("err").hidden = false; $("err").textContent = "The microphone was blocked. Allow it in your browser settings, then try again."; }); }); }
 $("lm").onclick = () => setLat(O.lat - 0.01); $("lp").onclick = () => setLat(O.lat + 0.01);
 function setLat(v){ O.lat = Math.max(0, Math.min(0.4, Math.round(v * 100) / 100)); $("lat").textContent = Math.round(O.lat * 1000) + " ms"; saveOpts(); }
 setLat(O.lat);
