@@ -33,18 +33,20 @@
     gear: ["none", "acoustic", "guitar"]
   };
   // what everything else costs: the more of a novelty, the more picks (hair colours are never locked). Anything new that
-  // isn't listed here costs 60.
+  // isn't listed here costs 300. Repriced 14 Oct 2026 (Dave: prices were too low): a 10-minute session earns about 100 picks,
+  // so 150 is about one session, 300 a week of practice, 600 two weeks, 1000 most of a month. LEGENDARY items (2000 and up,
+  // a gold tag in the editor) take most of a term: a status symbol. Items already bought stay unlocked.
   const PRICES = {
-    hair: { quiff: 30, mop: 30, bowl: 60, spiky: 60, spacebuns: 60, grunge: 60, mohawk: 100 },
-    mark: { scar: 30, warpaint: 60, glam: 60, bolt: 100, starpaint: 150, batpaint: 150 },
-    eyewear: { round: 30, shades: 60, mask: 100, patch: 100 },
-    top: { overalls: 30, jersey: 30, track: 30, bolt: 30, jacket: 60, flannel: 60, puffer: 60, tiedye: 60, collarless: 60, fringe: 100, military: 100, sequin: 150, pepper: 150, leather: 150 },
-    bottom: { leggings: 30, trackies: 30, cargo: 30, pleated: 30, baggy: 60, ripped: 60, maxi: 60, flares: 100, stage: 100, tutu: 100 },
-    shoes: { boots: 30, chelsea: 60, platforms: 100 },
-    neck: { beads: 30, bowtie: 30, peace: 60, chain: 60, clock: 100 },
-    extra: { bumbag: 30, sweatbands: 30, belt: 60, wings: 150, cape: 150 },
-    acc: { flower: 30, party: 30, visor: 30, band: 30, sidecap: 30, bucket: 60, flowers: 60, bunny: 60, cat: 60, hippy: 60, phones: 60, santa: 100, elf: 100, pirate: 100, crown: 150, halo: 150, horns: 150 },
-    gear: { ukulele: 30, bass: 60, mic: 60, violin: 100, flyingv: 150, doubleneck: 150 }
+    hair: { quiff: 150, mop: 150, bowl: 300, spiky: 300, spacebuns: 300, grunge: 300, mohawk: 600 },
+    mark: { scar: 150, warpaint: 300, glam: 300, bolt: 600, starpaint: 1000, batpaint: 1000 },
+    eyewear: { round: 150, shades: 300, mask: 600, patch: 600 },
+    top: { overalls: 150, jersey: 150, track: 150, bolt: 150, jacket: 300, flannel: 300, puffer: 300, tiedye: 300, collarless: 300, fringe: 600, military: 600, sequin: 1000, pepper: 1000, leather: 1000 },
+    bottom: { leggings: 150, trackies: 150, cargo: 150, pleated: 150, baggy: 300, ripped: 300, maxi: 300, flares: 600, stage: 600, tutu: 600 },
+    shoes: { boots: 150, chelsea: 300, platforms: 600 },
+    neck: { beads: 150, bowtie: 150, peace: 300, chain: 300, clock: 600 },
+    extra: { bumbag: 150, sweatbands: 150, belt: 300, wings: 1000, cape: 1000, goldwings: 2000 },
+    acc: { flower: 150, party: 150, visor: 150, band: 150, sidecap: 150, bucket: 300, flowers: 300, bunny: 300, cat: 300, hippy: 300, phones: 300, santa: 600, elf: 600, pirate: 600, crown: 1000, halo: 1000, horns: 1000, diamondcrown: 3000 },
+    gear: { ukulele: 150, bass: 300, mic: 300, violin: 600, flyingv: 1000, doubleneck: 1000, goldv: 2500, diamondneck: 3500 }
   };
   // which list in PlayerArt.options each part's choices come from
   const LISTS = { hair: "hair", mark: "marks", eyewear: "eyewear", top: "tops", bottom: "bottoms", shoes: "shoes", neck: "neck", extra: "extras", acc: "acc", gear: "gear" };
@@ -104,7 +106,7 @@
   const packItem = (part, v) => PACK_ONLY.find(a => a.part === part && a.value === v);
   function price(part, v){
     if(questItem(part, v) || packItem(part, v) || !OPEN[part] || OPEN[part].includes(v)) return 0;
-    return (PRICES[part] || {})[v] || 60;
+    return (PRICES[part] || {})[v] || 300;
   }
   const isOpen = (part, v, w) => { const q = questItem(part, v); if(q) return ADVENTURE_LIVE && adventureOwned().has(q.id);
     if(packItem(part, v)) return (w || load()).unlocked.includes(id(part, v));
@@ -173,7 +175,7 @@
     const w = load(), list = [];
     if(w.once[k]) return null;
     w.once[k] = 1;
-    if(isOpen(part, v, w) && !packItem(part, v)){ add(w, picks || 50, why, list); save(w); show(list, w.picks); return { picks: picks || 50 }; }
+    if(isOpen(part, v, w) && !packItem(part, v)){ add(w, picks || 300, why, list); save(w); show(list, w.picks); return { picks: picks || 300 }; }
     if(!w.unlocked.includes(id(part, v))) w.unlocked.push(id(part, v));
     save(w); return { item: true };
   }
@@ -212,5 +214,6 @@
     return got;
   }
 
-  window.FMAPicks = { EARN, OPEN, ADVENTURE, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, bonus, adventureOwned, icon: ICON };
+  const LEGEND = 2000;      // this price and up is Legendary
+  window.FMAPicks = { EARN, OPEN, ADVENTURE, LEGEND, balance: () => load().picks, price, isOpen: (p, v) => isOpen(p, v), lock: lockOf, hidden, unlock, grant, round, milestone, bonus, adventureOwned, icon: ICON };
 })();

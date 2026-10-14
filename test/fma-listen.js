@@ -134,13 +134,31 @@
         const x = this._time(), sr = this.ctx.sampleRate, W = Math.min(o.window, x.length >> 1);
         const tMin = Math.max(2, Math.floor(sr / o.fmax)), tMax = Math.min(Math.ceil(sr / o.fmin), x.length - W - 1);
         if(!this.d || this.d.length < tMax + 2) this.d = new Float32Array(tMax + 2);
-        const d = this.d, off = x.length - W - tMax - 1;          // the newest samples
-        for(let t = 1; t <= tMax; t++){ let s = 0; for(let j = 0; j < W; j++){ const e = x[off + j] - x[off + j + t]; s += e * e; } d[t] = s; }
+        const d = this.d, off0 = x.length - W - tMax - 1, span = W + tMax + 1;          // the newest samples
+        // a palm mute (or any note dying fast) halves in loudness every cycle, and then no period ever matches: even out the
+        // fade first (14 Oct 2026). Steady notes are left alone.
+        let e1 = 0, e2 = 0; const hs = span >> 1;
+        for(let j = 0; j < hs; j++){ e1 += x[off0 + j] * x[off0 + j]; e2 += x[off0 + hs + j] * x[off0 + hs + j]; }
+        let y = x, off = off0;
+        if(e2 > 0 && e1 > e2 * 1.5){
+          const k = Math.log(Math.min(Math.sqrt(e1 / e2), 12)) / hs;
+          if(!this.yb || this.yb.length < span) this.yb = new Float32Array(span);
+          y = this.yb; off = 0; for(let j = 0; j < span; j++) y[j] = x[off0 + j] * Math.exp(k * (j - hs));
+        }
+        for(let t = 1; t <= tMax; t++){ let s = 0; for(let j = 0; j < W; j++){ const e = y[off + j] - y[off + j + t]; s += e * e; } d[t] = s; }
         let run = 0; d[0] = 1;
         for(let t = 1; t <= tMax; t++){ run += d[t]; d[t] = d[t] * t / (run || 1); }
         let t = tMin;
         while(t < tMax){ if(d[t] < o.threshold){ while(t + 1 < tMax && d[t + 1] < d[t]) t++; break; } t++; }
         if(t >= tMax) return null;
+        // a phone mic barely hears a low string's own note, so its overtones (an octave, or an octave and a fifth, above) can
+        // pass the test first: the low E reads as B. If 3 or 2 times this period fits clearly better, that's the real note.
+        // (A real B's period fits about as well at 3 times, so it stays a B.) (14 Oct 2026)
+        if(d[t] > 0.03) for(const k of [3, 2]){
+          const c0 = Math.round(k * t); if(c0 + 3 >= tMax) continue;
+          let bt = c0; for(let u = c0 - 3; u <= c0 + 3; u++) if(d[u] < d[bt]) bt = u;
+          if(d[bt] < 0.5 * d[t]){ t = bt; break; }
+        }
         const a = d[t - 1], b = d[t], c = d[t + 1], den = a - 2 * b + c;
         const tau = t + (den ? 0.5 * (a - c) / den : 0);
         return { f: sr / tau, clarity: 1 - b };
@@ -157,7 +175,7 @@
   }
 
   function chordMatch(chord, opts){
-    const o = Object.assign({ thr: 0.40, strays: 0, need: 3 }, opts || {});
+    const o = Object.assign({ thr: 0.25, strays: 0, need: 3 }, opts || {});   // 25% (was 40%, 13 Oct 2026): phone mics hear quiet low strings weakly
     const latched = new Array(12).fill(false), onFor = new Array(12).fill(0);
     let run = 0, heard = 0;
     return {
@@ -166,13 +184,16 @@
       step(sc){
         if(!sc){ latched.fill(false); onFor.fill(0); run = 0; return { hit: false, latched, heard }; }
         const allow = chord.allow || chord.mask; let missing = 0, strays = 0;
+        for(let i = 0; i < 12; i++) latched[i] = sc[i] >= o.thr || (latched[i] && sc[i] >= o.thr - 0.10);   // once counted, a note stays counted until it drops a little
         for(let i = 0; i < 12; i++){
-          const v = sc[i], need = (chord.mask >> i) & 1;
-          latched[i] = v >= o.thr || (latched[i] && v >= o.thr - 0.10);     // once counted, a note stays counted until it drops a little
+          const need = (chord.mask >> i) & 1;
           onFor[i] = latched[i] ? onFor[i] + 1 : 0;
           if(onFor[i] >= 2 && need) heard |= 1 << i;                         // a chip lights only after two readings in a row
           if(need && !latched[i]) missing++;
-          if(!need && !((allow >> i) & 1) && latched[i]) strays++;
+          // not a stray: a note the shape may sound (allow), or the overtone a fifth above a chord note that's ringing (as in
+          // the classroom rig's GG Chord Check)
+          const j = (i + 5) % 12, ov = ((chord.mask >> j) & 1) && latched[j];
+          if(!need && !((allow >> i) & 1) && latched[i] && !ov) strays++;
         }
         run = (missing === 0 && strays <= o.strays) ? run + 1 : 0;
         return { hit: run >= o.need, latched, heard };
@@ -193,7 +214,7 @@
         rmsWin.push({ t: now, rms }); while(rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
         const floor = Math.min(0.02, Math.max(0.006, Math.min(...rmsWin.map(r => r.rms)) * 3));
         let midi = null;
-        if(rms > floor){ const p = det.read(); if(p && p.clarity > 0.85 && p.f > 70 && p.f < 1400) midi = 69 + 12 * Math.log2(p.f / 440); }
+        if(rms > floor){ const p = det.read(); if(p && p.clarity > 0.8 && p.f > 70 && p.f < 1400) midi = 69 + 12 * Math.log2(p.f / 440); }
         frames.push({ t: now, rms, midi }); while(frames.length && frames[0].t < now - 2) frames.shift();
         if(h.legato && h.legato() && midi != null && Math.abs(midi - Math.round(midi)) < 0.35){
           const r = Math.round(midi);
@@ -206,8 +227,9 @@
         for(let k = pending.length - 1; k >= 0; k--){
           const t = pending[k]; if(now < t + 0.12) continue;
           pending.splice(k, 1);
-          const ms = frames.filter(f => f.midi != null && f.t >= t + 0.03 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
-          if(ms.length >= 2){ const m = Math.round(ms[ms.length >> 1]); lastEmit = m; if(h.onNote) h.onNote(m, t, false); }
+          const ms = frames.filter(f => f.midi != null && f.t >= t + 0.02 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
+          // two readings, or one clean one (a palm mute can be gone in 50 ms)
+          if(ms.length >= 2 || (ms.length === 1 && Math.abs(ms[0] - Math.round(ms[0])) < 0.3)){ const m = Math.round(ms[ms.length >> 1]); lastEmit = m; if(h.onNote) h.onNote(m, t, false); }
         }
       }
     };

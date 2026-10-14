@@ -49,9 +49,14 @@
           const heard = new Set(shape.map(cell).map((c, i) => c && (OPEN[i] + c.fret) % 12).filter(x => x !== null && x !== undefined && x !== false));
           pcs = pcs.filter(pc => heard.has(pc)).concat([...heard].filter(pc => !pcs.includes(pc)));
         }
-        const full = pcs.reduce((a, pc) => a | (1 << pc), 0);
+        // NEEDED: only the chord's own notes (G B D for G), as in the classroom rig (GroupGuitar_core.lua). Notes the shape
+        // also sounds (the easy G's open E, the easy C's open B) are ALLOWED but never needed (14 Oct 2026, Dave).
+        const own = ivs.map(iv => (p.root + iv) % 12).reduce((a, pc) => a | (1 << pc), 0);
+        const full = pcs.reduce((a, pc) => a | (1 << pc), 0) | own;
         if(PIANO && name === base && (ladder.pianoEasy || []).includes(name)) pcs = [p.root, (p.root + ivs[1]) % 12];     // two-note chord: root and 3rd
-        const c = { name, base, root: p.root, pcs, tones: pcs.map(pc => spell[pc]), mask: pcs.reduce((a, pc) => a | (1 << pc), 0), allow: full, tier: ti, shape,
+        const need = PIANO ? pcs.reduce((a, pc) => a | (1 << pc), 0) : own;
+        if(!PIANO) pcs = pcs.filter(pc => (own >> pc) & 1);      // the note chips show (and light up) only the needed notes
+        const c = { name, base, root: p.root, pcs, tones: pcs.map(pc => spell[pc]), mask: need, allow: full, tier: ti, shape,
           easy: PIANO && pcs.length === 2 };
         list.push(c); byName[name] = c;
       });

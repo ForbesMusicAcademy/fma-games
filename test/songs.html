@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="fma-style.css?v=3">
+<link rel="stylesheet" href="fma-style.css?v=5">
 <style>
 /* Song Packs: songs in packs of five, three stars a song, a trophy and a character prize for finishing a pack.
    Guitar players read scrolling tab; piano players choose coloured notes on a staff or Falling Notes. Phone first.
@@ -111,6 +111,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.spst{display:block;font-size:11px;line-height:1;color:#B07D00;letter-spacing:1px;margin-top:2px}.spst.nost{color:var(--muted);letter-spacing:0;font-weight:600}
 </style>
 </head>
 <body class="fma">
@@ -151,7 +152,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     </div>
     <p id="hint"></p>
     <div class="row">
-      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn</button><button id="mPlay" aria-pressed="false">Play along</button></div>
+      <div class="seg" role="group" aria-label="How to play"><button id="mLearn" aria-pressed="true">Learn<small class="spst nost">no stars</small></button><button id="mPlay" aria-pressed="false">Play along</button></div>
       <div class="seg" id="speeds" role="group" aria-label="Speed"></div>
     </div>
     <div class="row">
@@ -168,10 +169,10 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=2"></script>
+<script src="fma-listen.js?v=4"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=11"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
 <script>
 /* ============================================================
    Song Packs (home). Wave 1 of the games site: projects/games-slow-release-plan.md in Dave's workspace.
@@ -195,8 +196,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
-const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Full", f: 1 }];
-const PLAY_PCT = 80, FULL_PCT = 90, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
+const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
+const PLAY_PCT = 80, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
 const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
 
 /* ---------- the catalogue ----------
@@ -565,6 +566,42 @@ function tone(m, when, len, vol, type, fx){
     lfo.connect(lg); lfo.connect(lg2); lg.connect(o1.frequency); lg2.connect(o2.frequency); lfo.start(t + 0.12); lfo.stop(end); scheduled.push(lfo); }
   scheduled.push(o1, o2);
 }
+/* A plucked guitar string (14 Oct 2026, Dave: "a more realistic guitar sound"): Karplus-Strong, worked out once per note
+   into a buffer and cached. A burst of picked noise runs round a delay line one period long, losing a little top end each
+   time round, which is how a real string rings and darkens. The pick position notch and a touch of body make it sound like
+   an electric-acoustic rather than a synth. Slides, bends and vibrato bend the playback rate, so the tone stays real.
+   A palm mute is a short, dark, damped version. */
+const plucks = {};
+function pluckBuf(m, muted){
+  const k = m + (muted ? "pm" : ""); if (plucks[k]) return plucks[k];
+  const c = audio(), sr = c.sampleRate, f = 440 * Math.pow(2, (m - 69) / 12), damp = muted ? 0.35 : 0.5, N = Math.max(3, Math.round(sr / f + damp));
+  const secs = muted ? 0.35 : 3, len = Math.floor(sr * secs), buf = c.createBuffer(1, len, sr), y = buf.getChannelData(0);
+  const line = new Float32Array(N), pos = Math.max(1, Math.round(N * 0.18));          // picked about a fifth of the way along
+  let lp = 0; for (let i = 0; i < N; i++) { const r = Math.random() * 2 - 1; lp += (muted ? 0.25 : 0.6) * (r - lp); line[i] = lp; }
+  for (let i = N - 1; i >= pos; i--) line[i] -= 0.9 * line[i - pos];                 // the pick-position notch
+  const loss = muted ? 0.93 : Math.min(0.9985, 0.996 + (52 - m) * 0.00004);
+  let p = 0, prev = 0;
+  for (let i = 0; i < len; i++) {
+    const nx = (p + 1) % N, v = line[p];
+    line[p] = loss * ((1 - damp) * v + damp * line[nx]);
+    y[i] = 0.5 * (v + prev) * (i < 40 ? i / 40 : 1); prev = v; p = nx;
+  }
+  let mx = 0; for (let i = 0; i < len; i++) mx = Math.max(mx, Math.abs(y[i])); if (mx) for (let i = 0; i < len; i++) y[i] /= mx;
+  return plucks[k] = { buf, rate: f / (sr / (N - damp)) };      // the loop's own period is N - damp samples: tune it exactly
+}
+function pluck(m, when, len, vol, fx, muted){
+  const c = audio(), t = Math.max(when || c.currentTime, c.currentTime), pb = pluckBuf(m, muted);
+  const src = c.createBufferSource(), g = c.createGain(), body = c.createBiquadFilter(), top = c.createBiquadFilter();
+  src.buffer = pb.buf; src.playbackRate.setValueAtTime(pb.rate, t);
+  body.type = "peaking"; body.frequency.value = 180; body.Q.value = 0.9; body.gain.value = 4;
+  top.type = "lowpass"; top.frequency.value = muted ? 1400 : 5200;
+  const ring = Math.min(pb.buf.duration, Math.max(0.25, len || 1.2)), peak = (vol || 0.3) * 1.6;
+  g.gain.setValueAtTime(peak, t); g.gain.setValueAtTime(peak, t + ring); g.gain.exponentialRampToValueAtTime(0.0001, t + ring + 0.08);
+  if (fx && fx.from != null) { const r0 = pb.rate * Math.pow(2, (fx.from - m) / 12); src.playbackRate.setValueAtTime(r0, t); src.playbackRate.linearRampToValueAtTime(pb.rate, t + fx.glide); }
+  if (fx && fx.vib) { const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 5.5; lg.gain.value = pb.rate * 0.012; lfo.connect(lg); lg.connect(src.playbackRate); lfo.start(t + 0.12); lfo.stop(t + ring + 0.1); scheduled.push(lfo); }
+  src.connect(body); body.connect(top); top.connect(g); g.connect(out);
+  src.start(t); src.stop(t + ring + 0.1); scheduled.push(src);
+}
 function click(when, accent){
   const c = audio(), o = c.createOscillator(), g = c.createGain();
   o.frequency.value = accent ? 1800 : 1200; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(accent ? 0.22 : 0.14, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.05);
@@ -618,6 +655,7 @@ let hopFrom = -1, hopTo = 0, hopAt = 0, trans = 0, LEG = false;
 const LEGATO = ["hammer", "pull", "slide", "slidedown"];      // learn mode: the character's last hop (note indices)
 const pops = [];
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
+const SPEED_STARS = { slow: 1, med: 2, full: 3 };      // Play along at PLAY_PCT% or better wins that speed's star; Learn wins none (Dave, 14 Oct 2026)
 const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
 function resetRun(){
   hush(); clearTimeout(simT); simTs.forEach(clearTimeout); simTs.length = 0;
@@ -643,8 +681,8 @@ function hint(text){
   if (!cur) return;
   const r = rec(rk(pack, cur.id));
   $("hint").textContent = mode === "learn"
-    ? (techTip(notes[0]) || (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Finish the song for your first star." : "The notes wait for you. Finish the song for your first star."))
-    : r.stars >= 3 ? "Three stars! Play it again any time." : r.stars >= 2 ? `Get ${FULL_PCT}% at Full speed for the third star.` : `Get ${PLAY_PCT}% at any speed for the second star.`;
+    ? (techTip(notes[0]) || (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Learn mode is for practice: stars are won in Play along." : "The notes wait for you. Learn mode is for practice: stars are won in Play along."))
+    : r.stars >= 3 ? "Three stars! Play it again any time." : `Get ${PLAY_PCT}% at ${["Slow", "Medium", "Fast"][r.stars]} speed for ${r.stars ? "star " + (r.stars + 1) : "your first star"}.`;
 }
 async function startRun(asDemo){
   $("err").hidden = true;
@@ -672,7 +710,7 @@ async function startRun(asDemo){
       if (n.tech.includes("hammer") || n.tech.includes("pull")) vol = 0.2;
       if (n.tech.includes("vib")) fx = Object.assign(fx || {}, { vib: true });
       if (pm) { vol = 0.22; len = 0.14; }
-      tone(soundOf(n), when, len, vol, INST === "guitar" ? "sawtooth" : null, fx);
+      if (INST === "guitar") pluck(soundOf(n), when, len, vol, fx, pm); else tone(soundOf(n), when, len, vol, null, fx);
     });
     if (O.backing || demo) cur.chords.forEach(([b, name], i) => {
       const next = i + 1 < cur.chords.length ? cur.chords[i + 1][0] : endBeat, len = Math.max(0.3, (next - b) * spb);
@@ -700,8 +738,18 @@ function songPos(){
 // legato: the note came from a pitch change while the string was still ringing (a hammer-on, pull-off, slide or bend), not
 // a new pick. Those only ever count when they're right: the notes a slide or bend passes through on the way are ignored.
 const preBend = (n, pc) => { for (let k = 1; k <= n.bend; k++) if ((((n.m - k) % 12) + 12) % 12 === pc) return true; return false; };
+// a phone mic often hears a low guitar string as its own overtone (an octave, or an octave and a fifth, up: low E as E3 or
+// B3). On guitar, a note that's exactly that far above a note we're waiting for counts as that note (14 Oct 2026).
+function fold(m, when){
+  if (INST !== "guitar" || m == null) return m;
+  const at = when != null ? (when - t0) / spb : songPos();
+  const want = mode === "learn" ? [notes[idx]] : notes.filter(n => !n.res && Math.abs((at - n.t) * spb) <= GOOD);
+  for (const n of want) if (n && [12, 19, 24].includes(m - n.m)) return n.m;
+  return m;
+}
 function press(m, when, legato){
   if (!running || demo) return;
+  m = fold(m, when);
   const pc = ((m % 12) + 12) % 12;
   if (mode === "learn") learnPress(pc, legato); else playPress(pc, when, legato);
 }
@@ -804,7 +852,7 @@ async function openMic(){
   if (micOn) return;
   audio();
   det = FMAListen.create(); await det.start({ ctx: ac });
-  tracker = FMAListen.notes(det, { legato: () => LEG,
+  tracker = FMAListen.notes(det, { legato: () => LEG || INST === "guitar",      // guitar: a first reading that was wrong (the overtone) can still be put right while the string rings
     onLevel: rms => { $("lvl").firstChild.style.width = Math.min(100, rms * 600) + "%"; },
     onHeard: m => { if (m != null) { $("heard").textContent = "Hearing: " + noteName(m); heardAt = performance.now(); } else if (performance.now() - heardAt > 600) $("heard").textContent = "Hearing: –"; },
     onNote: (m, t, leg) => { press(m, mode === "play" ? t - O.lat : null, leg); flashKey(m); } });
@@ -976,22 +1024,20 @@ function finish(){
   if (mode === "learn") {
     pct = Math.round(100 * stats.first / Math.max(1, total));
     improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
-    r.stars = Math.max(r.stars, 1);
     html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${r.stars > before ? "First star!" : "Song finished!"}</h3>
+      <h3>${pct >= 100 ? "Every note first time!" : "Song learnt!"}</h3>
       <p>${stats.first} of ${total} notes right first time.</p>
-      <p>${r.stars < 2 ? `Ready for more? Try <b>Play along</b>: get ${PLAY_PCT}% for the next star.` : "Nice work. Play along is where the next stars are."}</p>
+      <p>Stars are won in <b>Play along</b>: ${PLAY_PCT}% at Slow for one star, Medium for two, Fast for three.</p>
       <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
-    mom = pct >= 100 ? "win" : r.stars > before ? "best" : "done";
+    mom = pct >= 100 ? "win" : improved ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
     const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
-    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, 2);
-    if (pct >= FULL_PCT && speed === "full") r.stars = 3;
-    r.stars = Math.max(r.stars, 1);
+    if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, SPEED_STARS[speed] || 1);
     const sp = SPEEDS.find(s => s.k === speed).n;
-    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT && speed !== "full" ? `Now try <b>Full</b> speed: ${FULL_PCT}% there wins the third star.`
-      : pct >= PLAY_PCT ? `So close: ${FULL_PCT}% at Full speed wins the third star.` : `${PLAY_PCT}% wins the next star. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
+    const nextSp = ["Slow", "Medium", "Fast"][r.stars];
+    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT ? `Now try <b>${nextSp}</b>: ${PLAY_PCT}% there wins ${r.stars + 1} stars.`
+      : `${PLAY_PCT}% at ${sp} wins ${SPEED_STARS[speed] > r.stars ? (SPEED_STARS[speed] === 1 ? "a star" : SPEED_STARS[speed] + " stars") : "a new best"}. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
     html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
       <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
       <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
@@ -999,7 +1045,7 @@ function finish(){
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
   const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
-  html += (nextSong && r.stars >= 1 ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(cleanTitle(nextSong.title))}</button>` : "")
+  html += (nextSong ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(cleanTitle(nextSong.title))}</button>` : "")
     + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">Back to ${esc(pack.name)}</button>`
     + (slowDevice ? `<p style="font-size:13px">This device was working hard, so your player stopped hopping to keep the notes smooth.</p>` : "");
   save(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
@@ -1022,7 +1068,7 @@ function setMode(m){
   $("backing").hidden = m === "learn";
   resetRun();
 }
-$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}</button>`).join("");
+$("speeds").innerHTML = SPEEDS.map(s => `<button data-k="${s.k}" aria-pressed="${s.k === speed}">${s.n}<small class="spst">${"★".repeat(SPEED_STARS[s.k])}</small></button>`).join("");
 $("speeds").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return; speed = b.dataset.k; O.speed = speed; saveOpts();
   $("speeds").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); resetRun(); };
 $("mLearn").onclick = () => setMode("learn"); $("mPlay").onclick = () => setMode("play");

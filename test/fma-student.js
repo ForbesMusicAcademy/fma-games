@@ -359,7 +359,7 @@
         p.textContent = "Your points this week: " + r.me.week + (r.me.last ? " (last week " + r.me.last + ")" : "");
         el.append(p);
         r.teams.forEach(t => { const d = document.createElement("div");
-          d.textContent = t.name + ": " + ord(t.rank) + " of " + t.of + " this week · " + t.practised + " of " + t.members + " have practised"; el.append(d); });
+          d.textContent = t.name + ": " + (t.tied ? "equal " : "") + ord(t.rank) + " of " + t.of + " this week · " + t.practised + " of " + t.members + " have practised"; el.append(d); });
       }catch(e){}
     },
     // the weekly team league (team names and counts only), for the classroom screen; null when tracking is off
