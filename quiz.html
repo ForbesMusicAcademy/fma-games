@@ -165,7 +165,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
 </div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=7"></script>
+<script src="fma-listen.js?v=8"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=12"></script>
@@ -269,7 +269,7 @@ function readNote(){
     if(sc){
       const best = FMAListen.strongest(sc, 0.18);
       // overtones are taken off (a played E doesn't also read as B), and the note must clearly beat both neighbouring semitones
-      if(best >= 0 && sc[best] > 0.35) top = best;
+      if(best >= 0 && sc[best] > 0.25) top = best;      // (strongest() credits a note's overtones, so the played note wins)
       if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + ")  tonal " + det.tonal.toFixed(2) + "  tuning " + (det.tune * 100).toFixed(0) + " cents\n" + NOTE_NAMES.map((n, i) => n.padEnd(2) + " " + "#".repeat(Math.round(sc[i] * 20))).join("\n");
     }else if(DEBUG) dbgText = "level " + db.toFixed(1) + " dB (gate " + det.gateDb.toFixed(1) + "): below the gate or not musical";
   }
