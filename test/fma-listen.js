@@ -175,7 +175,9 @@
   }
 
   function chordMatch(chord, opts){
-    const o = Object.assign({ thr: 0.15, strays: 0, need: 3 }, opts || {});   // 15% (Dave, 14 Oct 2026, after trying it; was 25%, and 40% before 13 Oct): phone mics hear quiet low strings weakly
+    // miss: chord notes that may be missing (FMAChords.missFor: 1 while a chord is new); root (0-11): with miss > 0 the
+    // root must be one of the notes heard, and at least two chord notes always are
+    const o = Object.assign({ thr: 0.15, strays: 0, need: 3, miss: 0, root: -1 }, opts || {});   // 15% (Dave, 14 Oct 2026, after trying it; was 25%, and 40% before 13 Oct): phone mics hear quiet low strings weakly
     const latched = new Array(12).fill(false), onFor = new Array(12).fill(0);
     let run = 0, heard = 0;
     return {
@@ -195,7 +197,9 @@
           const j = (i + 5) % 12, ov = ((chord.mask >> j) & 1) && latched[j];
           if(!need && !((allow >> i) & 1) && latched[i] && !ov) strays++;
         }
-        run = (missing === 0 && strays <= o.strays) ? run + 1 : 0;
+        const total = [...Array(12).keys()].filter(i => (chord.mask >> i) & 1).length;
+        const ok = missing === 0 || (missing <= o.miss && total - missing >= 2 && (o.root < 0 || latched[o.root]));
+        run = (ok && strays <= o.strays) ? run + 1 : 0;
         return { hit: run >= o.need, latched, heard };
       }
     };

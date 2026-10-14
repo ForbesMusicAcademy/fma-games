@@ -126,6 +126,18 @@
     const out = new Set(); list.slice(0, n).forEach(c => { out.add(c.name); out.add(c.base); });      // "C:3" also opens songs that use C
     return out;
   }
+  // a chord's stars in Chord Quest (the same sum as chords.html's starsOf: learning = 0, graduated = 1 + reviews, max 3)
+  function stars(name){
+    try{ const P = JSON.parse(localStorage.getItem(window.fmaKey ? fmaKey(STORE) : STORE)), c = P && P.cards && P.cards[name];
+      if(!c) return 0; return Math.min(3, c.grad ? c.k + 1 : c.k); }catch(e){ return 0; }
+  }
+  /* How strict to be (Dave, 14 Oct 2026): while a chord is new (0 or 1 star) 2 of its 3 notes count, as long as the root is
+     one of them; from 2 stars every note is needed. Wrong notes are never allowed, at any stage. Two-note chords always
+     need both. Students can't change this: their stars do. Returns the number of chord notes that may be missing. */
+  function missFor(name){
+    const c = byName[name]; if(!c) return 0;
+    const n = c.pcs.length; return n >= 3 && stars(name) < 2 ? 1 : 0;
+  }
   // the chord a song's "C" means for this player: on piano, the full chord once it's unlocked, else the easy two-note one
   function forSong(name, open){
     const full = byName[name + ":3"];
@@ -139,6 +151,6 @@
     info: name => byName[name] || null,
     label: name => { const c = byName[name]; if(PIANO) return c && c.easy ? "Easy-" + c.base : (c ? c.base : name);
       return (ladder && ladder.labels && ladder.labels[name]) || name; },
-    diagram, unlocked, forSong, START_POOL, inst: INST, storeKey: STORE
+    diagram, unlocked, forSong, stars, missFor, START_POOL, inst: INST, storeKey: STORE
   };
 })();
