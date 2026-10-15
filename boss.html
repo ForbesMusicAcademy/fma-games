@@ -175,6 +175,7 @@ body.piano #diag{width:100%;max-width:380px}
 .sim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .sim button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:800;user-select:none;touch-action:none}
 .sim button.on{background:var(--accent)}
+#cal .meter{height:12px;border-radius:7px;margin-top:12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -191,6 +192,13 @@ body.piano #diag{width:100%;max-width:380px}
     <div id="lairs" style="display:flex;flex-direction:column;gap:14px"></div>
     <p style="font-size:13px;color:var(--muted);text-align:center;margin:0"><span data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are each song's main loop, simplified.</p>
   </div>
+
+  <!-- the room check before the first fight (same as Chord Quest) -->
+  <section class="card" id="cal" hidden>
+    <h2>Shh… listening to the room</h2>
+    <p>Keep quiet and don't play for two seconds.</p>
+    <div class="meter"><i id="calBar"></i></div>
+  </section>
 
   <!-- getting ready for one song -->
   <section class="card setup" id="setup" hidden>
@@ -241,14 +249,14 @@ body.piano #diag{width:100%;max-width:380px}
 </div>
 
 <script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=3"></script>
+<script src="fma-listen.js?v=9"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=33"></script>
 <script src="fma-picks.js?v=11"></script>
-<script src="fma-chords.js?v=4"></script>
+<script src="fma-chords.js?v=6"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -332,7 +340,7 @@ function readScores(){
   return sc;
 }
 // Root mode: the chord's root must be the clearly strongest note (it has to beat both neighbouring semitones by 25%).
-const strongest = sc => FMAListen.strongest(sc, 0.25);
+const strongest = sc => FMAListen.strongest(sc, 0.18);      // was 0.25 (14 Oct 2026)
 
 /* ---------- The beat: drums made on the device ---------- */
 const snd = { ctx:null, out:null, noise:null, next:0, beat:0, timer:null, t0:0, bpm:80, mode:"drums", bars:0 };
@@ -459,7 +467,7 @@ function frame(){
   if(idx !== G.idx){
     if(G.idx >= 0){ G.outcomes[G.idx] = G.hit; if(!G.hit) miss(); }       // close the bar we just left
     if(G.done) return;
-    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx]); G.settle = performance.now() + 250;
+    G.idx = idx; G.hit = false; G.rootRun = 0; G.match = FMAListen.chordMatch(G.chords[idx], { miss: FMAChords.missFor(G.chords[idx].name), root: G.chords[idx].root }); G.settle = performance.now() + 250;
     setChord(idx);
     [...$("bars").children].forEach((el, i) => { el.className = i < idx ? (G.outcomes[i] ? "hit" : "miss") : i === idx ? "now" : ""; });
     if(idx > 0 && G.outcomes[idx - 1]) $("status").textContent = "";
@@ -556,7 +564,7 @@ function nextSong(){
 }
 
 /* ---------- The boss map ---------- */
-const show = id => { ["map","setup","play","end"].forEach(s => { $(s).hidden = s !== id; }); scrollTo(0, 0); };
+const show = id => { ["map","setup","play","end","cal"].forEach(s => { $(s).hidden = s !== id; }); scrollTo(0, 0); };
 const openSet = () => TEACHER ? new Set(FMAChords.list.map(c => c.name)) : FMAChords.unlocked();
 const openSongs = () => { const o = openSet(); return FMABoss.order().filter(s => FMABoss.isOpen(s, o)); };
 const expanded = new Set();
@@ -611,12 +619,20 @@ function drawSetup(){
   chips("backs", BACKS, "back", o => o.s);
   $("tip").textContent = PIANO ? "Use headphones so the game doesn't hear its own drums." : "Use headphones so the game doesn't hear its own drums. Tune up first.";
 }
+// listen to the room for two seconds and set the loudness gate just above it (Chord Quest does the same), so a quiet
+// phone mic still hears the guitar and a noisy lounge doesn't count as playing. Once per visit; not for a MIDI keyboard.
+async function calibrate(){
+  if(det.keysOnly) return;
+  show("cal");
+  const t0 = performance.now(), bar = setInterval(() => { $("calBar").style.width = Math.min(100, (performance.now() - t0) / 20) + "%"; }, 60);
+  await det.calibrate(2000); clearInterval(bar);
+}
 async function begin(){
   $("go").disabled = true; $("again").disabled = true; $("err").hidden = true;
   try{
     if(!snd.ctx){
       if(SIM){ sndInit(new (window.AudioContext || window.webkitAudioContext)()); }
-      else{ await det.start(); sndInit(det.ctx); }
+      else{ await det.start(); sndInit(det.ctx); await calibrate(); }
     }
     if(snd.ctx.state === "suspended") await snd.ctx.resume();
     startFight(); requestAnimationFrame(frame);
