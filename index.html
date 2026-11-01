@@ -412,10 +412,17 @@ function drawInstrument(){
   chip.textContent = (inst === "piano" ? "🎹 Piano" : inst === "bass" ? "🎸 Bass" : "🎸 Guitar");
   chip.setAttribute("aria-label", "You play " + inst + ". Tap to change.");
 }
+// Bass was added on 2 Nov 2026, after families had already answered Guitar or Piano: everyone who answered before then is
+// asked once more (their answer stays highlighted), so a bass player who picked Guitar finds the bass games.
+const ASKED = fmaKey("fma-instrument-asked-v2");
+const askedV2 = () => { try{ return localStorage.getItem(ASKED) === "1"; }catch(e){ return true; } };
 function askInstrument(){
+  const again = !!fmaInstrument.get() && !askedV2();
+  try{ localStorage.setItem(ASKED, "1"); }catch(e){}
+  if(document.querySelector(".instq")) return;
   const cur = fmaInstrument.get(), w = document.createElement("div");
   w.className = "instq";
-  w.innerHTML = `<div class="in"><b>What do you play?</b><p>We'll show you the games for your instrument. You can change it any time with the button in the corner.</p>
+  w.innerHTML = `<div class="in"><b>${again ? "New: bass games!" : "What do you play?"}</b><p>${again ? "Do you play bass? Pick it to see the new bass games. " : ""}We'll show you the games for your instrument. You can change it any time with the button in the corner.</p>
     <div class="row"><button data-v="guitar" class="${cur === "guitar" ? "on" : ""}"><span>🎸</span>Guitar</button><button data-v="piano" class="${cur === "piano" ? "on" : ""}"><span>🎹</span>Piano</button><button data-v="bass" class="${cur === "bass" ? "on" : ""}"><span>🎸</span>Bass</button></div></div>`;
   w.querySelectorAll("button").forEach(b => b.onclick = () => { fmaInstrument.set(b.dataset.v); w.remove(); drawInstrument(); drawTuneFirst(); if(!cur && !touched()) hello(); });
   if(cur) w.addEventListener("click", e => { if(e.target === w) w.remove(); });    // the first time, they choose
@@ -463,7 +470,7 @@ if(window.FMAStudent && FMAStudent.challenge) FMAStudent.challenge().then(c => {
   // everyone who practised that week gets the picks once the studio makes it
   if(done && c.mine > 0 && c.picks && window.FMAPicks) FMAPicks.milestone("studio:" + c.week, c.picks, "the Academy Challenge");
 });
-if(!fmaInstrument.get()) askInstrument();
+if(!fmaInstrument.get() || !askedV2()) askInstrument();
 else if(!touched() && location.hash !== "#character") hello();
 if(location.hash === "#character") openEditor();
 </script>
