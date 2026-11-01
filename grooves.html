@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<title>Groove Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=5">
+<style>
+/* Groove Lab (bass, 2 Nov 2026): ten levels of FMA original bass grooves, learnt by call and response. The game plays a
+   groove with the band, then it's your turn: the drummer drops the kick and the bass, so the microphone only hears you
+   (and the hi-hats and snare it hears are filtered out). Phone first, one column. */
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:620px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;--sky:#2E7DA8;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:620px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px;line-height:1.15}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+[hidden]{display:none!important}
+.muted{color:var(--muted)}
+/* levels */
+#levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lv{display:flex;flex-direction:column;text-align:left;border:1px solid var(--line);border-radius:20px;background:#fff;padding:0;overflow:hidden;box-shadow:0 10px 30px -24px rgba(35,35,31,.5)}
+.lv .cover{padding:14px 16px;color:#fff;min-height:84px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.lv .cover b{font-family:var(--head);font-weight:900;font-size:22px;line-height:1.1}
+.lv .cover small{display:block;font-size:13px;font-weight:700;opacity:.9}
+.lv .cover .emo{font-size:36px;line-height:1}
+.lv .body{padding:10px 16px 14px;color:var(--muted);font-size:15px}
+.lv.locked{opacity:.55}
+.lv.locked .cover{filter:grayscale(.85)}
+.bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--good)}
+/* one level's grooves */
+.groove{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 14px;margin-top:10px}
+.groove b{font-family:var(--head);font-weight:900;font-size:19px;display:block}
+.groove span{color:var(--muted);font-size:14px}
+.groove .st{margin-left:auto;display:flex;gap:2px;flex:none}
+.groove .st img,.modes img{width:24px;height:24px}
+/* the player */
+#phase{border-radius:18px;padding:12px 16px;text-align:center;font-family:var(--head);font-weight:900;font-size:26px;background:var(--line);color:var(--muted);transition:background .2s,color .2s}
+#phase.listen{background:#D9ECF6;color:var(--sky)}
+#phase.you{background:var(--accent);color:var(--fg)}
+#phase.count{background:#EFE8D8;color:var(--fg)}
+#phase small{display:block;font-family:var(--ui);font-size:14px;font-weight:700;opacity:.85}
+.beats{display:flex;justify-content:center;gap:8px;margin-top:6px}
+.beats i{width:12px;height:12px;border-radius:50%;background:currentColor;opacity:.2}
+.beats i.on{opacity:1}
+#tabWrap{position:relative;margin-top:12px}
+#tab{width:100%;height:auto;display:block}
+#tabHide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#F3EEE2 0 12px,#EFE8D8 12px 24px);border-radius:12px;font-family:var(--head);font-weight:900;font-size:22px;color:var(--muted)}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.modes button{border:2px solid var(--line);background:#fff;border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:86px}
+.modes button b{font-family:var(--head);font-weight:900;font-size:17px}
+.modes button small{color:var(--muted);font-size:12px;line-height:1.2;text-align:center}
+.modes button.on{border-color:var(--fg);background:#FFF6DC}
+.row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.seg button{border:0;background:none;min-height:40px;padding:0 14px;font-weight:700}
+.seg button.on{background:var(--accent)}
+.stage{display:flex;align-items:center;gap:12px;margin-top:12px}
+.stage .buddy{flex:none;width:86px;aspect-ratio:1/1}
+#status{font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em}
+#meter{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:6px}
+#meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+.res{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.res div{background:#F6F1E4;border-radius:14px;padding:10px;text-align:center;color:var(--muted);font-weight:700;font-size:14px}
+.res div b{display:block;font-family:var(--head);font-weight:900;font-size:28px;color:var(--fg)}
+.stars{display:flex;justify-content:center;gap:4px}
+.stars img{width:56px;height:56px}
+.stars img.off{opacity:.35}
+.tip{background:#FFF6DC;border-radius:14px;padding:10px 14px;color:var(--fg);font-size:15px;margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Groove Lab</h1><a class="fma-back" id="back" href="./">&larr; All games</a></div></div>
+<div id="app">
+
+  <!-- all levels -->
+  <section id="levelsView">
+    <div class="card">
+      <h2>Lock in with the band</h2>
+      <p>Ten levels of bass grooves. In each one the band plays a groove, then it's your turn to play it back. Every groove has three stars: <b>Copy it</b>, <b>Lock it in</b> (keep it going on your own) and <b>By ear</b> (no tab).</p>
+      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
+    </div>
+    <div id="levels" style="margin-top:14px"></div>
+  </section>
+
+  <!-- one level -->
+  <section id="levelView" hidden>
+    <div class="card" id="levelHead"></div>
+    <div id="grooveList"></div>
+  </section>
+
+  <!-- playing a groove -->
+  <section id="playView" hidden>
+    <div class="card">
+      <h2 id="gTitle"></h2>
+      <p id="gHook" style="margin-top:0"></p>
+      <div id="phase">Ready<small id="phaseSub">Pick a way to play, then press Start</small><div class="beats" id="beats"></div></div>
+      <div id="tabWrap"><svg id="tab" viewBox="0 0 640 200" aria-label="Bass tab"></svg><div id="tabHide" hidden>By ear: no tab! 👂</div></div>
+      <div class="modes" id="modes"></div>
+      <div class="row">
+        <span class="seg" id="speed"><button data-f="0.8">Slow</button><button data-f="1">Full speed</button></span>
+        <button class="ghost" id="hear" style="min-height:44px;padding:0 16px">🔊 Hear it</button>
+      </div>
+      <div class="stage"><div class="buddy" id="buddy"></div><div style="flex:1"><div id="status"></div><div id="meter"><i id="lvl"></i></div><p id="modeHelp" class="muted" style="margin:6px 0 0;font-size:15px"></p></div></div>
+      <button class="big play" id="go" style="margin-top:12px">Start (allow microphone)</button>
+      <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    </div>
+    <div class="card" id="result" hidden></div>
+    <details class="card" style="padding:12px 16px"><summary style="cursor:pointer;color:var(--muted);font-weight:700">Tips for playing with a phone or laptop</summary>
+      <p>Put the device close to your amp (or close to your bass if it's not plugged in), and turn the device's volume up so you can hear the hi-hats on your turn.</p>
+      <p>Mute each note when the next one starts, especially in the levels with gaps. Clean starts and stops are what the game listens for, and they're what makes a groove sound tight.</p>
+      <p>Headphones are fine: then the game can't hear itself at all.</p>
+    </details>
+  </section>
+</div>
+
+<script src="fma-student.js?v=10"></script>
+<script src="fma-listen.js?v=10"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=33"></script>
+<script src="fma-picks.js?v=11"></script>
+<script>
+/* ============================================================
+   Groove Lab. All the grooves are FMA originals, written for this page (none copies a real song's bass line).
+   Each groove is written bar by bar in a small tab notation, one note per token, "<string><fret>:<length>":
+     strings   G D A E   (thinnest ... thickest)
+     lengths   w=4 h=2 dq=1.5 q=1 e=0.5 s=0.25, and for a shuffle l3=2/3 + t=1/3 (beats)
+     r:<length> is a rest.
+   Levels open at 5 stars in the level before (?teacher opens them all). Progress is kept under fmaKey, so it follows the
+   player when tracking is on.
+
+   How a round runs (all scheduled on one clock, the page's AudioContext, which the listener shares):
+     Copy it      a count-in, then four times: the band plays the groove (Listen), then you play it back (Your turn)
+     Lock it in   a count-in, the band plays it once, then you play it four times in a row
+     By ear       Copy it with the tab hidden (it's shown again at the end)
+   On your turn the drummer plays only hi-hats and snare (no kick, no bass), and the listener's bass mode filters those
+   out, so the speaker never competes with the microphone. Notes count by name (an octave up or down is fine), within a
+   quarter of a second of where they belong; "in the pocket" means within 60 ms of your own average feel, so a player who
+   sits a touch behind the beat (or a device with a slow speaker) isn't marked down for it.
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search), TEACHER = q.has("teacher"), DEBUG = q.has("debug");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const OPEN = { G: 43, D: 38, A: 33, E: 28 }, SIDX = { G: 0, D: 1, A: 2, E: 3 };
+const LEN = { w: 4, h: 2, dq: 1.5, q: 1, e: 0.5, s: 0.25, l3: 2 / 3, t: 1 / 3 };
+
+/* ---------- the grooves ---------- */
+const L = (n, name, style, emo, col, col2, tempo, skill, tip, grooves) => ({ n, name, style, emo, col, col2, tempo, skill, tip, grooves });
+const G = (id, title, hook, bars, drums) => ({ id, title, hook, bars, drums });
+const LEVELS = [
+  L(1, "Hold It Down", "Rock", "🧱", "#3E9A57", "#7CC36B", 76, "Open strings, one note a beat.",
+    "The bass and the kick drum are a team. Listen for the kick and play right on top of it.", [
+    G("first-stomp", "First Stomp", "Four on E, four on A. Count out loud: 1 2 3 4.", ["E0:q E0:q E0:q E0:q", "A0:q A0:q A0:q A0:q"]),
+    G("big-steps", "Big Steps", "Long notes. Let each one ring for two whole beats.", ["E0:h A0:h", "D0:h A0:h"], "halftime"),
+    G("three-strings", "Three Strings", "Two short, one long, on three different strings.", ["E0:q E0:q A0:h", "E0:q E0:q D0:h"])]),
+  L(2, "Eighth-Note Engine", "Punk", "🚂", "#B8322C", "#FF8A6B", 84, "Two notes every beat.",
+    "Keep your plucking hand moving like an engine: two notes a beat, every note the same size.", [
+    G("engine-room", "Engine Room", "Eight on E, eight on A. Don't slow down on the change.", ["E0:e E0:e E0:e E0:e E0:e E0:e E0:e E0:e", "A0:e A0:e A0:e A0:e A0:e A0:e A0:e A0:e"], "punk"),
+    G("night-drive", "Night Drive", "A string change every two beats.", ["E0:e E0:e E0:e E0:e A0:e A0:e A0:e A0:e", "D0:e D0:e D0:e D0:e A0:e A0:e A0:e A0:e"], "punk"),
+    G("steady-rocker", "Steady Rocker", "One long, two short. Feel the gallop.", ["E0:q E0:e E0:e A0:q A0:e A0:e", "D0:q D0:e D0:e A0:q A0:e A0:e"])]),
+  L(3, "Find the Root", "Garage rock", "🔑", "#2E7DA8", "#8ECAE6", 84, "Fretted root notes on the E and A strings.",
+    "The root is the note a chord is named after. G is fret 3 on the E string, C is fret 3 on the A string, F is fret 1 on the E string.", [
+    G("garage-door", "Garage Door", "G, then C, then A and E. Fret 3 twice, then open strings.", ["E3:e E3:e E3:e E3:e A3:e A3:e A3:e A3:e", "A0:e A0:e A0:e A0:e E0:e E0:e E0:e E0:e"]),
+    G("steady-on", "Steady On", "C and G, then D and a long A.", ["A3:q A3:q E3:q E3:q", "D0:q D0:q A0:h"]),
+    G("sunny-side", "Sunny Side", "F, C, G, A. Four chords, four roots.", ["E1:e E1:e E1:e E1:e A3:e A3:e A3:e A3:e", "E3:e E3:e E3:e E3:e A0:e A0:e A0:e A0:e"])]),
+  L(4, "Root and Five", "Country", "🤠", "#8A6A1F", "#FFC42B", 88, "The root, then its fifth.",
+    "The fifth is two frets up on the next string, or the open string just below. Root, five, root, five: that's a country bass line.", [
+    G("two-step", "Two-Step", "A and its fifth below (open E), then D and open A.", ["A0:q E0:q A0:q E0:q", "D0:q A0:q D0:q A0:q"], "country"),
+    G("root-five", "Root Five", "Fret 3 on E, fret 5 on A. Then the same shape one string over.", ["E3:q A5:q E3:q A5:q", "A3:q D5:q A3:q D5:q"], "country"),
+    G("back-porch", "Back Porch", "Root, a quick double on the fifth, root, fifth.", ["A0:q E0:e E0:e A0:q E0:q", "D0:q A0:e A0:e D0:q A0:q"], "country")]),
+  L(5, "Octave Jumps", "Disco", "🪩", "#C23B7A", "#FF9BC8", 96, "The same note, an octave higher.",
+    "The octave is two strings over and two frets up. Bounce between them and you've got a dance floor.", [
+    G("mirror-ball", "Mirror Ball", "Open E and its octave (D string, fret 2), then A and its octave.", ["E0:e D2:e E0:e D2:e E0:e D2:e E0:e D2:e", "A0:e G2:e A0:e G2:e A0:e G2:e A0:e G2:e"], "disco"),
+    G("roller-disco", "Roller Disco", "The octave shape moves: A, G, then A, B.", ["E5:e D7:e E5:e D7:e E3:e D5:e E3:e D5:e", "A0:e G2:e A0:e G2:e A2:e G4:e A2:e G4:e"], "disco"),
+    G("up-and-down", "Up and Down", "Low, high, a quick double, high.", ["A0:q G2:q A0:e A0:e G2:q", "A5:q G7:q A5:e A5:e G7:q"], "disco")]),
+  L(6, "Make Some Space", "Hip hop", "🎧", "#26211F", "#8C8576", 84, "Rests are part of the groove.",
+    "Stop the string ringing in the gaps (lift your fretting finger or touch the string with your plucking hand). Quiet gaps make a groove hit hard.", [
+    G("hit-the-one", "Hit the One", "One big note, a long gap, and a pickup back to the start.", ["E0:q r:q r:q r:e E0:e", "A0:q r:q r:q r:e A0:e"], "hiphop"),
+    G("lazy-pocket", "Lazy Pocket", "A long note and a short one, then wait.", ["A0:dq A0:e r:h", "E3:dq E3:e r:q E0:q"], "hiphop"),
+    G("stop-start", "Stop Start", "Two notes, stop. Two notes, stop.", ["E0:e E0:e r:q E0:e E0:e r:q", "A0:e A0:e r:q D0:q r:q"], "hiphop")]),
+  L(7, "Walking Steps", "Soul", "🚶", "#7A4EA8", "#C9A7F0", 92, "Walk from one note to the next.",
+    "Instead of jumping to the next root, walk there one step at a time. The last note of each bar leads into the next.", [
+    G("step-up", "Step Up", "Walk up the E string to A, then up the A string to D.", ["E0:q E2:q E3:q E4:q", "A0:q A2:q A3:q A4:q"], "soul"),
+    G("stroll", "Stroll", "Up two steps and back down, on the A string then the D string.", ["A0:q A2:q A4:q A2:q", "D0:q D2:q D4:q D2:q"], "soul"),
+    G("sneaky-step", "Sneaky Step", "Sit on a note, then sneak in from one fret below.", ["A0:q A0:q A0:q A4:q", "A5:q A5:q A5:q E4:q"], "soul")]),
+  L(8, "Off the Beat", "Reggae", "🌴", "#1F7A6B", "#7FD1C2", 80, "Notes on the 'and'.",
+    "Count 1 & 2 & 3 & 4 & out loud. Some notes land on the '&', between the beats. That bounce is syncopation.", [
+    G("one-drop", "One Drop", "Leave beat 1 empty, then come in on beat 2.", ["r:q A0:e A0:e A3:q E3:q", "r:q D0:e D0:e D2:q A0:q"], "reggae"),
+    G("push-and-pull", "Push and Pull", "A note on the beat, then two on the '&'.", ["E0:q r:e E0:e r:e E0:e E3:q", "A0:q r:e A0:e r:e A0:e A3:q"], "reggae"),
+    G("skank", "Skank", "Short and bouncy, with little gaps.", ["A0:e r:e A0:e A0:e r:e A0:e E3:e E0:e", "D0:e r:e D0:e D0:e r:e D0:e A3:e A0:e"], "reggae")]),
+  L(9, "Shuffle", "Blues", "🎷", "#8A1F1F", "#FF6B3D", 88, "Swing it, and walk the blues.",
+    "A shuffle goes long-short, long-short. A blues walk climbs up the chord and back down, one note a beat.", [
+    G("boogie-walk", "Boogie Walk", "Up the A chord and back down, a note on every beat.", ["A0:q A4:q D2:q D4:q", "D5:q D4:q D2:q A4:q"], "shuffle"),
+    G("up-the-street", "Up the Street", "The same walk, moved up to D.", ["D0:q D4:q G2:q G4:q", "G5:q G4:q G2:q D4:q"], "shuffle"),
+    G("shuffle-stomp", "Shuffle Stomp", "Long-short then a beat, on E, A, D and A.", ["E0:l3 E0:t E0:q A0:l3 A0:t A0:q", "D0:l3 D0:t D0:q A0:l3 A0:t A0:q"], "shuffle")]),
+  L(10, "Funk", "Funk", "👑", "#C2501B", "#FFB805", 88, "Sixteenths, octaves and gaps.",
+    "Funk is tight. Short notes, clean gaps, and a big root on beat 1. The quick notes are sixteenths: four to a beat.", [
+    G("rubber-band", "Rubber Band", "A big E, a quick one, then up the E blues scale.", ["E0:e r:s E0:s r:e E0:e D2:e E0:e E3:e A0:e", "E0:e r:s E0:s r:e E0:e D0:e D2:e A2:e A0:e"], "funk"),
+    G("sticky-floor", "Sticky Floor", "Two quick notes, a gap, then hop around the A.", ["A0:s A0:s r:e A3:e A0:e A5:e r:e A3:e A0:e", "D0:s D0:s r:e D3:e D0:e A3:e r:e A5:e A0:e"], "funk"),
+    G("final-groove", "Final Groove", "Everything at once: sixteenths, octaves and a walk.", ["E0:e E0:s E0:s D2:e E0:e A2:e A0:e E3:e E0:e", "A0:e A0:s A0:s G2:e A0:e D2:e D0:e A3:e A2:e"], "funk")])
+];
+const NEED = 5;            // stars in the level before that open the next one
+
+// a groove's notes, in beats from the start of the groove
+function parse(g){
+  if (g.notes) return g;
+  const notes = []; let t0 = 0;
+  g.bars.forEach((bar, bi) => {
+    let t = 0;
+    for (const tok of bar.split(/\s+/)) {
+      const [a, len] = tok.split(":"); if (!(len in LEN)) throw new Error(g.id + ": bad length " + tok);
+      if (a !== "r") { const s = a[0], f = Number(a.slice(1)); if (!(s in OPEN) || isNaN(f)) throw new Error(g.id + ": bad note " + tok);
+        notes.push({ t: t0 + t, d: LEN[len], s: SIDX[s], f, m: OPEN[s] + f }); }
+      t += LEN[len];
+    }
+    if (Math.abs(t - 4) > 1e-6) console.warn(g.id + ": bar " + (bi + 1) + " adds up to " + t + " beats, not 4");
+    t0 += 4;
+  });
+  g.notes = notes; g.beats = t0; return g;
+}
+LEVELS.forEach(l => l.grooves.forEach(parse));
+
+/* ---------- progress ---------- */
+const KEY = fmaKey("fma-grooves-v1");
+let P = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
+P.g = P.g || {}; P.speed = P.speed || 1;
+const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
+const MODES = [
+  { k: "copy", n: "Copy it", d: "Listen, then play it back. 4 turns.", star: "Get 70% of the notes" },
+  { k: "lock", n: "Lock it in", d: "Hear it once, then play it 4 times.", star: "80% of the notes, in the pocket, at full speed" },
+  { k: "ear", n: "By ear", d: "Copy it with no tab.", star: "80% of the notes at full speed" }];
+const gs = id => P.g[id] || (P.g[id] = { copy: false, lock: false, ear: false, best: {} });
+const starsOf = g => { const s = P.g[g.id]; return s ? MODES.filter(m => s[m.k]).length : 0; };
+const levelStars = l => l.grooves.reduce((a, g) => a + starsOf(g), 0);
+const levelOpen = l => TEACHER || l.n === 1 || levelStars(LEVELS[l.n - 2]) >= NEED;
+const starImg = on => `<img src="${on ? "star-on.png" : "star-off.png"}" alt="${on ? "star" : "no star yet"}">`;
+
+/* ---------- views ---------- */
+let level = null, groove = null, mode = "copy";
+function show(v){ ["levelsView", "levelView", "playView"].forEach(x => $(x).hidden = x !== v); window.scrollTo(0, 0); }
+function drawLevels(){
+  $("levels").innerHTML = LEVELS.map(l => {
+    const open = levelOpen(l), got = levelStars(l), prev = LEVELS[l.n - 2];
+    return `<button class="lv ${open ? "" : "locked"}" data-n="${l.n}">
+      <div class="cover" style="background:linear-gradient(135deg,${l.col} 0%,${l.col} 55%,${l.col2} 140%)"><b><small>Level ${l.n} · ${esc(l.style)}</small>${esc(l.name)}</b><span class="emo">${open ? l.emo : "🔒"}</span></div>
+      <div class="body">${open ? esc(l.skill) : `Get ${NEED} stars in ${esc(prev.name)} to open (${levelStars(prev)} so far)`}
+      <div class="bar"><i style="width:${Math.round(100 * got / 9)}%"></i></div><div style="margin-top:4px;font-weight:700">${got} of 9 stars</div></div></button>`;
+  }).join("");
+}
+$("levels").onclick = e => { const b = e.target.closest(".lv"); if (!b) return; const l = LEVELS[Number(b.dataset.n) - 1]; if (levelOpen(l)) openLevel(l); };
+function openLevel(l){
+  stopRound(); level = l; show("levelView"); history.replaceState(null, "", "#" + l.n);
+  $("back").textContent = "← All levels"; $("back").href = "#";
+  $("levelHead").innerHTML = `<h2>Level ${l.n}: ${esc(l.name)}</h2><p style="margin-top:0"><b>${esc(l.style)}.</b> ${esc(l.skill)}</p><div class="tip">💡 ${esc(l.tip)}</div>
+    <div class="bar"><i style="width:${Math.round(100 * levelStars(l) / 9)}%"></i></div><p style="margin-bottom:0">${levelStars(l)} of 9 stars${l.n < 10 ? ` · ${NEED} open Level ${l.n + 1}` : ""}</p>`;
+  $("grooveList").innerHTML = l.grooves.map(g => `<button class="groove" data-id="${g.id}"><div><b>${esc(g.title)}</b><span>${esc(g.hook)}</span></div>
+    <span class="st">${MODES.map(m => starImg(P.g[g.id] && P.g[g.id][m.k])).join("")}</span></button>`).join("");
+}
+$("grooveList").onclick = e => { const b = e.target.closest(".groove"); if (b) openGroove(level.grooves.find(g => g.id === b.dataset.id)); };
+$("back").onclick = e => {
+  if (!$("playView").hidden){ e.preventDefault(); stopRound(); openLevel(level); }
+  else if (!$("levelView").hidden){ e.preventDefault(); level = null; show("levelsView"); drawLevels(); $("back").textContent = "← All games"; $("back").href = "./"; history.replaceState(null, "", location.pathname + location.search); }
+};
+
+let buddy = null;
+function openGroove(g){
+  groove = g; show("playView"); $("result").hidden = true;
+  $("back").textContent = "← " + level.name;
+  $("gTitle").textContent = g.title; $("gHook").textContent = g.hook;
+  const s = gs(g.id); mode = !s.copy ? "copy" : !s.lock ? "lock" : !s.ear ? "ear" : "copy";
+  drawModes(); drawSpeed(); drawTab(); setPhase(null);
+  if (!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("hello", 1500);
+  $("status").textContent = "";
+}
+function drawModes(){
+  const s = gs(groove.id);
+  $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${mode === m.k ? "on" : ""}">${starImg(s[m.k])}<b>${m.n}</b><small>${m.d}</small></button>`).join("");
+  const m = MODES.find(x => x.k === mode);
+  $("modeHelp").textContent = (s[m.k] ? "Star won! Play again any time. " : "For the star: ") + (s[m.k] ? "" : m.star.toLowerCase() + ".");
+  $("tabHide").hidden = mode !== "ear";
+}
+$("modes").onclick = e => { const b = e.target.closest("button"); if (!b || running) return; mode = b.dataset.k; drawModes(); };
+function drawSpeed(){ $("speed").querySelectorAll("button").forEach(b => b.classList.toggle("on", Number(b.dataset.f) === P.speed)); }
+$("speed").onclick = e => { const b = e.target.closest("button"); if (!b || running) return; P.speed = Number(b.dataset.f); saveP(); drawSpeed(); };
+
+/* ---------- the tab ----------
+   One row on a wide screen; on a phone each bar gets its own row, so quick notes stay big enough to read. */
+const TX0 = 52, TX1 = 628, TY = [36, 76, 116, 156], ROWH = 200;
+let perRow = 8;
+const pos = t => { const row = Math.min(Math.floor(t / perRow), groove.beats / perRow - 1); return { x: TX0 + (TX1 - TX0) * (t - row * perRow) / perRow, dy: row * ROWH }; };
+const tx = t => pos(t).x;
+function drawTab(marks){
+  const g = groove; let h = "";
+  perRow = $("tabWrap").clientWidth < 480 && g.beats > 4 ? 4 : g.beats;
+  const rows = g.beats / perRow;
+  $("tab").setAttribute("viewBox", `0 0 640 ${rows * ROWH}`);
+  for (let rw = 0; rw < rows; rw++) {
+    const dy = rw * ROWH;
+    ["G", "D", "A", "E"].forEach((n, i) => { h += `<line x1="${TX0 - 14}" x2="${TX1}" y1="${TY[i] + dy}" y2="${TY[i] + dy}" stroke="#B9AF9B" stroke-width="2"/><text x="10" y="${TY[i] + dy + 7}" font-family="Nunito" font-weight="900" font-size="20" fill="#6B6558">${n}</text>`; });
+    for (let k = 0; k <= perRow; k++) {
+      const b = rw * perRow + k, x = TX0 + (TX1 - TX0) * k / perRow;
+      if (b % 4 === 0 || k === perRow) h += `<line x1="${x}" x2="${x}" y1="${TY[0] + dy}" y2="${TY[3] + dy}" stroke="#23231F" stroke-width="${k === 0 || k === perRow ? 3 : 2}"/>`;
+      if (k < perRow) h += `<text x="${x + 6}" y="${190 + dy}" font-family="Work Sans" font-weight="700" font-size="15" fill="#6B6558">${b % 4 + 1}</text>`;
+    }
+  }
+  const gap = Math.min(...g.notes.map((n, i) => (i ? n.t - g.notes[i - 1].t : 9))), r = Math.max(9, Math.min(15, gap * (TX1 - TX0) / perRow * 0.46));
+  g.notes.forEach((n, i) => {
+    const p0 = pos(n.t), x = p0.x + r + 3, y = TY[n.s] + p0.dy, st = marks ? marks[i] : null;
+    const fill = st === "hit" ? "#3E7D4C" : st === "miss" ? "#C0392B" : "#fff", ink = st ? "#fff" : "#23231F";
+    const w = (TX1 - TX0) * Math.min(n.d, perRow - (n.t % perRow)) / perRow;
+    h += `<rect x="${p0.x + 6}" y="${y - 3}" width="${Math.max(6, w - 10)}" height="6" rx="3" fill="#FFB805" opacity=".55"/>`;
+    h += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="#23231F" stroke-width="2.5"/><text x="${x}" y="${y + r * 0.4}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="${Math.round(r * 1.15)}" fill="${ink}">${n.f}</text>`;
+  });
+  h += `<line id="head" x1="${TX0}" x2="${TX0}" y1="${TY[0] - 22}" y2="${TY[3] + 18}" stroke="#2E7DA8" stroke-width="4" stroke-linecap="round" opacity="0"/>`;
+  $("tab").innerHTML = h;
+}
+addEventListener("resize", () => { if (groove && !running && !$("playView").hidden) drawTab(); });
+// the playhead, on whichever row the beat is in
+function moveHead(t, col){
+  const h = document.getElementById("head"); if (!h) return;
+  const p0 = pos(t); h.setAttribute("x1", p0.x); h.setAttribute("x2", p0.x); h.setAttribute("y1", TY[0] - 22 + p0.dy); h.setAttribute("y2", TY[3] + 18 + p0.dy);
+  h.setAttribute("opacity", 1); h.setAttribute("stroke", col);
+}
+
+/* ---------- sound: a bass, a little drum kit, all synthesised on the page ---------- */
+let ac = null, out = null, noise = null;
+const voices = [];
+function audio(){
+  if (!ac) {
+    ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = 0.8; out.connect(ac.destination);
+    noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ac.state === "suspended") ac.resume().catch(() => {});
+  return ac;
+}
+function env(g, t, peak, a, len){ g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + len); }
+// a round, plucky bass: a sawtooth through a closing low-pass, with a sine underneath. Its overtones are what a phone speaker
+// actually plays (a phone can't reproduce 41 Hz), so the line is still easy to hear.
+function bassNote(m, t, len){
+  const f = 440 * Math.pow(2, (m - 69) / 12), g = ac.createGain(), lp = ac.createBiquadFilter(), o = ac.createOscillator(), s = ac.createOscillator(), sg = ac.createGain();
+  lp.type = "lowpass"; lp.Q.value = 2; lp.frequency.setValueAtTime(1400, t); lp.frequency.exponentialRampToValueAtTime(380, t + 0.25);
+  o.type = "sawtooth"; o.frequency.value = f; s.type = "sine"; s.frequency.value = f; sg.gain.value = 0.7;
+  const end = t + Math.max(0.12, len * 0.92);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.008); g.gain.exponentialRampToValueAtTime(0.28, t + 0.2);
+  g.gain.setValueAtTime(0.28, end - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, end);
+  o.connect(lp); s.connect(sg); sg.connect(lp); lp.connect(g); g.connect(out); o.start(t); s.start(t); o.stop(end + 0.02); s.stop(end + 0.02); voices.push(o, s);
+}
+function kick(t){
+  const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+  env(g, t, 0.9, 0.004, 0.22); o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.25); voices.push(o);
+}
+function hiss(t, hp, len, peak){
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noise; f.type = "highpass"; f.frequency.value = hp;
+  env(g, t, peak, 0.002, len); s.connect(f); f.connect(g); g.connect(out); s.start(t, Math.random() * 0.5); s.stop(t + len + 0.02); voices.push(s);
+}
+const snare = (t, soft) => hiss(t, 1800, 0.16, soft ? 0.18 : 0.35), hat = (t, open, acc) => hiss(t, 7000, open ? 0.22 : 0.045, acc ? 0.22 : 0.12);
+function hush(){ const t = ac ? ac.currentTime : 0; voices.splice(0).forEach(v => { try { v.stop(t); } catch (e) {} }); }
+
+// one bar of drums for a style, in beats: k = kick, s = snare, h = hi-hat, o = open hat
+const DRUMS = {
+  rock:     { k: [0, 2, 2.5], s: [1, 3], h: [0, .5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  halftime: { k: [0, 1.5], s: [2], h: [0, .5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  punk:     { k: [0, 1, 2, 3], s: [1, 3], h: [0, .5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  country:  { k: [0, 2], s: [1, 3], h: [0, 1, 2, 3] },
+  disco:    { k: [0, 1, 2, 3], s: [1, 3], h: [0, 1, 2, 3], o: [.5, 1.5, 2.5, 3.5] },
+  hiphop:   { k: [0, 1.75, 2.5], s: [1, 3], h: [0, .5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  soul:     { k: [0, 2.5], s: [1, 3], h: [0, .5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  reggae:   { k: [2], s: [2], h: [.5, 1.5, 2.5, 3.5] },
+  shuffle:  { k: [0, 2], s: [1, 3], h: [0, 2 / 3, 1, 5 / 3, 2, 8 / 3, 3, 11 / 3] },
+  funk:     { k: [0, .75, 2.5], s: [1, 3], h: [0, .25, .5, .75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75] }
+};
+// full = the whole kit (Listen); otherwise hats and a soft snare only, so the microphone hears just the player
+function drumBar(t, spb, style, full){
+  const d = DRUMS[style] || DRUMS.rock;
+  if (full) d.k.forEach(b => kick(t + b * spb));
+  d.s.forEach(b => snare(t + b * spb, !full)); d.h.forEach((b, i) => hat(t + b * spb, false, i === 0)); (d.o || []).forEach(b => hat(t + b * spb, true));
+}
+
+/* ---------- the listener ---------- */
+const det = FMAListen.create();
+let heard = [];                       // {m, when} for every note the player plays
+const tracker = FMAListen.notes(det, { onNote(m, when){ heard.push({ m, when }); }, onLevel(r){ $("lvl").style.width = Math.min(100, r * 900) + "%"; } });
+if (window.FMAMidi) FMAMidi.onNote(e => { if (e.on && FMAMidi.active() && ac) heard.push({ m: e.note, when: ac.currentTime }); });
+
+/* ---------- a round ---------- */
+let running = false, plan = null, raf = 0, iv = 0;
+async function startRound(){
+  $("err").hidden = true;
+  try {
+    audio();
+    if (!det.ready && !(window.FMAMidi && FMAMidi.active())) await det.start({ ctx: ac, bass: true });
+  } catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, then try again."; return; }
+  running = true; heard = []; $("result").hidden = true; $("tabHide").hidden = mode !== "ear"; drawTab(); $("go").textContent = "Stop"; $("go").classList.remove("play");
+  $("modes").style.opacity = .5; $("speed").style.opacity = .5;
+  const f = mode === "copy" ? P.speed : 1;          // Lock it in and By ear always run at full speed
+  const spb = 60 / (level.tempo * f), cyc = groove.beats * spb, t0 = ac.currentTime + 0.25, segs = [];
+  // count-in: one bar of hi-hats, the first one louder
+  for (let b = 0; b < 4; b++) hat(t0 + b * spb, false, b === 0);
+  segs.push({ kind: "count", t0, t1: t0 + 4 * spb });
+  let t = t0 + 4 * spb;
+  const order = mode === "lock" ? ["call", "you", "you", "you", "you"] : ["call", "you", "call", "you", "call", "you", "call", "you"];
+  order.forEach(kind => {
+    for (let b = 0; b < groove.beats / 4; b++) drumBar(t + b * 4 * spb, spb, groove.drums || "rock", kind === "call");
+    if (kind === "call") groove.notes.forEach(n => bassNote(n.m, t + n.t * spb, n.d * spb));
+    segs.push({ kind, t0: t, t1: t + cyc, done: false });
+    t += cyc;
+  });
+  plan = { segs, spb, cyc, end: t, f, lat: (ac.outputLatency || 0) + (ac.baseLatency || 0) + 0.02, turns: [] };
+  iv = setInterval(() => { if (det.ready) tracker.step(); check(); }, 12);
+  if (buddy) buddy.moment("start", 1200);
+  loop();
+}
+function stopRound(){
+  if (!running) return;
+  running = false; cancelAnimationFrame(raf); clearInterval(iv); hush(); setPhase(null);
+  $("go").textContent = "Start"; $("go").classList.add("play"); $("modes").style.opacity = ""; $("speed").style.opacity = "";
+  const h = document.getElementById("head"); if (h) h.setAttribute("opacity", 0);
+}
+$("go").onclick = () => running ? (stopRound(), $("status").textContent = "Stopped.") : startRound();
+$("hear").onclick = () => {
+  if (running) return; audio(); hush();
+  const spb = 60 / (level.tempo * (mode === "copy" ? P.speed : 1)), t0 = ac.currentTime + 0.1;
+  for (let r = 0; r < 2; r++) { const t = t0 + r * groove.beats * spb;
+    for (let b = 0; b < groove.beats / 4; b++) drumBar(t + b * 4 * spb, spb, groove.drums || "rock", true);
+    groove.notes.forEach(n => bassNote(n.m, t + n.t * spb, n.d * spb)); }
+};
+
+function setPhase(kind, beat){
+  const el = $("phase");
+  el.className = kind === "call" ? "listen" : kind === "you" ? "you" : kind === "count" ? "count" : "";
+  const label = { call: ["Listen 👂", "The band plays it"], you: ["Your turn 🎸", "Play it back"], count: ["Get ready", "1, 2, 3, 4..."] }[kind] || ["Ready", "Pick a way to play, then press Start"];
+  el.firstChild.textContent = label[0]; $("phaseSub").textContent = label[1];
+  const nb = kind ? (kind === "count" ? 4 : groove.beats) : 0;
+  if ($("beats").children.length !== nb) $("beats").innerHTML = "<i></i>".repeat(nb);
+  [...$("beats").children].forEach((d, i) => d.classList.toggle("on", beat != null && i <= beat));
+}
+
+// match a turn's notes: each expected note takes the closest note of the same name (any octave) within 0.25 s
+function score(seg){
+  const exp = groove.notes.map(n => ({ n, at: seg.t0 + n.t * plan.spb + plan.lat }));
+  // (the window starts just before the turn, so the band's last note can't count as yours)
+  const pool = heard.filter(h => h.when >= seg.t0 + plan.lat - 0.12 && h.when < seg.t1 + plan.lat - 0.06 && !h.used);
+  const marks = [], offs = [];
+  exp.forEach((e, i) => {
+    let best = null;
+    pool.forEach(h => { if (h.used || ((h.m - e.n.m) % 12 + 12) % 12) return; const d = h.when - e.at; if (Math.abs(d) <= 0.25 && (!best || Math.abs(d) < Math.abs(best.when - e.at))) best = h; });
+    if (best) { best.used = true; marks[i] = "hit"; offs.push(best.when - e.at); } else marks[i] = "miss";
+  });
+  return { marks, offs, hits: offs.length, total: exp.length };
+}
+function loop(){
+  if (!running) return;
+  const now = ac.currentTime, seg = plan.segs.find(s => now >= s.t0 && now < s.t1);
+  if (seg) {
+    const beat = Math.floor((now - seg.t0) / plan.spb);
+    setPhase(seg.kind, beat);
+    if (seg.kind !== "count") moveHead((now - seg.t0) / plan.spb, seg.kind === "you" ? "#E09A00" : "#2E7DA8");
+    if (seg.kind === "call" && mode !== "ear") drawMarksOnce(seg, null);
+  }
+  raf = requestAnimationFrame(loop);
+}
+// Marking runs on the listener's timer, not the screen's animation frames (which stop when the page is out of sight).
+// A turn is marked a moment after it ends (the listener names a note 0.2 s after it starts).
+function check(){
+  if (!running) return;
+  const now = ac.currentTime;
+  plan.segs.forEach(s => {
+    if (s.kind !== "you" || s.done || now < s.t1 + plan.lat + 0.3) return;
+    s.done = true; const r = score(s); plan.turns.push(r);
+    if (mode !== "ear") { drawTab(r.marks); s.marked = true; }
+    const pct = Math.round(100 * r.hits / r.total);
+    $("status").textContent = pct >= 90 ? "Nailed it! " + r.hits + " of " + r.total : pct >= 60 ? "Good! " + r.hits + " of " + r.total + " notes" : r.hits ? r.hits + " of " + r.total + " notes. Keep going!" : "I didn't hear that one. Play a bit louder?";
+    if (buddy && pct >= 80) buddy.moment(pct === 100 ? "streak" : "hit", 1200);
+  });
+  if (now > plan.end + plan.lat + 0.35) finish();
+}
+// when the band plays it again, the tab goes back to plain (last turn's colours stay until then)
+function drawMarksOnce(seg){ if (seg.cleared) return; seg.cleared = true; drawTab(); }
+
+function finish(){
+  const turns = plan.turns, hits = turns.reduce((a, r) => a + r.hits, 0), total = turns.reduce((a, r) => a + r.total, 0);
+  const offs = turns.flatMap(r => r.offs), med = offs.length ? offs.slice().sort((a, b) => a - b)[offs.length >> 1] : 0;
+  const tight = offs.filter(o => Math.abs(o - med) <= 0.06).length;
+  const pct = total ? Math.round(100 * hits / total) : 0, pocket = offs.length ? Math.round(100 * tight / offs.length) : 0;
+  stopRound();
+  const s = gs(groove.id), full = plan.f === 1;
+  const won = mode === "copy" ? pct >= 70 : mode === "lock" ? pct >= 80 && pocket >= 65 : pct >= 80 && full;
+  const newStar = won && !s[mode], prevBest = s.best[mode] || 0, improved = pct > prevBest;
+  if (won) s[mode] = true; if (improved) s.best[mode] = pct; saveP();
+  if (mode === "ear") drawTab(turns.length ? turns[turns.length - 1].marks : null);
+  const m = MODES.find(x => x.k === mode);
+  const why = won ? "" : mode === "lock" && pct >= 80 ? "Lots of the right notes! For the star, keep them steadier: in the pocket needs 65%." : `For the star: ${m.star.toLowerCase()}.`;
+  $("result").hidden = false;
+  $("result").innerHTML = `<div class="stars">${MODES.map(x => `<img class="${s[x.k] ? "" : "off"}" src="${s[x.k] ? "star-on.png" : "star-off.png"}" alt="">`).join("")}</div>
+    <h2 style="text-align:center;margin-top:8px">${newStar ? "New star: " + m.n + "!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go"}</h2>
+    <div class="res"><div><b>${pct}%</b>notes</div><div><b>${offs.length ? pocket + "%" : "–"}</b>in the pocket</div></div>
+    <p style="text-align:center">${improved && prevBest ? "New best for " + m.n + " (was " + prevBest + "%). " : ""}${esc(why)}</p>
+    ${mode === "copy" && plan.f < 1 && won ? `<p style="text-align:center">Try it at Full speed next.</p>` : ""}
+    <div class="row"><button class="big play" id="again" style="flex:1">Play again</button></div>
+    ${newStar && nextMode() ? `<div class="row"><button class="ghost" id="next" style="flex:1">Next: ${nextMode().n} →</button></div>` : ""}
+    <p id="saved" class="muted" style="text-align:center;margin-bottom:0"></p>`;
+  $("again").onclick = () => { $("result").hidden = true; startRound(); };
+  if ($("next")) $("next").onclick = () => { mode = nextMode().k; drawModes(); $("result").hidden = true; drawTab(); };
+  drawModes(); $("tabHide").hidden = true;          // By ear: the tab is shown at the end, with your last turn marked
+  if (buddy) buddy.moment(newStar ? "win" : improved ? "best" : "done", 0);
+  $("result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (window.FMAStudent) {
+    const sent = FMAStudent.send("bass-grooves", { level: level.n, mode, detail: groove.id, score: pct, right: hits, total, improved: improved && pct > 0 });
+    if (FMAStudent.active && FMAStudent.active()) sent.then(ok => { $("saved").textContent = ok ? "Saved to your progress." : ""; });
+  }
+  levelPrize();
+}
+const nextMode = () => { const s = gs(groove.id); return MODES.find(x => !s[x.k]); };
+// every star in a level: Level 1 wins a bass for your character, the others 100 picks (once each)
+function levelPrize(){
+  if (!window.FMAPicks || levelStars(level) < 9) return;
+  if (level.n === 1){ const g = FMAPicks.grant("gear", "bass", "grooves:1", "finishing Groove Lab Level 1", 100);
+    if (g && g.item) $("saved").insertAdjacentHTML("beforebegin", `<div class="tip" style="text-align:center"><b>Level 1 complete!</b> You won a bass guitar for your player. Put it on in Make your player.</div>`); }
+  else FMAPicks.milestone("grooves:" + level.n, 100, "finishing Groove Lab Level " + level.n);
+}
+
+/* ---------- start ---------- */
+if (DEBUG) window.__grooves = { LEVELS, P, get plan(){ return plan; }, get heard(){ return heard; }, det };
+drawLevels();
+const startL = LEVELS[Number(location.hash.slice(1)) - 1];
+if (startL && levelOpen(startL)) openLevel(startL);
+</script>
+</body>
+</html>
