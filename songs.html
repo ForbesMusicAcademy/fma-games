@@ -168,8 +168,8 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 
 <div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
-<script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=9"></script>
+<script src="fma-student.js?v=11"></script>
+<script src="fma-listen.js?v=11"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=12"></script>
@@ -198,7 +198,7 @@ const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
 const PLAY_PCT = 80, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
-const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar";
+const INST = (window.fmaInstrument && fmaInstrument.get()) === "piano" ? "piano" : "guitar";      // bass players get guitar tab here (their own games are Groove Lab and Note Finder)
 
 /* ---------- the catalogue ----------
    Two separate sections share this page (Dave, 12 Oct):
