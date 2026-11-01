@@ -112,8 +112,9 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
    Find it   the game names a note (and, on bass and guitar, the string); play it. Any octave counts, since only the
              note's name is checked. A wrong note says what you played and shows where it is, then you try again.
    Name it   a dot lights up on the neck (or a key on the keyboard); tap its name. Works with no instrument at all.
-   The map:  each spot (string and fret, or note on the keyboard) is "know it" once it's been right, quickly (under 5 s),
-             twice in a row. Spots you don't know yet come up more often, so a round always works on the gaps.
+   The map:  each spot (string and fret, or note on the keyboard) is "know it" once it's been right first go, and goes
+             back to "learning" after a wrong answer. Spots you don't know yet come up more often, so a round always works
+             on the gaps.
    Kept under fmaKey, so it follows the player when tracking is on. Rounds are sent as "note-finder".
    ============================================================ */
 const $ = id => document.getElementById(id);
@@ -141,7 +142,7 @@ const MODES = [
   { k: "find", n: "Find it 🎸", sub: PIANO ? "Play the note it names" : "Play the note on the string it names" },
   { k: "name", n: "Name it 👆", sub: "Tap the name of the note that lights up. No instrument needed." }];
 if (PIANO) MODES[0].n = "Find it 🎹";
-const ROUND = 12, Q_SECS = 20, KNOW_SECS = 5;
+const ROUND = 12, Q_SECS = 20;
 
 /* ---------- progress ---------- */
 const KEY = fmaKey("fma-note-finder-" + (PIANO ? "piano" : BASS ? "bass" : "guitar") + "-v1");
@@ -150,10 +151,10 @@ P.map = P.map || {}; P.best = P.best || {}; P.mode = P.mode || "find"; P.level =
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
 // a spot: "s:f" (fret 0-11; fret 12 is the open string's note again) or "k:pc" on the keyboard
 const spotKey = sp => PIANO ? "k:" + sp.pc : sp.s + ":" + (sp.f % 12);
-const state = k => { const x = P.map[k]; return !x ? 0 : x.run >= 2 ? 2 : 1; };      // 0 not yet, 1 learning, 2 know it
-function mark(sp, right, secs){
+const state = k => { const x = P.map[k]; return !x ? 0 : x.run >= 1 ? 2 : 1; };      // 0 not yet, 1 learning, 2 know it
+function mark(sp, right){
   const k = spotKey(sp), x = P.map[k] || (P.map[k] = { run: 0, seen: 0 });
-  x.seen++; x.run = !right ? 0 : secs <= KNOW_SECS ? x.run + 1 : Math.max(1, Math.min(x.run, 1));      // slow but right: still learning
+  x.seen++; x.run = right ? x.run + 1 : 0;      // right first go: green (Dave, 2 Nov 2026). A wrong answer makes it yellow again.
   saveP();
 }
 
@@ -225,18 +226,25 @@ let iv = 0;
 /* ---------- the round ---------- */
 const R = { qs: [], qi: -1, score: 0, right: 0, times: [], q: null, t0: 0, tries: 0, busy: false, run: 0 };
 let buddy = null, timerRaf = 0;
+// A round: in a level of 12 notes or fewer, every note once, then the spare questions go to notes not known yet. In a
+// bigger level, notes not known yet first (yellow ones before ones never asked), then known ones for review.
 function pickSpots(){
-  const lv = LEVELS[P.level - 1], all = spotsOf(lv), out = [];
-  // unknown spots weigh 4, learning 3, known 1; never the same spot twice in a row
-  const w = sp => [4, 3, 1][state(spotKey(sp))];
-  while (out.length < ROUND) {
-    const pool = all.filter(sp => !out.length || spotKey(sp) !== spotKey(out[out.length - 1]));
-    let r = Math.random() * pool.reduce((a, sp) => a + w(sp), 0);
-    const sp = pool.find(x => (r -= w(x)) <= 0) || pool[0];
-    out.push(PIANO ? { pc: sp.pc, oct: Math.random() < 0.5 ? 0 : 1 } : { s: sp.s, f: sp.f === 0 && P.mode === "name" && Math.random() < 0.4 ? 12 : sp.f });
+  const lv = LEVELS[P.level - 1], all = shuffle(spotsOf(lv)), st = sp => state(spotKey(sp));
+  const notKnown = all.filter(sp => st(sp) < 2).sort((a, b) => st(b) - st(a));
+  let list;
+  if (all.length <= ROUND) {
+    list = all.slice();
+    for (let i = 0; list.length < ROUND && notKnown.length; i++) list.push(notKnown[i % notKnown.length]);
+    while (list.length < ROUND) list.push(all[Math.floor(Math.random() * all.length)]);
+  } else list = notKnown.concat(all.filter(sp => st(sp) === 2)).slice(0, ROUND);
+  // no note twice in a row
+  for (let tries = 0; tries < 60; tries++) {
+    list = shuffle(list);
+    if (list.every((sp, i) => !i || spotKey(sp) !== spotKey(list[i - 1]))) break;
   }
-  return out;
+  return list.map(sp => PIANO ? { pc: sp.pc, oct: Math.random() < 0.5 ? 0 : 1 } : { s: sp.s, f: sp.f === 0 && P.mode === "name" && Math.random() < 0.4 ? 12 : sp.f });
 }
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pcOf = sp => PIANO ? sp.pc : (STR[sp.s].m + sp.f) % 12;
 async function start(){
   $("err").hidden = true;
@@ -245,7 +253,8 @@ async function start(){
     catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it instead."; return; }
     clearInterval(iv); iv = setInterval(() => tracker.step(), 12);
   }
-  Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, times: [], run: 0 });
+  Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, times: [], run: 0,
+    knownBefore: spotsOf(LEVELS[P.level - 1]).filter(x => state(spotKey(x)) === 2).length });
   $("start").hidden = true; $("end").hidden = true; $("game").hidden = false;
   const lv = LEVELS[P.level - 1], twelve = lv.pcs.length > 7 || lv.pcs === BLACK;
   $("names").hidden = P.mode !== "name"; $("names").className = twelve ? "twelve" : "";
@@ -279,8 +288,8 @@ function answer(ok){
     R.score += pts; R.right++; R.times.push(secs); R.run++;
     $("status").textContent = (first ? "Yes! +" : "Got it! +") + pts; $("status").style.color = "var(--good)";
     if (buddy && (R.run % 3 === 0 || secs < 2)) buddy.moment(R.run % 3 === 0 ? "streak" : "hit", 1000);
-    mark(sp, first, secs);
-  } else { R.run = 0; $("status").textContent = "Here it is"; $("status").style.color = "var(--bad)"; mark(sp, false, secs); }
+    mark(sp, first);
+  } else { R.run = 0; $("status").textContent = "Here it is"; $("status").style.color = "var(--bad)"; mark(sp, false); }
   // show where it is (and the same note at fret 12 or 0)
   const dots = [[sp, ok ? "#3E7D4C" : "#C0392B", SHORT[pc], true]];
   if (!PIANO && (sp.f === 0 || sp.f === 12)) dots.push([{ s: sp.s, f: sp.f === 0 ? 12 : 0 }, ok ? "#3E7D4C" : "#C0392B", SHORT[pc]]);
@@ -323,7 +332,8 @@ function finish(){
   $("endH").textContent = isBest && prev ? "New best! 🎉" : R.right === R.qs.length ? "Every one right! 🎉" : "Round done!";
   $("endScore").textContent = R.score; $("endRight").textContent = R.right + "/" + R.qs.length;
   $("endAvg").textContent = R.times.length ? (R.times.reduce((a, b) => a + b, 0) / R.times.length).toFixed(1) + "s" : "–";
-  $("endBest").textContent = (isBest && prev ? "The old best was " + prev + ". " : prev ? "Your best: " + Math.max(prev, R.score) + ". " : "") + `You know ${known} of the ${sp.length} notes in ${lv.name}.`;
+  $("endBest").textContent = (isBest && prev ? "The old best was " + prev + ". " : prev ? "Your best: " + Math.max(prev, R.score) + ". " : "") + `You know ${known} of the ${sp.length} notes in ${lv.name}` + (known > R.knownBefore ? ` (${known - R.knownBefore} new this round!)` : "") + "."
+    + (known < sp.length ? " Get a yellow note right to turn it green." : "");
   drawMap($("endMap"));
   if (buddy) buddy.moment(isBest ? "best" : "done", 0);
   $("saved").textContent = "";
