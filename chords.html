@@ -82,6 +82,7 @@ label.set input[type=range]{width:100%}
 .tro svg.cup{width:44px;height:44px}
 .tro b{font-family:var(--head);font-weight:900;font-size:16px;line-height:1.1;text-align:center}
 .tro .st{font-size:12px;font-weight:700;color:#C98F00;min-height:14px}
+.tro .st.m4{color:#1F7FA8;font-weight:900;letter-spacing:.5px}
 .tro .st.m1{color:#9A5F2E}.tro .st.m2{color:#4F5B68}.tro .st.m3{color:#B07D00}
 .pop .medal{display:block;margin:0 auto}.pop .medal svg.cup{width:110px;height:110px}
 .tro.learning .st{color:var(--muted)}
@@ -233,10 +234,10 @@ function buildChords(){ CHORDS = FMAChords.list; TIERS = FMAChords.tiers; }
    days of practice; on a day it's due, LEARN_STREAK in a row moves it up a medal (silver, then gold) and the next review
    is GAPS[1] ... days away. A medal is never taken away (Dave, 2 Nov 2026): a miss only puts the count back to 0 at the
    medal the chord already has, and a due chord stays due until it's passed. The next chord unlocks when the newest has graduated, at most
-   (The old limit of 2 new chords a week is off: NEW_PER_WEEK = Infinity.) Home practice can earn up to three stars; the diamond (mastery)
-   is only earned in class. */
+   (The old limit of 2 new chords a week is off: NEW_PER_WEEK = Infinity.) Since 2 Nov 2026 home earns the diamond (mastery) too, at the
+   same point as the classroom rig's DIAMOND_K: three reviews passed after learning it. */
 const START_POOL = 2, NEW_PER_WEEK = Infinity,     // no weekly limit: a chord opens as soon as it's earned (Dave, 14 Oct 2026)
-      GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 3;
+      GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 4;      // bronze, silver, gold, diamond
 const KEY = fmaKey(FMAChords.storeKey);          // each player on this device has their own progress (guitar and piano kept apart)
 const PIANO = FMAChords.inst === "piano";
 if(PIANO) document.body.classList.add("piano");
@@ -278,7 +279,7 @@ function applyResult(name, hit, sess){
 function countLine(name){
   const c = P.cards[name]; if(!c) return "";
   if(!c.grad) return c.streak + " of " + LEARN_STREAK + " to learn it";
-  if(isDue(c, sessionNow()) && c.k + 1 < MAX_STARS) return c.streak + " of " + LEARN_STREAK + " for " + MEDALS[c.k + 2].n.toLowerCase();
+  if(isDue(c, sessionNow()) && c.k + 1 < MAX_STARS) return c.streak + " of " + LEARN_STREAK + (c.k + 2 >= 4 ? " to master it" : " for " + MEDALS[c.k + 2].n.toLowerCase());
   return "";
 }
 function maybeUnlock(sess){
@@ -404,8 +405,13 @@ const game = {
     let delay = hit ? 1300 : 1500;
     const queue = [];
     if(r.stars > r.starsBefore){
-      const nm = FMAChords.label(CHORDS[this.idx].name), st = Math.min(3, r.stars);
-      queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${st === 1 ? "You learned " + nm + "!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!"}</b><span class="songlist">${st === 1 ? "That's a bronze trophy. On another day, play it 3 times in a row to make it silver." : st === 2 ? "On another day, play it 3 times in a row to make it gold." : "That's gold. You really know this one."}</span></span>`);
+      const nm = FMAChords.label(CHORDS[this.idx].name), st = Math.min(MAX_STARS, r.stars);
+      const head = st === 1 ? "You learned " + nm + "!" : st >= 4 ? nm + ": MASTERED!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!";
+      const sub = st === 1 ? "That's a bronze trophy. On another day, play it 3 times in a row to make it silver."
+        : st === 2 ? "On another day, play it 3 times in a row to make it gold."
+        : st === 3 ? "On another day, play it 3 times in a row to master it."
+        : "That's the diamond trophy. You've got this chord for keeps.";
+      queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${head}</b><span class="songlist">${sub}</span></span>`);
     }
     if(r.unlocked){
       queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${FMAChords.label(r.unlocked)}</b></span>`);
@@ -465,10 +471,13 @@ const CUP = (fill, stroke) => `<svg class="cup" viewBox="0 0 48 48" aria-hidden=
 /* Medals, not stars (Dave, 2 Nov 2026): kids who'd just learned a chord saw 1 star of 3, two grey, and read it as "I didn't
    play it properly". The first win is a whole trophy: bronze for learning it, silver and gold for playing it again on later
    days. Underneath it's the same count (starsOf: 1 = learned, 2 and 3 = reviews passed). */
-const MEDALS = [null, { n: "Bronze", fill: "#D9925A", line: "#8A5A2B" }, { n: "Silver", fill: "#B9C5D3", line: "#4F5B68" }, { n: "Gold", fill: "#FFC93C", line: "#9A6B00" }];
-const medalCup = st => CUP(MEDALS[st].fill, MEDALS[st].line);
+const MEDALS = [null, { n: "Bronze", fill: "#D9925A", line: "#8A5A2B" }, { n: "Silver", fill: "#B9C5D3", line: "#4F5B68" }, { n: "Gold", fill: "#FFC93C", line: "#9A6B00" }, { n: "Diamond", fill: "#A8E8FF", line: "#1F7FA8" }];
+const medalCup = st => st >= 4 ? DIAMOND_CUP : CUP(MEDALS[st].fill, MEDALS[st].line);
+// the diamond: an ice-blue cup with a gem on the front
+const DIAMOND_CUP = CUP("#A8E8FF", "#1F7FA8").replace("</svg>", `<path d="M24 9l4.5 4.5L24 20l-4.5-6.5z" fill="#fff" stroke="#1F7FA8" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM39 20l.8 1.6 1.6.8-1.6.8-.8 1.6-.8-1.6-1.6-.8 1.6-.8z" fill="#1F7FA8"/></svg>`);
+const medalName = st => st >= 4 ? "MASTERED" : MEDALS[st].n;
 function medalLine(st){
-  return st >= 3 ? "Gold! You really know this one." : st === 2 ? "Silver. On another day, play it 3 times in a row to make it gold."
+  return st >= 4 ? "Diamond: MASTERED! 💎" : st === 3 ? "Gold. On another day, play it 3 times in a row to master it." : st === 2 ? "Silver. On another day, play it 3 times in a row to make it gold."
     : "Bronze. On another day, play it 3 times in a row to make it silver.";
 }
 const esc = t => String(t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
@@ -504,7 +513,7 @@ function drawHome(){
       const i = t.first + k, card = P.cards[c.name], st = starsOf(card);
       if(i < P.unlocked){
         const won = card && card.grad;
-        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${won ? MEDALS[Math.min(3, st)].n.toLowerCase() : "learning"}">${won ? medalCup(Math.min(3, st)) : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st ${won ? "m" + Math.min(3, st) : ""}">${won ? MEDALS[Math.min(3, st)].n : "learning"}</span></button>`;
+        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${won ? medalName(Math.min(MAX_STARS, st)).toLowerCase() : "learning"}">${won ? medalCup(Math.min(MAX_STARS, st)) : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st ${won ? "m" + Math.min(MAX_STARS, st) : ""}">${won ? medalName(Math.min(MAX_STARS, st)) : "learning"}</span></button>`;
       }else{
         html += `<div class="tro locked" aria-label="${esc(L(c.name))}, locked">${CUP("#EFEAE0", "#CFC7B6")}<b>${esc(L(c.name))}</b><span class="st">🔒</span></div>`;
       }
@@ -537,7 +546,7 @@ $("cabinet").onclick = ev => {
   const b = ev.target.closest("button.tro[data-i]"); if(!b) return;
   const i = Number(b.dataset.i), c = CHORDS[i], card = P.cards[c.name], st = starsOf(card);
   const w = document.createElement("div"); w.className = "chordpop";
-  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? medalLine(Math.min(3, st)) : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
+  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? medalLine(Math.min(MAX_STARS, st)) : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
   const [go, close] = w.querySelectorAll("button");
   close.onclick = () => w.remove();
   w.onclick = e => { if(e.target === w) w.remove(); };
