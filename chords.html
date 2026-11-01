@@ -229,9 +229,10 @@ let CHORDS = [], TIERS = [];
 function buildChords(){ CHORDS = FMAChords.list; TIERS = FMAChords.tiers; }
 
 /* ---------- Spaced repetition (the same rules as the classroom rig, with practice DAYS as the lessons) ----------
-   A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (star 1). It is then due for review
-   after GAPS[0] days of practice, then GAPS[1] ... after each review passed (stars 2 and 3). Missing a due review
-   is a lapse (back to learning, shorter gaps). The next chord unlocks when the newest has graduated, at most
+   A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (bronze). It is then due for review after GAPS[0]
+   days of practice; on a day it's due, LEARN_STREAK in a row moves it up a medal (silver, then gold) and the next review
+   is GAPS[1] ... days away. A medal is never taken away (Dave, 2 Nov 2026): a miss only puts the count back to 0 at the
+   medal the chord already has, and a due chord stays due until it's passed. The next chord unlocks when the newest has graduated, at most
    (The old limit of 2 new chords a week is off: NEW_PER_WEEK = Infinity.) Home practice can earn up to three stars; the diamond (mastery)
    is only earned in class. */
 const START_POOL = 2, NEW_PER_WEEK = Infinity,     // no weekly limit: a chord opens as soon as it's earned (Dave, 14 Oct 2026)
@@ -243,6 +244,9 @@ let P = null;
 function load(){
   try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
   if(!P || !P.cards) P = {unlocked: START_POOL, cards: {}, intro: {}, sess: 0, lastDate: null, last: null, fresh: null};
+  // Medals are never taken away now (2 Nov 2026): a chord the old rules sent back to learning after a missed review gets its
+  // trophy back, at the level it was left on, and is due for review again
+  for(const n in P.cards){ const c = P.cards[n]; if(!c.grad && c.lapses > 0){ c.grad = true; c.streak = 0; c.due = P.sess; } }
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -256,16 +260,26 @@ function starsOf(c){ if(!c) return 0; return c.grad ? Math.min(MAX_STARS, c.k + 
 function applyResult(name, hit, sess){
   const c = cardOf(name);
   if(c.grad && !isDue(c, sess)) return;                    // extra practice: schedule unchanged
+  if(c.grad && c.streak >= LEARN_STREAK) c.streak = 0;     // a chord learned under the old rules starts its review count at 0
   c.t = Date.now();                                         // when this chord last changed: class and home merge by it
   if(hit){
     c.miss = 0;
-    if(c.grad){ c.k++; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
-    else if(++c.streak >= LEARN_STREAK){ c.grad = true; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
+    if(++c.streak >= LEARN_STREAK){                         // 3 in a row: learned (bronze), or up a medal on a due day
+      c.streak = 0;
+      if(c.grad) c.k++; else c.grad = true;
+      c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)];
+    }
   }else{
-    c.streak = 0;
-    if(c.grad){ c.grad = false; c.lapses++; c.k = Math.max(0, c.k - 1); c.due = null; }
-    else c.miss++;
+    c.streak = 0;                                           // back to 0 of 3; the medal stays, and so does the review
+    if(!c.grad) c.miss++;
   }
+}
+// what the count is working towards, for the status line: "2 of 3 for silver"
+function countLine(name){
+  const c = P.cards[name]; if(!c) return "";
+  if(!c.grad) return c.streak + " of " + LEARN_STREAK + " to learn it";
+  if(isDue(c, sessionNow()) && c.k + 1 < MAX_STARS) return c.streak + " of " + LEARN_STREAK + " for " + MEDALS[c.k + 2].n.toLowerCase();
+  return "";
 }
 function maybeUnlock(sess){
   if(P.unlocked >= CHORDS.length) return false;
@@ -380,7 +394,8 @@ const game = {
   finish(hit){
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
-    $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
+    const cl = countLine(CHORDS[this.idx].name);
+    $("status").textContent = (hit ? "✓ Got it!" : "Not this time. Here comes the next one") + (cl && r.stars === r.starsBefore ? " (" + cl + ")" : "");
     streak = hit ? streak + 1 : 0; sess.tries++; if(hit) sess.hits++;
     if(!SELFTEST) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked, graduated:r.starsBefore === 0 && r.stars >= 1});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
@@ -390,7 +405,7 @@ const game = {
     const queue = [];
     if(r.stars > r.starsBefore){
       const nm = FMAChords.label(CHORDS[this.idx].name), st = Math.min(3, r.stars);
-      queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${st === 1 ? "You learned " + nm + "!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!"}</b><span class="songlist">${st === 1 ? "That's a bronze trophy. Play it again on another day to make it silver." : st === 2 ? "Play it again on another day to make it gold." : "That's gold. You really know this one."}</span></span>`);
+      queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${st === 1 ? "You learned " + nm + "!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!"}</b><span class="songlist">${st === 1 ? "That's a bronze trophy. On another day, play it 3 times in a row to make it silver." : st === 2 ? "On another day, play it 3 times in a row to make it gold." : "That's gold. You really know this one."}</span></span>`);
     }
     if(r.unlocked){
       queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${FMAChords.label(r.unlocked)}</b></span>`);
@@ -453,8 +468,8 @@ const CUP = (fill, stroke) => `<svg class="cup" viewBox="0 0 48 48" aria-hidden=
 const MEDALS = [null, { n: "Bronze", fill: "#D9925A", line: "#8A5A2B" }, { n: "Silver", fill: "#B9C5D3", line: "#4F5B68" }, { n: "Gold", fill: "#FFC93C", line: "#9A6B00" }];
 const medalCup = st => CUP(MEDALS[st].fill, MEDALS[st].line);
 function medalLine(st){
-  return st >= 3 ? "Gold! You really know this one." : st === 2 ? "Silver. Play it again on another day to make it gold."
-    : "Bronze. Play it again on another day to make it silver.";
+  return st >= 3 ? "Gold! You really know this one." : st === 2 ? "Silver. On another day, play it 3 times in a row to make it gold."
+    : "Bronze. On another day, play it 3 times in a row to make it silver.";
 }
 const esc = t => String(t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
 function nextUnlockWhen(){        // when the weekly limit on new chords lifts, or null if it isn't what's holding them back
