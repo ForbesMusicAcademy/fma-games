@@ -317,12 +317,13 @@ function drawTab(marks){
     }
   }
   const gap = Math.min(...g.notes.map((n, i) => (i ? n.t - g.notes[i - 1].t : 9))), r = Math.max(9, Math.min(15, gap * (TX1 - TX0) / perRow * 0.46));
+  // each note is a pill as long as its value (Dave, 2 Nov 2026): continuous crotchets sit end to end, the fret at the front
   g.notes.forEach((n, i) => {
-    const p0 = pos(n.t), x = p0.x + r + 3, y = TY[n.s] + p0.dy, st = marks ? marks[i] : null;
+    const p0 = pos(n.t), y = TY[n.s] + p0.dy, st = marks ? marks[i] : null;
     const fill = st === "hit" ? "#3E7D4C" : st === "miss" ? "#C0392B" : "#fff", ink = st ? "#fff" : "#23231F";
-    const w = (TX1 - TX0) * Math.min(n.d, perRow - (n.t % perRow)) / perRow;
-    h += `<rect x="${p0.x + 6}" y="${y - 3}" width="${Math.max(6, w - 10)}" height="6" rx="3" fill="#FFB805" opacity=".55"/>`;
-    h += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="#23231F" stroke-width="2.5"/><text x="${x}" y="${y + r * 0.4}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="${Math.round(r * 1.15)}" fill="${ink}">${n.f}</text>`;
+    const w = Math.max(r * 2, (TX1 - TX0) * Math.min(n.d, perRow - (n.t % perRow)) / perRow - 3), x = p0.x + 1.5;
+    h += `<rect x="${x}" y="${y - r}" width="${w}" height="${r * 2}" rx="${r}" fill="${fill}" stroke="#23231F" stroke-width="2.5"/>`;
+    h += `<text x="${x + r}" y="${y + r * 0.4}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="${Math.round(r * 1.15)}" fill="${ink}">${n.f}</text>`;
   });
   h += `<line id="head" x1="${TX0}" x2="${TX0}" y1="${TY[0] - 22}" y2="${TY[3] + 18}" stroke="#2E7DA8" stroke-width="4" stroke-linecap="round" opacity="0"/>`;
   $("tab").innerHTML = h;
