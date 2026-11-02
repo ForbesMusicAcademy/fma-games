@@ -140,9 +140,12 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest"), FIRST = q.has("first");
+// Tuned up: the finish card's big button goes straight on to playing (Dave, 2 Nov 2026: nobody tunes twice in a row;
+// a family's bug report said there was no way out but "Tune again"). Bass players go to Groove Lab, guitarists to Chord Quest.
 
 /* ---------- The strings, low to high (standard tuning). Bass players (2 Nov 2026) get the bass's four, an octave down. ---------- */
 const BASS = !!(window.fmaInstrument && fmaInstrument.get() === "bass");
+const NEXT = BASS ? { href: "grooves.html", label: "Now let's play: Groove Lab" } : { href: "chords.html", label: "Now let's play: Chord Quest" };
 const STRINGS = BASS ? [
   {note: "E", name: "low E",  desc: "the thickest string",       hz: 41.203},
   {note: "A", name: "A",      desc: "the 2nd thickest string",   hz: 55.000},
@@ -292,7 +295,8 @@ const race = {
         <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
         <div class="splits">${sp}</div>
         <p style="font-size:14px">Seconds per string. Give all ${STRINGS.length === 4 ? "four" : "six"} a final strum: tuning one string can nudge the others.</p>
-        ${FIRST ? `<a class="big" href="./" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">On to the games</a><button class="ghost" id="again" style="width:100%;margin-top:8px">Tune again</button>` : `<button class="big play" id="again">Tune again</button>`}`;
+        <a class="big play" href="${NEXT.href}" style="text-decoration:none;color:var(--fg)">${NEXT.label}</a>
+        <div style="display:flex;gap:8px;margin-top:8px"><a class="ghost" href="./" style="flex:1;display:flex;align-items:center;justify-content:center;text-decoration:none">All games</a><button class="ghost" id="again" style="flex:1">Tune again</button></div>`;
       PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };
