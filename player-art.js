@@ -52,10 +52,10 @@
       ["leggings", "Leggings"], ["flares", "Flares"], ["stage", "Stripe pants"], ["baggy", "Baggy jeans"], ["cargo", "Cargos"], ["ripped", "Ripped"], ["trackies", "Trackies"]],
     shoes: [["sneakers", "Sneakers"], ["hightops", "High-tops"], ["boots", "Boots"], ["chelsea", "Chelsea boots"], ["platforms", "Platforms"], ["skate", "Skate shoes"], ["lightup", "Light-up sneakers"], ["spark", "Spark high-tops"]],
     neck: [["none", "None"], ["beads", "Beads"], ["peace", "Peace sign"], ["chain", "Chain"], ["clock", "Clock"], ["scarf", "Scarf"], ["bowtie", "Bow tie"], ["bandana", "Bandana"], ["laminate", "AAA laminate"], ["glowchain", "Glow necklace"], ["pickpendant", "Pick pendant"]],
-    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["fmacap", "FMA cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"], ["pumpkin", "Pumpkin hat"]],
+    acc: [["none", "None"], ["bow", "Bow"], ["flower", "Flower"], ["flowers", "Flower crown"], ["halo", "Halo"], ["bunny", "Bunny"], ["cat", "Cat ears"], ["crown", "Crown"], ["diamondcrown", "Diamond crown"], ["party", "Party"], ["beanie", "Beanie"], ["cap", "Cap"], ["fmacap", "FMA cap"], ["sidecap", "Side cap"], ["visor", "Visor"], ["bucket", "Bucket"], ["band", "Band"], ["hippy", "Hippie headband"], ["phones", "Phones"], ["santa", "Santa"], ["elf", "Elf"], ["pirate", "Pirate"], ["horns", "Horns"], ["hardhat", "Hard hat"], ["skatehelmet", "Skate helmet"], ["headset", "Crew headset"], ["tuningcrown", "Tuning-peg crown"], ["pumpkin", "Pumpkin hat"]],
     // "guitar" is the Strat (older saves called it just "Guitar")
-    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"], ["glitter", "Glitter"], ["lightning", "Thunderbolt"]],
-    extras: [["none", "None"], ["wings", "Wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"], ["towel", "Roadie towel"], ["cablecoil", "Patch cable"]],
+    gear: [["none", "None"], ["acoustic", "Acoustic"], ["guitar", "Strat"], ["flyingv", "Flying V"], ["bass", "Bass"], ["violin", "Violin bass"], ["doubleneck", "Double neck"], ["goldv", "Golden Flying V"], ["diamondneck", "Diamond double neck"], ["ukulele", "Ukulele"], ["mic", "Mic"], ["rustbucket", "Rust Bucket"], ["stickerbomb", "Sticker Bomb"], ["glitter", "Glitter"], ["lightning", "Thunderbolt"]],
+    extras: [["none", "None"], ["wings", "Wings"], ["goldwings", "Golden wings"], ["backpack", "Backpack"], ["bumbag", "Bum bag"], ["belt", "Studded belt"], ["sweatbands", "Sweatbands"], ["cape", "Cape"], ["gloves", "Work gloves"], ["biostrap", "Biohazard strap"], ["kneepads", "Knee pads"], ["towel", "Roadie towel"], ["cablecoil", "Patch cable"]],
     skins: SKINS, palette: PALETTE, hairColors: HAIR_COLORS
   };
   const shade = (h, f) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
@@ -309,6 +309,8 @@
       case "halo": return U(`<ellipse cx="0" cy="-1.5" rx="0.62" ry="0.16" fill="none" stroke="${INK}" stroke-width="${W(15)}"/><ellipse cx="0" cy="-1.5" rx="0.62" ry="0.16" fill="none" stroke="#ffd34d" stroke-width="${W(8)}"/>`);
       case "bunny": return U(`<g transform="rotate(-9 -0.4 -1)"><ellipse cx="-0.4" cy="-1.62" rx="0.2" ry="0.66" fill="#f7f4ee"/><ellipse cx="-0.4" cy="-1.6" rx="0.09" ry="0.46" fill="#ffaabd" stroke="none"/></g><g transform="rotate(9 0.4 -1)"><ellipse cx="0.4" cy="-1.62" rx="0.2" ry="0.66" fill="#f7f4ee"/><ellipse cx="0.4" cy="-1.6" rx="0.09" ry="0.46" fill="#ffaabd" stroke="none"/></g>`);
       case "cat": return U(`<path d="M-0.98 -0.5 L-0.86 -1.5 L-0.28 -1.0Z" fill="${c}"/><path d="M-0.8 -0.9 L-0.78 -1.2 L-0.52 -1.0Z" fill="#ffaabd" stroke="none"/><path d="M0.98 -0.5 L0.86 -1.5 L0.28 -1.0Z" fill="${c}"/><path d="M0.8 -0.9 L0.78 -1.2 L0.52 -1.0Z" fill="#ffaabd" stroke="none"/>`);
+      // Legendary (picks): an ice-blue diamond crown with gems and a sparkle
+      case "diamondcrown": return U(`<path d="M-0.76 -0.86 L-0.94 -1.56 L-0.46 -1.16 L0 -1.72 L0.46 -1.16 L0.94 -1.56 L0.76 -0.86 Q0 -0.7 -0.76 -0.86Z" fill="#bfe9ff"/><path d="M-0.62 -0.95 L-0.7 -1.3 L-0.4 -1.06 L0 -1.46 L0.4 -1.06 L0.7 -1.3 L0.62 -0.95" fill="none" stroke="#fff" stroke-width="${W(4)}" opacity=".8"/><path d="M0 -1.04 L0.12 -0.92 L0 -0.8 L-0.12 -0.92Z" fill="#4aa8ff"/><circle cx="-0.94" cy="-1.56" r="0.09" fill="#ff6fa3" stroke="none"/><circle cx="0" cy="-1.72" r="0.1" fill="#fff" stroke="none"/><circle cx="0.94" cy="-1.56" r="0.09" fill="#ff6fa3" stroke="none"/><path d="M0.42 -1.62 l0.05 0.12 l0.12 0.05 l-0.12 0.05 l-0.05 0.12 l-0.05 -0.12 l-0.12 -0.05 l0.12 -0.05Z" fill="#fff" stroke="none"/>`);
       case "crown": return U(`<path d="M-0.72 -0.86 L-0.88 -1.5 L-0.42 -1.14 L0 -1.62 L0.42 -1.14 L0.88 -1.5 L0.72 -0.86 Q0 -0.7 -0.72 -0.86Z" fill="#ffc42b"/><circle cx="-0.88" cy="-1.5" r="0.08" fill="#e8433f" stroke="none"/><circle cx="0" cy="-1.62" r="0.08" fill="#4aa8ff" stroke="none"/><circle cx="0.88" cy="-1.5" r="0.08" fill="#e8433f" stroke="none"/>`);
       case "party": return U(`<g transform="rotate(10)"><path d="M-0.62 -0.86 L0.1 -2.0 L0.66 -0.8 Q0 -0.55 -0.62 -0.86Z" fill="${c}"/><path d="M-0.4 -1.14 Q0.05 -0.98 0.45 -1.12 M-0.2 -1.5 Q0.1 -1.4 0.3 -1.5" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${W(5)}"/><circle cx="0.1" cy="-2.02" r="0.16" fill="#ffc42b"/></g>`);
       case "beanie": return U(`<path d="${dome(-1.5, -0.3)}" fill="${c}"/><rect x="-1.16" y="-0.58" width="2.32" height="0.46" rx="0.16" fill="${c}"/><path d="M-0.84 -0.54 V-0.16 M-0.56 -0.54 V-0.16 M-0.28 -0.54 V-0.16 M0 -0.54 V-0.16 M0.28 -0.54 V-0.16 M0.56 -0.54 V-0.16 M0.84 -0.54 V-0.16" fill="none" stroke-opacity=".28" stroke-width="${W(3)}"/><circle cx="0" cy="-1.58" r="0.24" fill="#fff"/>`);
@@ -445,7 +447,7 @@
     return out;
   }
   /* ---- the instruments, drawn lying flat: neck along +x, strings on y = -2, the body around 0,0 ---- */
-  const INSTR_SIZE = { acoustic: 1.04, bass: 1.06, ukulele: 0.68, doubleneck: 0.92, violin: 1.0 };
+  const INSTR_SIZE = { acoustic: 1.04, bass: 1.06, ukulele: 0.68, doubleneck: 0.92, diamondneck: 0.92, violin: 1.0 };
   // a spike (or stud) on a jacket: base centred on x,y, pointing along angle a (radians)
   const spike = (x, y, a, len, w) => { const c = Math.cos(a), sn = Math.sin(a), f = n => n.toFixed(1);
     return `<path d="M${f(x - sn * w)} ${f(y + c * w)} L${f(x + c * len)} ${f(y + sn * len)} L${f(x + sn * w)} ${f(y - c * w)}Z" fill="#dfe3e8" ${sw(2.2)}/><path d="M${f(x - sn * w * 0.3)} ${f(y + c * w * 0.3)} L${f(x + c * len * 0.7)} ${f(y + sn * len * 0.7)}" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`; };
@@ -453,6 +455,12 @@
     // Rust Row's Rust Bucket: a beaten-up Strat, rust orange with spots of rust
     // Inside the Amp's Thunderbolt: a glowing teal Strat with a lightning bolt
     if(kind === "lightning") return `<g opacity=".35"><circle cx="-26" cy="-2" r="54" fill="#4fd0c0"/></g>` + instrumentSvg("guitar", "#4fd0c0") + `<path d="M-30 -24 L-42 0 L-30 0 L-40 22 L-18 -6 L-30 -6 L-22 -24Z" fill="#ffd34d" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"/>`;
+    // Legendary (picks, 14 Oct 2026): a gold Flying V with a glow, and an ice-blue diamond double neck, both sparkling
+    const twinkles = (pts, col) => `<g fill="${col || "#fff"}">${pts.map(([x, y, r]) => `<path d="${star(x, y, r, r * 0.38)}"/>`).join("")}</g>`;
+    if(kind === "goldv") return `<g opacity=".3"><circle cx="-22" cy="-2" r="58" fill="#ffd34d"/></g>` + instrumentSvg("flyingv", "#ffc42b")
+      + `<path d="M-50 -34 L4 -12" stroke="#fff6c8" stroke-width="4" stroke-linecap="round" opacity=".8"/>` + twinkles([[-46, -30, 7], [-40, 28, 6], [8, -18, 5], [-58, 10, 4]]);
+    if(kind === "diamondneck") return `<g opacity=".28"><circle cx="-20" cy="-2" r="62" fill="#9fe3ff"/></g>` + instrumentSvg("doubleneck", "#bfe9ff")
+      + `<g fill="#fff" opacity=".9"><path d="M-58 -30 L-44 -40 L-36 -22Z"/><path d="M-62 14 L-48 4 L-44 24Z"/><path d="M-30 30 L-18 20 L-14 38Z"/></g>` + twinkles([[-50, -44, 7], [-66, 30, 6], [10, -36, 5], [-20, 46, 5]], "#ffffff");
     // Backstage Pass's Glitter guitar: a sparkly purple Strat
     if(kind === "glitter") return instrumentSvg("guitar", "#a070e8") + `<g fill="#fff">${[[-44, -12], [-30, 10], [-52, 6], [-20, -20], [4, 16], [-38, -24]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4"/>`).join("")}</g><path d="${star(-34, -4, 8, 3.4)}" fill="#ffd34d" stroke="${INK}" stroke-width="2"/>`;
     // Skate City's Sticker Bomb: a white Strat covered in stickers
@@ -511,7 +519,7 @@
   function gearSvg(kind, g, c, solo){
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH, s = g.tW / 90;
     switch(kind){
-      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": case "rustbucket": case "stickerbomb": case "glitter": case "lightning": {
+      case "guitar": case "bass": case "ukulele": case "acoustic": case "flyingv": case "doubleneck": case "violin": case "rustbucket": case "stickerbomb": case "glitter": case "lightning": case "goldv": case "diamondneck": {
         const ga = guitarAt(g, solo), k = ga.k * (INSTR_SIZE[kind] || 1), strap = `M${x0 + 6} ${g.tTop + 4} L${(ga.x + 4 * s).toFixed(1)} ${(ga.y + 6 * s).toFixed(1)}`;
         return { mid: `<path d="${strap}" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${strap}" stroke="#a8723c" stroke-width="7" stroke-linecap="round"/>
         <g transform="translate(${ga.x.toFixed(1)} ${ga.y.toFixed(1)}) rotate(${ga.rot}) scale(${k.toFixed(3)})">${instrumentSvg(kind, c)}</g>` }; }
@@ -528,6 +536,7 @@
     const x0 = 200 - g.tW / 2, x1 = 200 + g.tW / 2, tBot = g.tTop + g.tH;
     switch(kind){
       case "cape": return gearSvg("cape", g, c);
+      case "goldwings": return extraSvg("wings", g, "#ffc42b");      // Legendary (picks)
       case "wings": { const wing = sg => { const bx = 200 + sg * 10, by = g.tTop + 16, tx = 200 + sg * (g.tW / 2 + 82), ty = g.tTop - 44;
           return `<path d="M${bx} ${by} C${bx + sg * 30} ${ty - 6} ${tx - sg * 14} ${ty - 12} ${tx} ${ty} C${tx + sg * 6} ${ty + 20} ${tx - sg * 4} ${ty + 30} ${tx - sg * 14} ${ty + 34} C${tx - sg * 4} ${ty + 48} ${tx - sg * 16} ${ty + 62} ${tx - sg * 30} ${ty + 62} C${tx - sg * 24} ${ty + 84} ${tx - sg * 42} ${ty + 100} ${tx - sg * 60} ${ty + 98} C${bx + sg * 18} ${g.tTop + g.tH * 0.8} ${bx} ${by + 30} ${bx} ${by}Z" fill="${c}" ${sw(5)}/><path d="M${tx - sg * 14} ${ty + 34} Q${bx + sg * 40} ${ty + 26} ${bx + sg * 16} ${by} M${tx - sg * 30} ${ty + 62} Q${bx + sg * 34} ${ty + 56} ${bx + sg * 12} ${by + 14}" fill="none" stroke="${shade(c, 0.78)}" stroke-width="3" stroke-linecap="round"/>`; };
         return { back: wing(-1) + wing(1) }; }
@@ -556,7 +565,7 @@
   /* ---- arms and hands ---- */
   const shoulder = (g, right) => [right ? 200 + g.tW / 2 - 6 : 200 - g.tW / 2 + 6, g.tTop + 16];
   // the guitar on its strap (also where its attack notes come from)
-  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele", "rustbucket", "stickerbomb", "glitter", "lightning"];
+  const INSTRUMENTS = ["acoustic", "guitar", "flyingv", "bass", "violin", "doubleneck", "ukulele", "rustbucket", "stickerbomb", "glitter", "lightning", "goldv", "diamondneck"];
   // solo = lifted high for a guitar solo, the neck pointing up at the sky
   const guitarAt = (g, solo) => { const s = g.tW / 90; return solo ? { x: 200 + 34 * s, y: g.tTop + g.tH * 0.56, rot: -46, k: s * 0.92 } : { x: 200 + 14 * s, y: g.tTop + g.tH * 0.64, rot: -30, k: s * 0.92 }; };
   const guitarPt = (g, lx, ly, solo) => { const t = guitarAt(g, solo), a = t.rot * Math.PI / 180;
@@ -584,7 +593,7 @@
      Deliberately no strumming movement at all: a hand moving at the guitar's body read badly (Oct 2026). The picking hand
      stays still; the life comes from the solo lift, headbangs and hops. */
   function holdPose(g, kind, solo){
-    const t = guitarAt(g, solo), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" ? 12 : 0;
+    const t = guitarAt(g, solo), a = t.rot * Math.PI / 180, k = t.k * (INSTR_SIZE[kind] || 1), dy = kind === "doubleneck" || kind === "diamondneck" ? 12 : 0;
     const at = (lx, ly) => [t.x + k * (lx * Math.cos(a) - ly * Math.sin(a)), t.y + k * (lx * Math.sin(a) + ly * Math.cos(a))];
     // From Dave's sketch (Oct 2026): the picking arm crosses the body to a still hand back towards the bridge. The fretting arm
     // runs from the shoulder down to the neck and goes BEHIND it (no hand drawn); all that shows of the hand is an "m" of three
@@ -1267,7 +1276,7 @@
   PlayerArt.item = (cfg, part) => {
     cfg = norm(Object.assign({}, cfg, { pose: "relax", gear: "none", name: "" }));
     const g = AGES[cfg.body] || AGES.kid, tBot = g.tTop + g.tH, box = (cx, cy, size) => `${(cx - size / 2).toFixed(1)} ${(cy - size / 2).toFixed(1)} ${size.toFixed(1)} ${size.toFixed(1)}`;
-    const vb = part === "extra" ? (cfg.extra === "wings" ? box(200, g.tTop - 6, g.tW + 210) : cfg.extra === "cape" ? box(200, (g.tTop + FEET) / 2 + 6, FEET - g.tTop + 50) : box(200, g.tTop + g.tH / 2, g.tW + 70))
+    const vb = part === "extra" ? (cfg.extra === "wings" || cfg.extra === "goldwings" ? box(200, g.tTop - 6, g.tW + 210) : cfg.extra === "cape" ? box(200, (g.tTop + FEET) / 2 + 6, FEET - g.tTop + 50) : box(200, g.tTop + g.tH / 2, g.tW + 70))
       : part === "top" ? box(200, g.tTop + g.tH / 2 + 4, Math.max(g.tW + 70, g.tH + 44))
       : part === "bottom" ? (["skirt", "pleated", "tutu"].includes(cfg.bottom) ? box(200, tBot + 18, g.tW + 66) : box(200, (tBot + FEET) / 2 + 2, Math.max(FEET - tBot + 34, g.tW + 70)))
       : part === "shoes" ? box(200, FEET + 2, 120)

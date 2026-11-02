@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFB805">
+<meta name="color-scheme" content="light">
+<title>Note Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fma-style.css?v=5">
+<style>
+/* Note Finder (2 Nov 2026): learn where the notes live on a bass, a guitar or a keyboard. Two ways to play: Find it (the
+   game names a note, you play it) and Name it (a note lights up, you tap its name: no instrument needed). Every answer
+   colours in a map of the neck or keyboard, and the notes you don't know yet come up more often. */
+:root{color-scheme:light;--bg:#FBF8EF;--fma-width:640px;--card:#FFFFFF;--fg:#23231F;--muted:#6B6558;--line:#E8E1D2;--good:#3E7D4C;--accent:#FFB805;--bad:#C0392B;
+  --head:'Nunito',ui-rounded,system-ui,sans-serif;--ui:'Work Sans',system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:17px;line-height:1.4;min-height:100dvh;display:flex;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+#app{width:100%;max-width:640px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 14px 40px -26px rgba(35,35,31,.4)}
+.card h2{margin:0 0 6px;font-family:var(--head);font-weight:900;font-size:24px;line-height:1.15}
+.card p{margin:8px 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:var(--fg)}
+[hidden]{display:none!important}
+.pick{display:grid;gap:8px;margin-top:10px}
+.pick.two{grid-template-columns:1fr 1fr}
+.pick.four{grid-template-columns:1fr 1fr}
+.pick button{border:2px solid var(--line);background:#fff;border-radius:16px;padding:10px;text-align:left;min-height:64px}
+.pick button b{display:block;font-family:var(--head);font-weight:900;font-size:18px}
+.pick button small{color:var(--muted);font-size:13px}
+.pick button.on{border-color:var(--fg);background:#FFF6DC}
+.lbl{font-weight:700;color:var(--muted);font-size:14px;margin-top:14px}
+#board{width:100%;height:auto;display:block;margin-top:10px}
+#prompt{font-family:var(--head);font-weight:900;font-size:clamp(26px,7vw,40px);text-align:center;line-height:1.1;min-height:1.2em}
+#prompt .nm{display:inline-block;background:var(--accent);border-radius:14px;padding:0 12px}
+.top{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--muted);font-size:14px}
+#score{font-family:var(--head);font-weight:900;font-size:26px;color:var(--fg)}
+#timer{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin:10px 0}
+#timer i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left}
+#names{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+#names.twelve{grid-template-columns:repeat(6,1fr)}
+#names button{min-height:52px;border-radius:14px;border:2px solid var(--fg);background:#fff;font-family:var(--head);font-weight:900;font-size:19px;padding:0}
+#names.twelve button{font-size:15px}
+#names button.right{background:var(--good);color:#fff;border-color:var(--good)}
+#names button.wrong{background:var(--bad);color:#fff;border-color:var(--bad)}
+.stage{display:flex;align-items:center;gap:12px;margin-top:10px}
+.stage .buddy{flex:none;width:76px;aspect-ratio:1/1}
+#status{font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em}
+#meter{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
+#meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.res div{background:#F6F1E4;border-radius:14px;padding:10px;text-align:center;color:var(--muted);font-weight:700;font-size:14px}
+.res div b{display:block;font-family:var(--head);font-weight:900;font-size:26px;color:var(--fg)}
+.key{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:700;margin-top:6px}
+.key i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:4px;border:2px solid #23231F}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="fma">
+<div class="fma-band"><div class="fma-band-in"><a class="fma-logo" href="./"><img src="https://images.squarespace-cdn.com/content/v1/6a33cfe198212b58a6deaf75/a9409f0f-e510-4d9d-82cf-6c42a8f7e9f0/New+Logo+-+TRANSPARENT.png?format=300w" alt="Forbes Music Academy"></a><h1>Note Finder</h1><a class="fma-back" href="./">&larr; All games</a></div></div>
+<div id="app">
+
+  <section class="card" id="start">
+    <h2 id="introH">Learn your way around</h2>
+    <p id="introP"></p>
+    <div class="lbl">How do you want to play?</div>
+    <div class="pick two" id="modes"></div>
+    <div class="lbl">Which notes?</div>
+    <div class="pick four" id="levels"></div>
+    <div class="lbl">Your map <span style="font-weight:600">(every note you get right fills it in)</span></div>
+    <svg id="mapBoard" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block;margin-top:6px"></svg>
+    <div class="key"><span><i style="background:#fff"></i>not yet</span><span><i style="background:#FFC42B"></i>learning</span><span><i style="background:#3E7D4C"></i>know it</span></div>
+    <p id="best" style="text-align:center"></p>
+    <button class="big play" id="go">Start</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    <p style="font-size:14px"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> In Find it, your device listens through its microphone and throws the sound away as it goes.</p>
+  </section>
+
+  <section class="card" id="game" hidden>
+    <div class="top"><span id="qnum"></span><span id="score">0</span></div>
+    <div id="timer"><i></i></div>
+    <div id="prompt"></div>
+    <svg id="board" viewBox="0 0 1000 270"></svg>
+    <div id="names"></div>
+    <div class="stage"><div class="buddy" id="buddy"></div><div style="flex:1"><div id="status"></div><div id="meter"><i id="lvl"></i></div></div></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><button class="ghost" id="quit" style="flex:1;min-height:44px">Stop</button></div>
+  </section>
+
+  <section class="card" id="end" hidden>
+    <h2 id="endH" style="text-align:center"></h2>
+    <div class="res"><div><b id="endScore">0</b>points</div><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
+    <p id="endBest" style="text-align:center"></p>
+    <svg id="endMap" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block"></svg>
+    <p id="saved" style="text-align:center;font-size:14px"></p>
+    <button class="big play" id="again">Play again</button>
+    <button class="ghost" id="change" style="width:100%;min-height:46px;margin-top:10px">Change notes or mode</button>
+  </section>
+</div>
+
+<script src="fma-student.js?v=11"></script>
+<script src="fma-listen.js?v=12"></script>
+<script src="fma-midi.js?v=1"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
+<script>
+/* ============================================================
+   Note Finder, for every instrument (fmaInstrument: guitar, bass or piano).
+   Find it   the game names a note (and, on bass and guitar, the string); play it. Any octave counts, since only the
+             note's name is checked. A wrong note says what you played and shows where it is, then you try again.
+   Name it   a dot lights up on the neck (or a key on the keyboard); tap its name. Works with no instrument at all.
+   The map:  each spot (string and fret, or note on the keyboard) is "know it" once it's been right first go, and goes
+             back to "learning" after a wrong answer. Spots you don't know yet come up more often, so a round always works
+             on the gaps.
+   Kept under fmaKey, so it follows the player when tracking is on. Rounds are sent as "note-finder".
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search), SIM = q.has("sim");
+const NAT = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
+const SHORT = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+const NATURAL = [0, 2, 4, 5, 7, 9, 11], BLACK = [1, 3, 6, 8, 10];
+const INST = (window.fmaInstrument && fmaInstrument.get()) || "guitar", PIANO = INST === "piano", BASS = INST === "bass";
+// strings, thinnest (top line) to thickest, as on tab
+const STR = BASS ? [{ n: "G", m: 43 }, { n: "D", m: 38 }, { n: "A", m: 33 }, { n: "E", m: 28 }]
+  : [{ n: "high E", m: 64 }, { n: "B", m: 59 }, { n: "G", m: 55 }, { n: "D", m: 50 }, { n: "A", m: 45 }, { n: "low E", m: 40 }];
+const low = STR.length - 1;
+const LEVELS = PIANO ? [
+  { n: 1, name: "C to G", sub: "Five white keys", pcs: [0, 2, 4, 5, 7] },
+  { n: 2, name: "White keys", sub: "All seven", pcs: NATURAL },
+  { n: 3, name: "Black keys", sub: "Sharps and flats", pcs: BLACK },
+  { n: 4, name: "All 12", sub: "Every key", pcs: [...Array(12).keys()] }
+] : [
+  { n: 1, name: "Low E string", sub: "Natural notes, frets 0-12", strs: [low], pcs: NATURAL },
+  { n: 2, name: "E and A strings", sub: "Natural notes", strs: [low, low - 1], pcs: NATURAL },
+  { n: 3, name: "Every string", sub: "Natural notes", strs: STR.map((_, i) => i), pcs: NATURAL },
+  { n: 4, name: "Sharps and flats", sub: "All 12, every string", strs: STR.map((_, i) => i), pcs: [...Array(12).keys()] }
+];
+const MODES = [
+  { k: "find", n: "Find it 🎸", sub: PIANO ? "Play the note it names" : "Play the note on the string it names" },
+  { k: "name", n: "Name it 👆", sub: "Tap the name of the note that lights up. No instrument needed." }];
+if (PIANO) MODES[0].n = "Find it 🎹";
+const ROUND = 12, Q_SECS = 20;
+
+/* ---------- progress ---------- */
+const KEY = fmaKey("fma-note-finder-" + (PIANO ? "piano" : BASS ? "bass" : "guitar") + "-v1");
+let P = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
+P.map = P.map || {}; P.best = P.best || {}; P.mode = P.mode || "find"; P.level = P.level || 1;
+const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
+// a spot: "s:f" (fret 0-11; fret 12 is the open string's note again) or "k:pc" on the keyboard
+const spotKey = sp => PIANO ? "k:" + sp.pc : sp.s + ":" + (sp.f % 12);
+const state = k => { const x = P.map[k]; return !x ? 0 : x.run >= 1 ? 2 : 1; };      // 0 not yet, 1 learning, 2 know it
+function mark(sp, right){
+  const k = spotKey(sp), x = P.map[k] || (P.map[k] = { run: 0, seen: 0 });
+  x.seen++; x.run = right ? x.run + 1 : 0;      // right first go: green (Dave, 2 Nov 2026). A wrong answer makes it yellow again.
+  saveP();
+}
+
+/* ---------- drawing: the neck or the keyboard ---------- */
+const NX = 92, NX1 = 984, FW = (NX1 - NX) / 12;
+const sy = s => STR.length === 4 ? 40 + s * 56 : 28 + s * 38;
+const fx = f => f === 0 ? NX - 40 : NX + (f - 0.5) * FW;
+const KW = 1000 / 14, KX = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6];             // white-key slot for each note name
+const kx = (pc, oct) => PIANO ? (oct * 7 + KX[pc]) * KW + (BLACK.includes(pc) ? KW : KW / 2) : 0;
+const COL = ["#FFFFFF", "#FFC42B", "#3E7D4C"];
+// dots: [{s, f} or {pc, oct}, fill, label, ring]
+function drawBoard(svg, dots, opts){
+  opts = opts || {}; let h = "";
+  if (PIANO) {
+    for (let i = 0; i < 14; i++) h += `<rect x="${i * KW + 1}" y="10" width="${KW - 2}" height="250" rx="8" fill="#fff" stroke="#23231F" stroke-width="2"/>`;
+    for (let o = 0; o < 2; o++) BLACK.forEach(pc => { const x = (o * 7 + KX[pc]) * KW + KW * 0.68; h += `<rect x="${x}" y="10" width="${KW * 0.64}" height="150" rx="6" fill="#23231F"/>`; });
+    h += `<text x="${KW / 2}" y="250" text-anchor="middle" font-family="Work Sans" font-weight="700" font-size="16" fill="#6B6558">C</text><text x="${7.5 * KW}" y="250" text-anchor="middle" font-family="Work Sans" font-weight="700" font-size="16" fill="#6B6558">C</text>`;
+    dots.forEach(([sp, fill, label, ring]) => { const x = kx(sp.pc, sp.oct || 0), y = BLACK.includes(sp.pc) ? 120 : 205;
+      h += `<circle cx="${x}" cy="${y}" r="${ring ? 26 : 22}" fill="${fill}" stroke="#23231F" stroke-width="${ring ? 5 : 2.5}"/>` + (label ? `<text x="${x}" y="${y + 7}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="${label.length > 1 ? 17 : 21}" fill="${fill === "#FFFFFF" || fill === "#FFC42B" ? "#23231F" : "#fff"}">${label}</text>` : ""); });
+  } else {
+    const yb = sy(STR.length - 1);
+    h += `<rect x="${NX - 6}" y="${sy(0) - 12}" width="8" height="${yb - sy(0) + 24}" fill="#23231F" rx="2"/>`;
+    for (let f = 1; f <= 12; f++) h += `<line x1="${NX + f * FW}" x2="${NX + f * FW}" y1="${sy(0) - 10}" y2="${yb + 10}" stroke="#B9AF9B" stroke-width="3"/>`;
+    const mid = (sy(0) + yb) / 2;
+    [3, 5, 7, 9].forEach(f => h += `<circle cx="${fx(f)}" cy="${mid}" r="8" fill="#E8E1D2"/>`);
+    h += `<circle cx="${fx(12)}" cy="${mid - 30}" r="8" fill="#E8E1D2"/><circle cx="${fx(12)}" cy="${mid + 30}" r="8" fill="#E8E1D2"/>`;
+    STR.forEach((st, i) => { const hl = opts.str === i;
+      h += `<line x1="${NX - 50}" x2="${NX1}" y1="${sy(i)}" y2="${sy(i)}" stroke="${hl ? "#E09A00" : "#6B6558"}" stroke-width="${hl ? 7 : 2 + i * (BASS ? 1.2 : 0.6)}"/>`;
+      h += `<text x="8" y="${sy(i) + 6}" font-family="Nunito" font-weight="900" font-size="${hl ? 26 : 22}" fill="${hl ? "#23231F" : "#6B6558"}">${st.n.replace("high ", "").replace("low ", "")}</text>`; });
+    [3, 5, 7, 9, 12].forEach(f => h += `<text x="${fx(f)}" y="${yb + 42}" text-anchor="middle" font-family="Work Sans" font-weight="700" font-size="22" fill="#6B6558">${f}</text>`);
+    dots.forEach(([sp, fill, label, ring]) => { const x = fx(sp.f), y = sy(sp.s);
+      h += `<circle cx="${x}" cy="${y}" r="${ring ? 24 : 19}" fill="${fill}" stroke="#23231F" stroke-width="${ring ? 5 : 2.5}"/>` + (label ? `<text x="${x}" y="${y + 8}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="${label.length > 1 ? 18 : 23}" fill="${fill === "#FFFFFF" || fill === "#FFC42B" || fill === "#FFF6DC" ? "#23231F" : "#fff"}">${label}</text>` : ""); });
+  }
+  svg.innerHTML = h;
+}
+// the map: every spot in the level, coloured by how well it's known
+function spotsOf(lv){
+  if (PIANO) return lv.pcs.map(pc => ({ pc }));
+  const out = []; lv.strs.forEach(s => { for (let f = 0; f <= 11; f++) if (lv.pcs.includes((STR[s].m + f) % 12)) out.push({ s, f }); }); return out;
+}
+function drawMap(svg){
+  const lv = LEVELS[P.level - 1];
+  if (PIANO) drawBoard(svg, [0, 1].flatMap(oct => spotsOf(lv).map(sp => [{ pc: sp.pc, oct }, COL[state(spotKey(sp))], SHORT[sp.pc]])));
+  else drawBoard(svg, spotsOf(lv).flatMap(sp => { const c = COL[state(spotKey(sp))], d = [[sp, c, SHORT[(STR[sp.s].m + sp.f) % 12]]];
+    if (sp.f === 0) d.push([{ s: sp.s, f: 12 }, c, SHORT[(STR[sp.s].m) % 12]]); return d; }));
+}
+
+/* ---------- start screen ---------- */
+function drawStart(){
+  $("introP").textContent = PIANO ? "Learn where every note lives on the keyboard. Find it: the game names a note and you play it. Name it: a key lights up and you tap its name."
+    : `Learn where every note lives on your ${BASS ? "bass" : "guitar"}. Find it: the game names a note and a string, and you play it. Name it: a dot lights up on the neck and you tap its name.`;
+  $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${P.mode === m.k ? "on" : ""}"><b>${m.n}</b><small>${m.sub}</small></button>`).join("");
+  $("levels").innerHTML = LEVELS.map(l => { const sp = spotsOf(l), known = sp.filter(x => state(spotKey(x)) === 2).length;
+    return `<button data-n="${l.n}" class="${P.level === l.n ? "on" : ""}"><b>${l.name}</b><small>${l.sub} · know ${known} of ${sp.length}</small></button>`; }).join("");
+  drawMap($("mapBoard"));
+  const b = P.best[P.mode + P.level];
+  $("best").textContent = b ? "Your best here: " + b + " points" : "";
+  $("go").textContent = P.mode === "find" && !det.ready && !(window.FMAMidi && FMAMidi.active()) ? "Start (allow microphone)" : "Start";
+}
+$("modes").onclick = e => { const b = e.target.closest("button"); if (b) { P.mode = b.dataset.k; saveP(); drawStart(); } };
+$("levels").onclick = e => { const b = e.target.closest("button"); if (b) { P.level = Number(b.dataset.n); saveP(); drawStart(); } };
+
+/* ---------- listening (Find it) ---------- */
+const det = FMAListen.create();
+const tracker = FMAListen.notes(det, { legato: () => true, onNote(m){ played(m); }, onLevel(r){ $("lvl").style.width = Math.min(100, r * 900) + "%"; } });
+if (window.FMAMidi) FMAMidi.onNote(e => { if (e.on && FMAMidi.active()) played(e.note); });
+let iv = 0;
+
+/* ---------- the round ---------- */
+const R = { qs: [], qi: -1, score: 0, right: 0, times: [], q: null, t0: 0, tries: 0, busy: false, run: 0 };
+let buddy = null, timerRaf = 0;
+// A round: in a level of 12 notes or fewer, every note once, then the spare questions go to notes not known yet. In a
+// bigger level, notes not known yet first (yellow ones before ones never asked), then known ones for review.
+function pickSpots(){
+  const lv = LEVELS[P.level - 1], all = shuffle(spotsOf(lv)), st = sp => state(spotKey(sp));
+  const notKnown = all.filter(sp => st(sp) < 2).sort((a, b) => st(b) - st(a));
+  let list;
+  if (all.length <= ROUND) {
+    list = all.slice();
+    for (let i = 0; list.length < ROUND && notKnown.length; i++) list.push(notKnown[i % notKnown.length]);
+    while (list.length < ROUND) list.push(all[Math.floor(Math.random() * all.length)]);
+  } else list = notKnown.concat(all.filter(sp => st(sp) === 2)).slice(0, ROUND);
+  // no note twice in a row
+  for (let tries = 0; tries < 60; tries++) {
+    list = shuffle(list);
+    if (list.every((sp, i) => !i || spotKey(sp) !== spotKey(list[i - 1]))) break;
+  }
+  return list.map(sp => PIANO ? { pc: sp.pc, oct: Math.random() < 0.5 ? 0 : 1 } : { s: sp.s, f: sp.f === 0 && P.mode === "name" && Math.random() < 0.4 ? 12 : sp.f });
+}
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pcOf = sp => PIANO ? sp.pc : (STR[sp.s].m + sp.f) % 12;
+async function start(){
+  $("err").hidden = true;
+  if (P.mode === "find" && !SIM && !(window.FMAMidi && FMAMidi.active())) {
+    try { if (!det.ready) await det.start({ bass: BASS }); }
+    catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it instead."; return; }
+    clearInterval(iv); iv = setInterval(() => tracker.step(), 12);
+  }
+  Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, times: [], run: 0,
+    knownBefore: spotsOf(LEVELS[P.level - 1]).filter(x => state(spotKey(x)) === 2).length });
+  $("start").hidden = true; $("end").hidden = true; $("game").hidden = false;
+  const lv = LEVELS[P.level - 1], twelve = lv.pcs.length > 7 || lv.pcs === BLACK;
+  $("names").hidden = P.mode !== "name"; $("names").className = twelve ? "twelve" : "";
+  $("names").innerHTML = (twelve ? [...Array(12).keys()] : NATURAL).map(pc => `<button data-pc="${pc}">${twelve ? NAT[pc].replace("/", "<br>") : NAT[pc]}</button>`).join("");
+  $("meter").hidden = P.mode !== "find";
+  if (!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("start", 1200);
+  next();
+  cancelAnimationFrame(timerRaf); tickTimer();
+}
+function next(){
+  R.qi++;
+  if (R.qi >= R.qs.length) return finish();
+  const sp = R.qs[R.qi], pc = pcOf(sp);
+  R.q = sp; R.t0 = performance.now(); R.tries = 0; R.busy = false;
+  $("qnum").textContent = "Note " + (R.qi + 1) + " of " + R.qs.length; $("score").textContent = R.score; $("status").textContent = ""; $("status").style.color = "";
+  $("names").querySelectorAll("button").forEach(b => b.className = "");
+  if (P.mode === "find") {
+    $("prompt").innerHTML = PIANO ? `Play <span class="nm">${NAT[pc]}</span>` : `Play <span class="nm">${NAT[pc]}</span> on the ${STR[sp.s].n} string`;
+    drawBoard($("board"), [], { str: PIANO ? null : sp.s });
+    $("status").textContent = PIANO ? "Any octave is fine" : "Find it on the orange string";
+  } else {
+    $("prompt").textContent = "What note is this?";
+    drawBoard($("board"), [[sp, "#FFB805", "?", true]]);
+  }
+}
+function answer(ok){
+  const secs = (performance.now() - R.t0) / 1000, sp = R.q, pc = pcOf(sp);
+  R.busy = true;
+  if (ok) {
+    const first = R.tries === 0, pts = first ? Math.round(100 * (1 - 0.5 * Math.min(secs, Q_SECS) / Q_SECS)) : 25;
+    R.score += pts; R.right++; R.times.push(secs); R.run++;
+    $("status").textContent = (first ? "Yes! +" : "Got it! +") + pts; $("status").style.color = "var(--good)";
+    if (buddy && (R.run % 3 === 0 || secs < 2)) buddy.moment(R.run % 3 === 0 ? "streak" : "hit", 1000);
+    mark(sp, first);
+  } else { R.run = 0; $("status").textContent = "Here it is"; $("status").style.color = "var(--bad)"; mark(sp, false); }
+  // show where it is (and the same note at fret 12 or 0)
+  const dots = [[sp, ok ? "#3E7D4C" : "#C0392B", SHORT[pc], true]];
+  if (!PIANO && (sp.f === 0 || sp.f === 12)) dots.push([{ s: sp.s, f: sp.f === 0 ? 12 : 0 }, ok ? "#3E7D4C" : "#C0392B", SHORT[pc]]);
+  if (PIANO) dots.push([{ pc, oct: 1 - (sp.oct || 0) }, ok ? "#3E7D4C" : "#C0392B", SHORT[pc]]);
+  drawBoard($("board"), dots, { str: PIANO ? null : sp.s });
+  $("score").textContent = R.score;
+  setTimeout(next, ok ? 1100 : 2000);
+}
+// Find it: a note played
+let lastWrong = 0;
+function played(m){
+  if ($("game").hidden || P.mode !== "find" || R.busy || performance.now() - R.t0 < 400) return;
+  const pc = ((Math.round(m) % 12) + 12) % 12, want = pcOf(R.q);
+  if (pc === want) return answer(true);
+  if (performance.now() - lastWrong < 500) return;
+  lastWrong = performance.now(); R.tries++;
+  $("status").textContent = "That's " + NAT[pc] + ". Try again!"; $("status").style.color = "var(--bad)";
+  // show where the note they played is, on the asked string, so they learn from it
+  if (!PIANO) { let f = (pc - STR[R.q.s].m % 12 + 12) % 12; drawBoard($("board"), [[{ s: R.q.s, f }, "#FFFFFF", SHORT[pc]]], { str: R.q.s }); }
+}
+// Name it: a tap
+$("names").onclick = e => {
+  const b = e.target.closest("button"); if (!b || R.busy) return;
+  const pc = Number(b.dataset.pc), want = pcOf(R.q);
+  if (pc === want) { b.className = "right"; answer(true); }
+  else { b.className = "wrong"; R.tries++; const rb = $("names").querySelector(`[data-pc="${want}"]`); if (rb) rb.className = "right"; answer(false); }
+};
+function tickTimer(){
+  if ($("game").hidden) return;
+  const left = Math.max(0, Q_SECS - (performance.now() - R.t0) / 1000);
+  $("timer").firstChild.style.transform = "scaleX(" + (R.busy ? 0 : left / Q_SECS) + ")";
+  if (!R.busy && left <= 0) answer(false);
+  timerRaf = requestAnimationFrame(tickTimer);
+}
+function finish(){
+  $("game").hidden = true; $("end").hidden = false; cancelAnimationFrame(timerRaf);
+  const k = P.mode + P.level, prev = P.best[k] || 0, isBest = R.score > prev;
+  if (isBest) { P.best[k] = R.score; saveP(); }
+  const lv = LEVELS[P.level - 1], sp = spotsOf(lv), known = sp.filter(x => state(spotKey(x)) === 2).length;
+  $("endH").textContent = isBest && prev ? "New best! 🎉" : R.right === R.qs.length ? "Every one right! 🎉" : "Round done!";
+  $("endScore").textContent = R.score; $("endRight").textContent = R.right + "/" + R.qs.length;
+  $("endAvg").textContent = R.times.length ? (R.times.reduce((a, b) => a + b, 0) / R.times.length).toFixed(1) + "s" : "–";
+  $("endBest").textContent = (isBest && prev ? "The old best was " + prev + ". " : prev ? "Your best: " + Math.max(prev, R.score) + ". " : "") + `You know ${known} of the ${sp.length} notes in ${lv.name}` + (known > R.knownBefore ? ` (${known - R.knownBefore} new this round!)` : "") + "."
+    + (known < sp.length ? " Get a yellow note right to turn it green." : "");
+  drawMap($("endMap"));
+  if (buddy) buddy.moment(isBest ? "best" : "done", 0);
+  $("saved").textContent = "";
+  if (!SIM && window.FMAStudent) {
+    const sent = FMAStudent.send("note-finder", { level: P.level, mode: P.mode, detail: INST, score: R.score, right: R.right, total: R.qs.length, improved: isBest && R.score > 0 });
+    if (FMAStudent.active && FMAStudent.active()) sent.then(ok => { $("saved").textContent = ok ? "Saved to your progress." : ""; });
+  }
+  // the whole map known: a one-off reward per level
+  if (known === sp.length && window.FMAPicks) FMAPicks.milestone("note-finder:" + INST + ":" + P.level, 100, "knowing every note in " + lv.name);
+}
+$("go").onclick = start;
+$("again").onclick = start;
+$("change").onclick = () => { $("end").hidden = true; $("start").hidden = false; drawStart(); };
+$("quit").onclick = () => { $("game").hidden = true; $("start").hidden = false; cancelAnimationFrame(timerRaf); drawStart(); };
+if (SIM) window.__nf = { played, R, P };
+drawStart();
+</script>
+</body>
+</html>

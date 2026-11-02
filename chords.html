@@ -81,7 +81,10 @@ label.set input[type=range]{width:100%}
 .tro{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border:0;background:none;border-radius:12px;color:var(--fg);min-height:92px}
 .tro svg.cup{width:44px;height:44px}
 .tro b{font-family:var(--head);font-weight:900;font-size:16px;line-height:1.1;text-align:center}
-.tro .st{font-size:11px;letter-spacing:1px;color:#C98F00;min-height:14px}
+.tro .st{font-size:12px;font-weight:700;color:#C98F00;min-height:14px}
+.tro .st.m4{color:#1F7FA8;font-weight:900;letter-spacing:.5px}
+.tro .st.m1{color:#9A5F2E}.tro .st.m2{color:#4F5B68}.tro .st.m3{color:#B07D00}
+.pop .medal{display:block;margin:0 auto}.pop .medal svg.cup{width:110px;height:110px}
 .tro.learning .st{color:var(--muted)}
 .tro.next{outline:3px dashed var(--accent);outline-offset:-3px;background:#FFF6DB;animation:glow 1.6s ease-in-out infinite}
 .tro.locked{color:#B9B1A0;cursor:default}
@@ -131,6 +134,11 @@ body.piano #chord{font-size:clamp(64px,20vw,120px)}
 body.piano .tips .gtr{display:none}
 .chordpop .in .d.keys{width:100%}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
+.lens{display:flex;gap:8px;margin:4px 0 14px}
+.lens button{flex:1;min-height:46px;border-radius:999px;border:2px solid var(--line);background:#fff;font-family:var(--head);font-weight:900;font-size:17px;color:var(--fg)}
+.lens button[aria-pressed="true"]{border-color:var(--fg);background:#FFF6DB}
+#left{font-weight:800;color:var(--fg)}
+.set.dbgonly{display:none}body.debug .set.dbgonly{display:flex}
 </style>
 </head>
 <body class="fma">
@@ -144,6 +152,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
         <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div class="qlbl">chords unlocked<small id="qSub">Every chord you learn opens up songs in Boss Battle.</small></div></div>
       </div>
       <div class="hint" id="qHint" hidden></div>
+      <div class="lens" id="lens" role="group" aria-label="How long to play"><button data-m="1">1 min</button><button data-m="2">2 min</button><button data-m="5">5 min</button></div>
       <button class="big play" id="start">Play Chord Quest</button>
       <p class="fine"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away.</p>
       <p id="err" style="color:var(--bad);font-weight:700;margin:0" hidden></p>
@@ -176,13 +185,14 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
       <div id="status">Play it!</div>
       <div id="timer"><i id="timerBar"></i></div>
       <div class="meter"><i id="lvl"></i></div>
-      <div class="sub"><span id="tune"></span><span id="today"></span></div>
+      <div class="sub"><span id="tune"></span><span id="today"></span><span id="left"></span></div>
       <div class="row" style="align-items:center"><div id="buddy" style="width:76px;height:76px;flex:none;margin:-14px 0 -10px -8px"></div><button class="ghost" id="skip" style="flex:1">Skip this chord</button><button class="ghost" id="toHome">🏆 Trophies</button></div>
       <div id="newSongs"></div>
     </div>
     <details style="margin-top:14px"><summary>Settings and help</summary>
-      <label class="set">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
-      <label class="set">How loud a note must be: <b id="thrV">25</b>%<input type="range" id="thr" min="15" max="70" step="5" value="25"></label>
+      <!-- the two detector sliders only show with ?debug (Dave, 14 Oct 2026): strictness comes from the chord's stars -->
+      <label class="set dbgonly">Stray notes allowed: <b id="strayV">0</b><input type="range" id="stray" min="0" max="2" step="1" value="0"></label>
+      <label class="set dbgonly">How loud a note must be: <b id="thrV">15</b>%<input type="range" id="thr" min="10" max="70" step="5" value="15"></label>
       <button class="ghost" id="recal">Listen to the room again</button>
       <div id="dbg" hidden></div>
     </details>
@@ -194,12 +204,12 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 </div>
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
-<script src="fma-student.js?v=9"></script>
-<script src="fma-listen.js?v=3"></script>
+<script src="fma-student.js?v=11"></script>
+<script src="fma-listen.js?v=12"></script>
 <script src="fma-midi.js?v=1"></script>
-<script src="player-art.js?v=33"></script>
-<script src="fma-picks.js?v=11"></script>
-<script src="fma-chords.js?v=4"></script>
+<script src="player-art.js?v=34"></script>
+<script src="fma-picks.js?v=12"></script>
+<script src="fma-chords.js?v=6"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script src="boss-anim.js?v=2"></script>
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
@@ -212,6 +222,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest");
+if(DEBUG) document.body.classList.add("debug");
 
 /* ---------- Chord list (built from the shared ladder file) ---------- */
 // fma-chords.js builds it: the ladder order, and the notes each chord's guitar shape actually sounds
@@ -219,12 +230,14 @@ let CHORDS = [], TIERS = [];
 function buildChords(){ CHORDS = FMAChords.list; TIERS = FMAChords.tiers; }
 
 /* ---------- Spaced repetition (the same rules as the classroom rig, with practice DAYS as the lessons) ----------
-   A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (star 1). It is then due for review
-   after GAPS[0] days of practice, then GAPS[1] ... after each review passed (stars 2 and 3). Missing a due review
-   is a lapse (back to learning, shorter gaps). The next chord unlocks when the newest has graduated, at most
-   NEW_PER_WEEK new chords in any 7 days (a new shape needs teaching, so home practice is mostly review). Home practice can earn up to three stars; the diamond (mastery)
-   is only earned in class. */
-const START_POOL = 2, NEW_PER_WEEK = 2, GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 3;
+   A new chord is LEARNING: hit it LEARN_STREAK times in a row to graduate (bronze). It is then due for review after GAPS[0]
+   days of practice; on a day it's due, LEARN_STREAK in a row moves it up a medal (silver, then gold) and the next review
+   is GAPS[1] ... days away. A medal is never taken away (Dave, 2 Nov 2026): a miss only puts the count back to 0 at the
+   medal the chord already has, and a due chord stays due until it's passed. The next chord unlocks when the newest has graduated, at most
+   (The old limit of 2 new chords a week is off: NEW_PER_WEEK = Infinity.) Since 2 Nov 2026 home earns the diamond (mastery) too, at the
+   same point as the classroom rig's DIAMOND_K: three reviews passed after learning it. */
+const START_POOL = 2, NEW_PER_WEEK = Infinity,     // no weekly limit: a chord opens as soon as it's earned (Dave, 14 Oct 2026)
+      GAPS = [1, 2, 4, 8], LEARN_STREAK = 3, MAX_STARS = 4;      // bronze, silver, gold, diamond
 const KEY = fmaKey(FMAChords.storeKey);          // each player on this device has their own progress (guitar and piano kept apart)
 const PIANO = FMAChords.inst === "piano";
 if(PIANO) document.body.classList.add("piano");
@@ -232,6 +245,9 @@ let P = null;
 function load(){
   try{ P = JSON.parse(localStorage.getItem(KEY)); }catch(e){ P = null; }
   if(!P || !P.cards) P = {unlocked: START_POOL, cards: {}, intro: {}, sess: 0, lastDate: null, last: null, fresh: null};
+  // Medals are never taken away now (2 Nov 2026): a chord the old rules sent back to learning after a missed review gets its
+  // trophy back, at the level it was left on, and is due for review again
+  for(const n in P.cards){ const c = P.cards[n]; if(!c.grad && c.lapses > 0){ c.grad = true; c.streak = 0; c.due = P.sess; } }
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -245,16 +261,26 @@ function starsOf(c){ if(!c) return 0; return c.grad ? Math.min(MAX_STARS, c.k + 
 function applyResult(name, hit, sess){
   const c = cardOf(name);
   if(c.grad && !isDue(c, sess)) return;                    // extra practice: schedule unchanged
+  if(c.grad && c.streak >= LEARN_STREAK) c.streak = 0;     // a chord learned under the old rules starts its review count at 0
   c.t = Date.now();                                         // when this chord last changed: class and home merge by it
   if(hit){
     c.miss = 0;
-    if(c.grad){ c.k++; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
-    else if(++c.streak >= LEARN_STREAK){ c.grad = true; c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)]; }
+    if(++c.streak >= LEARN_STREAK){                         // 3 in a row: learned (bronze), or up a medal on a due day
+      c.streak = 0;
+      if(c.grad) c.k++; else c.grad = true;
+      c.due = sess + GAPS[Math.min(c.k, GAPS.length - 1)];
+    }
   }else{
-    c.streak = 0;
-    if(c.grad){ c.grad = false; c.lapses++; c.k = Math.max(0, c.k - 1); c.due = null; }
-    else c.miss++;
+    c.streak = 0;                                           // back to 0 of 3; the medal stays, and so does the review
+    if(!c.grad) c.miss++;
   }
+}
+// what the count is working towards, for the status line: "2 of 3 for silver"
+function countLine(name){
+  const c = P.cards[name]; if(!c) return "";
+  if(!c.grad) return c.streak + " of " + LEARN_STREAK + " to learn it";
+  if(isDue(c, sessionNow()) && c.k + 1 < MAX_STARS) return c.streak + " of " + LEARN_STREAK + (c.k + 2 >= 4 ? " to master it" : " for " + MEDALS[c.k + 2].n.toLowerCase());
+  return "";
 }
 function maybeUnlock(sess){
   if(P.unlocked >= CHORDS.length) return false;
@@ -303,12 +329,34 @@ if(window.FMAMidi) FMAMidi.useFor(det);      // a MIDI keyboard, when one is plu
 
 /* ---------- One attempt: does the player's sound contain exactly this chord's notes? ---------- */
 let buddy = null, streak = 0, paused = false, running = false;          // your character beside the Skip button, and chords in a row
+/* A session is 1, 2 or 5 minutes (Dave, 14 Oct 2026). The clock only runs while the game is on screen; when it runs out, the
+   chord being played finishes and the session ends with a summary. */
+const LENS_KEY = "fma-cq-minutes";
+let lens = 2; try{ lens = [1, 2, 5].includes(Number(localStorage.getItem(LENS_KEY))) ? Number(localStorage.getItem(LENS_KEY)) : 2; }catch(e){}
+const sess = { left: 0, hits: 0, tries: 0, last: 0, on: false };
+function drawLens(){ $("lens").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", Number(b.dataset.m) === lens)); }
+$("lens").onclick = e => { const b = e.target.closest("button"); if(!b) return; lens = Number(b.dataset.m); try{ localStorage.setItem(LENS_KEY, lens); }catch(e){} drawLens(); };
+drawLens();
+function newSession(){ Object.assign(sess, { left: lens * 60000, hits: 0, tries: 0, last: performance.now(), on: true }); }
+function sessionTick(){
+  const now = performance.now(); if(sess.on && !paused) sess.left -= now - sess.last; sess.last = now;
+  const s = Math.max(0, Math.ceil(sess.left / 1000)); $("left").textContent = sess.on ? "⏱ " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : "";
+}
+function sessionDone(){
+  sess.on = false; paused = true; game.over = true; $("left").textContent = "";
+  const mins = lens, pct = sess.tries ? Math.round(100 * sess.hits / sess.tries) : 0;
+  $("popBox").innerHTML = `<span><b>Time's up!</b></span><p style="margin:6px 0 2px">${mins} minutes of chords: <b>${sess.hits}</b> right out of ${sess.tries}${sess.tries ? ` (${pct}%)` : ""}.</p>
+    <button class="big play" id="sAgain" style="margin-top:12px">Play again</button><button class="ghost" id="sHome" style="margin-top:8px;width:100%">🏆 Trophies</button>`;
+  $("pop").hidden = false; PlayerArt.popIn($("popBox"), sess.hits ? "win" : "done");
+  $("sAgain").onclick = () => { $("pop").hidden = true; newSession(); paused = false; game.begin(pickChord()); };
+  $("sHome").onclick = () => { $("pop").hidden = true; $("toHome").onclick(); };
+}
 const game = {
-  idx: 0, match: null, started: 0, over: false, thr: 0.25, strays: 0,
+  idx: 0, match: null, started: 0, over: false, thr: 0.15, strays: 0,
   begin(idx){
     this.idx = idx; this.started = performance.now(); this.over = false;
     const c = CHORDS[idx], t = TIERS[c.tier];
-    this.match = FMAListen.chordMatch(c, { thr: this.thr, strays: this.strays });
+    this.match = FMAListen.chordMatch(c, { thr: this.thr, strays: this.strays, miss: FMAChords.missFor(c.name), root: c.root });
     const lab = FMAChords.label(c.name);
     $("chord").textContent = lab; $("chord").classList.toggle("long", lab.length > 3 && lab.length <= 6); $("chord").classList.toggle("longer", lab.length > 6);
     $("diag").innerHTML = FMAChords.diagram(c.name);
@@ -322,6 +370,7 @@ const game = {
   },
   // Called about 11 times a second with the latest reading.
   step(){
+    sessionTick();
     if(this.over || paused) return;
     const db = det.level();
     $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) / 70 * 100)) + "%";
@@ -346,15 +395,24 @@ const game = {
   finish(hit){
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
-    $("status").textContent = hit ? "✓ Got it!" : "Not this time. Here comes the next one";
-    streak = hit ? streak + 1 : 0;
+    const cl = countLine(CHORDS[this.idx].name);
+    $("status").textContent = (hit ? "✓ Got it!" : "Not this time. Here comes the next one") + (cl && r.stars === r.starsBefore ? " (" + cl + ")" : "");
+    streak = hit ? streak + 1 : 0; sess.tries++; if(hit) sess.hits++;
     if(!SELFTEST) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked, graduated:r.starsBefore === 0 && r.stars >= 1});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
     $("status").className = hit ? "ok" : "";
     $("today").textContent = "";
     let delay = hit ? 1300 : 1500;
     const queue = [];
-    if(r.stars > r.starsBefore) queue.push(`<span>${[1,2,3].map(i => `<img class="${r.stars >= i ? "" : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}<b>${FMAChords.label(CHORDS[this.idx].name)}: ${r.stars} star${r.stars > 1 ? "s" : ""}!</b></span>`);
+    if(r.stars > r.starsBefore){
+      const nm = FMAChords.label(CHORDS[this.idx].name), st = Math.min(MAX_STARS, r.stars);
+      const head = st === 1 ? "You learned " + nm + "!" : st >= 4 ? nm + ": MASTERED!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!";
+      const sub = st === 1 ? "That's a bronze trophy. On another day, play it 3 times in a row to make it silver."
+        : st === 2 ? "On another day, play it 3 times in a row to make it gold."
+        : st === 3 ? "On another day, play it 3 times in a row to master it."
+        : "That's the diamond trophy. You've got this chord for keeps.";
+      queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${head}</b><span class="songlist">${sub}</span></span>`);
+    }
     if(r.unlocked){
       queue.push(`<span><img src="unlocked.png" alt=""><b>New chord unlocked: ${FMAChords.label(r.unlocked)}</b></span>`);
       const ns = newBossSongs();
@@ -364,7 +422,7 @@ const game = {
         $("newSongs").innerHTML = `<a class="newsongs" href="boss.html?song=${ns.songs[0].id}">🎸 <span>New in Boss Battle: <b>${names}</b></span><span class="go">Play ›</span></a>`;
       }
     }
-    const next = () => { game.begin(pickChord()); };
+    const next = () => { if(sess.on && sess.left <= 0) sessionDone(); else game.begin(pickChord()); };
     if(queue.length){ setTimeout(() => popQueue(queue, next), 900); } else setTimeout(next, delay);
   }
 };
@@ -402,12 +460,26 @@ async function enterGame(){
   if(!running){ await calibrate(); running = true; setInterval(() => game.step(), 90); }
   else $("game").hidden = false;
   $("today").textContent = "";
+  if(!sess.on || sess.left <= 0) newSession();
+  sess.last = performance.now();
   game.begin(pickChord());
 }
 $("toHome").onclick = () => { paused = true; game.over = true; $("game").hidden = true; drawHome(); $("home").hidden = false; scrollTo(0, 0); };
 
 /* ---------- Chord Quest home: how many unlocked, the trophy cabinet, and the songs they open ---------- */
 const CUP = (fill, stroke) => `<svg class="cup" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h20v10c0 7-4.5 12-10 12s-10-5-10-12z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 10H8c0 6 3 9 7 9M34 10h6c0 6-3 9-7 9" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/><path d="M21 28h6v7h-6z" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/><path d="M15 41h18v-4c0-1-1-2-2-2H17c-1 0-2 1-2 2z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+/* Medals, not stars (Dave, 2 Nov 2026): kids who'd just learned a chord saw 1 star of 3, two grey, and read it as "I didn't
+   play it properly". The first win is a whole trophy: bronze for learning it, silver and gold for playing it again on later
+   days. Underneath it's the same count (starsOf: 1 = learned, 2 and 3 = reviews passed). */
+const MEDALS = [null, { n: "Bronze", fill: "#D9925A", line: "#8A5A2B" }, { n: "Silver", fill: "#B9C5D3", line: "#4F5B68" }, { n: "Gold", fill: "#FFC93C", line: "#9A6B00" }, { n: "Diamond", fill: "#A8E8FF", line: "#1F7FA8" }];
+const medalCup = st => st >= 4 ? DIAMOND_CUP : CUP(MEDALS[st].fill, MEDALS[st].line);
+// the diamond: an ice-blue cup with a gem on the front
+const DIAMOND_CUP = CUP("#A8E8FF", "#1F7FA8").replace("</svg>", `<path d="M24 9l4.5 4.5L24 20l-4.5-6.5z" fill="#fff" stroke="#1F7FA8" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM39 20l.8 1.6 1.6.8-1.6.8-.8 1.6-.8-1.6-1.6-.8 1.6-.8z" fill="#1F7FA8"/></svg>`);
+const medalName = st => st >= 4 ? "MASTERED" : MEDALS[st].n;
+function medalLine(st){
+  return st >= 4 ? "Diamond: MASTERED! 💎" : st === 3 ? "Gold. On another day, play it 3 times in a row to master it." : st === 2 ? "Silver. On another day, play it 3 times in a row to make it gold."
+    : "Bronze. On another day, play it 3 times in a row to make it silver.";
+}
 const esc = t => String(t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
 function nextUnlockWhen(){        // when the weekly limit on new chords lifts, or null if it isn't what's holding them back
   let introduced = 0, earliest = Infinity;
@@ -441,7 +513,7 @@ function drawHome(){
       const i = t.first + k, card = P.cards[c.name], st = starsOf(card);
       if(i < P.unlocked){
         const won = card && card.grad;
-        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${st} stars">${won ? CUP("#FFC93C", "#9A6B00") : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st">${won ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) : "learning"}</span></button>`;
+        html += `<button class="tro ${won ? "won" : "learning"} ${i === P.unlocked - 1 && !won ? "next" : ""}" data-i="${i}" aria-label="${esc(L(c.name))}, ${won ? medalName(Math.min(MAX_STARS, st)).toLowerCase() : "learning"}">${won ? medalCup(Math.min(MAX_STARS, st)) : CUP("#E9E4D8", "#A39B8A")}<b>${esc(L(c.name))}</b><span class="st ${won ? "m" + Math.min(MAX_STARS, st) : ""}">${won ? medalName(Math.min(MAX_STARS, st)) : "learning"}</span></button>`;
       }else{
         html += `<div class="tro locked" aria-label="${esc(L(c.name))}, locked">${CUP("#EFEAE0", "#CFC7B6")}<b>${esc(L(c.name))}</b><span class="st">🔒</span></div>`;
       }
@@ -474,7 +546,7 @@ $("cabinet").onclick = ev => {
   const b = ev.target.closest("button.tro[data-i]"); if(!b) return;
   const i = Number(b.dataset.i), c = CHORDS[i], card = P.cards[c.name], st = starsOf(card);
   const w = document.createElement("div"); w.className = "chordpop";
-  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? "★".repeat(st) + "☆".repeat(MAX_STARS - st) + " Keep it shining." : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
+  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? medalLine(Math.min(MAX_STARS, st)) : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
   const [go, close] = w.querySelectorAll("button");
   close.onclick = () => w.remove();
   w.onclick = e => { if(e.target === w) w.remove(); };

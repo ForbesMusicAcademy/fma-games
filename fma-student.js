@@ -55,12 +55,12 @@
     const p = prof(); return base + (p ? p.ns : ":guest");
   };
 
-  // Which instrument this player plays ("guitar" or "piano"; "" until they've said). Asked once on the games menu, kept with
+  // Which instrument this player plays ("guitar", "piano" or "bass"; "" until they've said; bass added 2 Nov 2026). Asked once on the games menu, kept with
   // their progress (so it follows them to any device), and changed from the menu's corner button.
   window.fmaInstrument = {
-    get(){ try{ const v = localStorage.getItem(fmaKey("fma-instrument-v1")); return v === "piano" || v === "guitar" ? v : ""; }catch(e){ return ""; } },
+    get(){ try{ const v = localStorage.getItem(fmaKey("fma-instrument-v1")); return v === "piano" || v === "guitar" || v === "bass" ? v : ""; }catch(e){ return ""; } },
     set(v){ try{ localStorage.setItem(fmaKey("fma-instrument-v1"), v); }catch(e){} },
-    word(){ return this.get() === "piano" ? "piano" : "guitar"; }
+    word(){ const v = this.get(); return v === "piano" || v === "bass" ? v : "guitar"; }
   };
 
   const post = body => fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) }).then(r => r.json());
@@ -359,7 +359,7 @@
         p.textContent = "Your points this week: " + r.me.week + (r.me.last ? " (last week " + r.me.last + ")" : "");
         el.append(p);
         r.teams.forEach(t => { const d = document.createElement("div");
-          d.textContent = t.name + ": " + ord(t.rank) + " of " + t.of + " this week · " + t.practised + " of " + t.members + " have practised"; el.append(d); });
+          d.textContent = t.name + ": " + (t.tied ? "equal " : "") + ord(t.rank) + " of " + t.of + " this week · " + t.practised + " of " + t.members + " have practised"; el.append(d); });
       }catch(e){}
     },
     // the weekly team league (team names and counts only), for the classroom screen; null when tracking is off

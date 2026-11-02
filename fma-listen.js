@@ -9,6 +9,10 @@
                                                { ctx }      share the page's own AudioContext (games that also play sound)
                                                { test: true } no microphone: feed sound into det.testGain instead (self-test,
                                                               replaying recordings)
+                                               { bass: true } a bass guitar (2 Nov 2026): the sound goes through a low-pass
+                                                              filter first (cymbals, hi-hats and a snare from the page's own
+                                                              speaker don't get in), and det.read() / FMAListen.notes() read
+                                                              pitch down to the open low E (41 Hz) instead of stopping at 70 Hz
    det.level()                               loudness in dB (0 = full scale) of the last ~0.1 s
    det.rms()                                 the same as plain RMS of the last 512 samples (onset detection)
    det.calibrate(ms)                         listens to the room for ms (default 2000) and sets det.gateDb a little above it
@@ -47,7 +51,7 @@
   function create(){
     const det = {
       ctx: null, an: null, tan: null, buf: null, td: new Float32Array(TIME), d: null, testGain: null,
-      tune: 0, tonal: 0, gateDb: -50, ready: false,
+      tune: 0, tonal: 0, gateDb: -50, ready: false, bass: false,
       async start(opts){
         opts = opts || {};
         if(this.ready) return;
@@ -55,7 +59,12 @@
         this.an = this.ctx.createAnalyser(); this.an.fftSize = CHROMA_FFT; this.an.smoothingTimeConstant = 0;
         this.tan = this.ctx.createAnalyser(); this.tan.fftSize = TIME; this.tan.smoothingTimeConstant = 0;
         this.buf = new Float32Array(this.an.frequencyBinCount);
-        const into = this.ctx.createGain(); into.connect(this.an); into.connect(this.tan);
+        const into = this.ctx.createGain(); let head = into;
+        if(opts.bass){           // two gentle low-pass stages: a bass's notes and their first overtones pass, drums' sizzle doesn't
+          this.bass = true;
+          for(let i = 0; i < 2; i++){ const lp = this.ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 600; lp.Q.value = 0.7; head.connect(lp); head = lp; }
+        }
+        head.connect(this.an); head.connect(this.tan);
         if(opts.test){
           this.testGain = into;            // test sound goes straight in, never to the speaker
         }else{
@@ -72,8 +81,10 @@
         return 20 * Math.log10(Math.sqrt(s / x.length) + 1e-9);
       },
       rms(){
-        const x = this._time(); let s = 0; for(let i = x.length - 512; i < x.length; i++) s += x[i] * x[i];
-        return Math.sqrt(s / 512);
+        // a bass's low E takes 1,170 samples for one cycle, so a 512-sample window rises and falls inside a single note
+        // and looks like fresh plucks: bass mode measures over 2048 (2 Nov 2026)
+        const n = this.bass ? 2048 : 512, x = this._time(); let s = 0; for(let i = x.length - n; i < x.length; i++) s += x[i] * x[i];
+        return Math.sqrt(s / n);
       },
       async calibrate(ms){
         ms = ms || 2000; const samples = [], t0 = performance.now();
@@ -130,7 +141,7 @@
       },
       // YIN pitch on the latest time block. Defaults suit melodies; Tune Up asks for a longer window and the guitar's range.
       read(opts){
-        const o = Object.assign({ fmin: 70, fmax: 1400, window: 1024, threshold: 0.15 }, opts || {});
+        const o = Object.assign(this.bass ? { fmin: 36, fmax: 450, window: 2048, threshold: 0.15 } : { fmin: 70, fmax: 1400, window: 1024, threshold: 0.15 }, opts || {});
         const x = this._time(), sr = this.ctx.sampleRate, W = Math.min(o.window, x.length >> 1);
         const tMin = Math.max(2, Math.floor(sr / o.fmax)), tMax = Math.min(Math.ceil(sr / o.fmin), x.length - W - 1);
         if(!this.d || this.d.length < tMax + 2) this.d = new Float32Array(tMax + 2);
@@ -221,15 +232,21 @@
     h = h || {};
     const frames = [], pending = [], rmsWin = [];
     let lastOnset = -9, stab = { m: null, c: 0 }, lastEmit = null;
+    // a bass's low notes need a longer look before their pitch is sure (a 41 Hz cycle is 24 ms), so its readings run later.
+    // (Read on every step: a page makes its tracker before det.start() says it's a bass.)
+    // A new pluck is a jump in loudness. A bass string re-plucked while it's still ringing (repeated notes, an acoustic bass)
+    // only jumps 30-50%, so bass mode takes a 30% jump; elsewhere 60% (2 Nov 2026, Dave missing repeats in Groove Lab).
+    let LO, HI, R0, R1, RISE;
     return {
       step(){
         if(!det.ready) return;
+        LO = det.bass ? 36 : 70; HI = det.bass ? 450 : 1400; R0 = det.bass ? 0.03 : 0.02; R1 = det.bass ? 0.2 : 0.12; RISE = det.bass ? 1.3 : 1.6;
         const now = det.ctx.currentTime, rms = det.rms();
         if(h.onLevel) h.onLevel(rms);
         rmsWin.push({ t: now, rms }); while(rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
         const floor = Math.min(0.012, Math.max(0.004, Math.min(...rmsWin.map(r => r.rms)) * 2));      // quieter notes count (was 0.006-0.02, x3; 14 Oct 2026)
         let midi = null;
-        if(rms > floor){ const p = det.read(); if(p && p.clarity > 0.8 && p.f > 70 && p.f < 1400) midi = 69 + 12 * Math.log2(p.f / 440); }
+        if(rms > floor){ const p = det.read(); if(p && p.clarity > 0.8 && p.f > LO && p.f < HI) midi = 69 + 12 * Math.log2(p.f / 440); }
         frames.push({ t: now, rms, midi }); while(frames.length && frames[0].t < now - 2) frames.shift();
         if(h.legato && h.legato() && midi != null && Math.abs(midi - Math.round(midi)) < 0.35){
           const r = Math.round(midi);
@@ -238,11 +255,11 @@
         }else if(midi == null) stab = { m: null, c: 0 };
         if(h.onHeard) h.onHeard(midi);
         let prevMin = Infinity; for(const f of frames) if(f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
-        if(prevMin < Infinity && rms > floor && rms > prevMin * 1.6 + 0.004 && now - lastOnset > 0.12){ lastOnset = now; pending.push(now); }
+        if(prevMin < Infinity && rms > floor && rms > prevMin * RISE + 0.004 && now - lastOnset > 0.12){ lastOnset = now; pending.push(now); }
         for(let k = pending.length - 1; k >= 0; k--){
-          const t = pending[k]; if(now < t + 0.12) continue;
+          const t = pending[k]; if(now < t + R1) continue;
           pending.splice(k, 1);
-          const ms = frames.filter(f => f.midi != null && f.t >= t + 0.02 && f.t <= t + 0.12).map(f => f.midi).sort((a, b) => a - b);
+          const ms = frames.filter(f => f.midi != null && f.t >= t + R0 && f.t <= t + R1).map(f => f.midi).sort((a, b) => a - b);
           // two readings, or one clean one (a palm mute can be gone in 50 ms)
           if(ms.length >= 2 || (ms.length === 1 && Math.abs(ms[0] - Math.round(ms[0])) < 0.3)){ const m = Math.round(ms[ms.length >> 1]); lastEmit = m; if(h.onNote) h.onNote(m, t, false); }
         }
