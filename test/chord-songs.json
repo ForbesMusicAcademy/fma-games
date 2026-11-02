@@ -1,5 +1,5 @@
 {
- "_readme": "Songs Chord Quest shows as 'songs you can play now' once every chord a song needs is unlocked. Taken from the Band Skills Ladder's Ladder Songs tab (Portal Data) on 2026-10-12; ask Claude to 'update the games from the ladder' after changing songs there. Titles and artists only: no lyrics, no chord charts, no links. Chord names must match chord-ladder.json (G and C here are the ladder's Easy-G and Easy-C).",
+ "_readme": "Songs Chord Quest shows as 'songs you can play now' once every chord a song needs is unlocked. Taken from the Band Skills Ladder's Ladder Songs tab (Portal Data) on 2026-10-12 (About a Girl, Ooh La La and Tennessee Whiskey added 2026-11-02); ask Claude to 'update the games from the ladder' after changing songs there. Titles and artists only: no lyrics, no chord charts, no links. Chord names must match chord-ladder.json (G and C here are the ladder's Easy-G and Easy-C).",
  "songs": [
   {
    "title": "21 Guns",
@@ -27,6 +27,14 @@
    "chords": [
     "Em",
     "D"
+   ]
+  },
+  {
+   "title": "About a Girl",
+   "artist": "Nirvana",
+   "chords": [
+    "Em",
+    "G"
    ]
   },
   {
@@ -238,6 +246,15 @@
    ]
   },
   {
+   "title": "Ooh La La",
+   "artist": "Faces",
+   "chords": [
+    "D",
+    "Em",
+    "G"
+   ]
+  },
+  {
    "title": "Open the Gate",
    "artist": "",
    "chords": [
@@ -328,6 +345,14 @@
     "D",
     "C",
     "G"
+   ]
+  },
+  {
+   "title": "Tennessee Whiskey",
+   "artist": "Chris Stapleton",
+   "chords": [
+    "A",
+    "Bm"
    ]
   },
   {
