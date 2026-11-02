@@ -234,11 +234,13 @@
     let lastOnset = -9, stab = { m: null, c: 0 }, lastEmit = null;
     // a bass's low notes need a longer look before their pitch is sure (a 41 Hz cycle is 24 ms), so its readings run later.
     // (Read on every step: a page makes its tracker before det.start() says it's a bass.)
-    let LO, HI, R0, R1;
+    // A new pluck is a jump in loudness. A bass string re-plucked while it's still ringing (repeated notes, an acoustic bass)
+    // only jumps 30-50%, so bass mode takes a 30% jump; elsewhere 60% (2 Nov 2026, Dave missing repeats in Groove Lab).
+    let LO, HI, R0, R1, RISE;
     return {
       step(){
         if(!det.ready) return;
-        LO = det.bass ? 36 : 70; HI = det.bass ? 450 : 1400; R0 = det.bass ? 0.03 : 0.02; R1 = det.bass ? 0.2 : 0.12;
+        LO = det.bass ? 36 : 70; HI = det.bass ? 450 : 1400; R0 = det.bass ? 0.03 : 0.02; R1 = det.bass ? 0.2 : 0.12; RISE = det.bass ? 1.3 : 1.6;
         const now = det.ctx.currentTime, rms = det.rms();
         if(h.onLevel) h.onLevel(rms);
         rmsWin.push({ t: now, rms }); while(rmsWin.length && rmsWin[0].t < now - 2) rmsWin.shift();
@@ -253,7 +255,7 @@
         }else if(midi == null) stab = { m: null, c: 0 };
         if(h.onHeard) h.onHeard(midi);
         let prevMin = Infinity; for(const f of frames) if(f.t >= now - 0.08 && f.t <= now - 0.02) prevMin = Math.min(prevMin, f.rms);
-        if(prevMin < Infinity && rms > floor && rms > prevMin * 1.6 + 0.004 && now - lastOnset > 0.12){ lastOnset = now; pending.push(now); }
+        if(prevMin < Infinity && rms > floor && rms > prevMin * RISE + 0.004 && now - lastOnset > 0.12){ lastOnset = now; pending.push(now); }
         for(let k = pending.length - 1; k >= 0; k--){
           const t = pending[k]; if(now < t + R1) continue;
           pending.splice(k, 1);
