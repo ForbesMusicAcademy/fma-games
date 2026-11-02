@@ -9,7 +9,8 @@
 (function(){
   /* ---------------- the rules, set once (change the numbers here) ---------------- */
   const EARN = {
-    round: 5,            // every finished round, even a "not yet": every try pays
+    round: 5,            // every finished round where something was played, even a "not yet": every real try pays
+    repeat: 1,           // the same song at the same speed and mode, after the first REPEATS goes that day (Dave, 2 Nov 2026)
     chordTry: 1,         // Chord Practice counts each chord as a round, so it pays a little per chord...
     chordHit: 2,         // ...and a bit more when it rings
     best: 10,            // beating your own best score or time
@@ -154,10 +155,22 @@
     Object.keys(EARN.days).forEach(k => { if(n >= +k) once(w, "week:" + wk + ":" + k, EARN.days[k], k + " practice days this week", list); });
   }
   // after every finished round, from FMAStudent.send (whether or not tracking is on)
+  // (2 Nov 2026, after a student earned ~1,800 picks replaying the easiest boss and letting songs run with nothing played)
+  //   - a round where nothing landed (no notes, hits or right answers, and no score) pays nothing and isn't a practice day
+  //   - the same song at the same speed and mode pays full picks for the first REPEATS goes a day, then EARN.repeat
+  //   Chord Quest is left alone: each chord is its own short try (1 pick, 2 when it rings).
+  const REPEATS = 3;
   function round(game, d){
     d = d || {}; const w = load(), list = [];
+    if(game !== "chords" && !(Number(d.right) > 0) && !(Number(d.score) > 0)) return list;
     if(game === "chords") add(w, d.right ? EARN.chordHit : EARN.chordTry, "playing a chord", list);
-    else add(w, EARN.round, "finishing a round", list);
+    else{
+      const today = dayStr(new Date()), k = [game, d.detail, d.level, d.mode].join("|");
+      if(!w.reps || w.reps.day !== today) w.reps = { day: today, n: {} };          // one day's counts only, so the save stays small
+      const n = w.reps.n[k] = (w.reps.n[k] || 0) + 1;
+      if(n <= REPEATS) add(w, EARN.round, "finishing a round", list);
+      else add(w, EARN.repeat, "playing it again (full picks for the first " + REPEATS + " goes a day: try a new song or speed)", list);
+    }
     if(d.improved && game !== "chords") add(w, EARN.best, "beating your best", list);
     if(game === "chords" && d.graduated) once(w, "chord:" + d.detail, EARN.graduate, "graduating " + d.detail, list);
     if(game === "boss-battle" && d.right) once(w, "boss:" + d.detail + ":" + d.level + ":" + d.mode, EARN.boss, "beating the boss", list);
