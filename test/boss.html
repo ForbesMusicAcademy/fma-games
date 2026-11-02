@@ -181,6 +181,8 @@ body.piano #diag{width:100%;max-width:380px}
 .hpq{margin:12px 0;padding:14px;border-radius:16px;background:var(--sky-bg,#EAF4FA);color:var(--sky-ink,#1C3A4A);border:2px solid var(--sky,#8ECAE6)}
 .hpq b{font-family:var(--head);font-size:18px}.hpq p{margin:6px 0 12px}.hpq .ghost{width:100%;margin-top:10px;min-height:46px}
 #cal .meter{height:12px;border-radius:7px;margin-top:12px}
+.nudge{background:#FFF6DC;border:2px solid var(--accent);border-radius:16px;padding:12px 14px;margin:10px 0;text-align:left;line-height:1.4}
+.nudge .fma-go{margin-top:10px}
 </style>
 </head>
 <body class="fma">
@@ -260,7 +262,7 @@ body.piano #diag{width:100%;max-width:380px}
 <script src="boss-art-metronome.js?v=1"></script><script src="boss-art-kit.js?v=1"></script><script src="boss-art-stompbox.js?v=1"></script>
 <script src="boss-art-sournote.js?v=1"></script><script src="boss-art-mic.js?v=1"></script><script src="boss-art-smoke.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
-<script src="fma-picks.js?v=12"></script>
+<script src="fma-picks.js?v=13"></script>
 <script src="fma-chords.js?v=6"></script>
 <script src="fma-boss-songs.js?v=2"></script>
 <script>
@@ -566,6 +568,14 @@ function finish(quit){
   $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks for the golden boss!</span></p>` : "") +
     (isBest && best ? `<p><span class="gold" style="background:var(--pick-bg)">New best combo: ${G.bestStreak} in a row!</span></p>` : best ? `<p style="color:var(--muted)">Your best combo at this speed: ${best} in a row</p>` : "") +
     (!win ? `<p class="goalnote">To win at ${SPEEDS.find(x => x.k === S.speed).n} speed, land ${Math.round(100 * WIN_RATE[S.speed])}% of the chords. ${S.speed !== "slow" ? "Slow needs 60%." : "Practise the tricky chords in Chord Quest, then come back."}</p>` : "");
+  // The nudge up (Dave, 2 Nov 2026): a player who keeps beating a song on the root note (one key on piano) is shown the next
+  // step, the whole chord at Slow, instead of replaying the same easy fight. Shown after a root-note win at Fast, or any
+  // root-note win once the song's already beaten, until they've beaten it with whole chords.
+  if(win && S.mode === "root" && !wonOf(song.id).chord && (S.speed === "fast" || before >= 1)){
+    $("endBest").insertAdjacentHTML("afterbegin", `<div class="nudge"><b>You've got the ${PIANO ? "keys" : "root notes"} down!</b> Ready for the next star? Play ${esc(song.t)} with <b>whole chords</b>, starting at Slow.
+      <button class="fma-go small play" id="tryChord" type="button">Try whole chords</button></div>`);
+    $("tryChord").onclick = () => { S.mode = "chord"; S.speed = "slow"; saveSel(); openSetup(); };
+  }
   const nx = nextSong();
   $("nextSong").hidden = !nx; if(nx) $("nextSong").textContent = `Next: ${nx.t} (vs ${FMABoss.name(FMABoss.bossOf(nx))})`;
   $("nextSong").onclick = () => { if(nx){ S.song = nx.id; saveSel(); openSetup(); } };
