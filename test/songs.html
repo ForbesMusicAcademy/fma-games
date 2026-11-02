@@ -878,7 +878,7 @@ function noteY(n){
 /* technique marks, drawn round a tab note: h / p arcs from the note before, slide lines, a bend arrow, vibrato, PM */
 function drawTech(c, n, x, y, w, p){
   if (!n.tech.length && !n.bend) return;
-  const prev = notes[n.i - 1], px = prev ? noteX(prev.t, p) : x - 40;
+  const prev = notes[n.i - 1], px = prev ? noteX(prev.t, p) + headHalf(headR()) : x - 40;
   c.save(); c.strokeStyle = "#23231F"; c.fillStyle = "#23231F"; c.lineWidth = 2; c.font = "900 13px Nunito, system-ui, sans-serif";
   for (const t of n.tech) {
     if (t === "hammer" || t === "pull") {
@@ -901,6 +901,9 @@ function drawTech(c, n, x, y, w, p){
   c.restore();
 }
 const headR = () => INST === "guitar" ? 13 : GAP * 0.78;
+// a note's pill: as long as the note (its value in beats x pixels a beat) less a 3 px gap, never shorter than its label needs
+const pillW = (n, R) => Math.max(INST === "guitar" ? 26 : R * 2, n.d * PXB - 3);
+const headHalf = R => INST === "guitar" ? 14 : R;          // from a pill's front edge to the centre of its label
 function draw(now){
   const c = g2; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, W, H);
   const p = songPos(), guitar = INST === "guitar";
@@ -925,34 +928,35 @@ function draw(now){
   c.fillStyle = "#FFB805"; c.fillRect(PLAYX - 1.5, TOP - 26, 3, (nLines - 1) * GAP + 52);
   // the notes
   const next = mode === "learn" && running && !demo ? notes[idx] : null, R = headR();
+  // Each note is a pill as long as its value (Dave, 2 Nov 2026): it starts where the note starts and runs for its length,
+  // less a hairline gap, so continuous crotchets sit end to end and a minim is twice a crotchet. The fret or note name sits
+  // at the front, which is what reaches the play line first. hx is the front's centre (marks, ledger lines, the hop).
   for (const n of notes) {
-    const x = noteX(n.t, p); if (x < -60 || x > W + 60) continue;
-    const y = noteY(n), len = Math.max(0, n.d * PXB - R * 2 - 4);
+    const x = noteX(n.t, p), pw = pillW(n, R); if (x + pw < -20 || x > W + 60) continue;
+    const y = noteY(n), hx = x + headHalf(R);
     const done = n.res === "hit" || n.res === "late" || (demo && n.t <= p), miss = n.res === "miss";
     const wrong = n.wrong && now - n.wrong < 350, letter = noteName(n.m)[0];
     c.globalAlpha = done ? 0.45 : miss ? 0.5 : 1;
-    // a soft tail for how long the note lasts
-    if (len > 6) { c.fillStyle = guitar ? "rgba(255,184,5,.35)" : NCOL[letter] + "55"; rr(x + R - 2, y - 4, len, 8, 4); c.fill(); }
     if (!guitar) {   // ledger lines
       const d = dia(n.m + shift); c.strokeStyle = "#23231F"; c.lineWidth = 2;
-      for (let L = E4 - 2; L >= d; L -= 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - R - 9, ly); c.lineTo(x + R + 9, ly); c.stroke(); }
-      for (let L = F5 + 2; L <= d; L += 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - R - 9, ly); c.lineTo(x + R + 9, ly); c.stroke(); }
+      for (let L = E4 - 2; L >= d; L -= 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - 9, ly); c.lineTo(x + pw + 9, ly); c.stroke(); }
+      for (let L = F5 + 2; L <= d; L += 2) { const ly = TOP + 4 * GAP - (L - E4) * GAP / 2; c.beginPath(); c.moveTo(x - 9, ly); c.lineTo(x + pw + 9, ly); c.stroke(); }
     }
     if (guitar) {
       const label = String(n.tab.f), w = Math.max(26, 12 + label.length * 10);
-      rr(x - w / 2, y - 13, w, 26, 9); c.fillStyle = miss ? "#F6DCD6" : done ? "#CFE9D4" : wrong ? "#F2B8AE" : "#fff"; c.fill();
+      rr(x, y - 13, pw, 26, 9); c.fillStyle = miss ? "#F6DCD6" : done ? "#CFE9D4" : wrong ? "#F2B8AE" : "#fff"; c.fill();
       c.lineWidth = 2.4; c.strokeStyle = miss ? "#C0392B" : done ? "#3E7D4C" : "#23231F"; c.stroke();
-      c.fillStyle = "#23231F"; c.font = "900 18px Nunito, system-ui, sans-serif"; c.fillText(label, x, y + 1);
-      drawTech(c, n, x, y, w, p);
-      if (O.names) { c.font = "800 12px Nunito, system-ui, sans-serif"; c.fillStyle = "#6B6558"; c.fillText(noteName(n.m).replace("#", "♯"), x, TOP + 5 * GAP + 22); }
+      c.fillStyle = "#23231F"; c.font = "900 18px Nunito, system-ui, sans-serif"; c.fillText(label, hx, y + 1);
+      drawTech(c, n, hx, y, w, p);
+      if (O.names) { c.font = "800 12px Nunito, system-ui, sans-serif"; c.fillStyle = "#6B6558"; c.fillText(noteName(n.m).replace("#", "♯"), hx, TOP + 5 * GAP + 22); }
     } else {
-      c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2);
+      rr(x, y - R, pw, R * 2, R);
       c.fillStyle = miss ? "#E7D8D3" : wrong ? "#F2B8AE" : NCOL[letter]; c.fill();
       c.lineWidth = 2.4; c.strokeStyle = miss ? "#C0392B" : done ? "#3E7D4C" : "#23231F"; c.stroke();
-      if (O.names) { const nm = noteName(n.m).replace("#", "♯"); c.fillStyle = miss ? "#6B6558" : NINK[letter]; c.font = "900 " + (nm.length > 1 ? Math.round(R * 0.82) : Math.round(R * 1.05)) + "px Nunito, system-ui, sans-serif"; c.fillText(nm, x, y + 1); }
-      else if (SHARP[((n.m % 12) + 12) % 12]) { c.fillStyle = "#23231F"; c.font = "900 " + Math.round(R) + "px Nunito, system-ui, sans-serif"; c.fillText("♯", x - R - 9, y); }
+      if (O.names) { const nm = noteName(n.m).replace("#", "♯"); c.fillStyle = miss ? "#6B6558" : NINK[letter]; c.font = "900 " + (nm.length > 1 ? Math.round(R * 0.82) : Math.round(R * 1.05)) + "px Nunito, system-ui, sans-serif"; c.fillText(nm, hx, y + 1); }
+      else if (SHARP[((n.m % 12) + 12) % 12]) { c.fillStyle = "#23231F"; c.font = "900 " + Math.round(R) + "px Nunito, system-ui, sans-serif"; c.fillText("♯", x - 9, y); }
     }
-    if (n === next) { c.globalAlpha = 0.5 + 0.4 * Math.sin(now / 160); c.lineWidth = 4; c.strokeStyle = "#FFB805"; c.beginPath(); c.arc(x, y, R + 7, 0, Math.PI * 2); c.stroke(); }
+    if (n === next) { const hr = guitar ? 13 : R; c.globalAlpha = 0.5 + 0.4 * Math.sin(now / 160); c.lineWidth = 4; c.strokeStyle = "#FFB805"; rr(x - 7, y - hr - 7, pw + 14, hr * 2 + 14, hr + 7); c.stroke(); }
     c.globalAlpha = 1;
   }
   // "Perfect!" words
@@ -967,7 +971,7 @@ function drawChar(now, p){
   if (!charImg || !notes.length) return;
   const ch = INST === "guitar" ? 66 : 62, cw = ch * charAspect;
   const R = headR();
-  const at = i => { const n = notes[Math.max(0, Math.min(notes.length - 1, i))]; return { x: noteX(n.t, p), y: noteY(n) - R - 2 }; };
+  const at = i => { const n = notes[Math.max(0, Math.min(notes.length - 1, i))]; return { x: noteX(n.t, p) + headHalf(R), y: noteY(n) - R - 2 }; };
   let x, y;
   if (!O.hop) { const a = at(Math.max(0, idx)); x = PLAYX - cw * 0.9; y = Math.min(a.y, TOP - 8); }
   else if (running && (mode === "play" || demo)) {
