@@ -76,6 +76,31 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 #sky + #board{margin-top:0}
 #board.tap{cursor:pointer;touch-action:manipulation}
 #hearts{letter-spacing:2px;font-size:18px}
+/* phones (4 Nov 2026, Dave): the neck needs the width, so a round plays sideways. Held upright, the round pauses behind a
+   "turn your phone" card; sideways, the header goes and the neck and sky fill the screen. */
+#turn{display:none;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:44px 18px}
+#turn .ph{font-size:64px;line-height:1;animation:turnPh 1.8s ease-in-out infinite}
+@keyframes turnPh{0%,25%{transform:rotate(0)}55%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (max-width:600px){ body.playing #game{display:none!important} body.playing #turn{display:flex} }
+@media (orientation:landscape) and (max-height:520px){
+  body.playing .fma-band{display:none}
+  body.playing{padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  body.playing #app{max-width:900px}
+  #game{padding:8px 14px 10px;position:relative}
+  #game #timer{margin:6px 0}
+  #game #prompt{font-size:24px}
+  #game #sky{height:30vh}
+  #game #board{height:40vh;margin-top:4px}
+  body.mode-name #game #board{height:34vh}
+  #game #names{margin-top:6px}
+  #game #names button{min-height:40px}
+  #game .stage{margin-top:4px}
+  #game .stage .buddy{display:none}
+  #game #status{font-size:16px}
+  #game #quit{min-height:34px!important;flex:none!important;padding:0 18px}
+  #game > div:last-child{position:absolute;right:14px;bottom:10px;margin:0!important}
+  #game .stage{padding:0 110px 0 40px;min-height:34px}      /* clear of the bug button (bottom left) and Stop */
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -87,18 +112,16 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <div class="rankTop"><span id="rankNum"></span><span id="rankOf"></span></div>
     <div class="pips" id="pips"></div>
     <h2 id="introH"></h2>
-    <p id="introP"></p>
     <p id="goal" class="goal"></p>
     <button class="big play" id="go">Play</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
-    <button class="ghost" id="noMic" style="width:100%;min-height:46px" hidden>Play Name it instead (no instrument)</button>
+    <button class="ghost" id="noMic" style="width:100%;min-height:46px" hidden>Play Name it instead</button>
     <div class="links"><button class="link" id="newestBtn" hidden></button><button class="link" id="howBtn">How to play</button><button class="link" id="earlierBtn">Play an earlier rank</button></div>
     <div class="pick four" id="ranks" hidden></div>
-    <div class="lbl">Your map <span style="font-weight:600">(every note you get right fills it in)</span></div>
+    <div class="lbl">Your map</div>
     <svg id="mapBoard" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block;margin-top:6px"></svg>
     <div class="key"><span><i style="background:#fff"></i>not yet</span><span><i style="background:#FFC42B"></i>learning</span><span><i style="background:#3E7D4C"></i>know it</span></div>
     <p id="best" style="text-align:center"></p>
-    <p style="font-size:14px"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> In Find it, your device listens through its microphone and throws the sound away as it goes.</p>
   </section>
 
   <section class="card" id="tut" hidden>
@@ -108,6 +131,8 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
     <ul id="tutP" class="tutList"></ul>
     <button class="big play" id="tutGo">Got it, let's play</button>
   </section>
+
+  <section class="card" id="turn"><div class="ph">📱</div><h2>Turn your phone sideways</h2><button class="ghost" id="turnStop" style="min-height:44px;padding:0 24px;margin-top:10px">Stop</button></section>
 
   <section class="card" id="game" hidden>
     <div class="top"><span id="qnum"></span><span id="hearts" hidden></span><span id="score">0</span></div>
@@ -264,24 +289,24 @@ const INSTR = PIANO ? "keyboard" : BASS ? "bass" : "guitar";
 const natDots = s => { const out = []; for (let f = 0; f <= 12; f++) { const pc = (STR[s].m + f) % 12; if (NATURAL.includes(pc)) out.push([{ s, f }, f === 0 || f === 12 ? "#FFB805" : "#FFFFFF", SHORT[pc]]); } return out; };
 const TUT = {
   lv1: PIANO ? { h: "Notes on the keyboard", dots: [0, 2, 4, 5, 7].map(pc => [{ pc }, pc ? "#FFFFFF" : "#FFB805", SHORT[pc]]),
-      items: ["Find C first: it's the white key just to the left of the two black keys.", "Going right along the white keys: C, D, E, F, G.", "The pattern repeats all the way along, so there's a C before every pair of black keys."] }
+      items: ["C is the white key just left of the two black keys.", "Going right: C, D, E, F, G.", "The pattern repeats all the way along."] }
     : { h: "Notes on the low E string", dots: natDots(low), str: low,
-      items: ["Played open, the thickest string is the note E.", "Notes use the letters A to G, then start again at A.", "Most notes are 2 frets apart, but E to F and B to C are only 1 fret apart.", "At fret 12 you're back to E."] },
+      items: ["The thickest string, played open, is E.", "Notes go A to G, then start again.", "Most are 2 frets apart. E to F and B to C are just 1.", "Fret 12 is E again."] },
   lv2: PIANO ? { h: "All the white keys", dots: NATURAL.map(pc => [{ pc }, pc === 9 || pc === 11 ? "#FFB805" : "#FFFFFF", SHORT[pc]]),
-      items: ["After G come A and B, then C again.", "That's all seven letters: A B C D E F G."] }
+      items: ["After G come A and B, then C again."] }
     : { h: "The A string", dots: natDots(low - 1), str: low - 1,
-      items: ["The string next to low E is the A string. Played open, it's the note A.", "The same gaps work here: 2 frets between most notes, 1 fret from B to C and from E to F.", "Now you'll get notes from both the E and A strings."] },
+      items: ["The next string, played open, is A.", "Same gaps: 2 frets, except B to C and E to F.", "Notes now come from both strings."] },
   lv3: PIANO ? { h: "The black keys", dots: [[{ pc: 0 }, "#FFFFFF", "C"], [{ pc: 1 }, "#FFB805", "C♯"], [{ pc: 2 }, "#FFFFFF", "D"]],
-      items: ["A black key is named after the white keys beside it.", "Just right of C is C♯ (C sharp). It's also just left of D, so it's D♭ (D flat) too.", "Same key, two names. The game shows both."] }
+      items: ["Black keys take their names from their neighbours.", "Right of C is C♯ (sharp). Left of D is D♭ (flat). Same key, two names."] }
     : { h: "Every string", dots: STR.map((st, i) => [{ s: i, f: 0 }, "#FFB805", SHORT[st.m % 12]]), str: STR.map((_, i) => i),
       items: [BASS ? "The four strings, thickest to thinnest, are E A D G." : "The six strings, thickest to thinnest, are E A D G B E. (Eddie Ate Dynamite, Good Bye Eddie.)",
-        "Each string starts on its own note, and the same gaps work on every string.", "Now notes can come from any string."] },
+        "Same gaps on every string."] },
   lv4: PIANO ? null : { h: "Sharps and flats", dots: [[{ s: low, f: 1 }, "#FFFFFF", "F"], [{ s: low, f: 2 }, "#FFB805", "F♯"], [{ s: low, f: 3 }, "#FFFFFF", "G"]], str: low,
-      items: ["The frets between the letter notes are sharps and flats.", "One fret up from F is F♯ (F sharp). One fret down from G is G♭ (G flat). It's the same fret, so it has both names.", "There's no sharp between B and C, or between E and F: they're already 1 fret apart."] },
-  "m-name": { items: [PIANO ? "How to play: a key lights up. Tap its name." : "How to play: a dot lights up on the neck. Tap its name."] },
-  "m-catch": { h: "Catch it 🌠", items: ["Notes fall toward the neck. Tap a fret that plays the note before it lands.", "Every tap plays the note, so you hear it too.", "If a note lands you lose a heart, and the game shows you where it was. You have 3 hearts."] },
-  "m-find": { h: PIANO ? "Find it 🎹" : "Find it 🎸", items: [PIANO ? "Now use your real keyboard. The game names a note: play it. Any octave counts." : `Now use your real ${INSTR}. The game names a note and a string: play it.`,
-    "Your device listens through the microphone. Nothing is recorded.", "Play a wrong note and it tells you what you played. Just try again."] }
+      items: ["The frets between letter notes are sharps (♯) and flats (♭).", "One fret up from F is F♯. One down from G is G♭. Same fret, two names.", "None between B and C, or E and F."] },
+  "m-name": { items: [PIANO ? "A key lights up. Tap its name." : "A dot lights up. Tap its name."] },
+  "m-catch": { h: "Catch it 🌠", items: ["Tap a fret that plays each falling note before it lands.", "Miss one and you lose a heart. You have 3."] },
+  "m-find": { h: PIANO ? "Find it 🎹" : "Find it 🎸", items: [PIANO ? "Play the note it names on your keyboard. Any octave." : `Grab your ${INSTR}. Play the note on the string it names.`,
+    "Wrong note? It tells you what you played. Try again."] }
 };
 // the card for a rank: what's new about its notes and its way of playing (everything, when asked for "How to play")
 function tutFor(all){
@@ -308,11 +333,10 @@ function drawStart(){
   $("rankOf").textContent = !top ? "Playing an earlier rank" : P.rank === RANKS.length ? "Top rank!" : "of " + RANKS.length;
   $("pips").innerHTML = RANKS.map((_, i) => `<i class="${i + 1 < P.rank ? "done" : i + 1 === P.rank ? "now" : ""}"></i>`).join("");
   $("introH").textContent = lv.name + " · " + md.n;
-  $("introP").textContent = md.sub;
   const need = needFor(rk.mode), tot = totalFor(rk.mode);
-  $("goal").textContent = !top ? `Practising an earlier rank. This one won't move you up: that happens at Rank ${P.rank}.`
-    : P.rank === RANKS.length ? "You've reached the top rank! Keep playing to turn your whole map green."
-    : rk.mode === "catch" ? `Catch ${need} of the ${tot} notes to reach Rank ${P.rank + 1}.` : `Get ${need} of ${tot} right first go to reach Rank ${P.rank + 1}.`;
+  $("goal").textContent = !top ? "Practice round: rank-ups happen at Rank " + P.rank + "."
+    : P.rank === RANKS.length ? "Top rank! Now turn your whole map green."
+    : rk.mode === "catch" ? `Catch ${need} of ${tot} to rank up.` : `Get ${need} of ${tot} right first go to rank up.`;
   $("earlierBtn").hidden = P.rank === 1;
   $("newestBtn").hidden = top; $("newestBtn").textContent = "Back to Rank " + P.rank;
   drawRanks();
@@ -366,12 +390,13 @@ async function start(){
   if (P.mode === "find" && !SIM && !(window.FMAMidi && FMAMidi.active())) {
     try { if (!det.ready) await det.start({ bass: BASS }); }
     catch (e) { $("start").hidden = false; $("tut").hidden = true; $("err").hidden = false; $("noMic").hidden = false;
-      $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it for now (it won't count toward your rank)."; return; }
+      $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it for now (just for practice)."; return; }
     clearInterval(iv); iv = setInterval(() => tracker.step(), 12);
   }
   Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, first: 0, times: [], run: 0,
     knownBefore: spotsOf(LEVELS[P.level - 1]).filter(x => state(spotKey(x)) === 2).length });
   $("start").hidden = true; $("end").hidden = true; $("tut").hidden = true; $("game").hidden = false;
+  document.body.classList.add("playing"); document.body.classList.toggle("mode-name", P.mode === "name");
   const C = P.mode === "catch";
   $("sky").toggleAttribute("hidden", !C);      // an svg has no .hidden property
   $("hearts").hidden = !C; $("timer").hidden = $("prompt").hidden = C; $("board").classList.toggle("tap", C);
@@ -421,7 +446,7 @@ function answer(ok){
 // Find it: a note played
 let lastWrong = 0;
 function played(m){
-  if ($("game").hidden || P.mode !== "find" || R.busy || performance.now() - R.t0 < 400) return;
+  if ($("game").hidden || P.mode !== "find" || R.busy || sideways() || performance.now() - R.t0 < 400) return;
   const pc = ((Math.round(m) % 12) + 12) % 12, want = pcOf(R.q);
   if (pc === want) return answer(true);
   if (performance.now() - lastWrong < 500) return;
@@ -437,14 +462,18 @@ $("names").onclick = e => {
   if (pc === want) { b.className = "right"; answer(true); }
   else { b.className = "wrong"; R.tries++; const rb = $("names").querySelector(`[data-pc="${want}"]`); if (rb) rb.className = "right"; answer(false); }
 };
+let lastTick = 0;
 function tickTimer(){
   if ($("game").hidden) return;
+  const nowT = performance.now(); if (sideways() && lastTick) R.t0 += nowT - lastTick; lastTick = nowT;
   const left = Math.max(0, Q_SECS - (performance.now() - R.t0) / 1000);
   $("timer").firstChild.style.transform = "scaleX(" + (R.busy ? 0 : left / Q_SECS) + ")";
   if (!R.busy && left <= 0) answer(false);
   timerRaf = requestAnimationFrame(tickTimer);
 }
+const sideways = () => matchMedia("(orientation: portrait) and (max-width: 600px)").matches;      // the round is paused
 function finish(){
+  document.body.classList.remove("playing");
   $("game").hidden = true; $("end").hidden = false; cancelAnimationFrame(timerRaf);
   const k = P.mode + P.level, prev = P.best[k] || 0, isBest = R.score > prev;
   if (isBest) { P.best[k] = R.score; saveP(); }
@@ -521,7 +550,7 @@ function catchStart(){
   try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) { actx = null; }
   const lv = LEVELS[P.level - 1];
   Object.assign(R, { qs: catchList(), right: 0, score: 0, times: [], run: 0, hearts: C_HEARTS });
-  Object.assign(CR, { list: R.qs, next: 0, falling: [], clock: 0, last: performance.now(), lastSpawn: -1e9, quietTill: 0, freezeTill: 0, flash: null,
+  Object.assign(CR, { list: R.qs, next: 0, falling: [], clock: 0, last: performance.now(), lastSpawn: -1e9, quietTill: 0, freezeTill: 0, flash: null, pop: null,
     dur: lv.pcs.length > 7 ? 9000 : lv.strs.length > 2 ? 8000 : 7500 });      // ms to fall; all 12 notes start slowest
   $("status").textContent = lv.strs.length < STR.length ? "Tap on the orange " + (lv.strs.length > 1 ? "strings" : "string") : "Tap anywhere on the neck";
   $("status").style.color = "";
@@ -529,6 +558,7 @@ function catchStart(){
 }
 function catchTick(now){
   if ($("game").hidden || P.mode !== "catch") return;
+  if (sideways()) { CR.last = now; catchRaf = requestAnimationFrame(catchTick); return; }
   const dt = Math.min(50, now - CR.last); CR.clock += dt; CR.last = now;
   const t = CR.clock;
   if (t >= CR.freezeTill) {
@@ -574,7 +604,9 @@ function catchDraw(){
   if (CR.pop && t < CR.pop.till) { const k = 1 - (CR.pop.till - t) / 500;
     h += `<circle cx="${CR.pop.x}" cy="${CR.pop.y}" r="${C_R + k * 30}" fill="none" stroke="#3E7D4C" stroke-width="${6 * (1 - k)}" opacity="${1 - k}"/>`
       + `<text x="${CR.pop.x}" y="${CR.pop.y - 10 - k * 30}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="30" fill="#3E7D4C" opacity="${1 - k}">+${CR.pop.pts}</text>`; }
-  $("sky").innerHTML = h;
+  const sk = $("sky"), W = sk.clientHeight ? Math.max(1000, 330 * sk.clientWidth / sk.clientHeight) : 1000;
+  sk.setAttribute("viewBox", `${(1000 - W) / 2} 0 ${W} 330`);
+  sk.innerHTML = h.replace('x1="0" x2="1000"', `x1="${(1000 - W) / 2}" x2="${(1000 + W) / 2}"`);
   const all = lvStrs().length === STR.length;
   drawBoard($("board"), CR.flash ? CR.flash.dots : [], { str: all ? null : lvStrs() });
 }
@@ -619,7 +651,8 @@ if (SIM) window.__catch = { CR, R, catchTap, allSpots, step: ms => { for (let i 
 $("go").onclick = play;
 $("again").onclick = () => subRound ? start() : play();
 $("change").onclick = () => { $("end").hidden = true; $("start").hidden = false; drawStart(); };
-$("quit").onclick = () => { $("game").hidden = true; $("start").hidden = false; cancelAnimationFrame(timerRaf); drawStart(); };
+$("turnStop").onclick = () => $("quit").click();
+$("quit").onclick = () => { document.body.classList.remove("playing"); $("game").hidden = true; $("start").hidden = false; cancelAnimationFrame(timerRaf); drawStart(); };
 if (SIM) window.__nf = { played, R, P };
 drawStart();
 </script>
