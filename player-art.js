@@ -576,6 +576,7 @@
   // (older bodies have smaller heads, so their raised arms can point more upwards: tilt)
   const reach = (g, sg, deg, frac) => { const S = shoulder(g, sg > 0), a = (deg + g.tilt) * Math.PI / 180, L = g.arm * (frac || 1); return [S[0] + sg * L * Math.sin(a), S[1] - L * Math.cos(a)]; };
   const hipHand = (g, sg) => [200 + sg * (g.tW / 2 + 1), g.tTop + g.tH - 8, "fist", { C: [200 + sg * (g.tW / 2 + 52), g.tTop + g.tH * 0.36], nosway: true }];
+  const PULL_Y = g => g.tTop + g.tH * 0.62;      // where a Tug of War rope passes through the hands
   const restHand = (g, sg) => [200 + sg * (g.tW / 2 + 20), g.tTop + g.tH + 12, "rest"];
   const POSES = {
     wave: g => [restHand(g, -1), [...reach(g, 1, 60, 1.06), "open", { cls: "waver" }]],
@@ -586,8 +587,18 @@
     hips: g => [hipHand(g, -1), hipHand(g, 1)],
     flex: g => [-1, 1].map(sg => { const S = shoulder(g, sg > 0); return [S[0] + sg * 54, S[1] - 38, "fist", { C: [S[0] + sg * 62, S[1] + 12], cls: "pumper", flex: true }]; }),
     rock: g => [-1, 1].map(sg => [...reach(g, sg, 64, 1.06), "rock", { cls: "pumper" }]),
-    relax: g => [restHand(g, -1), restHand(g, 1)]
+    relax: g => [restHand(g, -1), restHand(g, 1)],
+    // Tug of War (5 Nov 2026): both fists out to one side at waist height, gripping a rope that runs off that way
+    // (pullr = screen right, pulll = screen left). The far arm crosses in front of the body. Only the classroom screen uses them.
+    pullr: g => pullHands(g, 1),
+    pulll: g => pullHands(g, -1)
   };
+  function pullHands(g, sg){
+    const y = PULL_Y(g), edge = 200 + sg * g.tW / 2;
+    const near = [edge + sg * 60, y, "fist", { C: [edge + sg * 18, y - 4], nosway: true }];
+    const far = [edge + sg * 16, y + 2, "fist", { C: [200 - sg * 4, y + 18], front: true, nosway: true }];
+    return sg > 0 ? [far, near] : [near, far];
+  }
   /* Holding an instrument: the fretting hand on the neck and the picking hand over the strings, both in front of it.
      This is the resting pose whenever the gear is an instrument. Big game moments lift it into a solo instead of other poses.
      Deliberately no strumming movement at all: a hand moving at the guitar's body read badly (Oct 2026). The picking hand
@@ -1311,6 +1322,7 @@
   PlayerArt.MOMENTS = { hello: "wave", wait: "hips", start: "thumbs", hit: "thumbs", streak: "flex", best: "star", win: "rock", cheer: "cheer", done: "peace" };
   PlayerArt.presets = [];
   PlayerArt.norm = norm;
+  PlayerArt.pullY = body => PULL_Y(AGES[body] || AGES.kid);     // in the 400 x 400 viewBox
   window.PlayerArt = PlayerArt;
 
   /* ---- the saved character ---- */
