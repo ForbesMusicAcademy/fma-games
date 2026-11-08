@@ -62,7 +62,12 @@ button{font:inherit;cursor:pointer}
 .pop #popBox{background:#fff;border-radius:26px;padding:22px 26px;text-align:center;max-width:340px;width:calc(100% - 40px);animation:rise .35s ease-out}
 .pop img{height:84px;width:auto;display:inline-block;margin:0 4px}
 .pop img.off{opacity:.55}
-.pop b{display:block;font-family:var(--head);font-weight:900;font-size:26px;margin-top:8px}
+.pop b{display:block;font-family:var(--head);font-weight:900;font-size:22px;margin-top:8px}
+/* the finish: stars pop in, the time is huge, one big button (Dave, 8 Nov 2026) */
+.pop img.new{animation:starPop .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes starPop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
+.pop .time{display:block;font-family:var(--head);font-weight:900;font-size:68px;line-height:1;margin-top:2px}
+.pop .time.won{color:var(--good)}
 .pop p{margin:6px 0 14px;color:var(--muted)}
 .splits{display:grid;grid-template-columns:repeat(var(--nstr,6),1fr);gap:6px;margin:12px 0 4px}
 .splits span{background:var(--line);border-radius:10px;padding:6px 0;font-weight:700;font-size:13px;color:var(--muted)}
@@ -91,9 +96,8 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 
   <section class="card" id="intro">
     <h2>Tune up before you play</h2>
-    <p>Tune your guitar one string at a time, starting with the thick low E. Each string turns green when it's in tune, then the next one lights up. The clock starts when you pluck your first string, so you can try to beat your own best time.</p>
-    <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone and throws the sound away as it goes.</p>
-    <p>Tip: pluck one string at a time, let it ring, and turn the peg slowly. A quiet spot works best.</p>
+    <p>One string at a time, from the thick low E. Green means in tune. Beat your best time!</p>
+    <p>Tip: let each string ring and turn the peg slowly.</p>
     <p id="best"></p>
     <button class="big play" id="start">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
@@ -127,7 +131,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
 <div class="pop" id="pop" hidden><div id="popBox"></div></div>
 
 <script src="fma-student.js?v=11"></script>
-<script src="fma-listen.js?v=12"></script>
+<script src="fma-listen.js?v=13"></script>
 <script src="fma-midi.js?v=1"></script>
 <script src="player-art.js?v=34"></script>
 <script src="fma-picks.js?v=13"></script>
@@ -165,8 +169,10 @@ const cents = (f, ref) => 1200 * Math.log2(f / ref);
    Works on 4096 samples (about 85 ms). Searches 60-420 Hz, which covers every open string with room to be a long way out. */
 const BUF = 4096, W = 2048, FMIN = BASS ? 30 : 60, FMAX = BASS ? 220 : 420, YIN_T = 0.15;
 // the shared listener every game uses (fma-listen.js), reading pitch with a long window over the guitar's range
-const pitch = FMAListen.create(), sharedRead = pitch.read;
-pitch.read = function(){ return sharedRead.call(this, { fmin: FMIN, fmax: FMAX, window: W, threshold: YIN_T }); };
+// tunerRead (6 Nov 2026): measures the string on its first few overtones, so a bass's low E no longer reads sharp, and folds
+// an octave slip onto the string being tuned
+const pitch = FMAListen.create();
+pitch.read = function(){ return this.tunerRead(STRINGS[race.cur].hz, { fmin: FMIN, fmax: FMAX, window: W, threshold: YIN_T }); };
 // a MIDI keyboard, when one is plugged in, plays straight into the tune-up (fma-midi.js): the right note name in any octave locks the string in
 if(BASS){
   document.documentElement.style.setProperty("--nstr", 4);
@@ -234,10 +240,8 @@ const race = {
       return;
     }
     this.lastHeard = now;
-    // Fold octave slips: the detector sometimes reports a string's note an octave out. Take whichever reading sits nearest the target.
+    // octave slips are already folded onto the string (tunerRead in fma-listen.js); a MIDI key comes in the right octave
     let f = r.f, c = cents(f, s.hz);
-    // Only when the raw reading is nowhere near, and only if the fold lands close, so a neighbouring string isn't mistaken for a very flat one.
-    if(Math.abs(c) > 200) for(const k of [2, 0.5]){ const c2 = cents(f * k, s.hz); if(Math.abs(c2) <= 60){ c = c2; f *= k; break; } }
     $("hz").textContent = f.toFixed(1) + " Hz";
     if(Math.abs(c) > 200){   // more than 2 semitones out: probably the wrong string or the wrong peg, so ask rather than coach
       this.setNeedle(null); this.holdFrom = null; this.smooth = []; $("holdBar").style.width = "0";
@@ -290,13 +294,14 @@ const race = {
     $("best").textContent = "";
     const sp = this.splits.map((ms, i) => `<span>${STRINGS[i].note}<b>${(ms / 1000).toFixed(1)}</b></span>`).join("");
     setTimeout(() => {
-      $("popBox").innerHTML = `<span>${[1,2,3].map(i => `<img class="${stars >= i ? "" : "off"}" src="${stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}</span>
-        <b>Tuned in ${fmt(total)}</b>
-        <p>${isBest ? (prevBest === null ? "That's your first time on the board!" : "New personal best! The old one was " + fmt(prevBest) + ".") : "Your best is " + fmt(P.best) + "."}${streak() > 1 ? " " + streak() + " days in a row. 🔥" : ""}</p>
+      $("popBox").innerHTML = `<span>${[1,2,3].map(i => `<img class="${stars >= i ? "new" : "off"}" style="animation-delay:${0.15 * i}s" src="${stars >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("")}</span>
+        <b>${isBest ? (prevBest === null ? "Tuned!" : "New best!") : "Tuned!"}</b>
+        <span class="time ${isBest || stars === 3 ? "won" : ""}">${fmt(total)}</span>
+        <p>${isBest && prevBest !== null ? "Old best " + fmt(prevBest) : !isBest ? "Best " + fmt(P.best) : ""}${streak() > 1 ? (isBest && prevBest === null ? "" : " · ") + streak() + " days in a row 🔥" : ""}</p>
         <div class="splits">${sp}</div>
-        <p style="font-size:14px">Seconds per string. Give all ${STRINGS.length === 4 ? "four" : "six"} a final strum: tuning one string can nudge the others.</p>
+        <p style="font-size:14px">Now strum all ${STRINGS.length === 4 ? "four" : "six"} to check.</p>
         <a class="big play" href="${NEXT.href}" style="text-decoration:none;color:var(--fg)">${NEXT.label}</a>
-        <div style="display:flex;gap:8px;margin-top:8px"><a class="ghost" href="./" style="flex:1;display:flex;align-items:center;justify-content:center;text-decoration:none">All games</a><button class="ghost" id="again" style="flex:1">Tune again</button></div>`;
+        <button class="ghost" id="again" style="width:100%;min-height:48px;margin-top:8px">Tune again</button>`;
       PlayerArt.popIn($("popBox"), mom);
       $("pop").hidden = false;
       $("again").onclick = () => { $("pop").hidden = true; race.begin(); };

@@ -131,6 +131,7 @@ a.game b{display:block;font-family:var(--head);font-weight:900;font-size:22px;li
 a.game span{color:var(--muted);font-size:15px}
 .tag2{display:inline-block;background:var(--accent);border-radius:999px;padding:0 10px;font-weight:800;font-size:12px;margin-left:6px;vertical-align:middle;color:var(--fg)}
 small.foot{color:var(--muted);text-align:center;margin-top:4px}
+.privacy{margin:14px 0 0;color:var(--muted);font-size:13px;text-align:center;line-height:1.4}
 .soon{margin:0;text-align:center;color:var(--muted);font-weight:600}
 /* what do you play? asked once, then kept in the corner (opposite the bug button) to change any time */
 .instq{position:fixed;inset:0;z-index:70;background:rgba(20,16,12,.45);display:grid;place-items:center;padding:16px}
@@ -230,7 +231,6 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
     <div class="st-nums"><span id="stNow"></span><span id="stGoal"></span></div>
     <p class="st-prize" id="stPrize"></p>
   </section>
-  <p class="lead">Play on your phone, tablet or computer. Your device listens to your <span class="inst">guitar</span> through its microphone, or you can plug in a keyboard. <span data-tracked="No sound is recorded. Your scores, practice time and which games you open are saved to your progress so you and your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <div id="midiSlot"></div>
   <!-- Wave 1 menu (12 Oct 2026, projects/games-slow-release-plan.md): Adventure and Note Quiz are held back (their pages
        still exist, they're just not on the menu). Wave 2 (13 Oct): Boss Battle is back, for guitar and piano, and Chord Quest
@@ -242,8 +242,10 @@ body.fma .ask .row button.fma-go{flex:1;width:auto}
   <a class="game" href="quiz.html" data-for="guitar piano"><img src="characters/scales.png" alt=""><div><b>Note Quiz <span class="tag2">NEW</span></b><span>Answer music questions by playing the right note. Race three rivals or beat your best score.</span></div></a>
   <!-- Bass (2 Nov 2026): its own games. Note Finder is for every instrument. -->
   <a class="game" href="grooves.html" data-for="bass"><img src="star-on.png" alt=""><div><b>Groove Lab <span class="tag2">NEW</span></b><span>Hear a groove, then play it back. Ten levels of bass lines, from your first root notes to funk.</span></div></a>
-  <a class="game" href="notes.html" data-for="guitar bass piano"><img src="diamond.png" alt=""><div><b>Note Finder <span class="tag2">NEW</span></b><span>Learn where every note lives on your <span class="inst">guitar</span>. Find it, name it, and watch your map fill up.</span></div></a>
+  <a class="game" href="notes.html" data-for="guitar bass piano"><img src="diamond.png" alt=""><div><b>Note Finder <span class="tag2">NEW</span></b><span>Learn where every note lives on your <span class="inst">guitar</span>. Rank up as your map fills in.</span></div></a>
   <a class="game" href="league.html" id="leagueLink" hidden><img src="star-on.png" alt=""><div><b>Band League</b><span>Every class is a band. See which band is playing best this week, and help yours climb by practising.</span></div></a>
+  <!-- the one place the site says what the microphone does (Dave, 4 Nov 2026: not on every game) -->
+  <p class="privacy">The games listen through your device's microphone, or a plugged-in keyboard. <span data-tracked="No sound is recorded. Your scores, practice time and which games you open are saved to your progress so you and your teacher can see how you're going.">Nothing is recorded or sent anywhere. Your character is saved on this device only.</span></p>
   <small class="foot">Forbes Music Academy</small>
 </main>
 

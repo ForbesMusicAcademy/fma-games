@@ -161,13 +161,15 @@ body.piano #diag{width:100%;max-width:380px}
 .end .endarena{display:flex;max-width:420px;margin:0 auto 6px}
 .end h2{font-size:32px}
 .bigstars{display:flex;justify-content:center;gap:6px;margin:6px 0}
-.bigstars span{font-size:46px;line-height:1;color:#E3DCCB;transition:color .2s}
+.bigstars span{font-size:80px;line-height:1;color:#E3DCCB;transition:color .2s}
 .bigstars span.got{color:#FFB805;-webkit-text-stroke:2px #B07D00}
 .bigstars span.new{animation:starpop .6s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes starpop{0%{transform:scale(0) rotate(-40deg)}100%{transform:none}}
 .end .goalnote{font-weight:700;color:var(--fg);margin:4px 0}
-.end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700;font-size:14px}
-.end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
+/* the end screen: one huge score, green on a win, and one big button (Dave, 8 Nov 2026) */
+.end .score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:4px}
+.end .score.won{color:var(--good)}
+.end .scoreSub{font-weight:700;color:var(--muted);font-size:17px}
 .end .btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .end .btns .ghost{min-height:48px}
 .gold{background:linear-gradient(90deg,#FFE58A,#FFC93C);border-radius:999px;padding:3px 14px;font-family:var(--head);font-weight:900;display:inline-block}
@@ -196,7 +198,7 @@ body.piano #diag{width:100%;max-width:380px}
       <div class="tally" id="tally"></div>
     </section>
     <div id="lairs" style="display:flex;flex-direction:column;gap:14px"></div>
-    <p style="font-size:13px;color:var(--muted);text-align:center;margin:0"><span data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</span> Chords are each song's main loop, simplified.</p>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin:0">Chords are each song's main loop, simplified.</p>
   </div>
 
   <!-- the room check before the first fight (same as Chord Quest) -->
@@ -215,7 +217,7 @@ body.piano #diag{width:100%;max-width:380px}
     <h3>Speed</h3><div class="chips" id="speeds"></div>
     <h3>What do you play?</h3><div class="chips" id="modes"></div>
     <h3>Backing</h3><div class="chips" id="backs"></div>
-    <p class="tip" id="tip">Use headphones so the game doesn't hear its own drums.</p>
+    <p class="tip" id="tip"></p>
     <div class="hpq" id="hpq" hidden><b id="hpqTitle"></b><p id="hpqText"></p><button class="big" id="hpqYes"></button><button class="ghost" id="hpqNo"></button></div>
     <button class="big play" id="go">Fight!</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
@@ -246,9 +248,10 @@ body.piano #diag{width:100%;max-width:380px}
     <h2 id="endTitle"></h2>
     <div class="bigstars" id="endStars"></div>
     <p class="goalnote" id="endGoal"></p>
-    <div class="rows"><div><b id="endHits">0</b>chords hit</div><div><b id="endStreak">0</b>best combo</div><div><b id="endDmg">0</b>landed</div></div>
+    <div class="score" id="endDmg">0%</div>
+    <div class="scoreSub"><span id="endHits">0</span> chords · best combo <span id="endStreak">0</span></div>
     <div id="endBest"></div>
-    <div class="btns"><button class="big play" id="again">Fight again</button><button class="ghost" id="nextSong" hidden></button><button class="ghost" id="other">All bosses</button></div>
+    <div class="btns"><button class="big play" id="again">Fight again</button><button class="ghost" id="other">All bosses</button></div>
   </section>
 
   <details id="dbgBox" hidden><summary>Detector readout</summary><div id="dbg"></div></details>
@@ -561,24 +564,27 @@ function finish(quit){
   $("endTitle").textContent = win ? (G.gold ? "Golden boss beaten!" : `You beat ${FMABoss.name(boss)}!`) : `${FMABoss.name(boss)} won this time!`;
   $("endStars").innerHTML = [1, 2, 3].map(i => `<span class="${i <= after ? "got" : ""} ${i > before && i <= after ? "new" : ""}" style="animation-delay:${(i - before - 1) * 0.25}s">★</span>`).join("");
   const goals = GOALS(FMABoss.name(boss)), nextGoal = goals[after];
-  $("endGoal").innerHTML = after > before ? `New star! ${after === 3 ? "All three stars for this song." : "Next star: " + esc(nextGoal[1].toLowerCase()) + "."}`
-    : after < 3 ? `Next star: ${esc(nextGoal[1].toLowerCase())}.` : "All three stars. Can you set a new best combo?";
+  $("endGoal").innerHTML = after > before ? (after === 3 ? "New star! All three!" : `New star! Next: ${esc(nextGoal[1].toLowerCase())}`)
+    : after < 3 ? `Next star: ${esc(nextGoal[1].toLowerCase())}` : "";
   const played = G.outcomes.filter(x => x !== undefined).length;
-  $("endHits").textContent = G.hits + " / " + played; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = Math.round(100 * G.hits / Math.max(1, played)) + "%";
-  $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks for the golden boss!</span></p>` : "") +
-    (isBest && best ? `<p><span class="gold" style="background:var(--pick-bg)">New best combo: ${G.bestStreak} in a row!</span></p>` : best ? `<p style="color:var(--muted)">Your best combo at this speed: ${best} in a row</p>` : "") +
-    (!win ? `<p class="goalnote">To win at ${SPEEDS.find(x => x.k === S.speed).n} speed, land ${Math.round(100 * WIN_RATE[S.speed])}% of the chords. ${S.speed !== "slow" ? "Slow needs 60%." : "Practise the tricky chords in Chord Quest, then come back."}</p>` : "");
+  $("endHits").textContent = G.hits + " / " + played; $("endStreak").textContent = G.bestStreak; $("endDmg").textContent = Math.round(100 * G.hits / Math.max(1, played)) + "%"; $("endDmg").classList.toggle("won", !!win);
+  $("endBest").innerHTML = (G.gold && win ? `<p><span class="gold">+${GOLD_PICKS} bonus picks!</span></p>` : "") +
+    (isBest && best ? `<p><span class="gold" style="background:var(--pick-bg)">New best combo: ${G.bestStreak}!</span></p>` : "") +
+    (!win ? `<p class="goalnote">Win at ${Math.round(100 * WIN_RATE[S.speed])}%${S.speed !== "slow" ? " (Slow needs 60%)" : ""}</p>` : "");
   // The nudge up (Dave, 2 Nov 2026): a player who keeps beating a song on the root note (one key on piano) is shown the next
   // step, the whole chord at Slow, instead of replaying the same easy fight. Shown after a root-note win at Fast, or any
   // root-note win once the song's already beaten, until they've beaten it with whole chords.
   if(win && S.mode === "root" && !wonOf(song.id).chord && (S.speed === "fast" || before >= 1)){
-    $("endBest").insertAdjacentHTML("afterbegin", `<div class="nudge"><b>You've got the ${PIANO ? "keys" : "root notes"} down!</b> Ready for the next star? Play ${esc(song.t)} with <b>whole chords</b>, starting at Slow.
-      <button class="fma-go small play" id="tryChord" type="button">Try whole chords</button></div>`);
-    $("tryChord").onclick = () => { S.mode = "chord"; S.speed = "slow"; saveSel(); openSetup(); };
+    $("endBest").insertAdjacentHTML("afterbegin", `<div class="nudge"><b>You've got the ${PIANO ? "keys" : "root notes"} down!</b> Next star: whole chords, at Slow.</div>`);
   }
-  const nx = nextSong();
-  $("nextSong").hidden = !nx; if(nx) $("nextSong").textContent = `Next: ${nx.t} (vs ${FMABoss.name(FMABoss.bossOf(nx))})`;
-  $("nextSong").onclick = () => { if(nx){ S.song = nx.id; saveSel(); openSetup(); } };
+  /* One big button, one ghost under it (Dave, 8 Nov 2026: never two big buttons). The big one is the best next step:
+     whole chords after the nudge, the next song after a win, otherwise fight again. */
+  const nudge = !!$("endBest").querySelector(".nudge"), nx = win ? nextSong() : null, fight = () => begin(), toMap = () => { drawMap(); show("map"); };
+  const prim = nudge ? ["Try whole chords", () => { S.mode = "chord"; S.speed = "slow"; saveSel(); openSetup(); }]
+    : nx ? [`Next: ${nx.t}`, () => { S.song = nx.id; saveSel(); openSetup(); }] : ["Fight again", fight];
+  const sec = nudge || nx ? ["Fight again", fight] : ["All bosses", toMap];
+  $("again").textContent = prim[0]; $("again").onclick = prim[1];
+  $("other").textContent = sec[0]; $("other").onclick = sec[1];
   if(!win) setTimeout(() => say(pickLine(boss, "win"), 1800), 300);
   show("end");
 }
@@ -643,13 +649,15 @@ function askHeadphones(why){
   const box = $("hpq");
   $("hpqTitle").textContent = why === "check" ? "We can't hear your chords" : "Drums need headphones";
   $("hpqText").textContent = why === "check"
-    ? "Are you wearing headphones? Without them the game hears its own drums instead of your guitar, so your chords don't count."
-    : "Without headphones the game hears its own drums instead of you, and your chords won't count. Are you wearing headphones?";
-  $("hpqYes").textContent = why === "check" ? "I'm wearing headphones: fight again" : "Yes: drums on";
-  $("hpqNo").textContent = why === "check" ? "Turn the drums off and fight again" : "No: keep the click";
-  $("hpqYes").onclick = () => { box.hidden = true; S.back = "drums"; S.drumsOk = 1; saveSel(); drawSetup(); if(why === "check"){ hpTrusted = true; begin(); } };
-  $("hpqNo").onclick = () => { box.hidden = true; S.back = "click"; saveSel(); drawSetup(); if(why === "check") begin(); };
-  box.hidden = false; box.scrollIntoView({ block: "center", behavior: "smooth" });
+    ? "Wearing headphones? Without them the game hears its drums, not you."
+    : "Wearing headphones? Without them the game hears its drums, not you.";
+  $("hpqYes").textContent = why === "check" ? "Yes: fight again" : "Yes: drums on";
+  $("hpqNo").textContent = why === "check" ? "No: drums off, fight again" : "No: keep the click";
+  // while the question is up it's the only big button: Fight! hides until it's answered
+  const close = () => { box.hidden = true; $("go").hidden = false; };
+  $("hpqYes").onclick = () => { close(); S.back = "drums"; S.drumsOk = 1; saveSel(); drawSetup(); if(why === "check"){ hpTrusted = true; begin(); } };
+  $("hpqNo").onclick = () => { close(); S.back = "click"; saveSel(); drawSetup(); if(why === "check") begin(); };
+  box.hidden = false; $("go").hidden = true; box.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 function openSetup(){ drawSetup(); show("setup"); }
 function drawSetup(){
@@ -661,7 +669,7 @@ function drawSetup(){
   chips("speeds", SPEEDS, "speed", o => Math.round(100 * WIN_RATE[o.k]) + "% to win");
   chips("modes", MODES, "mode", o => o.s);
   chips("backs", BACKS, "back", o => o.s);
-  $("tip").textContent = PIANO ? "Use headphones so the game doesn't hear its own drums." : "Use headphones so the game doesn't hear its own drums. Tune up first.";
+  $("tip").textContent = PIANO ? "Headphones on, so the game hears you, not its drums." : "Headphones on, and tune up first.";
 }
 // listen to the room for two seconds and set the loudness gate just above it (Chord Quest does the same), so a quiet
 // phone mic still hears the guitar and a noisy lounge doesn't count as playing. Once per visit; not for a MIDI keyboard.
@@ -688,8 +696,6 @@ async function begin(){
   $("go").disabled = false; $("again").disabled = false;
 }
 $("go").onclick = begin;
-$("again").onclick = () => begin();
-$("other").onclick = () => { drawMap(); show("map"); };
 $("toMap").onclick = () => { drawMap(); show("map"); };
 $("quit").onclick = () => finish(true);
 FMAChords.load().then(() => {

@@ -71,9 +71,19 @@ h3.lvl{align-self:flex-start;display:inline-block;margin:10px 0 0;font-family:va
 .pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
 .pop .box p{color:var(--muted);margin:8px 0}
 .pop .big{margin-top:10px}
-.pop .pct{font-family:var(--head);font-weight:900;font-size:72px;line-height:1;color:var(--good)}
-.pop .stars img{height:66px;width:auto;margin:0 3px}
-.pop .stars img.off{opacity:.45}
+/* the result: one big button, huge stars and score, few words (Dave, 8 Nov 2026) */
+.pop .pct{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:4px;color:var(--fg)}
+.pop .pct.won{color:var(--good)}
+.pop .stars{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.pop .stars img{height:76px;width:auto}
+.pop .stars img.off{opacity:.3}
+.pop .stars img.new{animation:spop .7s cubic-bezier(.2,1.6,.4,1) both .2s}
+@keyframes spop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
+.pop .sub{font-weight:700;font-size:17px;color:var(--muted);margin:4px 0 0}
+.pop .need{display:inline-block;margin-top:12px;background:#F6F1E4;border-radius:999px;padding:8px 18px;font-weight:700;font-size:17px;color:var(--fg)}
+.pop .big{margin-top:16px}
+.pop .ghost{width:100%;min-height:50px;margin-top:10px;font-size:17px}
+.pop .textlink{border:0;background:none;color:var(--muted);font-weight:700;text-decoration:underline;margin-top:12px;padding:6px;font-size:15px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -89,9 +99,7 @@ kbd{font:700 14px var(--ui);background:#fff;border:1px solid var(--line);border-
   <section id="menu">
     <div class="card" style="margin-bottom:14px">
       <h2>Catch the notes on the keys</h2>
-      <p>Notes fall down onto the keyboard. Play each one as it reaches the keys. Start with <b>Learn</b> (the notes wait for you), then try <b>Play along</b> with the music.</p>
-      <p>Play on your <b>real piano</b> (the microphone listens), or a <b>keyboard plugged into this device</b>. Tap a key on the screen to hear how it sounds.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b></p>
+      <p>Play each note as it lands. Real piano or a plugged-in keyboard.</p>
       <div id="midiSlot" style="margin-top:6px"></div>
     </div>
     <div id="list"></div>
@@ -269,8 +277,8 @@ function hint(text){
   if (!cur) return;
   const r = rec(cur.id);
   $("hint").textContent = mode === "learn"
-    ? (r.stars ? "Learn it again, or try Play along for more stars." : "The notes wait for you. Learn mode is for practice: stars are won in Play along.")
-    : r.stars >= 3 ? "Three stars! Play it again any time." : `Get ${PLAY_PCT}% at ${["Slow", "Medium", "Fast"][r.stars]} speed for ${r.stars ? "star " + (r.stars + 1) : "your first star"}.`;
+    ? "The notes wait for you." + (r.stars ? "" : " Stars are in Play along.")
+    : r.stars >= 3 ? "⭐⭐⭐ Play it any time." : `⭐ at ${PLAY_PCT}% on ${["Slow", "Medium", "Fast"][r.stars]}`;
 }
 async function startRun(asDemo){
   $("err").hidden = true;
@@ -489,42 +497,42 @@ function finish(){
   if (finished || !running || demo) return;
   finished = true; running = false; hush();
   const r = rec(cur.id), before = r.stars, total = notes.length;
-  let html, pct, improved = false, mom = "done";
+  const nextSong = FROM_PACK ? null : SONGS[SONGS.indexOf(cur) + 1];
+  // one big button and at most one quiet one (Dave, 8 Nov 2026): main = the obvious next step
+  let pct, improved = false, mom = "done", head, sub, need = "", won, main, alt = null;
+  const again = { t: "Play again", f: () => { resetRun(); startRun(); } }, next = nextSong ? { t: "Next song", f: () => openSong(nextSong) } : null;
   r.runs++;
   if (mode === "learn") {
     pct = Math.round(100 * stats.first / Math.max(1, total));
-    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
-    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${pct >= 100 ? "Every note first time!" : "Song learnt!"}</h3>
-      <p>${stats.first} of ${total} notes right first time.</p>
-      <p>Stars are won in <b>Play along</b>: ${PLAY_PCT}% at Slow for one star, Medium for two, Fast for three.</p>
-      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct); won = true;
+    head = pct >= 100 ? "Every note first time!" : "Song learnt!"; sub = stats.first + "/" + total + " first time";
+    if (!r.stars) need = "Stars are in Play along";
+    main = { t: "Play along", f: () => setMode("play") }; alt = { t: "Learn again", f: again.f };
     mom = pct >= 100 ? "win" : improved ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
     const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
     if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, SPEED_STARS[speed] || 1);
-    const sp = SPEEDS.find(s => s.k === speed).n;
-    const nextSp = ["Slow", "Medium", "Fast"][r.stars];
-    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT ? `Now try <b>${nextSp}</b>: ${PLAY_PCT}% there wins ${r.stars + 1} stars.`
-      : `${PLAY_PCT}% at ${sp} wins ${SPEED_STARS[speed] > r.stars ? (SPEED_STARS[speed] === 1 ? "a star" : SPEED_STARS[speed] + " stars") : "a new best"}. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
-    html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
-      <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
-      <button class="big play" id="pAgain">Play again</button>`;
+    won = pct >= PLAY_PCT;
+    const sp = SPEEDS.find(s => s.k === speed).n, nk = ["slow", "med", "full"][r.stars];
+    head = r.stars > before ? (r.stars === 3 ? "Three stars!" : "New star!") : improved && old ? "New best!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go";
+    sub = stats.hit + "/" + total + " notes · " + sp;
+    if (!won) need = "Star at " + PLAY_PCT + "%";
+    if (won && r.stars < 3 && nk !== speed) { main = { t: "Try " + SPEEDS.find(s => s.k === nk).n, f: () => { const b = $("speeds").querySelector(`[data-k="${nk}"]`); if (b) b.click(); startRun(); } }; alt = again; }
+    else if (r.stars >= 3 && next) { main = next; alt = again; }
+    else { main = again; alt = next; }
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
-  const nextSong = SONGS[SONGS.indexOf(cur) + 1];
-  html += (nextSong && !FROM_PACK ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(nextSong.title)}</button>` : "")
-    + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">${FROM_PACK ? "Back to the pack" : "All songs"}</button>`;
+  const html = `<h3>${head}</h3><div class="stars">${[1, 2, 3].map(i => `<img class="${r.stars >= i ? (i > before ? "new" : "") : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="${r.stars >= i ? "star" : "no star yet"}">`).join("")}</div>
+    <div class="pct ${won ? "won" : ""}">${pct}%</div><p class="sub">${sub}</p>${need ? `<div class="need">${need}</div>` : ""}
+    <button class="big play" id="pMain">${main.t}</button>${alt ? `<button class="ghost" id="pAlt">${alt.t}</button>` : ""}
+    <div><button class="textlink" id="pSongs">${(FROM_PACK ? "Back to the pack" : "All songs")}</button></div>`;
   save(); drawList(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
   $("popBox").innerHTML = html; $("pop").hidden = false;
   PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
   if (!SIM) FMAStudent.send("falling-notes", { detail: cur.title, mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved });
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
-  on("pAgain", () => { resetRun(); startRun(); });
-  on("pPlay", () => { setMode("play"); });
-  on("pNext", () => openSong(nextSong));
+  on("pMain", main.f); if (alt) on("pAlt", alt.f);
   on("pSongs", goMenu);
 }
 

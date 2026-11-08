@@ -52,11 +52,59 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 #status{font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em}
 #meter{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
 #meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
-.res{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.res div{background:#F6F1E4;border-radius:14px;padding:10px;text-align:center;color:var(--muted);font-weight:700;font-size:14px}
-.res div b{display:block;font-family:var(--head);font-weight:900;font-size:26px;color:var(--fg)}
+/* the end of a round: one huge score, few words, one big button (Dave, 8 Nov 2026) */
+#endH{font-size:30px}
+.score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;text-align:center;margin-top:4px}
+.score.won{color:var(--good)}
+.score.pop{animation:pop .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+.scoreSub{text-align:center;font-weight:700;color:var(--muted);font-size:17px}
 .key{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:700;margin-top:6px}
 .key i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:4px;border:2px solid #23231F}
+/* the rank ladder (4 Nov 2026): one Play button; the game picks the notes and the way to play */
+.rankTop{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--muted);font-size:14px}
+#rankNum{font-family:var(--head);font-weight:900;font-size:16px;color:var(--fg);background:var(--accent);border-radius:999px;padding:2px 12px}
+.pips{display:flex;gap:4px;margin:10px 0 12px}
+.pips i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.pips i.done{background:var(--good)}
+.pips i.now{background:var(--accent)}
+.goal{background:#F6F1E4;border-radius:14px;padding:10px 12px;font-weight:700;color:var(--fg)!important;font-size:15px}
+.links{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 18px;margin-top:10px}
+.link{background:none;border:0;padding:6px;color:var(--muted);font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.pick button:disabled{opacity:.5;cursor:default}
+.newTag{display:inline-block;background:var(--good);color:#fff;font-family:var(--head);font-weight:900;font-size:14px;border-radius:999px;padding:2px 12px;margin-bottom:6px}
+.tutList{margin:8px 0 14px;padding-left:20px;color:var(--fg);line-height:1.45}
+.tutList li{margin-bottom:8px}
+/* Catch it: the sky the notes fall through, sitting right on top of the neck */
+#sky{width:100%;height:auto;display:block;margin-top:6px;background:linear-gradient(#E9F5FB,#FBF8EF);border-radius:16px 16px 0 0}
+#sky + #board{margin-top:0}
+#board.tap{cursor:pointer;touch-action:manipulation}
+#hearts{letter-spacing:2px;font-size:18px}
+/* phones (4 Nov 2026, Dave): the neck needs the width, so a round plays sideways. Held upright, the round pauses behind a
+   "turn your phone" card; sideways, the header goes and the neck and sky fill the screen. */
+#turn{display:none;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:44px 18px}
+#turn .ph{font-size:64px;line-height:1;animation:turnPh 1.8s ease-in-out infinite}
+@keyframes turnPh{0%,25%{transform:rotate(0)}55%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (max-width:600px){ body.playing #game{display:none!important} body.playing #turn{display:flex} }
+@media (orientation:landscape) and (max-height:520px){
+  body.playing .fma-band{display:none}
+  body.playing{padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  body.playing #app{max-width:900px}
+  #game{padding:8px 14px 10px;position:relative}
+  #game #timer{margin:6px 0}
+  #game #prompt{font-size:24px}
+  #game #sky{height:30vh}
+  #game #board{height:40vh;margin-top:4px}
+  body.mode-name #game #board{height:34vh}
+  #game #names{margin-top:6px}
+  #game #names button{min-height:40px}
+  #game .stage{margin-top:4px}
+  #game .stage .buddy{display:none}
+  #game #status{font-size:16px}
+  #game #quit{min-height:34px!important;flex:none!important;padding:0 18px}
+  #game > div:last-child{position:absolute;right:14px;bottom:10px;margin:0!important}
+  #game .stage{padding:0 110px 0 40px;min-height:34px}      /* clear of the bug button (bottom left) and Stop */
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -65,25 +113,36 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 <div id="app">
 
   <section class="card" id="start">
-    <h2 id="introH">Learn your way around</h2>
-    <p id="introP"></p>
-    <div class="lbl">How do you want to play?</div>
-    <div class="pick two" id="modes"></div>
-    <div class="lbl">Which notes?</div>
-    <div class="pick four" id="levels"></div>
-    <div class="lbl">Your map <span style="font-weight:600">(every note you get right fills it in)</span></div>
+    <div class="rankTop"><span id="rankNum"></span><span id="rankOf"></span></div>
+    <div class="pips" id="pips"></div>
+    <h2 id="introH"></h2>
+    <p id="goal" class="goal"></p>
+    <button class="big play" id="go">Play</button>
+    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+    <button class="ghost" id="noMic" style="width:100%;min-height:46px" hidden>Play Name it instead</button>
+    <div class="links"><button class="link" id="newestBtn" hidden></button><button class="link" id="howBtn">How to play</button><button class="link" id="earlierBtn">Play an earlier rank</button></div>
+    <div class="pick four" id="ranks" hidden></div>
+    <div class="lbl">Your map</div>
     <svg id="mapBoard" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block;margin-top:6px"></svg>
     <div class="key"><span><i style="background:#fff"></i>not yet</span><span><i style="background:#FFC42B"></i>learning</span><span><i style="background:#3E7D4C"></i>know it</span></div>
     <p id="best" style="text-align:center"></p>
-    <button class="big play" id="go">Start</button>
-    <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
-    <p style="font-size:14px"><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> In Find it, your device listens through its microphone and throws the sound away as it goes.</p>
   </section>
 
+  <section class="card" id="tut" hidden>
+    <div class="newTag">New!</div>
+    <h2 id="tutH"></h2>
+    <svg id="tutBoard" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block;margin:6px 0"></svg>
+    <ul id="tutP" class="tutList"></ul>
+    <button class="big play" id="tutGo">Got it, let's play</button>
+  </section>
+
+  <section class="card" id="turn"><div class="ph">📱</div><h2>Turn your phone sideways</h2><button class="ghost" id="turnStop" style="min-height:44px;padding:0 24px;margin-top:10px">Stop</button></section>
+
   <section class="card" id="game" hidden>
-    <div class="top"><span id="qnum"></span><span id="score">0</span></div>
+    <div class="top"><span id="qnum"></span><span id="hearts" hidden></span><span id="score">0</span></div>
     <div id="timer"><i></i></div>
     <div id="prompt"></div>
+    <svg id="sky" viewBox="0 0 1000 330" hidden></svg>
     <svg id="board" viewBox="0 0 1000 270"></svg>
     <div id="names"></div>
     <div class="stage"><div class="buddy" id="buddy"></div><div style="flex:1"><div id="status"></div><div id="meter"><i id="lvl"></i></div></div></div>
@@ -92,12 +151,14 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 
   <section class="card" id="end" hidden>
     <h2 id="endH" style="text-align:center"></h2>
-    <div class="res"><div><b id="endScore">0</b>points</div><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
-    <p id="endBest" style="text-align:center"></p>
+    <div class="score" id="endRight">0</div>
+    <div class="scoreSub"><span id="endScore">0</span> points · <span id="endAvg">–</span> a note</div>
+    <p id="endRank" class="goal" style="text-align:center;font-size:17px"></p>
+    <p id="endBest" style="text-align:center;margin:6px 0"></p>
     <svg id="endMap" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block"></svg>
     <p id="saved" style="text-align:center;font-size:14px"></p>
     <button class="big play" id="again">Play again</button>
-    <button class="ghost" id="change" style="width:100%;min-height:46px;margin-top:10px">Change notes or mode</button>
+    <button class="ghost" id="change" style="width:100%;min-height:46px;margin-top:10px">Back</button>
   </section>
 </div>
 
@@ -142,12 +203,15 @@ const MODES = [
   { k: "find", n: "Find it 🎸", sub: PIANO ? "Play the note it names" : "Play the note on the string it names" },
   { k: "name", n: "Name it 👆", sub: "Tap the name of the note that lights up. No instrument needed." }];
 if (PIANO) MODES[0].n = "Find it 🎹";
+// Catch it (4 Nov 2026, Dave): notes fall toward the neck and you tap a fret that plays each one before it lands. Bass and
+// guitar only. No instrument needed; every tap plays the real note.
+else MODES.push({ k: "catch", n: "Catch it 🌠", sub: "Notes fall toward the neck. Tap a fret that plays each one before it lands." });
 const ROUND = 12, Q_SECS = 20;
 
 /* ---------- progress ---------- */
 const KEY = fmaKey("fma-note-finder-" + (PIANO ? "piano" : BASS ? "bass" : "guitar") + "-v1");
 let P = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
-P.map = P.map || {}; P.best = P.best || {}; P.mode = P.mode || "find"; P.level = P.level || 1;
+P.map = P.map || {}; P.best = P.best || {}; P.seen = P.seen || {};
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
 // a spot: "s:f" (fret 0-11; fret 12 is the open string's note again) or "k:pc" on the keyboard
 const spotKey = sp => PIANO ? "k:" + sp.pc : sp.s + ":" + (sp.f % 12);
@@ -181,7 +245,7 @@ function drawBoard(svg, dots, opts){
     const mid = (sy(0) + yb) / 2;
     [3, 5, 7, 9].forEach(f => h += `<circle cx="${fx(f)}" cy="${mid}" r="8" fill="#E8E1D2"/>`);
     h += `<circle cx="${fx(12)}" cy="${mid - 30}" r="8" fill="#E8E1D2"/><circle cx="${fx(12)}" cy="${mid + 30}" r="8" fill="#E8E1D2"/>`;
-    STR.forEach((st, i) => { const hl = opts.str === i;
+    STR.forEach((st, i) => { const hl = Array.isArray(opts.str) ? opts.str.includes(i) : opts.str === i;
       h += `<line x1="${NX - 50}" x2="${NX1}" y1="${sy(i)}" y2="${sy(i)}" stroke="${hl ? "#E09A00" : "#6B6558"}" stroke-width="${hl ? 7 : 2 + i * (BASS ? 1.2 : 0.6)}"/>`;
       h += `<text x="8" y="${sy(i) + 6}" font-family="Nunito" font-weight="900" font-size="${hl ? 26 : 22}" fill="${hl ? "#23231F" : "#6B6558"}">${st.n.replace("high ", "").replace("low ", "")}</text>`; });
     [3, 5, 7, 9, 12].forEach(f => h += `<text x="${fx(f)}" y="${yb + 42}" text-anchor="middle" font-family="Work Sans" font-weight="700" font-size="22" fill="#6B6558">${f}</text>`);
@@ -202,20 +266,100 @@ function drawMap(svg){
     if (sp.f === 0) d.push([{ s: sp.s, f: 12 }, c, SHORT[(STR[sp.s].m) % 12]]); return d; }));
 }
 
+/* ---------- the rank ladder (4 Nov 2026, Dave) ----------
+   No choices before a round: one Play button. Each rank is one set of notes and one way to play, and adds one new thing.
+   On bass and guitar each set of notes comes in Name it (see it), then Catch it (find it fast), then Find it (play it on
+   the instrument); on keyboard, Name it then Find it. A round with 80% right first go (in Catch it, 80% caught) moves you
+   up a rank, when it's your newest rank. Anything new gets a short "how it works" card the first time, and "How to play"
+   shows it again. Earlier ranks can be played again from the start screen. */
+const ORDER = PIANO ? ["name", "find"] : ["name", "catch", "find"];
+const RANKS = LEVELS.flatMap(l => ORDER.map(k => ({ level: l.n, mode: k })));
+const modeOf = k => MODES.find(m => m.k === k);
+const totalFor = k => k === "catch" ? C_ROUND : ROUND, needFor = k => Math.ceil(totalFor(k) * 0.8);
+let subRound = false;      // a Name it round played instead of Find it (no instrument): it doesn't count toward the rank
+function setRank(r){ P.play = r; P.level = RANKS[r - 1].level; P.mode = RANKS[r - 1].mode; }
+// someone who played before the ladder: start them after every set of notes they already know all of
+if (!P.rank) {
+  let r = 1;
+  for (const l of LEVELS) { const sp = spotsOf(l); if (sp.every(x => state(spotKey(x)) === 2)) r = Math.min(RANKS.length, l.n * ORDER.length + 1); else break; }
+  P.rank = r; P.play = r;
+  // the notes they skipped are known; Name it and Find it were in the old game, but Catch it is new to them
+  RANKS.slice(0, r - 1).forEach(x => { P.seen["lv" + x.level] = 1; if (x.mode !== "catch") P.seen["m-" + x.mode] = 1; });
+}
+if (!P.play || P.play > P.rank) P.play = P.rank;
+setRank(P.play);
+
+/* ---------- the "how it works" cards ---------- */
+const INSTR = PIANO ? "keyboard" : BASS ? "bass" : "guitar";
+const natDots = s => { const out = []; for (let f = 0; f <= 12; f++) { const pc = (STR[s].m + f) % 12; if (NATURAL.includes(pc)) out.push([{ s, f }, f === 0 || f === 12 ? "#FFB805" : "#FFFFFF", SHORT[pc]]); } return out; };
+const TUT = {
+  lv1: PIANO ? { h: "Notes on the keyboard", dots: [0, 2, 4, 5, 7].map(pc => [{ pc }, pc ? "#FFFFFF" : "#FFB805", SHORT[pc]]),
+      items: ["C is the white key just left of the two black keys.", "Going right: C, D, E, F, G.", "The pattern repeats all the way along."] }
+    : { h: "Notes on the low E string", dots: natDots(low), str: low,
+      items: ["The thickest string, played open, is E.", "Notes go A to G, then start again.", "Most are 2 frets apart. E to F and B to C are just 1.", "Fret 12 is E again."] },
+  lv2: PIANO ? { h: "All the white keys", dots: NATURAL.map(pc => [{ pc }, pc === 9 || pc === 11 ? "#FFB805" : "#FFFFFF", SHORT[pc]]),
+      items: ["After G come A and B, then C again."] }
+    : { h: "The A string", dots: natDots(low - 1), str: low - 1,
+      items: ["The next string, played open, is A.", "Same gaps: 2 frets, except B to C and E to F.", "Notes now come from both strings."] },
+  lv3: PIANO ? { h: "The black keys", dots: [[{ pc: 0 }, "#FFFFFF", "C"], [{ pc: 1 }, "#FFB805", "C♯"], [{ pc: 2 }, "#FFFFFF", "D"]],
+      items: ["Black keys take their names from their neighbours.", "Right of C is C♯ (sharp). Left of D is D♭ (flat). Same key, two names."] }
+    : { h: "Every string", dots: STR.map((st, i) => [{ s: i, f: 0 }, "#FFB805", SHORT[st.m % 12]]), str: STR.map((_, i) => i),
+      items: [BASS ? "The four strings, thickest to thinnest, are E A D G." : "The six strings, thickest to thinnest, are E A D G B E. (Eddie Ate Dynamite, Good Bye Eddie.)",
+        "Same gaps on every string."] },
+  lv4: PIANO ? null : { h: "Sharps and flats", dots: [[{ s: low, f: 1 }, "#FFFFFF", "F"], [{ s: low, f: 2 }, "#FFB805", "F♯"], [{ s: low, f: 3 }, "#FFFFFF", "G"]], str: low,
+      items: ["The frets between letter notes are sharps (♯) and flats (♭).", "One fret up from F is F♯. One down from G is G♭. Same fret, two names.", "None between B and C, or E and F."] },
+  "m-name": { items: [PIANO ? "A key lights up. Tap its name." : "A dot lights up. Tap its name."] },
+  "m-catch": { h: "Catch it 🌠", items: ["Tap a fret that plays each falling note before it lands.", "Miss one and you lose a heart. You have 3."] },
+  "m-find": { h: PIANO ? "Find it 🎹" : "Find it 🎸", items: [PIANO ? "Play the note it names on your keyboard. Any octave." : `Grab your ${INSTR}. Play the note on the string it names.`,
+    "Wrong note? It tells you what you played. Try again."] }
+};
+// the card for a rank: what's new about its notes and its way of playing (everything, when asked for "How to play")
+function tutFor(all){
+  const rk = RANKS[P.play - 1], keys = ["lv" + rk.level, "m-" + rk.mode].filter(k => TUT[k] && (all || !P.seen[k]));
+  if (!keys.length) return null;
+  const parts = keys.map(k => TUT[k]), withH = parts.find(x => x.h), withDots = parts.find(x => x.dots);
+  return { keys, h: withH ? withH.h : modeOf(rk.mode).n, items: parts.flatMap(x => x.items), dots: withDots && withDots.dots, str: withDots && withDots.str };
+}
+function showTut(t){
+  $("start").hidden = true; $("end").hidden = true; $("tut").hidden = false;
+  $("tutH").textContent = t.h; $("tutP").innerHTML = t.items.map(x => `<li>${x}</li>`).join("");
+  $("tutBoard").toggleAttribute("hidden", !t.dots);
+  if (t.dots) drawBoard($("tutBoard"), PIANO ? t.dots.map(([sp, c, l]) => [{ pc: sp.pc, oct: 0 }, c, l]) : t.dots, { str: t.str });
+  $("tutGo").onclick = () => { t.keys.forEach(k => P.seen[k] = 1); saveP(); start(); };
+  window.scrollTo(0, 0);
+}
+function play(){ subRound = false; setRank(P.play); const t = tutFor(false); if (t) showTut(t); else start(); }
+
 /* ---------- start screen ---------- */
 function drawStart(){
-  $("introP").textContent = PIANO ? "Learn where every note lives on the keyboard. Find it: the game names a note and you play it. Name it: a key lights up and you tap its name."
-    : `Learn where every note lives on your ${BASS ? "bass" : "guitar"}. Find it: the game names a note and a string, and you play it. Name it: a dot lights up on the neck and you tap its name.`;
-  $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${P.mode === m.k ? "on" : ""}"><b>${m.n}</b><small>${m.sub}</small></button>`).join("");
-  $("levels").innerHTML = LEVELS.map(l => { const sp = spotsOf(l), known = sp.filter(x => state(spotKey(x)) === 2).length;
-    return `<button data-n="${l.n}" class="${P.level === l.n ? "on" : ""}"><b>${l.name}</b><small>${l.sub} · know ${known} of ${sp.length}</small></button>`; }).join("");
+  if (subRound) { subRound = false; setRank(P.play); }
+  const rk = RANKS[P.play - 1], lv = LEVELS[rk.level - 1], md = modeOf(rk.mode), top = P.play === P.rank;
+  $("rankNum").textContent = "Rank " + P.play;
+  $("rankOf").textContent = !top ? "Playing an earlier rank" : P.rank === RANKS.length ? "Top rank!" : "of " + RANKS.length;
+  $("pips").innerHTML = RANKS.map((_, i) => `<i class="${i + 1 < P.rank ? "done" : i + 1 === P.rank ? "now" : ""}"></i>`).join("");
+  $("introH").textContent = lv.name + " · " + md.n;
+  const need = needFor(rk.mode), tot = totalFor(rk.mode);
+  $("goal").textContent = !top ? "Practice round: rank-ups happen at Rank " + P.rank + "."
+    : P.rank === RANKS.length ? "Top rank! Now turn your whole map green."
+    : rk.mode === "catch" ? `Catch ${need} of ${tot} to rank up.` : `Get ${need} of ${tot} right first go to rank up.`;
+  $("earlierBtn").hidden = P.rank === 1;
+  $("newestBtn").hidden = top; $("newestBtn").textContent = "Back to Rank " + P.rank;
+  drawRanks();
   drawMap($("mapBoard"));
   const b = P.best[P.mode + P.level];
-  $("best").textContent = b ? "Your best here: " + b + " points" : "";
-  $("go").textContent = P.mode === "find" && !det.ready && !(window.FMAMidi && FMAMidi.active()) ? "Start (allow microphone)" : "Start";
+  $("best").textContent = b ? "Your best at this rank: " + b + " points" : "";
+  $("go").textContent = P.mode === "find" && !det.ready && !(window.FMAMidi && FMAMidi.active()) && !SIM ? "Play (allow microphone)" : "Play";
+  $("noMic").hidden = true; $("err").hidden = true;
 }
-$("modes").onclick = e => { const b = e.target.closest("button"); if (b) { P.mode = b.dataset.k; saveP(); drawStart(); } };
-$("levels").onclick = e => { const b = e.target.closest("button"); if (b) { P.level = Number(b.dataset.n); saveP(); drawStart(); } };
+function drawRanks(){
+  $("ranks").innerHTML = RANKS.map((x, i) => { const n = i + 1, open = n <= P.rank;
+    return `<button data-n="${n}" class="${n === P.play ? "on" : ""}" ${open ? "" : "disabled"}><b>${open ? "" : "🔒 "}Rank ${n}</b><small>${LEVELS[x.level - 1].name} · ${modeOf(x.mode).n}${n === P.rank + 1 ? " · pass Rank " + P.rank + " to unlock" : ""}</small></button>`; }).join("");
+}
+$("earlierBtn").onclick = () => { $("ranks").hidden = !$("ranks").hidden; $("earlierBtn").textContent = $("ranks").hidden ? "Play an earlier rank" : "Hide the ranks"; };
+$("ranks").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return; setRank(Number(b.dataset.n)); saveP(); $("ranks").hidden = true; $("earlierBtn").textContent = "Play an earlier rank"; drawStart(); };
+$("howBtn").onclick = () => showTut(tutFor(true));
+$("newestBtn").onclick = () => { setRank(P.rank); saveP(); drawStart(); };
+$("noMic").onclick = () => { subRound = true; P.mode = "name"; start(); };
 
 /* ---------- listening (Find it) ---------- */
 const det = FMAListen.create();
@@ -250,12 +394,18 @@ async function start(){
   $("err").hidden = true;
   if (P.mode === "find" && !SIM && !(window.FMAMidi && FMAMidi.active())) {
     try { if (!det.ready) await det.start({ bass: BASS }); }
-    catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it instead."; return; }
+    catch (e) { $("start").hidden = false; $("tut").hidden = true; $("err").hidden = false; $("noMic").hidden = false;
+      $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, or play Name it for now (just for practice)."; return; }
     clearInterval(iv); iv = setInterval(() => tracker.step(), 12);
   }
-  Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, times: [], run: 0,
+  Object.assign(R, { qs: pickSpots(), qi: -1, score: 0, right: 0, first: 0, times: [], run: 0,
     knownBefore: spotsOf(LEVELS[P.level - 1]).filter(x => state(spotKey(x)) === 2).length });
-  $("start").hidden = true; $("end").hidden = true; $("game").hidden = false;
+  $("start").hidden = true; $("end").hidden = true; $("tut").hidden = true; $("game").hidden = false;
+  document.body.classList.add("playing"); document.body.classList.toggle("mode-name", P.mode === "name");
+  const C = P.mode === "catch";
+  $("sky").toggleAttribute("hidden", !C);      // an svg has no .hidden property
+  $("hearts").hidden = !C; $("timer").hidden = $("prompt").hidden = C; $("board").classList.toggle("tap", C);
+  if (C) { $("names").hidden = true; $("meter").hidden = true; if (!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("start", 1200); return catchStart(); }
   const lv = LEVELS[P.level - 1], twelve = lv.pcs.length > 7 || lv.pcs === BLACK;
   $("names").hidden = P.mode !== "name"; $("names").className = twelve ? "twelve" : "";
   $("names").innerHTML = (twelve ? [...Array(12).keys()] : NATURAL).map(pc => `<button data-pc="${pc}">${twelve ? NAT[pc].replace("/", "<br>") : NAT[pc]}</button>`).join("");
@@ -285,7 +435,7 @@ function answer(ok){
   R.busy = true;
   if (ok) {
     const first = R.tries === 0, pts = first ? Math.round(100 * (1 - 0.5 * Math.min(secs, Q_SECS) / Q_SECS)) : 25;
-    R.score += pts; R.right++; R.times.push(secs); R.run++;
+    R.score += pts; R.right++; if (first) R.first++; R.times.push(secs); R.run++;
     $("status").textContent = (first ? "Yes! +" : "Got it! +") + pts; $("status").style.color = "var(--good)";
     if (buddy && (R.run % 3 === 0 || secs < 2)) buddy.moment(R.run % 3 === 0 ? "streak" : "hit", 1000);
     mark(sp, first);
@@ -301,7 +451,7 @@ function answer(ok){
 // Find it: a note played
 let lastWrong = 0;
 function played(m){
-  if ($("game").hidden || P.mode !== "find" || R.busy || performance.now() - R.t0 < 400) return;
+  if ($("game").hidden || P.mode !== "find" || R.busy || sideways() || performance.now() - R.t0 < 400) return;
   const pc = ((Math.round(m) % 12) + 12) % 12, want = pcOf(R.q);
   if (pc === want) return answer(true);
   if (performance.now() - lastWrong < 500) return;
@@ -317,23 +467,27 @@ $("names").onclick = e => {
   if (pc === want) { b.className = "right"; answer(true); }
   else { b.className = "wrong"; R.tries++; const rb = $("names").querySelector(`[data-pc="${want}"]`); if (rb) rb.className = "right"; answer(false); }
 };
+let lastTick = 0;
 function tickTimer(){
   if ($("game").hidden) return;
+  const nowT = performance.now(); if (sideways() && lastTick) R.t0 += nowT - lastTick; lastTick = nowT;
   const left = Math.max(0, Q_SECS - (performance.now() - R.t0) / 1000);
   $("timer").firstChild.style.transform = "scaleX(" + (R.busy ? 0 : left / Q_SECS) + ")";
   if (!R.busy && left <= 0) answer(false);
   timerRaf = requestAnimationFrame(tickTimer);
 }
+const sideways = () => matchMedia("(orientation: portrait) and (max-width: 600px)").matches;      // the round is paused
 function finish(){
+  document.body.classList.remove("playing");
   $("game").hidden = true; $("end").hidden = false; cancelAnimationFrame(timerRaf);
   const k = P.mode + P.level, prev = P.best[k] || 0, isBest = R.score > prev;
   if (isBest) { P.best[k] = R.score; saveP(); }
   const lv = LEVELS[P.level - 1], sp = spotsOf(lv), known = sp.filter(x => state(spotKey(x)) === 2).length;
-  $("endH").textContent = isBest && prev ? "New best! 🎉" : R.right === R.qs.length ? "Every one right! 🎉" : "Round done!";
+  $("endH").textContent = isBest && prev ? "New best! 🎉" : (P.mode === "catch" ? R.right : R.first) === R.qs.length ? (P.mode === "catch" ? "Caught every one! 🎉" : "Every one right! 🎉")
+    : P.mode === "catch" && R.hearts <= 0 ? "Out of hearts!" : "Round done!";
   $("endScore").textContent = R.score; $("endRight").textContent = R.right + "/" + R.qs.length;
   $("endAvg").textContent = R.times.length ? (R.times.reduce((a, b) => a + b, 0) / R.times.length).toFixed(1) + "s" : "–";
-  $("endBest").textContent = (isBest && prev ? "The old best was " + prev + ". " : prev ? "Your best: " + Math.max(prev, R.score) + ". " : "") + `You know ${known} of the ${sp.length} notes in ${lv.name}` + (known > R.knownBefore ? ` (${known - R.knownBefore} new this round!)` : "") + "."
-    + (known < sp.length ? " Get a yellow note right to turn it green." : "");
+  $("endBest").textContent = (isBest && prev ? "Old best " + prev + " · " : prev ? "Best " + Math.max(prev, R.score) + " · " : "") + `${known}/${sp.length} notes known` + (known > R.knownBefore ? ` (+${known - R.knownBefore})` : "");
   drawMap($("endMap"));
   if (buddy) buddy.moment(isBest ? "best" : "done", 0);
   $("saved").textContent = "";
@@ -343,11 +497,168 @@ function finish(){
   }
   // the whole map known: a one-off reward per level
   if (known === sp.length && window.FMAPicks) FMAPicks.milestone("note-finder:" + INST + ":" + P.level, 100, "knowing every note in " + lv.name);
+  // the ladder: a good round at your newest rank moves you up one
+  const good = P.mode === "catch" ? R.right : R.first, need = needFor(P.mode), tot = R.qs.length;
+  const up = !subRound && P.play === P.rank && P.rank < RANKS.length && good >= need;
+  $("again").textContent = "Play again";
+  if (up) {
+    P.rank++; setRank(P.rank); saveP();
+    $("endH").textContent = "Rank up! 🎉";
+    const nx = RANKS[P.rank - 1];
+    $("endRank").textContent = `Rank ${P.rank}: ${LEVELS[nx.level - 1].name} · ${modeOf(nx.mode).n}`;
+    $("again").textContent = "Play Rank " + P.rank;
+    if (buddy) buddy.moment("win", 0);
+    if (!SIM && window.FMAPicks) FMAPicks.milestone("note-finder-rank:" + INST + ":" + P.rank, 20, "reaching Rank " + P.rank + " in Note Finder");
+  } else if (subRound) $("endRank").textContent = "Practice round. Find it counts for your rank.";
+  else if (P.play === P.rank && P.rank < RANKS.length)
+    $("endRank").textContent = `Get ${need}/${tot}${P.mode === "catch" ? "" : " first go"} for Rank ${P.rank + 1}`;
+  else $("endRank").textContent = P.play < P.rank ? `Your newest rank: Rank ${P.rank}` : "Top rank!";
+  // the big number is green when the round was good enough to rank up (or every one was right)
+  const sc = $("endRight"); sc.className = "score" + (up || good >= need || good === tot ? " won" : ""); void sc.offsetWidth; sc.classList.add("pop");
 }
-$("go").onclick = start;
-$("again").onclick = start;
+/* ---------- Catch it ----------
+   14 notes fall toward the neck, one or two at a time, a little quicker after each catch. Tap any fret on the level's
+   strings that plays a falling note to catch it (if two of the same note are falling, the lower one goes). A catch
+   scores 50 to 100 (more the higher up it was caught) and fills in that spot on the map. A wrong tap plays and names the
+   note you tapped, and the neck goes quiet for a moment so mashing doesn't pay. A note that lands costs a heart and shows
+   every place on those strings it could have been; three hearts, and the round stops if they run out.
+   The clock only moves while the page is on screen, so switching away pauses the game. */
+const C_ROUND = 14, C_HEARTS = 3, C_LAND = 300, C_R = 34;
+let actx = null, catchRaf = 0;
+function pluck(m, secs){      // a plucked string (the same one Song Practice uses), so every tap plays the real pitch
+  const sr = actx.sampleRate, freq = 440 * Math.pow(2, (m - 69) / 12), n = Math.floor(sr * secs), N = Math.max(2, Math.round(sr / freq)),
+    b = actx.createBuffer(1, n, sr), d = b.getChannelData(0), line = new Float32Array(N);
+  for (let i = 0; i < N; i++) line[i] = Math.random() * 2 - 1;
+  for (let pass = 0; pass < 3; pass++) for (let i = 0; i < N; i++) line[i] = (line[i] + line[(i + 1) % N]) / 2;
+  let pk = 0; for (let i = 0; i < N; i++) pk = Math.max(pk, Math.abs(line[i])); for (let i = 0; i < N; i++) line[i] /= pk || 1;
+  let p = 0; for (let i = 0; i < n; i++) { const v = line[p], nx = line[(p + 1) % N]; d[i] = v * 0.5; line[p] = (v + nx) * 0.5 * 0.9985; p = (p + 1) % N; }
+  for (let i = 0, na = Math.floor(sr * 0.006); i < na; i++) d[i] += (Math.random() * 2 - 1) * 0.9 * (1 - i / na);
+  return b;
+}
+function playMidi(m){
+  if (!actx) return;
+  const s = actx.createBufferSource(), g = actx.createGain(); s.buffer = pluck(m, 1.2); g.gain.value = 0.7;
+  s.connect(g); g.connect(actx.destination); s.start();
+}
+const lvStrs = () => LEVELS[P.level - 1].strs;
+// the 14 notes: every note name in the level comes up, and names with spots not known yet come up more
+function catchList(){
+  const lv = LEVELS[P.level - 1], sp = spotsOf(lv), w = {};
+  lv.pcs.forEach(pc => { const mine = sp.filter(x => pcOf(x) === pc); w[pc] = 1 + 2 * mine.filter(x => state(spotKey(x)) < 2).length / Math.max(1, mine.length); });
+  let list = shuffle(lv.pcs).slice(0, C_ROUND);
+  while (list.length < C_ROUND) { let tot = 0; for (const pc in w) tot += w[pc]; let r = Math.random() * tot, pick = lv.pcs[0];
+    for (const pc of lv.pcs) { r -= w[pc]; if (r <= 0) { pick = pc; break; } } list.push(pick); }
+  for (let t = 0; t < 60; t++) { list = shuffle(list); if (list.every((pc, i) => !i || pc !== list[i - 1])) break; }
+  return list;
+}
+const CR = { list: [], next: 0, falling: [], clock: 0, last: 0, lastSpawn: -1e9, dur: 0, quietTill: 0, freezeTill: 0, flash: null };
+function catchStart(){
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) { actx = null; }
+  const lv = LEVELS[P.level - 1];
+  Object.assign(R, { qs: catchList(), right: 0, score: 0, times: [], run: 0, hearts: C_HEARTS });
+  Object.assign(CR, { list: R.qs, next: 0, falling: [], clock: 0, last: performance.now(), lastSpawn: -1e9, quietTill: 0, freezeTill: 0, flash: null, pop: null,
+    dur: lv.pcs.length > 7 ? 9000 : lv.strs.length > 2 ? 8000 : 7500 });      // ms to fall; all 12 notes start slowest
+  $("status").textContent = lv.strs.length < STR.length ? "Tap on the orange " + (lv.strs.length > 1 ? "strings" : "string") : "Tap anywhere on the neck";
+  $("status").style.color = "";
+  catchDraw(); cancelAnimationFrame(catchRaf); catchRaf = requestAnimationFrame(catchTick);
+}
+function catchTick(now){
+  if ($("game").hidden || P.mode !== "catch") return;
+  if (sideways()) { CR.last = now; catchRaf = requestAnimationFrame(catchTick); return; }
+  const dt = Math.min(50, now - CR.last); CR.clock += dt; CR.last = now;
+  const t = CR.clock;
+  if (t >= CR.freezeTill) {
+    if (CR.flash && t >= CR.flash.till) CR.flash = null;
+    // spawn: one at a time to begin with, then up to two, then three; spaced so they don't arrive together
+    const maxOn = CR.next < 4 ? 1 : CR.next < 10 ? 2 : 3;
+    if (CR.next < CR.list.length && CR.falling.length < maxOn && t - CR.lastSpawn > CR.dur * 0.42) {
+      let x = 0; for (let k = 0; k < 20; k++) { x = 70 + Math.random() * 860; if (CR.falling.every(f => Math.abs(f.x - x) > 150)) break; }
+      CR.falling.push({ pc: CR.list[CR.next++], x, born: t, dur: CR.dur }); CR.lastSpawn = t;
+    }
+    // a note that reaches the neck
+    const landed = CR.falling.find(f => (t - f.born) / f.dur >= 1);
+    if (landed) {
+      CR.falling = CR.falling.filter(f => f !== landed); R.hearts--; R.run = 0;
+      $("status").textContent = NAT[landed.pc] + " got through. Here's where it lives"; $("status").style.color = "var(--bad)";
+      CR.flash = { till: t + 1800, dots: allSpots(landed.pc).map(sp => [sp, "#C0392B", SHORT[landed.pc]]) };
+      CR.freezeTill = t + 1800;
+      if (R.hearts <= 0) { catchDraw(); return setTimeout(catchEnd, 1800); }
+    }
+    if (CR.next >= CR.list.length && !CR.falling.length) { catchDraw(); return setTimeout(catchEnd, 700); }
+  } else { CR.falling.forEach(f => f.born += dt); CR.lastSpawn += dt; }      // frozen: the falling notes hold still
+  catchDraw();
+  catchRaf = requestAnimationFrame(catchTick);
+}
+const catchEnd = () => { if (!$("game").hidden && P.mode === "catch") finish(); };
+// every spot on the level's strings (frets 0-12) that plays this note
+function allSpots(pc){
+  const out = []; lvStrs().forEach(s => { for (let f = 0; f <= 12; f++) if ((STR[s].m + f) % 12 === pc) out.push({ s, f }); }); return out;
+}
+function catchDraw(){
+  const t = CR.clock;
+  $("qnum").textContent = "Note " + Math.min(CR.next, CR.list.length) + " of " + CR.list.length;
+  $("hearts").textContent = "❤️".repeat(Math.max(0, R.hearts)) + "🤍".repeat(C_HEARTS - Math.max(0, R.hearts));
+  $("score").textContent = R.score;
+  let h = `<line x1="0" x2="1000" y1="${C_LAND + 26}" y2="${C_LAND + 26}" stroke="#E09A00" stroke-width="3" stroke-dasharray="14 10"/>`;
+  CR.falling.forEach(f => {
+    const y = 20 + C_R + Math.min(1, (t - f.born) / f.dur) * (C_LAND - C_R - 20), two = NAT[f.pc].includes("/");
+    h += `<line x1="${f.x}" x2="${f.x}" y1="${Math.max(0, y - 90)}" y2="${y - C_R}" stroke="#FFC42B" stroke-width="6" stroke-linecap="round" opacity=".45"/>`;
+    h += `<circle cx="${f.x}" cy="${y}" r="${C_R}" fill="#FFB805" stroke="#23231F" stroke-width="3"/>`;
+    h += two ? `<text x="${f.x}" y="${y - 2}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="22" fill="#23231F">${SHORT[f.pc]}</text><text x="${f.x}" y="${y + 20}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="16" fill="#23231F">${NAT[f.pc].split("/")[1]}</text>`
+      : `<text x="${f.x}" y="${y + 11}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="32" fill="#23231F">${SHORT[f.pc]}</text>`;
+  });
+  if (CR.pop && t < CR.pop.till) { const k = 1 - (CR.pop.till - t) / 500;
+    h += `<circle cx="${CR.pop.x}" cy="${CR.pop.y}" r="${C_R + k * 30}" fill="none" stroke="#3E7D4C" stroke-width="${6 * (1 - k)}" opacity="${1 - k}"/>`
+      + `<text x="${CR.pop.x}" y="${CR.pop.y - 10 - k * 30}" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="30" fill="#3E7D4C" opacity="${1 - k}">+${CR.pop.pts}</text>`; }
+  const sk = $("sky"), W = sk.clientHeight ? Math.max(1000, 330 * sk.clientWidth / sk.clientHeight) : 1000;
+  sk.setAttribute("viewBox", `${(1000 - W) / 2} 0 ${W} 330`);
+  sk.innerHTML = h.replace('x1="0" x2="1000"', `x1="${(1000 - W) / 2}" x2="${(1000 + W) / 2}"`);
+  const all = lvStrs().length === STR.length;
+  drawBoard($("board"), CR.flash ? CR.flash.dots : [], { str: all ? null : lvStrs() });
+}
+// a tap on the neck: which string and fret
+$("board").addEventListener("pointerdown", e => {
+  if (P.mode !== "catch" || $("game").hidden) return;
+  e.preventDefault();
+  const svg = $("board"), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const gap = sy(1) - sy(0); let s = -1, best = 1e9;
+  STR.forEach((_, i) => { const d = Math.abs(p.y - sy(i)); if (d < best) { best = d; s = i; } });
+  if (best > gap * 0.6 || p.x < NX - 80) return;
+  const f = p.x < NX ? 0 : Math.min(12, Math.max(1, Math.ceil((p.x - NX) / FW)));
+  catchTap({ s, f });
+});
+function catchTap(sp){
+  const t = CR.clock;
+  if (t < CR.freezeTill || t < CR.quietTill) return;
+  if (!lvStrs().includes(sp.s)) { $("status").textContent = "Stay on the orange " + (lvStrs().length > 1 ? "strings" : "string"); $("status").style.color = ""; return; }
+  const m = STR[sp.s].m + sp.f, pc = m % 12;
+  playMidi(m);
+  const hits = CR.falling.filter(f => f.pc === pc).sort((a, b) => a.born - b.born);      // the oldest is the lowest
+  if (hits.length) {
+    const f = hits[0], k = Math.min(1, (t - f.born) / f.dur), pts = Math.round(100 - 50 * k);
+    CR.falling = CR.falling.filter(x => x !== f);
+    R.score += pts; R.right++; R.run++; R.times.push((t - f.born) / 1000);
+    CR.dur = Math.max(3200, CR.dur * 0.94);
+    CR.pop = { x: f.x, y: 20 + C_R + k * (C_LAND - C_R - 20), pts, till: t + 500 };
+    if (sp.f === 0 || sp.f === 12) mark({ s: sp.s, f: 0 }, true); else mark(sp, true);
+    $("status").textContent = R.run >= 3 ? R.run + " in a row! " + SHORT[pc] : "Yes! " + NAT[pc]; $("status").style.color = "var(--good)";
+    if (buddy && R.run % 4 === 0) buddy.moment("streak", 1000);
+    CR.flash = { till: t + 450, dots: [[sp, "#3E7D4C", SHORT[pc], true]] };
+  } else {
+    R.run = 0; CR.quietTill = t + 650;
+    if (lvStrs().some(s => s === sp.s) && LEVELS[P.level - 1].pcs.includes(pc)) mark(sp.f === 12 ? { s: sp.s, f: 0 } : sp, false);
+    $("status").textContent = "That's " + NAT[pc]; $("status").style.color = "var(--bad)";
+    CR.flash = { till: t + 650, dots: [[sp, "#FFFFFF", SHORT[pc], true]] };
+  }
+}
+if (SIM) window.__catch = { CR, R, catchTap, allSpots, step: ms => { for (let i = 0; i < ms / 50; i++) catchTick(CR.last + 50); } };
+
+$("go").onclick = play;
+$("again").onclick = () => subRound ? start() : play();
 $("change").onclick = () => { $("end").hidden = true; $("start").hidden = false; drawStart(); };
-$("quit").onclick = () => { $("game").hidden = true; $("start").hidden = false; cancelAnimationFrame(timerRaf); drawStart(); };
+$("turnStop").onclick = () => $("quit").click();
+$("quit").onclick = () => { document.body.classList.remove("playing"); $("game").hidden = true; $("start").hidden = false; cancelAnimationFrame(timerRaf); drawStart(); };
 if (SIM) window.__nf = { played, R, P };
 drawStart();
 </script>

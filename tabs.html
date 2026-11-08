@@ -44,7 +44,7 @@ button{font:inherit;cursor:pointer}
 /* player */
 #top{display:flex;align-items:center;gap:10px}
 #top h2{flex:1;margin:0;font-family:var(--head);font-weight:900;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:20px}
+#score{font-family:var(--head);font-weight:900;color:var(--good);font-size:24px;white-space:nowrap}
 #bars{font-weight:700;color:var(--muted);font-size:14px}
 #wrap{position:relative;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:12px;min-height:170px}
 #at{width:100%;max-height:60vh;overflow:auto;scrollbar-width:none;position:relative}
@@ -64,24 +64,29 @@ body.wait .at-cursor-bar,body.wait .at-cursor-beat{display:none}   /* learning m
 #heard{font-weight:700;min-width:8.5em}
 #lvl{flex:1;min-width:60px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
 #lvl i{display:block;height:100%;width:0;background:var(--accent)}
-#last{margin-top:8px;min-height:1.4em;color:var(--muted);font-weight:600}
+#last{margin-top:8px;min-height:1.3em;font-family:var(--head);font-weight:900;font-size:22px;line-height:1.2}
 #latBox{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:15px;font-weight:600}
 #latBox{justify-content:space-between}
 #latBox button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:800}
 #err{color:var(--bad);font-weight:700}
-/* end of run + messages */
-.pop{position:fixed;inset:0;background:rgba(35,35,31,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fade .25s}
-.pop .box{background:#fff;border-radius:26px;padding:22px 24px;text-align:center;max-width:380px;width:100%;animation:rise .35s ease-out}
-.pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
-.pop .box p{color:var(--muted);margin:8px 0}
-.pop .big{margin-top:10px}
-.pop .pct{font-family:var(--head);font-weight:900;font-size:78px;line-height:1;color:var(--good)}
-.pop .stars img{height:76px;width:auto;margin:0 3px}
-.pop .stars img.off{opacity:.45}
-.pop .stars img.dia{height:92px}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* the result (and the diamond intro) take the place of the controls, so only one big button is ever on screen (Dave, 8 Nov 2026) */
+#result{text-align:center;margin-top:12px}
+#result>div:first-child{width:92px!important;height:92px!important;margin:0 auto -4px!important}   /* your character (PlayerArt.popIn) */
+#result h3{margin:4px 0 0;font-family:var(--head);font-weight:900;font-size:30px;line-height:1.15}
+#result h3.won{color:var(--good)}
+#result p{color:var(--muted);margin:6px 0;font-weight:600}
+#result .pct{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:4px}
+#result .pct.won{color:var(--good)}
+#result .stars{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:6px}
+#result .stars img{height:76px;width:auto}
+#result .stars img.off{opacity:.3}
+#result .stars img.dia{height:92px}
+#result .stars img.new{animation:pop .7s cubic-bezier(.2,1.6,.4,1) both .15s}
+#result .need{display:inline-block;margin-top:10px;background:#F6F1E4;border-radius:999px;padding:8px 18px;font-weight:700;font-size:17px;color:var(--fg)}
+#result .big{margin-top:16px}
+#result .ghost{width:100%;min-height:50px;margin-top:10px;font-size:17px}
+@keyframes pop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
 a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;background:#fff;white-space:nowrap}
 </style>
 </head>
@@ -93,8 +98,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section id="menu">
     <div class="card" style="margin-bottom:14px">
       <h2>Play the tab, note by note</h2>
-      <p>Your device listens through its microphone. Play each note on the tab. It only moves on when you get it right.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> The sound is analysed on this device and thrown away. Tip: tune up first and find a quiet spot.</p>
+      <p>The tab waits for each right note. Tune up first!</p>
     </div>
     <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
     <p id="listErr" style="color:var(--bad);font-weight:700" hidden></p>
@@ -104,23 +108,24 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
   <section id="player" class="card" hidden>
     <div id="top"><button class="ghost" id="back">← Songs</button><h2 id="title"></h2><span id="score"></span></div>
     <div id="wrap"><div id="at"></div><div id="msg">Loading tab…</div><div id="count"></div></div>
-    <div class="row"><span id="heard">Hearing: –</span><span id="lvl"><i></i></span><span id="bars"></span></div>
+    <div class="row" id="hearRow"><span id="heard">Hearing: –</span><span id="lvl"><i></i></span><span id="bars"></span></div>
     <div id="last"></div>
+    <div id="setup">
     <div class="row">
       <div id="buddy" style="width:72px;height:72px;flex:none;margin:-10px -4px -6px -8px"></div>
-      <button class="big play" id="go" style="flex:2">Start (allow microphone)</button>
+      <button class="big play" id="go" style="flex:2">Start</button>
       <button class="ghost" id="dia" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px"></button>
       <button class="ghost" id="listen" style="flex:1;min-height:56px;border-radius:16px;font-size:17px;white-space:nowrap;padding:0 8px">▶ Listen</button>
     </div>
-    <p id="diaHint" style="margin:8px 0 0;font-size:14px;color:var(--muted)"></p>
+    <p id="diaHint" style="margin:8px 0 0;font-size:15px;color:var(--muted);font-weight:600"></p>
+    </div>
+    <div id="result" hidden></div>
     <div class="row" id="latBox" hidden><span>Timing delay (raise it if notes land late)</span>  <button id="lm">−</button> <b id="lat"></b> <button id="lp">+</button> </div>
     <p id="err" hidden></p>
     <div id="dbg" hidden style="font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;margin-top:8px"></div>
   </section>
 </div>
 
-<!-- messages -->
-<div class="pop" id="pop" hidden><div class="box" id="popBox"></div></div>
 
 <script src="fma-student.js?v=11"></script>
 <script src="fma-midi.js?v=1"></script>
@@ -396,38 +401,47 @@ function finish(){
   finished = true; running = false; setApiPlaying(false); markNow(true);
   $("go").textContent = "Start"; $("latBox").hidden = true;
   const total = expected.length, pct = pctNow(), r = rec(cur.id), before = { stars: r.stars, diamond: r.diamond };
-  let html;
+  let html, newStar = false;
+  const starsNew = (n, from) => [1, 2, 3].map(i => `<img class="${n >= i ? (i > from ? "new" : "") : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="${n >= i ? "star" : "no star yet"}">`).join("");
   if (waitMode) {
     const stars = pct >= 100 ? 3 : pct >= TWO_STAR_PCT ? 2 : 1;      // finishing at all earns one
     r.runs++; r.best = Math.max(r.best, pct); r.stars = Math.max(r.stars, stars);
     P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "learn", pct, stars });
-    const msg = stars === 3 ? "Perfect! Every note first time." : stars === 2 ? "Nice playing! Get every note first time for the third star." : "Finished! Aim for " + TWO_STAR_PCT + "% or more of the notes first time for two stars.";
-    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(stars, false)}</div>
-      <h3>${stars > before.stars ? "New: " + stars + " star" + (stars > 1 ? "s" : "") + "!" : "Run finished"}</h3>
-      <p>${stats.hit} of ${total} notes first time · ${stats.near} took another go</p><p>${msg}</p>
-      <button class="big play" id="again">Play again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+    newStar = stars > before.stars;
+    const diaNow = r.stars >= DIAMOND_NEEDS_STARS && before.stars < DIAMOND_NEEDS_STARS && !r.diamond;   // the diamond just opened
+    const need = stars === 3 ? "" : stars === 2 ? "⭐ 3: every note first time" : "⭐ 2 at " + TWO_STAR_PCT + "%";
+    html = `<div class="stars">${starsNew(stars, before.stars)}</div>
+      <div class="pct ${newStar || stars === 3 ? "won" : ""}">${pct}%</div>
+      <h3 class="${newStar ? "won" : ""}">${stars === 3 ? "Perfect!" : newStar ? "New star!" : "Finished!"}</h3>
+      <p>${stats.hit} of ${total} first time</p>
+      ${need ? `<div class="need">${need}</div>` : ""}
+      ${diaNow ? `<button class="big" id="goDia">💎 Go for the diamond</button><button class="ghost" id="again">Play again</button>`
+               : `<button class="big play" id="again">Play again</button><button class="ghost" id="songs">All songs</button>`}`;
   } else {
     const won = pct >= DIAMOND_PCT;
     r.runs++; if (won) r.diamond = true;
     P.log.push({ d: todayStr(), t: new Date().toISOString(), song: cur.id, mode: "diamond", pct, diamond: won });
     html = won
-      ? `<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>${before.diamond ? "Diamond again!" : "Diamond earned!"}</h3><div class="pct">${pct}%</div><p>${stats.hit} of ${total} notes right and on time.</p>
-         <button class="big" id="songs">All songs</button>`
-      : `<div class="pct" style="color:var(--warn)">${pct}%</div><h3>Not this time</h3><p>${stats.hit} of ${total} notes right and on time. You need ${DIAMOND_PCT}%.</p>
-         <p>Playing at home isn't always as accurate as in your lesson, so don't get discouraged. Try again, or nudge the timing delay if everything shows as late.</p>
-         <button class="big play" id="again">Try again</button><button class="ghost" id="songs" style="margin-top:8px;width:100%">All songs</button>`;
+      ? `<div class="stars"><img class="dia ${before.diamond ? "" : "new"}" src="diamond.png" alt="diamond"></div><div class="pct won">${pct}%</div><h3 class="won">${before.diamond ? "Diamond again!" : "Diamond!"}</h3><p>${stats.hit} of ${total} right and on time</p>
+         <button class="big" id="songs">All songs</button><button class="ghost" id="again">Play again</button>`
+      : `<div class="pct">${pct}%</div><h3>Not this time</h3><p>${stats.hit} of ${total} right and on time</p>
+         <div class="need">💎 at ${DIAMOND_PCT}%</div><p style="font-size:15px">All late? Raise the timing delay.</p>
+         <button class="big play" id="again">Try again</button><button class="ghost" id="songs">All songs</button>`;
   }
   save(); drawList(); refreshButtons();
-  showPop(html);
+  showResult(html);
   const mom = waitMode ? (r.stars === 3 && pct >= 100 ? "win" : r.stars > before.stars ? "best" : "done") : (pct >= DIAMOND_PCT ? "win" : "done");
-  PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
+  PlayerArt.popIn($("result"), mom); if (buddy) buddy.moment(mom, 2500);
   if (!sim) FMAStudent.send("songs", waitMode ? { detail: cur.title, mode: "learn", score: pct, right: r.stars, total: 3, improved: r.stars > before.stars }
     : { detail: cur.title, mode: "diamond", score: pct, right: pct >= DIAMOND_PCT ? 1 : 0, total: 1, improved: pct >= DIAMOND_PCT && !before.diamond });
-  const a = $("again"); if (a) a.onclick = () => { hidePop(); startRun(waitMode); };
-  const sg = $("songs"); if (sg) sg.onclick = () => { hidePop(); goMenu(); };
+  const learnRun = waitMode;
+  const a = $("again"); if (a) a.onclick = () => startRun(learnRun);
+  const sg = $("songs"); if (sg) sg.onclick = goMenu;
+  const gd = $("goDia"); if (gd) gd.onclick = diamondIntro;
 }
-function showPop(html){ $("popBox").innerHTML = html; $("pop").hidden = false; }
-function hidePop(){ $("pop").hidden = true; }
+// the result (or the diamond intro) takes the controls' place; startRun / stopRun / openSong bring the controls back
+function showResult(html){ $("result").innerHTML = html; $("setup").hidden = $("hearRow").hidden = true; $("result").hidden = false; setTimeout(() => $("result").scrollIntoView({ block: "end" }), 60); }   // not smooth: follow() scrolling the tab every frame cancels a smooth scroll
+function showSetup(){ $("result").hidden = true; $("setup").hidden = $("hearRow").hidden = false; }
 
 /* ---------- audio set-up, click track and the test simulator ---------- */
 async function openInput(){
@@ -551,7 +565,7 @@ function resetRun(){
   for (const e of expected) { e.res = null; e.tries = 0; paint(e, ""); }
   idx = 0; dispT = 0; finishing = false; finished = false; running = false; lastAcceptedT = -9;
   stats.hit = stats.near = stats.miss = stats.done = 0; onsets.length = 0; pending.length = 0;
-  $("score").textContent = ""; $("last").textContent = ""; $("go").textContent = "Start"; $("count").style.opacity = 0;
+  $("score").textContent = ""; $("last").textContent = ""; $("go").textContent = "Start"; $("count").style.opacity = 0; showSetup();
   setApiPlaying(false); fed = -1; feed(0); showBar(); markNow(true);
 }
 async function startRun(learn){
@@ -566,23 +580,23 @@ async function startRun(learn){
 }
 function stopRun(){ resetRun(); $("latBox").hidden = true; }
 $("go").onclick = () => { if (running) stopRun(); else startRun(true); };
-$("dia").onclick = () => {
+function diamondIntro(){
   const r = rec(cur.id); if (r.stars < DIAMOND_NEEDS_STARS || running) return;
-  showPop(`<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>Go for the diamond</h3>
-    <p>You'll play the whole song to a click, at the proper speed, and notes need to be right <b>and on time</b>. You need ${DIAMOND_PCT}%.</p>
-    <p>Playing at home might not be as accurate as in your lesson, because phones and speakers add small delays. So don't get discouraged if it doesn't go your way first time.</p>
-    <p>Wear headphones if you can, so the click doesn't leak into the microphone.</p>
-    ${api.score && api.score.tracks.length > 1 ? `<label style="display:flex;gap:10px;align-items:center;margin:0 0 12px;font-weight:700"><input type="checkbox" id="dband" style="width:22px;height:22px"${bandOn ? " checked" : ""}> 🎧 Play with the band (headphones on only: through speakers the microphone hears the band)</label>` : ""}
-    <button class="big" id="dgo">Start the click</button><button class="ghost" id="dno" style="margin-top:8px;width:100%">Not now</button>`);
-  $("dgo").onclick = () => { bandOn = !!($("dband") && $("dband").checked); hidePop(); startRun(false); };
-  $("dno").onclick = hidePop;
-};
+  showResult(`<div class="stars"><img class="dia" src="diamond.png" alt=""></div><h3>Go for the diamond</h3>
+    <p>The whole song to a click. Right notes, on time.</p>
+    <div class="need">💎 at ${DIAMOND_PCT}% · headphones help</div>
+    ${api.score && api.score.tracks.length > 1 ? `<label style="display:flex;gap:10px;align-items:center;justify-content:center;margin:14px 0 0;font-weight:700"><input type="checkbox" id="dband" style="width:22px;height:22px"${bandOn ? " checked" : ""}> 🎧 With the band (headphones only)</label>` : ""}
+    <button class="big play" id="dgo">Start the click</button><button class="ghost" id="dno">Not now</button>`);
+  $("dgo").onclick = () => { bandOn = !!($("dband") && $("dband").checked); startRun(false); };
+  $("dno").onclick = showSetup;
+}
+$("dia").onclick = diamondIntro;
 function refreshButtons(){
   if (!cur) return;
   const r = rec(cur.id);
   const open = r.stars >= DIAMOND_NEEDS_STARS;
   $("dia").textContent = (open ? "💎 " : "🔒 ") + "Diamond";
-  $("diaHint").textContent = r.diamond ? "You've earned the diamond for this song. Play it again any time." : open ? "Ready? Play the whole song to a click for the diamond." : "Get " + DIAMOND_NEEDS_STARS + " stars to unlock the diamond challenge.";
+  $("diaHint").textContent = r.diamond ? "💎 Diamond earned!" : open ? "💎 Diamond: play it to a click." : "⭐ " + DIAMOND_NEEDS_STARS + " stars open the diamond.";
   $("dia").disabled = r.stars < DIAMOND_NEEDS_STARS;
   $("dia").style.opacity = r.stars < DIAMOND_NEEDS_STARS ? .5 : 1;
 }

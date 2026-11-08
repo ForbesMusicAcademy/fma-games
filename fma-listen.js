@@ -36,6 +36,10 @@
    SINGLE NOTES (melodies, tuning)
    det.read(opts) -> {f, clarity} | null     the pitch of the latest block (YIN). opts: {fmin, fmax, window, threshold};
                                              the defaults suit melodies (70-1400 Hz, 1024-sample window)
+   det.tunerRead(hz, opts) -> {f, clarity, raw} | null   Tune Up only (6 Nov 2026): the pitch of a string being tuned to hz.
+                                             read() finds the note, then it's measured on the string's first few overtones
+                                             (a bass's low strings read 6-12 cents sharp on read() alone). Also hears a low
+                                             string in a noisy room when two or more clear overtones back the reading up
    const t = FMAListen.notes(det, { onNote(midi, when, legato), legato: () => bool, onLevel(rms), onHeard(midi|null) })
      t.step()                                call every ~12 ms. A note starts when the level jumps; its pitch is read just
                                              after. With legato() true, a new pitch that holds steady for ~50 ms with no new
@@ -176,8 +180,53 @@
         const a = d[t - 1], b = d[t], c = d[t + 1], den = a - 2 * b + c;
         const tau = t + (den ? 0.5 * (a - c) / den : 0);
         return { f: sr / tau, clarity: 1 - b };
+      },
+      // Tune Up only (6 Nov 2026): the pitch of one string being tuned to `target` Hz. Other games don't use this.
+      // A small mic barely hears a bass's low notes, so read() goes by the overtones, and a thick string's overtones run a
+      // little sharp: an in-tune low E read 6-12 cents high and never locked. So: read() finds the note, then the pitch is
+      // measured on the spectrum from the string's first few overtones, where that sharpness is under 2 cents.
+      // Returns {f, clarity, raw} (raw = read()'s own answer, folded to the target's octave) or null.
+      tunerRead(target, opts){
+        let r = this._yin(opts), loose = false;
+        // a noisy room can hide a low string from read(): look again less strictly, and keep that reading only if the
+        // spectrum backs it up below (two or more overtones ringing clearly where they should)
+        if(!r || r.clarity < 0.8){ r = this._yin(Object.assign({}, opts, { threshold: 0.4 })); loose = true; }
+        if(!r) return null;
+        let f = r.f;
+        const cents = x => 1200 * Math.log2(x / target);
+        // an octave out (or two, on a bass) still names the right note: fold it onto the string, but only when it lands close
+        if(Math.abs(cents(f)) > 200) for(const k of this.bass ? [2, 0.5, 4, 0.25] : [2, 0.5]){ if(Math.abs(cents(f * k)) <= 60){ f *= k; break; } }
+        const out = { f, clarity: r.clarity, raw: f };
+        if(Math.abs(cents(f)) > 200) return loose ? null : out;     // the wrong string: Tune Up says so, no need to be exact
+        this.an.getFloatFrequencyData(this.buf);
+        const bw = this.ctx.sampleRate / CHROMA_FFT, B = this.buf, top = this.bass ? 560 : 1100;
+        const parts = []; let loud = -Infinity;
+        for(let n = 1; n <= 4 && n * f < top; n++){
+          // the loudest bin within 40 cents of where overtone n should be, then the true peak between bins
+          const lo = Math.max(2, Math.floor(n * f * Math.pow(2, -40 / 1200) / bw)), hi = Math.min(B.length - 2, Math.ceil(n * f * Math.pow(2, 40 / 1200) / bw));
+          let k = lo; for(let i = lo; i <= hi; i++) if(B[i] > B[k]) k = i;
+          if(k === lo || k === hi || !(B[k] > B[k - 1] && B[k] >= B[k + 1])) continue;      // no real peak there
+          const a = B[k - 1], b = B[k], c = B[k + 1], dn = a - 2 * b + c, p = dn ? 0.5 * (a - c) / dn : 0;
+          parts.push({ n, f: (k + p) * bw / n, db: b }); if(b > loud) loud = b;
+        }
+        // the lowest overtones that ring clearly (within 25 dB of the loudest) give the pitch; the lowest one counts most
+        const good = parts.filter(q => q.db > loud - 25);
+        if(good.length){
+          let sw = 0, sf = 0; for(const q of good){ const w = Math.pow(10, q.db / 20) / (q.n * q.n * q.n); sw += w; sf += w * q.f; }
+          const fs = sf / sw;
+          if(Math.abs(1200 * Math.log2(fs / f)) < 50) out.f = fs;     // agrees with read(): trust the finer reading
+          else if(loose) return null;
+        }
+        if(loose){
+          // clear = stands 12 dB above the spectrum around it
+          const clear = good.filter(q => { const k = Math.round(q.f * q.n / bw), seg = Array.from(B.subarray(Math.max(0, k - 20), k + 21)).sort((x, y) => x - y); return q.db > seg[seg.length >> 1] + 12; });
+          if(clear.length < 2) return null;
+          out.clarity = 0.8;
+        }
+        return out;
       }
     };
+    det._yin = det.read;       // tunerRead's own copy of read(): a page may swap det.read for tunerRead (Tune Up does)
     return det;
   }
 

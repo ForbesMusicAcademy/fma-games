@@ -102,9 +102,19 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 .pop .box h3{margin:0 0 4px;font-family:var(--head);font-weight:900;font-size:26px}
 .pop .box p{color:var(--muted);margin:8px 0}
 .pop .big{margin-top:10px}
-.pop .pct{font-family:var(--head);font-weight:900;font-size:72px;line-height:1;color:var(--good)}
-.pop .stars img{height:66px;width:auto;margin:0 3px}
-.pop .stars img.off{opacity:.45}
+/* the result: one big button, huge stars and score, few words (Dave, 8 Nov 2026) */
+.pop .pct{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:4px;color:var(--fg)}
+.pop .pct.won{color:var(--good)}
+.pop .stars{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.pop .stars img{height:76px;width:auto}
+.pop .stars img.off{opacity:.3}
+.pop .stars img.new{animation:spop .7s cubic-bezier(.2,1.6,.4,1) both .2s}
+@keyframes spop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
+.pop .sub{font-weight:700;font-size:17px;color:var(--muted);margin:4px 0 0}
+.pop .need{display:inline-block;margin-top:12px;background:#F6F1E4;border-radius:999px;padding:8px 18px;font-weight:700;font-size:17px;color:var(--fg)}
+.pop .big{margin-top:16px}
+.pop .ghost{width:100%;min-height:50px;margin-top:10px;font-size:17px}
+.pop .textlink{border:0;background:none;color:var(--muted);font-weight:700;text-decoration:underline;margin-top:12px;padding:6px;font-size:15px}
 .pop .trophy{width:120px;height:120px;margin:0 auto}
 .pop .prizepic{width:110px;height:110px;margin:4px auto 0}
 .pop .prizepic svg{width:100%;height:100%}
@@ -122,8 +132,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <section id="packsView">
     <div class="card" style="margin-bottom:14px">
       <h2>Pick a pack</h2>
-      <p id="introLine">Every song earns up to 3 stars. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens more packs.</p>
-      <p><b data-tracked="No sound is recorded, and only your scores and practice time are saved to your progress.">Nothing is recorded or sent anywhere.</b> Your device listens through its microphone, or you can plug in a keyboard.</p>
+      <p id="introLine">3 stars a song. Get them all for the trophy.</p>
       <div id="midiSlot" style="margin-top:6px"></div>
     </div>
     <div class="packs" id="packs"></div>
@@ -407,8 +416,8 @@ function checkTrophies(){
   if (!p) return false;
   PK.won[wonKey(p)] = new Date().toISOString().slice(0, 10); savePK();
   const g = FMAPicks.grant(p.prize.part, p.prize.value, (LAB ? "lab:" : "pack:") + p.id, "finishing " + p.name, 50) || {};
-  $("popBox").innerHTML = `<div class="trophy">${trophy(p, true, 120)}</div><h3>${esc(p.name)} complete!</h3><p>Every star in the ${LAB ? "lab" : "pack"}. That's the trophy!</p>
-    ${g.picks ? `<p>You already had the ${esc(p.prize.label)}, so here are <b>${g.picks} picks</b> instead.</p>` : `<div class="prizepic">${prizePic(p)}</div><p>You won the <b>${esc(p.prize.label)}</b>. Put it on in the character editor.</p>`}
+  $("popBox").innerHTML = `<div class="trophy">${trophy(p, true, 120)}</div><h3>${esc(p.name)} complete!</h3>
+    ${g.picks ? `<p><b>+${g.picks} picks</b></p>` : `<div class="prizepic">${prizePic(p)}</div><p>You won the <b>${esc(p.prize.label)}</b>!</p>`}
     <a class="big" href="./#character" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)">Dress up my player</a><button class="ghost" id="pOk" style="margin-top:8px;width:100%">Keep playing</button>`;
   $("pop").hidden = false; PlayerArt.popIn($("popBox"), "win");
   $("pOk").onclick = () => { $("pop").hidden = true; drawPacks(); if (pack) drawPack(); };
@@ -456,7 +465,7 @@ function goPacks(){ stopRun(); pack = null; $("pop").hidden = true; $("player").
 if (LAB) {
   document.title = "Riff Lab"; document.querySelector(".fma-band h1").textContent = "Riff Lab";
   document.querySelector("#packsView h2").textContent = "Learn the moves of rock guitar";
-  $("introLine").textContent = "Ten labs of riffs, each one teaching a new move: plain notes on the low E first, then palm mutes, slides, hammer-ons, pull-offs, bends and vibrato. Every riff earns up to 3 stars, and every star you need is shown. Finish a lab to win its trophy and a prize for your character.";
+  $("introLine").textContent = "Ten labs, one new move each. 3 stars a riff. Get them all for the trophy.";
   $("toPacks").textContent = "← All labs"; $("back").textContent = "← Lab";
 }
 if (LAB && INST === "piano") {
@@ -470,7 +479,7 @@ if (LAB && INST === "piano") {
   const p = PACKS.find(p => p.id === location.hash.slice(1));
   if (p && packState(p) === "open") openPack(p);
 }).catch(() => { $("listErr").hidden = false; $("listErr").textContent = "Couldn't load the songs. Check your connection and refresh."; });
-if (INST === "piano" && !LAB) $("introLine").textContent = "Every song earns up to 3 stars, in either piano view. Get every star in a pack to win its trophy and a prize for your character. Earning stars opens the next pack.";
+if (INST === "piano" && !LAB) $("introLine").textContent = "3 stars a song, in either view. Get them all for the trophy.";
 
 /* ---------- melody to guitar tab ----------
    With a pack rule [strings, highest fret]: try every group of that many neighbouring strings, in every octave (the key
@@ -681,8 +690,8 @@ function hint(text){
   if (!cur) return;
   const r = rec(rk(pack, cur.id));
   $("hint").textContent = mode === "learn"
-    ? (techTip(notes[0]) || (r.stars ? "Learn it again, or try Play along for the next star." : INST === "guitar" ? "The tab waits for you. The number is the fret, the line is the string. Learn mode is for practice: stars are won in Play along." : "The notes wait for you. Learn mode is for practice: stars are won in Play along."))
-    : r.stars >= 3 ? "Three stars! Play it again any time." : `Get ${PLAY_PCT}% at ${["Slow", "Medium", "Fast"][r.stars]} speed for ${r.stars ? "star " + (r.stars + 1) : "your first star"}.`;
+    ? (techTip(notes[0]) || (INST === "guitar" ? "Number = fret, line = string. It waits for you." : "The notes wait for you.") + (r.stars ? "" : " Stars are in Play along."))
+    : r.stars >= 3 ? "⭐⭐⭐ Play it any time." : `⭐ at ${PLAY_PCT}% on ${["Slow", "Medium", "Fast"][r.stars]}`;
 }
 async function startRun(asDemo){
   $("err").hidden = true;
@@ -1016,43 +1025,43 @@ function finish(){
   if (finished || !running || demo) return;
   finished = true; running = false; hush();
   const r = rec(rk(pack, cur.id)), before = r.stars, total = notes.length;
-  let html, pct, improved = false, mom = "done";
+  const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
+  // one big button and at most one quiet one (Dave, 8 Nov 2026): main = the obvious next step
+  let pct, improved = false, mom = "done", head, sub, need = "", won, main, alt = null;
+  const again = { t: "Play again", f: () => { resetRun(); startRun(); } }, next = nextSong ? { t: "Next song", f: () => openSong(paced(nextSong, pack)) } : null;
   r.runs++;
   if (mode === "learn") {
     pct = Math.round(100 * stats.first / Math.max(1, total));
-    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct);
-    html = `<div class="pct">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${pct >= 100 ? "Every note first time!" : "Song learnt!"}</h3>
-      <p>${stats.first} of ${total} notes right first time.</p>
-      <p>Stars are won in <b>Play along</b>: ${PLAY_PCT}% at Slow for one star, Medium for two, Fast for three.</p>
-      <button class="big play" id="pPlay">Try Play along</button><button class="ghost" id="pAgain" style="margin-top:8px;width:100%">Learn it again</button>`;
+    improved = pct > (r.learn || 0); r.learn = Math.max(r.learn || 0, pct); won = true;
+    head = pct >= 100 ? "Every note first time!" : "Song learnt!"; sub = stats.first + "/" + total + " first time";
+    if (!r.stars) need = "Stars are in Play along";
+    main = { t: "Play along", f: () => setMode("play") }; alt = { t: "Learn again", f: again.f };
     mom = pct >= 100 ? "win" : improved ? "best" : "done";
   } else {
     pct = Math.round(100 * stats.hit / Math.max(1, total));
     const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
     if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, SPEED_STARS[speed] || 1);
-    const sp = SPEEDS.find(s => s.k === speed).n;
-    const nextSp = ["Slow", "Medium", "Fast"][r.stars];
-    const tip = r.stars >= 3 ? "Three stars. You've mastered this one!" : pct >= PLAY_PCT ? `Now try <b>${nextSp}</b>: ${PLAY_PCT}% there wins ${r.stars + 1} stars.`
-      : `${PLAY_PCT}% at ${sp} wins ${SPEED_STARS[speed] > r.stars ? (SPEED_STARS[speed] === 1 ? "a star" : SPEED_STARS[speed] + " stars") : "a new best"}. ${speed !== "slow" ? "Slow speed is a good way to get there." : "You're getting there: every go counts."}`;
-    html = `<div class="pct" style="color:${pct >= PLAY_PCT ? "var(--good)" : "var(--warn)"}">${pct}%</div><div class="stars">${starImgs(r.stars)}</div>
-      <h3>${r.stars > before ? "New: " + r.stars + " stars!" : improved && old ? "New best at " + sp + "!" : "Song finished!"}</h3>
-      <p>${stats.hit} of ${total} notes on time at ${sp} speed${stats.perfect ? ` · ${stats.perfect} perfect` : ""} · best run ${stats.maxCombo} in a row</p><p>${tip}</p>
-      <button class="big play" id="pAgain">Play again</button>`;
+    won = pct >= PLAY_PCT;
+    const sp = SPEEDS.find(s => s.k === speed).n, nk = ["slow", "med", "full"][r.stars];
+    head = r.stars > before ? (r.stars === 3 ? "Three stars!" : "New star!") : improved && old ? "New best!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go";
+    sub = stats.hit + "/" + total + " notes · " + sp;
+    if (!won) need = "Star at " + PLAY_PCT + "%";
+    if (won && r.stars < 3 && nk !== speed) { main = { t: "Try " + SPEEDS.find(s => s.k === nk).n, f: () => { const b = $("speeds").querySelector(`[data-k="${nk}"]`); if (b) b.click(); startRun(); } }; alt = again; }
+    else if (r.stars >= 3 && next) { main = next; alt = again; }
+    else { main = again; alt = next; }
     mom = r.stars > before ? "win" : improved ? "best" : "done";
   }
-  const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
-  html += (nextSong ? `<button class="ghost" id="pNext" style="margin-top:8px;width:100%">Next song: ${esc(cleanTitle(nextSong.title))}</button>` : "")
-    + `<button class="ghost" id="pSongs" style="margin-top:8px;width:100%">Back to ${esc(pack.name)}</button>`
+  const html = `<h3>${head}</h3><div class="stars">${[1, 2, 3].map(i => `<img class="${r.stars >= i ? (i > before ? "new" : "") : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="${r.stars >= i ? "star" : "no star yet"}">`).join("")}</div>
+    <div class="pct ${won ? "won" : ""}">${pct}%</div><p class="sub">${sub}</p>${need ? `<div class="need">${need}</div>` : ""}
+    <button class="big play" id="pMain">${main.t}</button>${alt ? `<button class="ghost" id="pAlt">${alt.t}</button>` : ""}
+    <div><button class="textlink" id="pSongs">${"Back to " + esc(pack.name)}</button></div>`
     + (slowDevice ? `<p style="font-size:13px">This device was working hard, so your player stopped hopping to keep the notes smooth.</p>` : "");
   save(); hint(); $("go").textContent = "Start"; $("combo").style.opacity = 0;
   $("popBox").innerHTML = html; $("pop").hidden = false;
   PlayerArt.popIn($("popBox"), mom); if (buddy) buddy.moment(mom, 2500);
   if (!SIM) FMAStudent.send(GAME, { detail: cleanTitle(cur.title), mode, level: mode === "play" ? speed : "learn", score: pct, right: stats.hit, total, improved, instrument: INST });
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { $("pop").hidden = true; fn(); }; };
-  on("pAgain", () => { resetRun(); startRun(); });
-  on("pPlay", () => setMode("play"));
-  on("pNext", () => openSong(paced(nextSong, pack)));
+  on("pMain", main.f); if (alt) on("pAlt", alt.f);
   on("pSongs", backToPack);
 }
 
