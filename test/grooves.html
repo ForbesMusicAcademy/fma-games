@@ -58,25 +58,33 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 #tab{width:100%;height:auto;display:block}
 #tabHide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#F3EEE2 0 12px,#EFE8D8 12px 24px);border-radius:12px;font-family:var(--head);font-weight:900;font-size:22px;color:var(--muted)}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.modes button{border:2px solid var(--line);background:#fff;border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:86px}
+.modes button{border:2px solid var(--line);background:#fff;border-radius:16px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:0}
 .modes button b{font-family:var(--head);font-weight:900;font-size:17px}
-.modes button small{color:var(--muted);font-size:12px;line-height:1.2;text-align:center}
+.modes button small{color:var(--muted);font-size:13px;line-height:1.2;text-align:center}
 .modes button.on{border-color:var(--fg);background:#FFF6DC}
 .row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
 .seg{display:inline-flex;border:2px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
-.seg button{border:0;background:none;min-height:40px;padding:0 14px;font-weight:700}
+.seg button{border:0;background:none;min-height:44px;padding:0 12px;font-weight:700;white-space:nowrap}
 .seg button.on{background:var(--accent)}
 .stage{display:flex;align-items:center;gap:12px;margin-top:12px}
 .stage .buddy{flex:none;width:86px;aspect-ratio:1/1}
-#status{font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em}
-#meter{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:6px}
+#status{font-family:var(--head);font-weight:900;font-size:26px;line-height:1.15;min-height:1.2em}
+#status.good{color:var(--good)}
+#status.hint{font-family:var(--ui);font-weight:700;font-size:18px;color:var(--fg)}
+#meter{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:8px}
 #meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
-.res{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
-.res div{background:#F6F1E4;border-radius:14px;padding:10px;text-align:center;color:var(--muted);font-weight:700;font-size:14px}
-.res div b{display:block;font-family:var(--head);font-weight:900;font-size:28px;color:var(--fg)}
-.stars{display:flex;justify-content:center;gap:4px}
-.stars img{width:56px;height:56px}
-.stars img.off{opacity:.35}
+/* the result takes the place of the controls, so there's only ever one big button on screen (Dave, 8 Nov 2026) */
+#result{text-align:center;margin-top:8px}
+.stars{display:flex;justify-content:center;gap:6px}
+.stars img{width:76px;height:76px}
+.stars img.off{opacity:.3}
+.stars img.new{animation:pop .7s cubic-bezier(.2,1.6,.4,1) both .15s}
+@keyframes pop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
+.score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:6px}
+.score.won{color:var(--good)}
+.scoreSub{font-weight:700;color:var(--muted);font-size:17px}
+.need{display:inline-block;margin-top:12px;background:#F6F1E4;border-radius:999px;padding:8px 18px;font-weight:700;font-size:17px}
+#result .ghost{width:100%;min-height:50px;margin-top:10px;font-size:17px}
 .tip{background:#FFF6DC;border-radius:14px;padding:10px 14px;color:var(--fg);font-size:15px;margin-top:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -89,7 +97,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <section id="levelsView">
     <div class="card">
       <h2>Lock in with the band</h2>
-      <p>Ten levels of bass grooves. In each one the band plays a groove, then it's your turn to play it back. Every groove has three stars: <b>Copy it</b>, <b>Lock it in</b> (keep it going on your own) and <b>By ear</b> (no tab).</p>
+      <p>The band plays a groove. You play it back. Three stars each.</p>
     </div>
     <div id="levels" style="margin-top:14px"></div>
   </section>
@@ -104,20 +112,21 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
   <section id="playView" hidden>
     <div class="card">
       <h2 id="gTitle"></h2>
-      <p id="gHook" style="margin-top:0"></p>
-      <div id="phase">Ready<small id="phaseSub">Pick a way to play, then press Start</small><div class="beats" id="beats"></div></div>
+      <div id="phase">Ready<small id="phaseSub"></small><div class="beats" id="beats"></div></div>
       <div id="tabWrap"><svg id="tab" viewBox="0 0 640 200" aria-label="Bass tab"></svg><div id="tabHide" hidden>By ear: no tab! 👂</div></div>
-      <div class="modes" id="modes"></div>
-      <div class="row">
-        <span class="seg" id="speed"><button data-f="0.8">Slow</button><button data-f="1">Full speed</button></span>
-        <button class="ghost" id="hear" style="min-height:44px;padding:0 16px">🔊 Hear it</button>
+      <div class="stage"><div class="buddy" id="buddy"></div><div style="flex:1"><div id="status"></div><div id="meter" hidden><i id="lvl"></i></div></div></div>
+      <div id="setup">
+        <div class="modes" id="modes"></div>
+        <div class="row" style="flex-wrap:nowrap;gap:8px">
+          <span class="seg" id="speed" style="flex:none"><button data-f="0.8">Slow</button><button data-f="1">Full speed</button></span>
+          <button class="ghost" id="hear" style="min-height:48px;padding:0 10px;flex:1;white-space:nowrap">🔊 Hear it</button>
+        </div>
+        <button class="big play" id="go" style="margin-top:14px">Start</button>
+        <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
       </div>
-      <div class="stage"><div class="buddy" id="buddy"></div><div style="flex:1"><div id="status"></div><div id="meter"><i id="lvl"></i></div><p id="modeHelp" class="muted" style="margin:6px 0 0;font-size:15px"></p></div></div>
-      <button class="big play" id="go" style="margin-top:12px">Start (allow microphone)</button>
-      <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
+      <div id="result" hidden></div>
     </div>
-    <div class="card" id="result" hidden></div>
-    <details class="card" style="padding:12px 16px"><summary style="cursor:pointer;color:var(--muted);font-weight:700">Tips for playing with a phone or laptop</summary>
+    <details class="card" style="padding:12px 16px"><summary style="cursor:pointer;color:var(--muted);font-weight:700">Phone or laptop tips</summary>
       <p>Put the device close to your amp (or close to your bass if it's not plugged in), and turn the device's volume up so you can hear the hi-hats on your turn.</p>
       <p>Mute each note when the next one starts, especially in the levels with gaps. Clean starts and stops are what the game listens for, and they're what makes a groove sound tight.</p>
       <p>Headphones are fine: then the game can't hear itself at all.</p>
@@ -238,9 +247,9 @@ let P = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } cat
 P.g = P.g || {}; P.speed = P.speed || 1;
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} };
 const MODES = [
-  { k: "copy", n: "Copy it", d: "Listen, then play it back. 4 turns.", star: "Get 70% of the notes" },
-  { k: "lock", n: "Lock it in", d: "Hear it once, then play it 4 times.", star: "80% of the notes, in the pocket, at full speed" },
-  { k: "ear", n: "By ear", d: "Copy it with no tab.", star: "80% of the notes at full speed" }];
+  { k: "copy", n: "Copy it", d: "Listen, play back", need: 70, star: "⭐ at 70%" },
+  { k: "lock", n: "Lock it in", d: "Play it 4 times", need: 80, star: "⭐ at 80%, in the pocket" },
+  { k: "ear", n: "By ear", d: "No tab", need: 80, star: "⭐ at 80%, full speed" }];
 const gs = id => P.g[id] || (P.g[id] = { copy: false, lock: false, ear: false, best: {} });
 const starsOf = g => { const s = P.g[g.id]; return s ? MODES.filter(m => s[m.k]).length : 0; };
 const levelStars = l => l.grooves.reduce((a, g) => a + starsOf(g), 0);
@@ -275,21 +284,24 @@ $("back").onclick = e => {
 };
 
 let buddy = null;
+function showSetup(){ $("result").hidden = true; $("setup").hidden = false; }
 function openGroove(g){
-  groove = g; show("playView"); $("result").hidden = true;
+  groove = g; show("playView"); showSetup();
   $("back").textContent = "← " + level.name;
-  $("gTitle").textContent = g.title; $("gHook").textContent = g.hook;
+  $("gTitle").textContent = g.title;
   const s = gs(g.id); mode = !s.copy ? "copy" : !s.lock ? "lock" : !s.ear ? "ear" : "copy";
   drawModes(); drawSpeed(); drawTab(); setPhase(null);
   if (!buddy) buddy = PlayerArt.buddy($("buddy")); else buddy.moment("hello", 1500);
-  $("status").textContent = "";
+  setStatus("");
 }
+// the buddy's line: the groove's hint when idle, then each turn's score, then the result
+function setStatus(t, good){ const hint = !t && groove; $("status").textContent = hint ? groove.hook : t; $("status").classList.toggle("good", !!good); $("status").classList.toggle("hint", !!hint); }
 function drawModes(){
   const s = gs(groove.id);
   $("modes").innerHTML = MODES.map(m => `<button data-k="${m.k}" class="${mode === m.k ? "on" : ""}">${starImg(s[m.k])}<b>${m.n}</b><small>${m.d}</small></button>`).join("");
   const m = MODES.find(x => x.k === mode);
-  $("modeHelp").textContent = (s[m.k] ? "Star won! Play again any time. " : "For the star: ") + (s[m.k] ? "" : m.star.toLowerCase() + ".");
   $("tabHide").hidden = mode !== "ear";
+  if (!running) setPhase(null);
 }
 $("modes").onclick = e => { const b = e.target.closest("button"); if (!b || running) return; mode = b.dataset.k; drawModes(); };
 function drawSpeed(){ $("speed").querySelectorAll("button").forEach(b => b.classList.toggle("on", Number(b.dataset.f) === P.speed)); }
@@ -403,7 +415,7 @@ async function startRound(){
     audio();
     if (!det.ready && !(window.FMAMidi && FMAMidi.active())) await det.start({ ctx: ac, bass: true });
   } catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, then try again."; return; }
-  running = true; heard = []; $("result").hidden = true; $("tabHide").hidden = mode !== "ear"; drawTab(); $("go").textContent = "Stop"; $("go").classList.remove("play");
+  running = true; heard = []; showSetup(); setStatus(""); $("meter").hidden = false; $("tabHide").hidden = mode !== "ear"; drawTab(); $("go").textContent = "Stop"; $("go").classList.remove("play");
   $("modes").style.opacity = .5; $("speed").style.opacity = .5;
   const f = mode === "copy" ? P.speed : 1;          // Lock it in and By ear always run at full speed
   const spb = 60 / (level.tempo * f), cyc = groove.beats * spb, t0 = ac.currentTime + 0.25, segs = [];
@@ -425,11 +437,11 @@ async function startRound(){
 }
 function stopRound(){
   if (!running) return;
-  running = false; cancelAnimationFrame(raf); clearInterval(iv); hush(); setPhase(null);
+  running = false; cancelAnimationFrame(raf); clearInterval(iv); hush(); setPhase(null); $("meter").hidden = true;
   $("go").textContent = "Start"; $("go").classList.add("play"); $("modes").style.opacity = ""; $("speed").style.opacity = "";
   const h = document.getElementById("head"); if (h) h.setAttribute("opacity", 0);
 }
-$("go").onclick = () => running ? (stopRound(), $("status").textContent = "Stopped.") : startRound();
+$("go").onclick = () => running ? (stopRound(), setStatus("Stopped.")) : startRound();
 $("hear").onclick = () => {
   if (running) return; audio(); hush();
   const spb = 60 / (level.tempo * (mode === "copy" ? P.speed : 1)), t0 = ac.currentTime + 0.1;
@@ -441,7 +453,9 @@ $("hear").onclick = () => {
 function setPhase(kind, beat){
   const el = $("phase");
   el.className = kind === "call" ? "listen" : kind === "you" ? "you" : kind === "count" ? "count" : "";
-  const label = { call: ["Listen 👂", "The band plays it"], you: ["Your turn 🎸", "Play it back"], count: ["Get ready", "1, 2, 3, 4..."] }[kind] || ["Ready", "Pick a way to play, then press Start"];
+  // idle, the banner names the mode and what its star needs (or that it's won)
+  const m = MODES.find(x => x.k === mode), won = groove && P.g[groove.id] && P.g[groove.id][mode];
+  const label = { call: ["Listen 👂", "The band plays it"], you: ["Your turn 🎸", "Play it back"], count: ["Get ready", "1, 2, 3, 4..."] }[kind] || [m.n, won ? "⭐ Star won!" : m.star];
   el.firstChild.textContent = label[0]; $("phaseSub").textContent = label[1];
   const nb = kind ? (kind === "count" ? 4 : groove.beats) : 0;
   if ($("beats").children.length !== nb) $("beats").innerHTML = "<i></i>".repeat(nb);
@@ -482,7 +496,7 @@ function check(){
     s.done = true; const r = score(s); plan.turns.push(r);
     if (mode !== "ear") { drawTab(r.marks); s.marked = true; }
     const pct = Math.round(100 * r.hits / r.total);
-    $("status").textContent = pct >= 90 ? "Nailed it! " + r.hits + " of " + r.total : pct >= 60 ? "Good! " + r.hits + " of " + r.total + " notes" : r.hits ? r.hits + " of " + r.total + " notes. Keep going!" : "I didn't hear that one. Play a bit louder?";
+    setStatus(pct >= 90 ? "Nailed it! " + r.hits + "/" + r.total : pct >= 60 ? "Good! " + r.hits + "/" + r.total : r.hits ? r.hits + "/" + r.total + ". Keep going!" : "Didn't hear that. Louder?", pct >= 60);
     if (buddy && pct >= 80) buddy.moment(pct === 100 ? "streak" : "hit", 1200);
   });
   if (now > plan.end + plan.lat + 0.35) finish();
@@ -501,19 +515,22 @@ function finish(){
   const newStar = won && !s[mode], prevBest = s.best[mode] || 0, improved = pct > prevBest;
   if (won) s[mode] = true; if (improved) s.best[mode] = pct; saveP();
   if (mode === "ear") drawTab(turns.length ? turns[turns.length - 1].marks : null);
-  const m = MODES.find(x => x.k === mode);
-  const why = won ? "" : mode === "lock" && pct >= 80 ? "Lots of the right notes! For the star, keep them steadier: in the pocket needs 65%." : `For the star: ${m.star.toLowerCase()}.`;
-  $("result").hidden = false;
-  $("result").innerHTML = `<div class="stars">${MODES.map(x => `<img class="${s[x.k] ? "" : "off"}" src="${s[x.k] ? "star-on.png" : "star-off.png"}" alt="">`).join("")}</div>
-    <h2 style="text-align:center;margin-top:8px">${newStar ? "New star: " + m.n + "!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go"}</h2>
-    <div class="res"><div><b>${pct}%</b>notes</div><div><b>${offs.length ? pocket + "%" : "–"}</b>in the pocket</div></div>
-    <p style="text-align:center">${improved && prevBest ? "New best for " + m.n + " (was " + prevBest + "%). " : ""}${esc(why)}</p>
-    ${mode === "copy" && plan.f < 1 && won ? `<p style="text-align:center">Try it at Full speed next.</p>` : ""}
-    <div class="row"><button class="big play" id="again" style="flex:1">Play again</button></div>
-    ${newStar && nextMode() ? `<div class="row"><button class="ghost" id="next" style="flex:1">Next: ${nextMode().n} →</button></div>` : ""}
-    <p id="saved" class="muted" style="text-align:center;margin-bottom:0"></p>`;
-  $("again").onclick = () => { $("result").hidden = true; startRound(); };
-  if ($("next")) $("next").onclick = () => { mode = nextMode().k; drawModes(); $("result").hidden = true; drawTab(); };
+  const m = MODES.find(x => x.k === mode), nx = newStar ? nextMode() : null;
+  const why = won ? (mode === "copy" && plan.f < 1 ? "Now try Full speed" : improved && prevBest ? "New best! (was " + prevBest + "%)" : "")
+    : mode === "lock" && pct >= 80 ? "Steadier for the star: 65% in the pocket" : mode === "ear" && !full ? "Star needs Full speed" : "";
+  setStatus(newStar ? "New star!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go", won);
+  $("setup").hidden = true; $("result").hidden = false;
+  $("result").innerHTML = `<div class="stars">${MODES.map(x => `<img class="${s[x.k] ? (newStar && x.k === mode ? "new" : "") : "off"}" src="${s[x.k] ? "star-on.png" : "star-off.png"}" alt="${s[x.k] ? "star" : "no star yet"}">`).join("")}</div>
+    <div class="score ${won ? "won" : ""}">${pct}%</div>
+    <div class="scoreSub">of the notes${mode === "lock" && offs.length ? ` · ${pocket}% in the pocket` : ""}</div>
+    ${why ? `<div class="need">${esc(why)}</div>` : ""}
+    <button class="big play" id="again" style="margin-top:16px">${nx ? "Next: " + nx.n : "Play again"}</button>
+    <button class="ghost" id="other">${nx ? "Play again" : "Change mode"}</button>
+    <p id="saved" class="muted" style="margin-bottom:0"></p>`;
+  const replay = () => startRound(), pickNext = () => { mode = nx.k; showSetup(); drawModes(); drawTab(); setStatus(""); },
+        toSetup = () => { showSetup(); drawTab(); setStatus(""); };
+  $("again").onclick = nx ? pickNext : replay;
+  $("other").onclick = nx ? replay : toSetup;
   drawModes(); $("tabHide").hidden = true;          // By ear: the tab is shown at the end, with your last turn marked
   if (buddy) buddy.moment(newStar ? "win" : improved ? "best" : "done", 0);
   $("result").scrollIntoView({ behavior: "smooth", block: "nearest" });

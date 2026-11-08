@@ -52,9 +52,13 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 #status{font-family:var(--head);font-weight:900;font-size:20px;min-height:1.3em}
 #meter{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
 #meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
-.res{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.res div{background:#F6F1E4;border-radius:14px;padding:10px;text-align:center;color:var(--muted);font-weight:700;font-size:14px}
-.res div b{display:block;font-family:var(--head);font-weight:900;font-size:26px;color:var(--fg)}
+/* the end of a round: one huge score, few words, one big button (Dave, 8 Nov 2026) */
+#endH{font-size:30px}
+.score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;text-align:center;margin-top:4px}
+.score.won{color:var(--good)}
+.score.pop{animation:pop .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+.scoreSub{text-align:center;font-weight:700;color:var(--muted);font-size:17px}
 .key{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:700;margin-top:6px}
 .key i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:4px;border:2px solid #23231F}
 /* the rank ladder (4 Nov 2026): one Play button; the game picks the notes and the way to play */
@@ -147,9 +151,10 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 
   <section class="card" id="end" hidden>
     <h2 id="endH" style="text-align:center"></h2>
-    <p id="endRank" class="goal" style="text-align:center"></p>
-    <div class="res"><div><b id="endScore">0</b>points</div><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
-    <p id="endBest" style="text-align:center"></p>
+    <div class="score" id="endRight">0</div>
+    <div class="scoreSub"><span id="endScore">0</span> points · <span id="endAvg">–</span> a note</div>
+    <p id="endRank" class="goal" style="text-align:center;font-size:17px"></p>
+    <p id="endBest" style="text-align:center;margin:6px 0"></p>
     <svg id="endMap" viewBox="0 0 1000 270" style="width:100%;height:auto;display:block"></svg>
     <p id="saved" style="text-align:center;font-size:14px"></p>
     <button class="big play" id="again">Play again</button>
@@ -479,11 +484,10 @@ function finish(){
   if (isBest) { P.best[k] = R.score; saveP(); }
   const lv = LEVELS[P.level - 1], sp = spotsOf(lv), known = sp.filter(x => state(spotKey(x)) === 2).length;
   $("endH").textContent = isBest && prev ? "New best! 🎉" : (P.mode === "catch" ? R.right : R.first) === R.qs.length ? (P.mode === "catch" ? "Caught every one! 🎉" : "Every one right! 🎉")
-    : P.mode === "catch" && R.hearts <= 0 ? "Out of hearts! Have another go" : "Round done!";
+    : P.mode === "catch" && R.hearts <= 0 ? "Out of hearts!" : "Round done!";
   $("endScore").textContent = R.score; $("endRight").textContent = R.right + "/" + R.qs.length;
   $("endAvg").textContent = R.times.length ? (R.times.reduce((a, b) => a + b, 0) / R.times.length).toFixed(1) + "s" : "–";
-  $("endBest").textContent = (isBest && prev ? "The old best was " + prev + ". " : prev ? "Your best: " + Math.max(prev, R.score) + ". " : "") + `You know ${known} of the ${sp.length} notes in ${lv.name}` + (known > R.knownBefore ? ` (${known - R.knownBefore} new this round!)` : "") + "."
-    + (known < sp.length ? " Get a yellow note right to turn it green." : "");
+  $("endBest").textContent = (isBest && prev ? "Old best " + prev + " · " : prev ? "Best " + Math.max(prev, R.score) + " · " : "") + `${known}/${sp.length} notes known` + (known > R.knownBefore ? ` (+${known - R.knownBefore})` : "");
   drawMap($("endMap"));
   if (buddy) buddy.moment(isBest ? "best" : "done", 0);
   $("saved").textContent = "";
@@ -501,14 +505,16 @@ function finish(){
     P.rank++; setRank(P.rank); saveP();
     $("endH").textContent = "Rank up! 🎉";
     const nx = RANKS[P.rank - 1];
-    $("endRank").textContent = `You're now Rank ${P.rank}: ${LEVELS[nx.level - 1].name} · ${modeOf(nx.mode).n}`;
+    $("endRank").textContent = `Rank ${P.rank}: ${LEVELS[nx.level - 1].name} · ${modeOf(nx.mode).n}`;
     $("again").textContent = "Play Rank " + P.rank;
     if (buddy) buddy.moment("win", 0);
     if (!SIM && window.FMAPicks) FMAPicks.milestone("note-finder-rank:" + INST + ":" + P.rank, 20, "reaching Rank " + P.rank + " in Note Finder");
-  } else if (subRound) $("endRank").textContent = "That was Name it for practice. Find it needs your " + INSTR + " to count toward your rank.";
+  } else if (subRound) $("endRank").textContent = "Practice round. Find it counts for your rank.";
   else if (P.play === P.rank && P.rank < RANKS.length)
-    $("endRank").textContent = (P.mode === "catch" ? `You caught ${good} of ${tot}.` : `${good} of ${tot} right first go.`) + ` Get ${need} to reach Rank ${P.rank + 1}. Have another go!`;
-  else $("endRank").textContent = P.play < P.rank ? `Your newest rank is Rank ${P.rank}.` : "Top rank! Keep turning your map green.";
+    $("endRank").textContent = `Get ${need}/${tot}${P.mode === "catch" ? "" : " first go"} for Rank ${P.rank + 1}`;
+  else $("endRank").textContent = P.play < P.rank ? `Your newest rank: Rank ${P.rank}` : "Top rank!";
+  // the big number is green when the round was good enough to rank up (or every one was right)
+  const sc = $("endRight"); sc.className = "score" + (up || good >= need || good === tot ? " won" : ""); void sc.offsetWidth; sc.classList.add("pop");
 }
 /* ---------- Catch it ----------
    14 notes fall toward the neck, one or two at a time, a little quicker after each catch. Tap any fret on the level's

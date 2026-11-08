@@ -104,9 +104,14 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
 /* End */
 .end{text-align:center}
 #endImg{width:150px;height:150px;margin:0 auto}
-.end .score{font-family:var(--head);font-weight:900;font-size:64px;line-height:1}
+/* one huge score, few words, one big button (Dave, 8 Nov 2026) */
+.end .score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1}
+.end .score.won{color:var(--good)}
+.end .score.pop{animation:pop .6s cubic-bezier(.2,1.6,.4,1) both .15s}
+@keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+.end .newbest{font-size:20px;padding:4px 18px}
 .end .rows{display:flex;justify-content:center;gap:22px;margin:10px 0;color:var(--muted);font-weight:700}
-.end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:24px}
+.end .rows b{display:block;color:var(--fg);font-family:var(--head);font-size:26px}
 .end .newbest{display:inline-block;background:var(--accent);border:2px solid var(--fg);border-radius:999px;padding:2px 14px;font-weight:800;margin:6px 0}
 #dbg{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap}
 .sim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
@@ -121,7 +126,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
 
   <section class="card" id="start">
     <h2>Find the note, win the points</h2>
-    <p>Each question has four answers. Every answer sits on a note. Work out the right answer, then <b>find its note on your <span class="inst">guitar</span></b> and hold it to lock in. Faster = more points.</p>
+    <p>Pick the answer. <b>Play its note on your <span class="inst">guitar</span></b> and hold it. Faster = more points.</p>
     <h3 class="pick">Topic</h3>
     <div class="cats" id="cats"></div>
     <h3 class="pick">Questions</h3>
@@ -130,7 +135,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
     <div class="levels" id="levels"></div>
     <h3 class="pick">Play</h3>
     <div class="levels" id="modes"></div>
-    <p id="tip">Tip: tune up first, find a quiet spot, and don't play music through the speaker. A guitar plugged into an audio interface works best.</p>
+    <p id="tip">Tip: tune up, find a quiet spot, no music playing.</p>
     <p id="playingAs" style="color:var(--fg)"></p>
     <button class="big play" id="go">Start (allow microphone)</button>
     <p id="err" style="color:var(--bad);font-weight:700" hidden></p>
@@ -151,7 +156,7 @@ h3.pick{margin:14px 0 -4px;font-family:var(--head);font-weight:900;font-size:14p
   <section class="card end" id="end" hidden>
     <div id="endImg"></div>
     <div class="score" id="endScore">0</div>
-    <div class="rows"><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>avg time</div></div>
+    <div class="rows"><div><b id="endRight">0</b>right</div><div><b id="endAvg">–</b>a note</div></div>
     <div id="endPlace" style="font-family:var(--head);font-weight:900;font-size:22px"></div>
     <div class="board" id="endBoard" hidden></div>
     <div id="endBest"></div>
@@ -364,7 +369,9 @@ function endGame(){
     const sent = FMAStudent.send("note-quiz", {level:G.level.n, mode:G.mode, score:G.score, right:G.right, total:G.qs.length, improved:isBest && G.score > 0});
     if(FMAStudent.active()) sent.then(ok => { $("savedMsg").textContent = ok ? "Saved to your progress." : "Couldn't save this one. Check your connection."; });
   }
-  $("endBest").innerHTML = isBest ? `<span class="newbest">New best for ${G.level.name}!</span>` : `<p>Best for ${G.level.name}: ${best}</p>`;
+  $("endBest").innerHTML = isBest ? `<span class="newbest">New best!</span>` : `<p>Best: ${best}</p>`;
+  // the big score goes green for a new best or a win
+  const sc = $("endScore"); sc.className = "score" + ((isBest && G.score > 0) || won ? " won" : ""); void sc.offsetWidth; sc.classList.add("pop");
 }
 
 function tick(){
@@ -439,7 +446,7 @@ $("go").onclick = begin;
 $("again").onclick = () => { drawCats(); drawLevels(); drawModes(); show("start"); $("go").disabled = false; G.phase = "start"; };
 if(PIANO){
   document.querySelectorAll(".inst").forEach(el => { el.textContent = "piano"; });
-  $("tip").textContent = "Tip: find a quiet spot and don't play music through the speaker. Middle of the keyboard works best. Note stickers on your keys help.";
+  $("tip").textContent = "Tip: find a quiet spot, no music playing. Note stickers help.";
 }
 { const sel = store.get().sel || {}; G.cat = CATS.some(c => c.k === sel.cat) ? sel.cat : "mix"; G.diff = sel.diff === 2 ? 2 : 1; }
 drawCats(); drawLevels(); drawModes(); if(window.FMAStudent) FMAStudent.mount($("playingAs"));

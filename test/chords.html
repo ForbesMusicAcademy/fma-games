@@ -44,7 +44,7 @@ button{font:inherit;cursor:pointer}
 .chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:54px}
 .chip{min-width:58px;padding:6px 14px;border-radius:999px;background:var(--line);color:var(--muted);font-family:var(--head);font-weight:900;font-size:26px;text-align:center;transition:background .2s,color .2s}
 .chip.on{background:var(--good);color:#fff}
-#status{text-align:center;font-family:var(--head);font-weight:900;font-size:24px;min-height:1.3em;margin-top:8px}
+#status{text-align:center;font-family:var(--head);font-weight:900;font-size:30px;line-height:1.15;min-height:1.2em;margin-top:8px}
 #status.ok{color:var(--good)}
 .meter{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin-top:12px}
 .meter i{display:block;height:100%;width:0;background:var(--good);transition:width .08s}
@@ -57,7 +57,11 @@ button{font:inherit;cursor:pointer}
 .pop #popBox{background:#fff;border-radius:26px;padding:22px 26px;text-align:center;max-width:320px;animation:rise .35s ease-out}
 .pop img{height:96px;width:auto;display:inline-block;margin:0 4px}
 .pop img.off{opacity:.55}
-.pop b{display:block;font-family:var(--head);font-weight:900;font-size:24px;margin-top:8px}
+.pop b{display:block;font-family:var(--head);font-weight:900;font-size:26px;margin-top:8px}
+/* the end-of-session score: one huge number, green when you got some (Dave, 8 Nov 2026: scores very large and obvious) */
+.pop .score{font-family:var(--head);font-weight:900;font-size:84px;line-height:1;margin-top:6px}
+.pop .score.won{color:var(--good)}
+.pop .scoreSub{font-weight:700;color:var(--muted);font-size:17px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
@@ -149,7 +153,7 @@ a.menu{color:var(--muted);font-weight:700;text-decoration:none;border:2px solid 
     <section class="card hero">
       <div class="hero-top">
         <div class="hbuddy" id="hbuddy"></div>
-        <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div class="qlbl">chords unlocked<small id="qSub">Every chord you learn opens up songs in Boss Battle.</small></div></div>
+        <div class="quest"><div class="n" id="qCount">0<small id="qOf"></small></div><div class="qlbl">chords unlocked<small id="qSub"></small></div></div>
       </div>
       <div class="hint" id="qHint" hidden></div>
       <div class="lens" id="lens" role="group" aria-label="How long to play"><button data-m="1">1 min</button><button data-m="2">2 min</button><button data-m="5">5 min</button></div>
@@ -344,7 +348,7 @@ function sessionTick(){
 function sessionDone(){
   sess.on = false; paused = true; game.over = true; $("left").textContent = "";
   const mins = lens, pct = sess.tries ? Math.round(100 * sess.hits / sess.tries) : 0;
-  $("popBox").innerHTML = `<span><b>Time's up!</b></span><p style="margin:6px 0 2px">${mins} minutes of chords: <b>${sess.hits}</b> right out of ${sess.tries}${sess.tries ? ` (${pct}%)` : ""}.</p>
+  $("popBox").innerHTML = `<span><b>Time's up!</b></span><div class="score ${sess.hits ? "won" : ""}">${sess.hits}</div><div class="scoreSub">chord${sess.hits === 1 ? "" : "s"} right${sess.tries ? ` out of ${sess.tries}` : ""}</div>
     <button class="big play" id="sAgain" style="margin-top:12px">Play again</button><button class="ghost" id="sHome" style="margin-top:8px;width:100%">🏆 Trophies</button>`;
   $("pop").hidden = false; PlayerArt.popIn($("popBox"), sess.hits ? "win" : "done");
   $("sAgain").onclick = () => { $("pop").hidden = true; newSession(); paused = false; game.begin(pickChord()); };
@@ -395,7 +399,7 @@ const game = {
     if(this.over) return; this.over = true;
     const r = score(this.idx, hit);
     const cl = countLine(CHORDS[this.idx].name);
-    $("status").textContent = (hit ? "✓ Got it!" : "Not this time. Here comes the next one") + (cl && r.stars === r.starsBefore ? " (" + cl + ")" : "");
+    $("status").textContent = (hit ? "✓ Got it!" : "Not this time") + (cl && r.stars === r.starsBefore ? " (" + cl + ")" : "");
     streak = hit ? streak + 1 : 0; sess.tries++; if(hit) sess.hits++;
     if(!SELFTEST) FMAStudent.send("chords", {detail:CHORDS[this.idx].name, right:hit ? 1 : 0, total:1, score:r.stars, improved:r.stars > r.starsBefore || !!r.unlocked, graduated:r.starsBefore === 0 && r.stars >= 1});
     if(buddy && hit) buddy.moment([3, 5, 8, 12].includes(streak) ? "streak" : "hit", 1200);
@@ -406,10 +410,7 @@ const game = {
     if(r.stars > r.starsBefore){
       const nm = FMAChords.label(CHORDS[this.idx].name), st = Math.min(MAX_STARS, r.stars);
       const head = st === 1 ? "You learned " + nm + "!" : st >= 4 ? nm + ": MASTERED!" : nm + " is " + MEDALS[st].n.toLowerCase() + "!";
-      const sub = st === 1 ? "That's a bronze trophy. On another day, play it 3 times in a row to make it silver."
-        : st === 2 ? "On another day, play it 3 times in a row to make it gold."
-        : st === 3 ? "On another day, play it 3 times in a row to master it."
-        : "That's the diamond trophy. You've got this chord for keeps.";
+      const sub = st >= 4 ? "Diamond trophy. Yours for keeps!" : (st === 1 ? "Bronze trophy! " : "") + "Next: 3 in a row, another day.";
       queue.push(`<span><span class="medal">${medalCup(st)}</span><b>${head}</b><span class="songlist">${sub}</span></span>`);
     }
     if(r.unlocked){
@@ -491,14 +492,14 @@ function drawHome(){
   const L = n => FMAChords.label(n);
   const open = CHORDS.slice(0, P.unlocked), grads = open.filter(c => P.cards[c.name] && P.cards[c.name].grad).length;
   $("qCount").innerHTML = P.unlocked + `<small> / ${CHORDS.length}</small>`;
-  $("qSub").textContent = grads + (grads === 1 ? " trophy" : " trophies") + " won so far. Every chord opens songs in Boss Battle.";
+  $("qSub").textContent = grads + (grads === 1 ? " trophy" : " trophies");
   $("start").textContent = P.sess ? "Keep playing" : "Play Chord Quest";
   // the glowing next step
   const newest = CHORDS[P.unlocked - 1], next = CHORDS[P.unlocked], nc = newest && P.cards[newest.name];
   let hint = "";
-  if(!next) hint = "You've unlocked every chord on the ladder. Keep them all shining!";
-  else if(!(nc && nc.grad)) hint = `Next: play <b>${L(newest.name)}</b> right ${LEARN_STREAK} times in a row to win its trophy and unlock <b>${L(next.name)}</b>.`;
-  else { const when = nextUnlockWhen(); hint = when ? `<b>${L(next.name)}</b> unlocks on ${when}. New chords open two a week, so keep your trophies shining until then.` : `<b>${L(next.name)}</b> unlocks as soon as you play your next round.`; }
+  if(!next) hint = "Every chord unlocked!";
+  else if(!(nc && nc.grad)) hint = `Play <b>${L(newest.name)}</b> ${LEARN_STREAK} in a row to unlock <b>${L(next.name)}</b>`;
+  else { const when = nextUnlockWhen(); hint = when ? `<b>${L(next.name)}</b> unlocks on ${when}` : `<b>${L(next.name)}</b> unlocks next round`; }
   $("qHint").innerHTML = hint; $("qHint").hidden = !hint;
   // the cabinet: every shelf up to the one you're on, plus the next one, so the road ahead is visible but not overwhelming
   const curTier = (CHORDS[Math.min(P.unlocked, CHORDS.length - 1)] || {}).tier || 0;
@@ -545,7 +546,7 @@ $("cabinet").onclick = ev => {
   const b = ev.target.closest("button.tro[data-i]"); if(!b) return;
   const i = Number(b.dataset.i), c = CHORDS[i], card = P.cards[c.name], st = starsOf(card);
   const w = document.createElement("div"); w.className = "chordpop";
-  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? medalLine(Math.min(MAX_STARS, st)) : `Play it right ${LEARN_STREAK} times in a row to win this trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
+  w.innerHTML = `<div class="in"><b>${esc(FMAChords.label(c.name))}</b><div class="d ${PIANO ? "keys" : ""}">${FMAChords.diagram(c.name)}</div><p>${card && card.grad ? medalLine(Math.min(MAX_STARS, st)) : `${LEARN_STREAK} in a row wins the trophy.`}</p><button class="big">Practise ${esc(FMAChords.label(c.name))}</button><button class="ghost" style="margin-top:8px;width:100%">Close</button></div>`;
   const [go, close] = w.querySelectorAll("button");
   close.onclick = () => w.remove();
   w.onclick = e => { if(e.target === w) w.remove(); };
