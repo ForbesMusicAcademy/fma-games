@@ -411,10 +411,15 @@ if (window.FMAMidi) FMAMidi.onNote(e => { if (e.on && FMAMidi.active() && ac) he
 let running = false, plan = null, raf = 0, iv = 0;
 async function startRound(){
   $("err").hidden = true;
+  // The microphone always runs here (9 Nov 2026, Dave): this is a bass game, and a MIDI device in the computer (a keyboard,
+  // an e-kit, an audio interface's MIDI port) used to switch the mic off, leaving a flat meter and nothing marked.
+  // A keyboard's notes still count as well; with a keyboard in, a blocked mic doesn't stop the game.
   try {
     audio();
-    if (!det.ready && !(window.FMAMidi && FMAMidi.active())) await det.start({ ctx: ac, bass: true });
-  } catch (e) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, then try again."; return; }
+    if (!det.ready) await det.start({ ctx: ac, bass: true });
+  } catch (e) {
+    if (!(window.FMAMidi && FMAMidi.active())) { $("err").hidden = false; $("err").textContent = "The microphone is blocked. Allow it in your browser's settings, then try again."; return; }
+  }
   running = true; heard = []; showSetup(); setStatus(""); $("meter").hidden = false; $("tabHide").hidden = mode !== "ear"; drawTab(); $("go").textContent = "Stop"; $("go").classList.remove("play");
   $("modes").style.opacity = .5; $("speed").style.opacity = .5;
   const f = mode === "copy" ? P.speed : 1;          // Lock it in and By ear always run at full speed
