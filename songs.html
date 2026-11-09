@@ -121,7 +121,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{transform:translateY(14px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.spst{display:block;font-size:11px;line-height:1;color:#B07D00;letter-spacing:1px;margin-top:2px}.spst.nost{color:var(--muted);letter-spacing:0;font-weight:600}
+.spst{display:block;font-size:11px;line-height:1;color:#CFC6B2;letter-spacing:1px;margin-top:2px}.spst.won{color:#B07D00}.spst img{height:11px;width:auto;vertical-align:-1px;margin-left:2px}.spst.nost{color:var(--muted);letter-spacing:0;font-weight:600}
 </style>
 </head>
 <body class="fma">
@@ -192,7 +192,7 @@ button{font:inherit;cursor:pointer;color:var(--fg)}
      PIANO   coloured notes on a staff with the note name in each head, plus a little piano under it; or Falling Notes
              (keys.html, which keeps the same stars, so both views fill the same packs).
    LEARN waits for the right note; PLAY ALONG keeps time at Slow / Medium / Full with a count-in and soft backing.
-   Stars per song (as Falling Notes): 1 for finishing Learn, 2 for 80% in Play along, 3 for 90% at Full speed.
+   Stars per song (as Falling Notes) = the speeds beaten in Play along (9 Nov 2026): 75% on Slow, Medium, Fast wins 1, 2, 3; every note on Fast wins the diamond.
    Only the note NAME has to match (any octave): phone mics jump octaves, and home keyboards are small.
    Your character hops from note to note on the same canvas; if the device drops frames it stops hopping by itself.
    A pack at 100% of its stars wins a trophy and a character item (Spooky Season: the pumpkin hat, only won here).
@@ -206,7 +206,7 @@ const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
-const PLAY_PCT = 80, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
+const PLAY_PCT = 75, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
 const HEAR_DELAY = 0.16;     // how long after a note starts the listener names it (fma-listen.js reads 0.12 s), plus a little slack
 const INST = (window.fmaInstrument && fmaInstrument.get()) === "piano" ? "piano" : "guitar";      // bass players get guitar tab here (their own games are Groove Lab and Note Finder)
 
@@ -363,7 +363,7 @@ O.mic = true;      // the real instrument only: the mic, or a MIDI keyboard when
 const saveOpts = () => { P.packOpts = O; save(); };
 
 let SONGS = {}, pack = null, cur = null;
-const starImgs = n => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("");
+const starImgs = (n, dia) => [1, 2, 3].map(i => `<img class="${n >= i ? "" : "off"}" src="${n >= i ? "star-on.png" : "star-off.png"}" alt="">`).join("") + (dia ? `<img src="diamond.png" alt="diamond">` : "");
 const packStars = p => ids(p).reduce((b, id) => b + starsOf(p, id), 0);
 const prevPack = p => { const ladder = PACKS.filter(x => !x.seasonal), i = ladder.indexOf(p); return i > 0 ? ladder[i - 1] : null; };
 function packState(p){
@@ -443,7 +443,7 @@ function drawPack(){
   $("songList").innerHTML = list.map(id => { const s = SONGS[id]; if (!s) return ""; const st = starsOf(p, id), nx = id === nextId;
     const lvl = !LAB && p.lv && INST === "guitar" ? levelOf(p, id) : "";
     const ps = paced(s, p), part = ps && ps.paced && ps.paced.cut ? `<span class="fma-info" style="margin-right:6px">First ${ps.bars} bars</span>` : "";
-    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${part}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st)}</span></button>`; }).join("");
+    return `<button class="song${nx ? " next" : ""}" data-id="${id}"><span class="meta"><b>${esc(cleanTitle(s.title))}${nx ? '<span class="here">TRY THIS</span>' : ""}</b><small>${lvl ? `<span class="fma-info" style="margin-right:6px">${lvl}</span>` : ""}${part}${esc(s.hook || "")}</small></span><span class="rew" aria-label="${st} stars">${starImgs(st, (P.songs[rk(p, id)] || {}).diamond)}</span></button>`; }).join("");
 }
 // a review song's label: which earlier level it comes from (new songs at this pack's own level get "New")
 function levelOf(p, id){
@@ -666,6 +666,14 @@ const LEGATO = ["hammer", "pull", "slide", "slidedown"];      // learn mode: the
 const pops = [];
 const stats = { hit: 0, first: 0, perfect: 0, miss: 0, combo: 0, maxCombo: 0 };
 const SPEED_STARS = { slow: 1, med: 2, full: 3 };      // Play along at PLAY_PCT% or better wins that speed's star; Learn wins none (Dave, 14 Oct 2026)
+// Stars mean one thing only: the speeds you've beaten (Dave, 9 Nov 2026). 75% on Slow = 1st star, Medium = 2nd, Fast = 3rd;
+// every note at Fast wins the diamond. The % is just that run's score. Each speed button lights its stars once they're won,
+// so the stars on the buttons are the same stars as on the result and in the song list.
+function drawSpeedStars(r){
+  $("speeds").querySelectorAll("button").forEach(b => { const n = SPEED_STARS[b.dataset.k], st = b.querySelector(".spst"); if (!st) return;
+    st.className = "spst" + (r && r.stars >= n ? " won" : "");
+    st.innerHTML = "★".repeat(n) + (b.dataset.k === "full" && r && r.diamond ? '<img src="diamond.png" alt="diamond">' : ""); });
+}
 const speedF = () => (SPEEDS.find(s => s.k === speed) || SPEEDS[0]).f;
 function resetRun(){
   hush(); clearTimeout(simT); simTs.forEach(clearTimeout); simTs.length = 0;
@@ -692,7 +700,8 @@ function hint(text){
   const r = rec(rk(pack, cur.id));
   $("hint").textContent = mode === "learn"
     ? (techTip(notes[0]) || (INST === "guitar" ? "Number = fret, line = string. It waits for you." : "The notes wait for you.") + (r.stars ? "" : " Stars are in Play along."))
-    : r.stars >= 3 ? "⭐⭐⭐ Play it any time." : `⭐ at ${PLAY_PCT}% on ${["Slow", "Medium", "Fast"][r.stars]}`;
+    : r.diamond ? "Every speed beaten, and the diamond." : r.stars >= 3 ? "Every note on Fast wins the diamond." : `${PLAY_PCT}% on ${["Slow", "Medium", "Fast"][r.stars]} wins the next star.`;
+  drawSpeedStars(r);
 }
 async function startRun(asDemo){
   $("err").hidden = true;
@@ -1032,7 +1041,7 @@ function finish(){
   const r = rec(rk(pack, cur.id)), before = r.stars, total = notes.length;
   const i = ids(pack).indexOf(cur.id), nextSong = SONGS[ids(pack)[i + 1]];
   // one big button and at most one quiet one (Dave, 8 Nov 2026): main = the obvious next step
-  let pct, improved = false, mom = "done", head, sub, need = "", won, main, alt = null;
+  let pct, improved = false, mom = "done", head, sub, need = "", won, main, alt = null, newDia = false;
   const again = { t: "Play again", f: () => { resetRun(); startRun(); } }, next = nextSong ? { t: "Next song", f: () => openSong(paced(nextSong, pack)) } : null;
   r.runs++;
   if (mode === "learn") {
@@ -1046,17 +1055,19 @@ function finish(){
     pct = Math.round(100 * stats.hit / Math.max(1, total));
     const old = r.best[speed] || 0; improved = pct > old; r.best[speed] = Math.max(old, pct);
     if (pct >= PLAY_PCT) r.stars = Math.max(r.stars, SPEED_STARS[speed] || 1);
+    if (pct >= 100 && speed === "full" && !r.diamond) { r.diamond = true; newDia = true; }
     won = pct >= PLAY_PCT;
     const sp = SPEEDS.find(s => s.k === speed).n, nk = ["slow", "med", "full"][r.stars];
-    head = r.stars > before ? (r.stars === 3 ? "Three stars!" : "New star!") : improved && old ? "New best!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go";
+    head = newDia ? "Diamond! Every note on Fast!" : r.stars > before ? (r.stars === 3 ? "Three stars!" : "New star!") : improved && old ? "New best!" : won ? "You did it again!" : pct >= 50 ? "Getting there!" : "Have another go";
     sub = stats.hit + "/" + total + " notes · " + sp;
     if (!won) need = "Star at " + PLAY_PCT + "%";
+    else if (r.stars >= 3 && !r.diamond) need = "Every note on Fast for the diamond";
     if (won && r.stars < 3 && nk !== speed) { main = { t: "Try " + SPEEDS.find(s => s.k === nk).n, f: () => { const b = $("speeds").querySelector(`[data-k="${nk}"]`); if (b) b.click(); startRun(); } }; alt = again; }
     else if (r.stars >= 3 && next) { main = next; alt = again; }
     else { main = again; alt = next; }
-    mom = r.stars > before ? "win" : improved ? "best" : "done";
+    mom = newDia || r.stars > before ? "win" : improved ? "best" : "done";
   }
-  const html = `<h3>${head}</h3><div class="stars">${[1, 2, 3].map(i => `<img class="${r.stars >= i ? (i > before ? "new" : "") : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="${r.stars >= i ? "star" : "no star yet"}">`).join("")}</div>
+  const html = `<h3>${head}</h3><div class="stars">${[1, 2, 3].map(i => `<img class="${r.stars >= i ? (i > before ? "new" : "") : "off"}" src="${r.stars >= i ? "star-on.png" : "star-off.png"}" alt="${r.stars >= i ? "star" : "no star yet"}">`).join("")}${r.diamond ? `<img class="${newDia ? "new" : ""}" src="diamond.png" alt="diamond">` : ""}</div>
     <div class="pct ${won ? "won" : ""}">${pct}%</div><p class="sub">${sub}</p>${need ? `<div class="need">${need}</div>` : ""}
     <button class="big play" id="pMain">${main.t}</button>${alt ? `<button class="ghost" id="pAlt">${alt.t}</button>` : ""}
     <div><button class="textlink" id="pSongs">${"Back to " + esc(pack.name)}</button></div>`
