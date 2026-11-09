@@ -207,6 +207,7 @@ const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
 const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
 const PLAY_PCT = 80, PERFECT = 0.09, GOOD = 0.2, LEARN_F = 0.7;
+const HEAR_DELAY = 0.16;     // how long after a note starts the listener names it (fma-listen.js reads 0.12 s), plus a little slack
 const INST = (window.fmaInstrument && fmaInstrument.get()) === "piano" ? "piano" : "guitar";      // bass players get guitar tab here (their own games are Groove Lab and Note Finder)
 
 /* ---------- the catalogue ----------
@@ -1011,8 +1012,12 @@ function frame(now){
     const p = songPos();
     const cn = Math.floor((p + countBeats) / countUnit + 1e-6) + 1;
     if (p < 0 && cn >= 1) { $("count").textContent = cn; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
-    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > GOOD) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
-    if (p > endBeat + 1) { if (demo) resetRun(); else finish(); }
+    // A note only counts as missed once the microphone has had time to report it (Dave, 9 Nov 2026: late notes were being
+    // marked missed before the listener, which names a note about 0.12 s after it starts, could say it was played; so a
+    // note played a little late never counted, and a player who drifts behind lost more and more of the song).
+    const wait = GOOD + O.lat + HEAR_DELAY;
+    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > wait) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
+    if (p > endBeat + 1 && (demo || notes.every(n => n.res))) { if (demo) resetRun(); else finish(); }
   }
   if (!$("player").hidden && W && cur) draw(now);
   requestAnimationFrame(frame);

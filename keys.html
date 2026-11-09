@@ -156,6 +156,7 @@ const noteName = m => NAMES[((Math.round(m) % 12) + 12) % 12];
 const SPEEDS = [{ k: "slow", n: "Slow", f: 0.6 }, { k: "med", n: "Medium", f: 0.8 }, { k: "full", n: "Fast", f: 1 }];
 const PLAY_PCT = 80;
 const PERFECT = 0.09, GOOD = 0.2;              // seconds either side of the beat
+const HEAR_DELAY = 0.16;                       // how long after a note starts the listener names it (fma-listen.js reads 0.12 s), plus a little slack
 const LEARN_F = 0.7;                           // Learn mode falls at 70% of the song's speed (then waits anyway)
 const FALL_SECS = 2.6;                         // how long a note takes to fall from the top to the keys
 const KEY = fmaKey("fma-keys-v1");             // each player on this device keeps their own stars
@@ -484,8 +485,12 @@ function frame(now){
     const p = songPos();
     const cn = Math.floor((p + countBeats) / countUnit + 1e-6) + 1;       // 1 on the first click, counting up
     if (p < 0 && cn >= 1) { $("count").textContent = cn; $("count").style.opacity = 1; } else $("count").style.opacity = 0;
-    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > GOOD) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
-    if (p > endBeat + 1) { if (demo) { resetRun(); } else finish(); }
+    // A note only counts as missed once the microphone has had time to report it (Dave, 9 Nov 2026: late notes were being
+    // marked missed before the listener, which names a note about 0.12 s after it starts, could say it was played; so a
+    // note played a little late never counted, and a player who drifts behind lost more and more of the song).
+    const wait = GOOD + O.lat + HEAR_DELAY;
+    if (!demo) for (const n of notes) { if (n.res) continue; if ((p - n.t) * spb > wait) { n.res = "miss"; stats.miss++; stats.combo = 0; score(); } else break; }
+    if (p > endBeat + 1 && (demo || notes.every(n => n.res))) { if (demo) { resetRun(); } else finish(); }
   }
   if (!$("player").hidden && W) draw(now);
   requestAnimationFrame(frame);

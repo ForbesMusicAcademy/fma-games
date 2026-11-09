@@ -145,11 +145,11 @@ const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const DEBUG = q.has("debug"), SELFTEST = q.has("selftest"), FIRST = q.has("first");
 // Tuned up: the finish card's big button goes straight on to playing (Dave, 2 Nov 2026: nobody tunes twice in a row;
-// a family's bug report said there was no way out but "Tune again"). Bass players go to Groove Lab, guitarists to Chord Quest.
+// a family's bug report said there was no way out but "Tune again"). It goes to all the games, so they pick (Dave, 9 Nov 2026; it used to go to Chord Quest or Groove Lab).
 
 /* ---------- The strings, low to high (standard tuning). Bass players (2 Nov 2026) get the bass's four, an octave down. ---------- */
 const BASS = !!(window.fmaInstrument && fmaInstrument.get() === "bass");
-const NEXT = BASS ? { href: "grooves.html", label: "Now let's play: Groove Lab" } : { href: "chords.html", label: "Now let's play: Chord Quest" };
+const NEXT = { href: "./", label: "Now let's play!" };
 const STRINGS = BASS ? [
   {note: "E", name: "low E",  desc: "the thickest string",       hz: 41.203},
   {note: "A", name: "A",      desc: "the 2nd thickest string",   hz: 55.000},

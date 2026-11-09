@@ -336,7 +336,7 @@ let buddy = null, streak = 0, paused = false, running = false;          // your 
    chord being played finishes and the session ends with a summary. */
 const LENS_KEY = "fma-cq-minutes";
 let lens = 2; try{ lens = [1, 2, 5].includes(Number(localStorage.getItem(LENS_KEY))) ? Number(localStorage.getItem(LENS_KEY)) : 2; }catch(e){}
-const sess = { left: 0, hits: 0, tries: 0, last: 0, on: false };
+const sess = { left: 0, hits: 0, tries: 0, last: 0, on: false, boss: "" };
 function drawLens(){ $("lens").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", Number(b.dataset.m) === lens)); }
 $("lens").onclick = e => { const b = e.target.closest("button"); if(!b) return; lens = Number(b.dataset.m); try{ localStorage.setItem(LENS_KEY, lens); }catch(e){} drawLens(); };
 drawLens();
@@ -347,6 +347,10 @@ function sessionTick(){
 }
 function sessionDone(){
   sess.on = false; paused = true; game.over = true; $("left").textContent = "";
+  if(sess.boss){ const b = sess.boss; sess.boss = ""; $("pop").hidden = false; popQueue([b], timesUp); return; }   // boss news first, then the score
+  timesUp();
+}
+function timesUp(){
   const mins = lens, pct = sess.tries ? Math.round(100 * sess.hits / sess.tries) : 0;
   $("popBox").innerHTML = `<span><b>Time's up!</b></span><div class="score ${sess.hits ? "won" : ""}">${sess.hits}</div><div class="scoreSub">chord${sess.hits === 1 ? "" : "s"} right${sess.tries ? ` out of ${sess.tries}` : ""}</div>
     <button class="big play" id="sAgain" style="margin-top:12px">Play again</button><button class="ghost" id="sHome" style="margin-top:8px;width:100%">🏆 Trophies</button>`;
@@ -418,7 +422,8 @@ const game = {
       const ns = newBossSongs();
       if(ns.songs.length){
         const names = ns.songs.slice(0, 3).map(x => esc(x.t)).join(", ") + (ns.songs.length > 3 ? ` and ${ns.songs.length - 3} more` : "");
-        queue.push(`<span><div class="bossmini" data-boss="${ns.boss || FMABoss.bossOf(ns.songs[0])}"></div><b>${ns.songs.length} new song${ns.songs.length > 1 ? "s" : ""} in Boss Battle!</b><span class="songlist">${names}</span>${ns.boss ? `<span class="songlist">A new boss is waiting: <b style="display:inline;font-size:inherit;color:var(--fg)">${esc(FMABoss.name(ns.boss))}</b></span>` : ""}</span>`);
+        // The boss news waits for the end of the round (Dave, 9 Nov 2026): trophy, new chord and new boss all at once was too much.
+        sess.boss = `<span><div class="bossmini" data-boss="${ns.boss || FMABoss.bossOf(ns.songs[0])}"></div><b>${ns.songs.length} new song${ns.songs.length > 1 ? "s" : ""} in Boss Battle!</b><span class="songlist">${names}</span>${ns.boss ? `<span class="songlist">A new boss is waiting: <b style="display:inline;font-size:inherit;color:var(--fg)">${esc(FMABoss.name(ns.boss))}</b></span>` : ""}</span>`;
         $("newSongs").innerHTML = `<a class="newsongs" href="boss.html?song=${ns.songs[0].id}">🎸 <span>New in Boss Battle: <b>${names}</b></span><span class="go">Play ›</span></a>`;
       }
     }
